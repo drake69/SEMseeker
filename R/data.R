@@ -18,6 +18,25 @@
 "dmr_annotation"
 
 
+#' cytoband_hg19
+#'
+#' Cytogenetic band coordinates for the hg19 human genome assembly.
+#' Used by \code{\link{probe_annotation_build}} to assign a \code{CHR_CYTOBAND}
+#' label (e.g. \code{"q12.2"}) to each CpG probe based on its chromosomal
+#' position.  Band boundaries are derived from probe positions in the full
+#' Illumina EPIC annotation and cover all autosomes and sex chromosomes.
+#'
+#' @format A data frame with 829 rows and four columns:
+#' \describe{
+#'   \item{CHR}{Chromosome identifier without \code{"chr"} prefix
+#'     (e.g. \code{"1"}, \code{"X"}).}
+#'   \item{START}{Approximate start position of the cytogenetic band (bp).}
+#'   \item{END}{Approximate end position of the cytogenetic band (bp).}
+#'   \item{CYTOBAND}{ISCN band label (e.g. \code{"q12.2"}, \code{"p36.33"}).}
+#' }
+"cytoband_hg19"
+
+
 #' metrics_properties
 #'
 #' Metadata table describing the statistical properties of each SEM metric.

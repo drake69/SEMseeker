@@ -100,14 +100,26 @@ probe_annotation_build <- function(tech, force = FALSE) {
   anno_df$ISLAND_S_SHELF <- ifelse(island_rel == "S_Shelf", island_name, NA_character_)
 
   # ---- CHR_CYTOBAND ----
-  cytoband_col <- intersect(
-    c("UCSC_CpG_Islands_Name", "Methyl450_Loci", "Methyl27_Loci"),
-    colnames(anno_df)
-  )
-  anno_df$CHR_CYTOBAND <- if (length(cytoband_col) > 0L)
-    as.character(anno_df[[cytoband_col[[1L]]]])
-  else
-    NA_character_
+  # Assigned by range overlap against the bundled cytoband_hg19 table
+  # (829 rows, one per cytogenetic band in hg19).
+  cb        <- SEMseeker::cytoband_hg19
+  chr_vec   <- anno_df$CHR
+  start_vec <- anno_df$START
+  cytoband_vec <- rep(NA_character_, nrow(anno_df))
+
+  for (chr_val in unique(chr_vec[!is.na(chr_vec)])) {
+    cb_chr   <- cb[cb$CHR == chr_val, , drop = FALSE]
+    if (nrow(cb_chr) == 0L) next
+    idx_anno <- which(chr_vec == chr_val)
+    for (i in seq_len(nrow(cb_chr))) {
+      in_band <- idx_anno[
+        start_vec[idx_anno] >= cb_chr$START[i] &
+        start_vec[idx_anno] <= cb_chr$END[i]
+      ]
+      cytoband_vec[in_band] <- cb_chr$CYTOBAND[i]
+    }
+  }
+  anno_df$CHR_CYTOBAND <- cytoband_vec
 
   # ---- DMR columns from bundled dmr_annotation ----
   dmr <- SEMseeker::dmr_annotation
