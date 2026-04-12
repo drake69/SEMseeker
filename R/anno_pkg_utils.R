@@ -16,6 +16,22 @@
   K27  = "IlluminaHumanMethylation27kanno.ilmn12.hg19"
 )
 
+#' Load an Illumina annotation package S4 object
+#'
+#' The main data object in IlluminaHumanMethylation*anno packages is stored as
+#' lazy data, not exported into the namespace.  \code{get(pkg, envir =
+#' asNamespace(pkg))} therefore fails.  The correct approach is to use
+#' \code{data()} to load the object into a temporary environment.
+#'
+#' @param pkg Character scalar: annotation package name.
+#' @return The \code{IlluminaMethylationAnnotation} S4 object.
+#' @keywords internal
+.anno_pkg_load <- function(pkg) {
+  env <- new.env(parent = emptyenv())
+  utils::data(list = pkg, package = pkg, envir = env)
+  get(pkg, envir = env)
+}
+
 #' Get probe IDs from an Illumina annotation package
 #'
 #' Extracts the complete vector of probe identifiers (e.g. \code{cg00000029})
@@ -25,7 +41,7 @@
 #' @return Character vector of probe IDs (rownames of the Locations table).
 #' @keywords internal
 .anno_pkg_probe_ids <- function(pkg) {
-  obj  <- get(pkg, envir = asNamespace(pkg))
+  obj  <- .anno_pkg_load(pkg)
   locs <- slot(obj, "data")$Locations
   rownames(locs)
 }
@@ -44,7 +60,7 @@
 #' @keywords internal
 .anno_pkg_to_df <- function(pkg) {
 
-  obj       <- get(pkg, envir = asNamespace(pkg))
+  obj       <- .anno_pkg_load(pkg)
   data_list <- slot(obj, "data")
 
   # Core genomic positions
