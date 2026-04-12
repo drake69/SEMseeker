@@ -1,13 +1,16 @@
 # Internal utilities for accessing Illumina methylation annotation packages.
 #
-# The three IlluminaHumanMethylation*anno packages store their data as S4
-# objects of class "IlluminaHumanMethylationAnnotation" (defined in minfi).
-# Each object has a @data slot containing named data.frames:
-#   - Locations    : chr, pos, strand  (rownames = probe IDs)
-#   - Islands.UCSC : Islands_Name, Relation_to_Island
-#   - Other        : UCSC_RefGene_Name, UCSC_RefGene_Group, ...
+# The IlluminaHumanMethylation*anno packages expose their data as *separate*
+# lazy data objects ("Locations", "Islands.UCSC", "Other") that must be loaded
+# individually with data().  The top-level S4 wrapper object (which has the
+# same name as the package) only contains lazy-loading descriptors in its @data
+# slot — accessing slot(obj, "data")$Locations directly returns a list of the
+# form list(what="Locations", envir="package:...") rather than the actual table.
 #
-# SEMseeker accesses these slots directly — minfi is not a dependency.
+# Correct access pattern (no minfi required):
+#   env <- new.env(parent = emptyenv())
+#   utils::data("Locations", package = pkg, envir = env)
+#   locs <- as.data.frame(get("Locations", envir = env), stringsAsFactors = FALSE)
 
 # Map from SEMseeker technology key to Bioconductor annotation package name
 .ANNO_PKGS <- c(
@@ -16,20 +19,21 @@
   K27  = "IlluminaHumanMethylation27kanno.ilmn12.hg19"
 )
 
-#' Load an Illumina annotation package S4 object
+#' Load a named sub-table from an Illumina annotation package
 #'
-#' The main data object in IlluminaHumanMethylation*anno packages is stored as
-#' lazy data, not exported into the namespace.  \code{get(pkg, envir =
-#' asNamespace(pkg))} therefore fails.  The correct approach is to use
-#' \code{data()} to load the object into a temporary environment.
+#' Each data object (e.g. "Locations", "Islands.UCSC", "Other") is stored as an
+#' independent lazy dataset in the package and must be loaded via \code{data()}.
+#' Accessing the top-level S4 wrapper and then reading \code{@data$Locations}
+#' only yields a lazy descriptor, not the actual table.
 #'
-#' @param pkg Character scalar: annotation package name.
-#' @return The \code{IlluminaMethylationAnnotation} S4 object.
+#' @param pkg   Character scalar: annotation package name.
+#' @param table Character scalar: name of the dataset to load (e.g. \code{"Locations"}).
+#' @return A \code{data.frame} with probe IDs as rownames.
 #' @keywords internal
-.anno_pkg_load <- function(pkg) {
+.anno_pkg_load_table <- function(pkg, table) {
   env <- new.env(parent = emptyenv())
-  utils::data(list = pkg, package = pkg, envir = env)
-  get(pkg, envir = env)
+  utils::data(list = table, package = pkg, envir = env)
+  as.data.frame(get(table, envir = env), stringsAsFactors = FALSE)
 }
 
 #' Get probe IDs from an Illumina annotation package
@@ -41,15 +45,14 @@
 #' @return Character vector of probe IDs (rownames of the Locations table).
 #' @keywords internal
 .anno_pkg_probe_ids <- function(pkg) {
-  obj  <- .anno_pkg_load(pkg)
-  locs <- slot(obj, "data")$Locations
+  locs <- .anno_pkg_load_table(pkg, "Locations")
   rownames(locs)
 }
 
 #' Build a data.frame from an Illumina annotation package
 #'
-#' Combines the Locations, Islands.UCSC, and Other tables from the annotation
-#' package S4 object into a single data.frame with one row per probe.
+#' Loads the Locations, Islands.UCSC, and Other sub-tables from the annotation
+#' package and combines them into a single data.frame with one row per probe.
 #' Does not require minfi.
 #'
 #' @param pkg Character scalar: annotation package name.
@@ -60,35 +63,30 @@
 #' @keywords internal
 .anno_pkg_to_df <- function(pkg) {
 
-  obj       <- .anno_pkg_load(pkg)
-  data_list <- slot(obj, "data")
+  # Core genomic positions — always present
+  locs <- .anno_pkg_load_table(pkg, "Locations")
 
-  # Core genomic positions
-  locs <- as.data.frame(data_list$Locations, stringsAsFactors = FALSE)
-
-  # CpG island context
-  if ("Islands.UCSC" %in% names(data_list)) {
-    islands <- as.data.frame(data_list[["Islands.UCSC"]],
-                             stringsAsFactors = FALSE)
-  } else {
-    islands <- data.frame(
-      Islands_Name       = NA_character_,
-      Relation_to_Island = NA_character_,
-      row.names          = rownames(locs),
-      stringsAsFactors   = FALSE
-    )
-  }
+  # CpG island context — present in all three arrays
+  islands <- tryCatch(
+    .anno_pkg_load_table(pkg, "Islands.UCSC"),
+    error = function(e) {
+      data.frame(
+        Islands_Name       = NA_character_,
+        Relation_to_Island = NA_character_,
+        row.names          = rownames(locs),
+        stringsAsFactors   = FALSE
+      )
+    }
+  )
 
   # Gene body and other annotations
-  if ("Other" %in% names(data_list)) {
-    other <- as.data.frame(data_list$Other, stringsAsFactors = FALSE)
-  } else {
-    other <- data.frame(row.names = rownames(locs))
-  }
+  other <- tryCatch(
+    .anno_pkg_load_table(pkg, "Other"),
+    error = function(e) data.frame(row.names = rownames(locs))
+  )
 
   # Combine — all tables share the same rownames (probe IDs)
-  df <- cbind(locs, islands, other)
-  df
+  cbind(locs, islands, other)
 }
 
 #' Detect Illumina array technology by probe-ID overlap
