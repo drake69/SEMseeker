@@ -24,17 +24,17 @@ Imports: dplyr, doFuture, doRNG, FactoMineR, factoextra, foreach, FSA,
         lqmm, plyr, polars, progressr, reshape, reshape2, R.utils, rlang,
         stats, stringr, utils, withr, zoo, VennDiagram, effsize, pwr,
         combinat, philentropy, parallelly, knitr, lmtest,
-        glmnet, sqldf, readr, tidyr, readxl, xtable,
-        IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
-        IlluminaHumanMethylation450kanno.ilmn12.hg19,
-        IlluminaHumanMethylation27kanno.ilmn12.hg19
+        glmnet, sqldf, readr, tidyr, readxl, xtable
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
         stringi, testthat, WebGestaltR, rmarkdown, pkgdown, STRINGdb,
         AnnotationDbi, KMEANS.KNN, M3C, UpSetR, boot, car, circlize,
         fastDummies, fitdistrplus, ggpubr, mediation, meta, nnet,
-        org.Hs.eg.db, quantreg, qvalue, tidyverse, matrixStats
+        org.Hs.eg.db, quantreg, qvalue, tidyverse, matrixStats,
+        IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
+        IlluminaHumanMethylation450kanno.ilmn12.hg19,
+        IlluminaHumanMethylation27kanno.ilmn12.hg19
 Depends: R (>= 4.5.0)
 Additional_repositories: https://community.r-multiverse.org
 LazyData: true
