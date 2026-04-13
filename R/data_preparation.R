@@ -19,6 +19,7 @@
 data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, dototal, covariates, depth_analysis, key)
 {
 
+  # browser()
   ssEnv <- get_session_info()
 
   transformation_y <- as.character(transformation_y)

@@ -126,6 +126,13 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
       colnames(local_result) <- toupper(colnames(local_result))
 
+      if(nrow(model_result)>0)
+        local_result <- cbind(local_result, model_result)
+
+      colnames(local_result) <- toupper(colnames(local_result))
+
+      # local_result
+      # result_temp <- plyr::rbind.fill(result_temp, local_result)
       local_result
     }
   }, error = function(e) {
