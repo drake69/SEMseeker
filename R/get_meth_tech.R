@@ -8,8 +8,6 @@
 #'     each installed \code{IlluminaHumanMethylation*anno} package; the
 #'     technology with the most matching probes wins.  Accurate for any subset
 #'     size (e.g. 20 k probes out of 866 k).
-#'   \item \strong{PROBES table} — falls back to the bundled \code{PROBES}
-#'     data object if annotation packages are unavailable (transition period).
 #'   \item \strong{Row-count heuristics} — last resort for WGBS or unknown
 #'     probe naming schemes.
 #' }
@@ -59,30 +57,7 @@ get_meth_tech <- function(signal_data) {
                  "technology identified as", tech,
                  "via annotation-package probe-ID overlap.")
 
-  # ---- Step 2: PROBES table fallback (transition period) ----
-  if (tech == "" &&
-      exists("PROBES", envir = asNamespace("SEMseeker"), inherits = FALSE)) {
-
-    probe_map <- get("PROBES", envir = asNamespace("SEMseeker"))
-
-    # Accept both lowercase (k450) and uppercase (K450) column names
-    counts <- setNames(integer(3), c("K27", "K450", "K850"))
-    for (tname in c("K27", "K450", "K850")) {
-      col <- if (tolower(tname) %in% colnames(probe_map)) tolower(tname) else tname
-      if (col %in% colnames(probe_map)) {
-        matched <- probe_map[probe_map$PROBE %in% probe_ids, , drop = FALSE]
-        counts[[tname]] <- sum(matched[[col]], na.rm = TRUE)
-      }
-    }
-    if (max(counts) > 0) {
-      tech <- names(which.max(counts))
-      msg  <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
-                    "technology identified as", tech,
-                    "via PROBES table probe-ID matching (", max(counts), "probes).")
-    }
-  }
-
-  # ---- Step 3: row-count heuristics (last resort) ----
+  # ---- Step 2: row-count heuristics (last resort) ----
   if (tech == "") {
     if (n_probes > 866562 ||
         all(grepl("_", probe_ids[seq_len(min(1000L, length(probe_ids)))]))) {

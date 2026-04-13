@@ -71,8 +71,6 @@ init_env <- function(result_folder, maxResources = 90, ...)
   ssEnv$session_folder <-  dir_check_and_create(result_folder,c("Log"))
   update_session_info(ssEnv)
 
-  # utils::data("PROBES")
-  # utils::data("PROBES_CHR_CHR")
   ssEnv$seed <- 7658776
 
 

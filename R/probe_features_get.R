@@ -40,16 +40,13 @@ probe_features_get <- function(area_subarea) {
     }
   }
 
-  # Use Bioconductor annotation package when available; fall back to pp_tot
-  # during the transition period before the large .rda files are removed.
+  # Build probe annotation from the Bioconductor array annotation package.
   pkg <- .ANNO_PKGS[[ssEnv$tech]]
-  if (!is.null(pkg) && requireNamespace(pkg, quietly = TRUE)) {
-    probe_features <- probe_annotation_build(ssEnv$tech)
-  } else {
-    log_event("WARNING: annotation package '", pkg,
-              "' not installed; falling back to bundled pp_tot.")
-    probe_features <- SEMseeker::pp_tot
+  if (is.null(pkg) || !requireNamespace(pkg, quietly = TRUE)) {
+    stop("Annotation package '", pkg, "' is not installed. ",
+         "Install it with: BiocManager::install('", pkg, "')")
   }
+  probe_features <- probe_annotation_build(ssEnv$tech)
 
   if (!grepl("_", area_subarea))
     area_subarea <- paste0(area_subarea, "_WHOLE")

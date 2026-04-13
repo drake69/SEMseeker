@@ -26,7 +26,7 @@ analyze_batch <- function(signal_data, sample_sheet)
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work on:", nrow(signal_data), " PROBES.")
   probe_features <- probe_features_get("PROBE")
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " loaded probe_features: PROBES")
+  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " loaded probe_features from Bioconductor annotation")
 
   probe_features <- probe_features[(probe_features$PROBE %in% rownames(signal_data)),]
   # sort probe features by CHR START and END
@@ -78,7 +78,7 @@ analyze_batch <- function(signal_data, sample_sheet)
   sample_sheet <- rbind(otherSamples, referenceSamples)
   i <- 0
   variables_to_export <- c( "ssEnv", "sample_sheet", "signal_data", "analyze_population",
-    "populationControlRangeBetaValues", "PROBES","probe_features")
+    "populationControlRangeBetaValues", "probe_features")
   # resultSampleSheet <- foreach::foreach(i = seq_along(ssEnv$keys_sample_groups[,1]), .combine = rbind, .export = variables_to_export ) %dorng%
   for (i in seq_along(ssEnv$keys_sample_groups[,1]))
   {
