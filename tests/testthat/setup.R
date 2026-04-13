@@ -20,15 +20,33 @@ if (use_synthetic_data)
   # perc_epimutation <- 0.05
 
   Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES')
-  # Generate synthetic probe features: fake Illumina-style cg IDs + genomic positions.
-  # Distributes probes evenly across chr1-chr22, X, Y.
-  .chrs <- as.character(c(1:22, "X", "Y"))
-  probe_features <- data.frame(
-    PROBE = paste0("cg", formatC(seq_len(nprobes), width = 8L, flag = "0")),
-    CHR   = .chrs[((seq_len(nprobes) - 1L) %% length(.chrs)) + 1L],
-    START = seq(1000000L, by = 1000L, length.out = nprobes),
-    stringsAsFactors = FALSE
-  )
+  # Build probe_features from the K850 Bioconductor annotation when installed
+  # (CI always has it). This ensures tech-detection tests work correctly
+  # because the probe IDs match the real array manifest.
+  # Falls back to synthetic IDs in environments without the annotation package.
+  .k850_pkg <- "IlluminaHumanMethylationEPICanno.ilm10b4.hg19"
+  if (requireNamespace(.k850_pkg, quietly = TRUE)) {
+    .locs_env <- new.env(parent = emptyenv())
+    utils::data(list = "Locations", package = .k850_pkg, envir = .locs_env)
+    .locs_df  <- as.data.frame(.locs_env$Locations, stringsAsFactors = FALSE)
+    .sampled  <- sample(nrow(.locs_df), min(nprobes, nrow(.locs_df)))
+    probe_features <- data.frame(
+      PROBE = rownames(.locs_df)[.sampled],
+      CHR   = sub("^chr", "", .locs_df$chr[.sampled]),
+      START = as.integer(.locs_df$pos[.sampled]),
+      stringsAsFactors = FALSE
+    )
+    nprobes <<- nrow(probe_features)
+  } else {
+    # Synthetic fallback: fake cg IDs distributed across chr1-22, X, Y
+    .chrs <- as.character(c(1:22, "X", "Y"))
+    probe_features <- data.frame(
+      PROBE = paste0("cg", formatC(seq_len(nprobes), width = 8L, flag = "0")),
+      CHR   = .chrs[((seq_len(nprobes) - 1L) %% length(.chrs)) + 1L],
+      START = seq(1000000L, by = 1000L, length.out = nprobes),
+      stringsAsFactors = FALSE
+    )
+  }
   probe_features$END      <- probe_features$START
   probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep = "_")
 

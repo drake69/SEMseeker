@@ -4,8 +4,6 @@ test_that("get-meth_tech", {
   tempFolders <- tempFolders[-1]
   SEMseeker:::init_env(result_folder =  tempFolder, parallel_strategy = parallel_strategy, maxResources = 90, figures = "HYPER", markers = "DELTAS", areas = "GENE")
 
-  probe_features <- SEMseeker::pp_tot
-
   ####################################################################################
 
   # signal_data_27 <- subset(signal_data, rownames(signal_data) %in% probe_features[probe_features$K27,"PROBE"])
