@@ -49,42 +49,75 @@ probe_features_get <- function(area_subarea) {
     area_subarea <- paste0(area_subarea, "_WHOLE")
 
   # -----------------------------------------------------------------------
-  # WGBS / LONGREAD path — read positions from the saved POSITION pivot.
-  # Only coordinate-based areas are supported; gene/island areas need C-04.
+  # WGBS / LONGREAD path
+  # Coordinate-only areas (CHR_WHOLE, PROBE_WHOLE) are handled inline.
+  # All semantic areas (GENE_*, ISLAND_*, CHR_CYTOBAND, DMR_*) are built
+  # via area_granges_build() and CpG assignments resolved with findOverlaps().
   # -----------------------------------------------------------------------
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
 
-    .coord_areas <- c("CHR", "CHR_WHOLE", "PROBE", "PROBE_WHOLE",
-                      "POSITION", "POSITION_WHOLE")
-    if (!any(sapply(.coord_areas, function(a) grepl(a, area_subarea,
-                                                     fixed = TRUE)))) {
-      stop(
-        "Area '", area_subarea, "' is not yet supported for ", ssEnv$tech, " data.\n",
-        "Gene-body, CpG-island, and other semantic areas require area_granges_build() ",
-        "(SEMseeker backlog C-04, planned for a future release).\n",
-        "Currently supported areas: CHR_WHOLE, PROBE_WHOLE."
-      )
-    }
-
     pf_path <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
     if (!file.exists(pf_path))
-      stop("POSITION pivot not found. Ensure signal_save() has completed before ",
+      stop("POSITION pivot not found. Ensure signal_save() completed before ",
            "calling probe_features_get() for area '", area_subarea, "'.")
 
-    pos      <- as.data.frame(polars::pl$read_parquet(pf_path))[, c("CHR","START","END")]
-    probe_features <- data.frame(
-      PROBE = paste0(pos$CHR, "_", pos$START),
-      CHR   = pos$CHR,
-      START = pos$START,
-      END   = pos$END,
-      stringsAsFactors = FALSE
+    pos <- as.data.frame(
+      polars::pl$read_parquet(pf_path))[, c("CHR", "START", "END")]
+    probe_ids <- paste0(pos$CHR, "_", pos$START)
+
+    # --- Coordinate-only areas (no annotation needed) ---
+    if (area_subarea %in% c("CHR_WHOLE", "PROBE_WHOLE",
+                             "POSITION_WHOLE", "PROBE")) {
+      probe_features <- data.frame(
+        PROBE = probe_ids, CHR = pos$CHR, START = pos$START, END = pos$END,
+        stringsAsFactors = FALSE)
+      if (grepl("CHR", area_subarea))
+        probe_features$CHR_WHOLE <- paste0("chr", probe_features$CHR)
+      if (grepl("PROBE", area_subarea))
+        probe_features$PROBE_WHOLE <- probe_features$PROBE
+      if (isTRUE(ssEnv$sex_chromosome_remove))
+        probe_features <- probe_features[
+          !(probe_features$CHR %in% c("X", "Y")), ]
+      return(probe_features)
+    }
+
+    # --- Semantic areas via area_granges_build() + findOverlaps() ---
+    for (pkg in c("GenomicRanges", "IRanges", "S4Vectors")) {
+      if (!requireNamespace(pkg, quietly = TRUE))
+        stop("Package '", pkg, "' is required for WGBS/LONGREAD area analysis.\n",
+             "Install: BiocManager::install(c('GenomicRanges','IRanges','S4Vectors'))")
+    }
+
+    # Build GRanges for the CpG positions (seqnames need "chr" prefix for TxDb)
+    cpg_gr <- GenomicRanges::GRanges(
+      seqnames = paste0("chr", pos$CHR),
+      ranges   = IRanges::IRanges(pos$START, pos$START)
     )
 
-    if (grepl("CHR", area_subarea) && !grepl("CHR_CYTOBAND", area_subarea))
-      probe_features$CHR_WHOLE <- paste0("chr", probe_features$CHR)
+    # Build area GRanges (cached after first call per session)
+    area_gr <- area_granges_build(area_subarea,
+                                  genome_build = ssEnv$genome_build)
 
-    if (grepl("PROBE", area_subarea))
-      probe_features$PROBE_WHOLE <- probe_features$PROBE
+    # Assign each CpG to its overlapping area (ignore strand for methylation)
+    hits <- GenomicRanges::findOverlaps(cpg_gr, area_gr,
+                                        ignore.strand = TRUE)
+
+    q_hits <- S4Vectors::queryHits(hits)
+    s_hits <- S4Vectors::subjectHits(hits)
+
+    probe_features <- data.frame(
+      PROBE = probe_ids[q_hits],
+      CHR   = pos$CHR[q_hits],
+      START = pos$START[q_hits],
+      END   = pos$END[q_hits],
+      stringsAsFactors = FALSE
+    )
+    probe_features[[area_subarea]] <-
+      as.character(GenomicRanges::mcols(area_gr)$label[s_hits])
+
+    if (nrow(probe_features) == 0)
+      log_event("WARNING: no CpG positions overlap area '", area_subarea,
+                "' for genome_build = '", ssEnv$genome_build, "'.")
 
     if (isTRUE(ssEnv$sex_chromosome_remove))
       probe_features <- probe_features[
