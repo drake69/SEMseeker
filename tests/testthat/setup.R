@@ -20,14 +20,17 @@ if (use_synthetic_data)
   # perc_epimutation <- 0.05
 
   Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES')
-  probe_features <- SEMseeker::PROBES
-  probe_features <- probe_features[!is.na(probe_features$START),c("CHR","START","PROBE")]
-  probe_features <- unique(probe_features)
-  probe_features$END <- probe_features$START
-
-  nprobes <- min(nprobes, nrow(probe_features))
-  probe_features <- probe_features[probe_features$PROBE %in% sample(x=probe_features[,"PROBE"] , size=nprobes),]
-  probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep="_")
+  # Generate synthetic probe features: fake Illumina-style cg IDs + genomic positions.
+  # Distributes probes evenly across chr1-chr22, X, Y.
+  .chrs <- as.character(c(1:22, "X", "Y"))
+  probe_features <- data.frame(
+    PROBE = paste0("cg", formatC(seq_len(nprobes), width = 8L, flag = "0")),
+    CHR   = .chrs[((seq_len(nprobes) - 1L) %% length(.chrs)) + 1L],
+    START = seq(1000000L, by = 1000L, length.out = nprobes),
+    stringsAsFactors = FALSE
+  )
+  probe_features$END      <- probe_features$START
+  probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep = "_")
 
   # test <- stats::rnorm(nsamples,mean = intersample_mean, sd = intersample_sd)
   # mean(test)
@@ -141,7 +144,7 @@ if (!use_synthetic_data) {
   signal_data <- signal_data[1:1000,]
   # count rows with all missing values
   nrow_missed <- sum(apply(signal_data, 1, function(x) all(is.na(x))))
-  probe_features <<- SEMseeker::PROBES[SEMseeker::PROBES$PROBE %in% rownames(signal_data),]
+  probe_features <<- SEMseeker::probe_annotation_build("K850")[rownames(signal_data), c("CHR","START","PROBE")]
   probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep="_")
   nprobes <<- nrow(signal_data) - nrow_missed
   nsamples <<- ncol(signal_data)

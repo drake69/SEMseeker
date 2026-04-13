@@ -27,6 +27,27 @@ get_meth_tech <- function(signal_data) {
   ssEnv    <- get_session_info()
   n_probes <- nrow(signal_data)
 
+  # If technology was explicitly declared by the user in init_env(), respect it.
+  # This is required for LONGREAD (indistinguishable from WGBS by probe-ID pattern)
+  # and useful when the user wants to override heuristics.
+  .declared_techs <- c("K850", "K450", "K27", "WGBS", "LONGREAD")
+  if (!is.null(ssEnv$tech) && ssEnv$tech %in% .declared_techs) {
+    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+              "technology pre-declared as '", ssEnv$tech,
+              "'; skipping auto-detection.")
+    # Still detect beta vs M-values
+    exclude_cols <- c("PROBE","CHR","K27","K450","K850","k27","k450","k850")
+    signal_cols  <- signal_data[
+      seq_len(min(10000L, nrow(signal_data))),
+      !colnames(signal_data) %in% exclude_cols, drop = FALSE]
+    max_data   <- max(abs(c(max(signal_cols, na.rm = TRUE),
+                             min(signal_cols, na.rm = TRUE))))
+    ssEnv$beta <- max_data <= 1
+    ssEnv$probes_count <- n_probes
+    update_session_info(ssEnv)
+    return(ssEnv)
+  }
+
   # Informational row-count hints
   if (n_probes == 485512)
     log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),

@@ -1,10 +1,17 @@
 #' Retrieve probe feature annotations for a given genomic area
 #'
 #' Returns a \code{data.frame} of CpG probe coordinates and feature annotations
-#' for the requested area/subarea combination.  Annotations are built from
+#' for the requested area/subarea combination.
+#'
+#' For \strong{Illumina} data (K850/K450/K27), annotations are built from
 #' Bioconductor array annotation packages (see \code{\link{probe_annotation_build}})
-#' and cached in the session environment, so the package is loaded only once
-#' per session.
+#' and cached in the session environment.
+#'
+#' For \strong{WGBS} and \strong{LONGREAD} data, coordinates are read directly
+#' from the saved POSITION pivot parquet (no Bioconductor annotation needed).
+#' Only coordinate-based areas (\code{CHR_WHOLE}, \code{PROBE_WHOLE}) are
+#' supported in this release; gene-body and island areas require
+#' \code{area_granges_build()} (backlog C-04).
 #'
 #' Probes on sex chromosomes are removed when \code{ssEnv$sex_chromosome_remove}
 #' is \code{TRUE}.
@@ -15,9 +22,7 @@
 #'   is appended automatically.
 #'
 #' @return A \code{data.frame} with columns \code{PROBE}, \code{CHR},
-#'   \code{START}, \code{END}, and the requested feature column, filtered to
-#'   probes matching the current array technology stored in the session
-#'   environment.
+#'   \code{START}, \code{END}, and the requested feature column.
 #'
 probe_features_get <- function(area_subarea) {
 
@@ -40,16 +45,63 @@ probe_features_get <- function(area_subarea) {
     }
   }
 
-  # Build probe annotation from the Bioconductor array annotation package.
+  if (!grepl("_", area_subarea))
+    area_subarea <- paste0(area_subarea, "_WHOLE")
+
+  # -----------------------------------------------------------------------
+  # WGBS / LONGREAD path — read positions from the saved POSITION pivot.
+  # Only coordinate-based areas are supported; gene/island areas need C-04.
+  # -----------------------------------------------------------------------
+  if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
+
+    .coord_areas <- c("CHR", "CHR_WHOLE", "PROBE", "PROBE_WHOLE",
+                      "POSITION", "POSITION_WHOLE")
+    if (!any(sapply(.coord_areas, function(a) grepl(a, area_subarea,
+                                                     fixed = TRUE)))) {
+      stop(
+        "Area '", area_subarea, "' is not yet supported for ", ssEnv$tech, " data.\n",
+        "Gene-body, CpG-island, and other semantic areas require area_granges_build() ",
+        "(SEMseeker backlog C-04, planned for a future release).\n",
+        "Currently supported areas: CHR_WHOLE, PROBE_WHOLE."
+      )
+    }
+
+    pf_path <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
+    if (!file.exists(pf_path))
+      stop("POSITION pivot not found. Ensure signal_save() has completed before ",
+           "calling probe_features_get() for area '", area_subarea, "'.")
+
+    pos      <- as.data.frame(polars::pl$read_parquet(pf_path))[, c("CHR","START","END")]
+    probe_features <- data.frame(
+      PROBE = paste0(pos$CHR, "_", pos$START),
+      CHR   = pos$CHR,
+      START = pos$START,
+      END   = pos$END,
+      stringsAsFactors = FALSE
+    )
+
+    if (grepl("CHR", area_subarea) && !grepl("CHR_CYTOBAND", area_subarea))
+      probe_features$CHR_WHOLE <- paste0("chr", probe_features$CHR)
+
+    if (grepl("PROBE", area_subarea))
+      probe_features$PROBE_WHOLE <- probe_features$PROBE
+
+    if (isTRUE(ssEnv$sex_chromosome_remove))
+      probe_features <- probe_features[
+        !(probe_features$CHR %in% c("X", "Y")), ]
+
+    return(probe_features)
+  }
+
+  # -----------------------------------------------------------------------
+  # Illumina path — Bioconductor annotation packages
+  # -----------------------------------------------------------------------
   pkg <- .ANNO_PKGS[[ssEnv$tech]]
   if (is.null(pkg) || !requireNamespace(pkg, quietly = TRUE)) {
     stop("Annotation package '", pkg, "' is not installed. ",
          "Install it with: BiocManager::install('", pkg, "')")
   }
   probe_features <- probe_annotation_build(ssEnv$tech)
-
-  if (!grepl("_", area_subarea))
-    area_subarea <- paste0(area_subarea, "_WHOLE")
 
   # Keep only probes matching the current technology
   probe_features <- probe_features[

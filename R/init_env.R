@@ -1,10 +1,24 @@
 #' init ssEnvonment
 #'
-#' @param result_folder where result of semseeker will bestored
-#' @param maxResources percentage of how many available cores will be used default 90 percent, rounded to the lowest integer
-#' @param ... other options to filter elaborations, including \code{parallel_strategy}
-#'   (parallelisation strategy for \pkg{future}: "sequential", "multisession",
-#'   "multicore", "cluster"; default "sequential")
+#' @param result_folder where result of semseeker will be stored
+#' @param maxResources percentage of how many available cores will be used
+#'   (default 90 percent, rounded to lowest integer)
+#' @param ... additional session options, including:
+#'   \describe{
+#'     \item{\code{parallel_strategy}}{parallelisation strategy for \pkg{future}:
+#'       \code{"sequential"} (default), \code{"multisession"}, \code{"multicore"},
+#'       \code{"cluster"}}
+#'     \item{\code{genome_build}}{reference genome assembly: \code{"hg19"} (default,
+#'       matches Illumina array annotation), \code{"hg38"} (GRCh38, typical for
+#'       long-read / Nanopore data), \code{"mm10"} (mouse — requires C-05).
+#'       Stored in \code{ssEnv$genome_build} and written to session provenance
+#'       metadata (C-06).}
+#'     \item{\code{tech}}{override technology auto-detection: \code{"K850"},
+#'       \code{"K450"}, \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}.
+#'       Required for long-read data because LONGREAD cannot be distinguished from
+#'       WGBS by probe-ID pattern alone.  Example:
+#'       \code{init_env(folder, tech = "LONGREAD", genome_build = "hg38")}}
+#'   }
 #'
 #' @return the working ssEnvonment
 init_env <- function(result_folder, maxResources = 90, ...)
@@ -92,6 +106,8 @@ init_env <- function(result_folder, maxResources = 90, ...)
   arguments <- set_env_variable(arguments,"iqrTimes",3)
   arguments <- set_env_variable(arguments,"sliding_window_size",11)
   arguments <- set_env_variable(arguments,"tech","")
+  arguments <- set_env_variable(arguments,"genome_build","hg19",
+    c("hg19","hg38","mm10","legacy"))
   arguments <- set_env_variable(arguments,"showprogress",FALSE)
   arguments <- set_env_variable(arguments,"signal_intrasample",FALSE)
   arguments <- set_env_variable(arguments,"openai_api_key","")
@@ -99,6 +115,12 @@ init_env <- function(result_folder, maxResources = 90, ...)
 
   if (!is.null(ssEnv$openai_api_key) && nzchar(ssEnv$openai_api_key))
     message("SEMseeker: set OPENAI_API_KEY in your environment to enable OpenAI features.")
+
+  # Warn when long-read technology is declared but genome_build is still hg19
+  if (identical(ssEnv$tech, "LONGREAD") && identical(ssEnv$genome_build, "hg19"))
+    log_event("WARNING: tech = 'LONGREAD' but genome_build = 'hg19'. ",
+              "Long-read sequencing (Nanopore/PacBio) typically aligns to GRCh38. ",
+              "Pass genome_build = 'hg38' to init_env() if your data uses hg38.")
 
   original_colors <- c('#b9e192', '#b3c7f7', '#f8b8d0','#f194b8', '#ffefb6', '#cfebb6','#b9ef92')
   original_colors <- rep(original_colors, 2)
