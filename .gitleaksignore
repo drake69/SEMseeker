@@ -1,0 +1,6 @@
+# Allowlisted gitleaks findings
+#
+# ca40fca: R/impact_analysis.R line 24 — disgenetplus2r example password
+# in a commented-out code block (never active code). The credential is
+# for the DisGeNET+ API and has been rotated.
+ca40fca14ec86b5a68eb3f9a2a6a54b35eb5f73a:R/impact_analysis.R:generic-api-key:24
