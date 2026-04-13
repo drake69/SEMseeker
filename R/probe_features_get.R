@@ -8,10 +8,28 @@
 #' and cached in the session environment.
 #'
 #' For \strong{WGBS} and \strong{LONGREAD} data, coordinates are read directly
-#' from the saved POSITION pivot parquet (no Bioconductor annotation needed).
-#' Only coordinate-based areas (\code{CHR_WHOLE}, \code{PROBE_WHOLE}) are
-#' supported in this release; gene-body and island areas require
-#' \code{area_granges_build()} (backlog C-04).
+#' from the saved POSITION pivot parquet; semantic areas (GENE_*, ISLAND_*,
+#' CHR_CYTOBAND, DMR_*) are resolved via \code{\link{area_granges_build}} and
+#' \code{GenomicRanges::findOverlaps()}.
+#'
+#' @section PROBE_WHOLE vs POSITION_WHOLE — technology semantics:
+#' The area \code{PROBE_WHOLE} has different meanings depending on technology:
+#' \describe{
+#'   \item{Illumina}{Each row identifies a specific \emph{array probe} by its
+#'     manufacturer ID (e.g. \code{cg00000029}).  The statistical test is
+#'     performed at the individual-probe level.  Probe identity is meaningful
+#'     here: two studies using the same array share the exact same set of probe
+#'     IDs and can be directly compared.}
+#'   \item{WGBS / LONGREAD}{There are no probe IDs.  \code{PROBE_WHOLE} is
+#'     treated as \strong{\code{POSITION_WHOLE}}: each row identifies a CpG by
+#'     its genomic coordinate (\code{CHR\_START}, e.g. \code{"1\_10000"}).
+#'     The statistical test is performed at the individual-position level.
+#'     Two WGBS datasets can be compared only if they share the same reference
+#'     genome (\code{ssEnv\$genome_build}) — mismatches are detected by the
+#'     session provenance guard (C-06).}
+#' }
+#' In both cases the downstream analysis pipeline is identical; the distinction
+#' is purely in what the \code{PROBE} column \emph{means} to the researcher.
 #'
 #' Probes on sex chromosomes are removed when \code{ssEnv$sex_chromosome_remove}
 #' is \code{TRUE}.

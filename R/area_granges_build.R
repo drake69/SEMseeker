@@ -8,12 +8,27 @@
 # Reference genome is taken from ssEnv$genome_build (set in init_env()) or
 # passed explicitly; default "hg19" matches the Illumina annotation packages.
 #
+# NOTE — PROBE_WHOLE vs POSITION_WHOLE (technology semantics)
+# -----------------------------------------------------------
+# For Illumina data, "PROBE_WHOLE" means individual array probes identified
+# by manufacturer IDs (e.g. cg00000029).  Statistical tests run at the
+# probe level.  Probe IDs are comparable across studies using the same array.
+#
+# For WGBS / long-read data there are no probe IDs.  The unit of analysis is
+# a genomic POSITION (CHR, START), encoded as a synthetic ID "CHR_START"
+# (e.g. "1_10000").  PROBE_WHOLE is therefore treated as POSITION_WHOLE:
+# each row identifies a CpG by coordinate, not by manufacturer identity.
+# Cross-study comparisons require the same reference genome (ssEnv$genome_build).
+#
+# This function builds GRanges for all areas EXCEPT PROBE/POSITION_WHOLE,
+# which are handled inline in probe_features_get() without annotation.
+#
 # Supported area/subarea values:
 #   GENE:    TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, WHOLE
 #   ISLAND:  WHOLE, N_SHORE, S_SHORE, N_SHELF, S_SHELF
 #   CHR:     WHOLE, CYTOBAND
 #   DMR:     WHOLE, DMR
-#   PROBE:   WHOLE  (coordinate-only, no annotation needed)
+#   PROBE:   WHOLE  (coordinate-only, handled by probe_features_get())
 #
 # All returned GRanges carry mcols()$label — the subarea identifier used
 # downstream to group CpGs (gene symbol, island coordinate, cytoband name …).
@@ -331,6 +346,19 @@
 #' @return A \code{GRanges} object.  \code{mcols(gr)$label} contains the
 #'   subarea identifier used downstream to group CpGs (gene symbol, island
 #'   coordinate, cytoband name, etc.).
+#'
+#' @section PROBE_WHOLE semantics by technology:
+#' \code{PROBE_WHOLE} is \strong{not} handled by this function.  It is resolved
+#' inline by \code{\link{probe_features_get}}:
+#' \itemize{
+#'   \item \strong{Illumina}: one row per array probe (manufacturer ID,
+#'     e.g. \code{cg00000029}).  Probe identity is meaningful and cross-study
+#'     comparable for the same array platform.
+#'   \item \strong{WGBS / LONGREAD}: treated as \code{POSITION_WHOLE} — one
+#'     row per genomic position encoded as \code{"CHR\_START"} (e.g.
+#'     \code{"1\_10000"}).  Cross-study comparisons require the same
+#'     \code{genome_build}.
+#' }
 #'
 #' @section Required packages (install via \code{BiocManager::install()}):
 #' \describe{
