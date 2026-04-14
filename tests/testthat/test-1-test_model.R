@@ -59,8 +59,9 @@ test_that("test_model t.test: clearly separated groups give small p-value", {
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
+  set.seed(99)
   df <- data.frame(
-    BURDEN = c(rep(0, 20), rep(100, 20)),
+    BURDEN = c(stats::rnorm(20, mean = 0, sd = 1), stats::rnorm(20, mean = 100, sd = 1)),
     GROUP  = factor(c(rep("ctrl", 20), rep("case", 20)))
   )
   f   <- stats::as.formula("BURDEN ~ GROUP")

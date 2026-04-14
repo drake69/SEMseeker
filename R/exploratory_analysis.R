@@ -151,21 +151,6 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
   })
   signal_data_original <- signal_data
 
-  # describe the sample sheet
-  describe_dataframe <- function(df) {
-    data.frame(
-      Variable = names(df),
-      Class = sapply(df, class),
-      Missing_Values = sapply(df, function(x) sum(is.na(x))),
-      Missing_Values_Percent = round(sapply(df, function(x) sum(is.na(x)) / length(x) * 100),2),
-      Unique_Values = sapply(df, function(x) length(unique(x))),
-      Mean = round(sapply(df, function(x) if (is.numeric(x)) mean(x, na.rm = TRUE) else NA),2),
-      Median = round(sapply(df, function(x) if (is.numeric(x)) median(x, na.rm = TRUE) else NA),2),
-      Min = round(sapply(df, function(x) if (is.numeric(x)) min(x, na.rm = TRUE) else NA),2),
-      Max = round(sapply(df, function(x) if (is.numeric(x)) max(x, na.rm = TRUE) else NA),2)
-    )
-  }
-
   step <- step + 1
   # Run the function on your dataframe
   sample_sheet_report <- describe_dataframe(sample_sheet)

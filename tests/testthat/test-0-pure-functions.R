@@ -11,6 +11,8 @@
 #  - compute_mean_delta_permutation_cpu() mean-difference permutation statistic
 #  - compute_spearman_permutation()       Spearman permutation statistic
 #  - compute_quantile_delta_permutation() quantile-difference permutation statistic
+#  - describe_dataframe()                 per-column summary statistics
+#  - polynomial_formula_build()           polynomial regression formula builder
 
 # ---------------------------------------------------------------------------
 # 1. name_cleaning
@@ -369,4 +371,85 @@ test_that("compute_quantile_delta_permutation: shuffle changes the result", {
   obs   <- SEMseeker:::compute_quantile_delta_permutation(f, df, shuffle = FALSE, quantile = 0.5)
   perms <- replicate(30, SEMseeker:::compute_quantile_delta_permutation(f, df, shuffle = TRUE, quantile = 0.5))
   expect_false(all(perms == obs))
+})
+
+# ---------------------------------------------------------------------------
+# 11. describe_dataframe
+# ---------------------------------------------------------------------------
+
+test_that("describe_dataframe: returns one row per column", {
+  df <- data.frame(x = 1:5, y = letters[1:5], z = c(1.1, NA, 2.2, NA, 3.3))
+  res <- SEMseeker:::describe_dataframe(df)
+  expect_s3_class(res, "data.frame")
+  expect_equal(nrow(res), 3)
+})
+
+test_that("describe_dataframe: Variable column matches input column names", {
+  df <- data.frame(alpha = 1:3, beta = c("a", "b", "c"))
+  res <- SEMseeker:::describe_dataframe(df)
+  expect_equal(as.character(res$Variable), c("alpha", "beta"))
+})
+
+test_that("describe_dataframe: Missing_Values counts NAs correctly", {
+  df <- data.frame(x = c(1, NA, 3, NA, 5))
+  res <- SEMseeker:::describe_dataframe(df)
+  expect_equal(res$Missing_Values, 2)
+})
+
+test_that("describe_dataframe: Missing_Values_Percent is 100*NA/n", {
+  df <- data.frame(x = c(NA, NA, 1, 1))  # 50% missing
+  res <- SEMseeker:::describe_dataframe(df)
+  expect_equal(res$Missing_Values_Percent, 50)
+})
+
+test_that("describe_dataframe: Mean/Median/Min/Max are NA for non-numeric columns", {
+  df <- data.frame(label = c("a", "b", "c"))
+  res <- SEMseeker:::describe_dataframe(df)
+  expect_true(is.na(res$Mean))
+  expect_true(is.na(res$Median))
+  expect_true(is.na(res$Min))
+  expect_true(is.na(res$Max))
+})
+
+test_that("describe_dataframe: numeric statistics are correct", {
+  df <- data.frame(v = c(1, 2, 3, 4, 5))
+  res <- SEMseeker:::describe_dataframe(df)
+  expect_equal(res$Mean,   3)
+  expect_equal(res$Median, 3)
+  expect_equal(res$Min,    1)
+  expect_equal(res$Max,    5)
+})
+
+# ---------------------------------------------------------------------------
+# 12. polynomial_formula_build
+# ---------------------------------------------------------------------------
+
+test_that("polynomial_formula_build: degree-1 without covariates gives y ~ I(x^1)", {
+  f <- SEMseeker:::polynomial_formula_build("y", "x", 1, character(0))
+  expect_equal(deparse(f), "y ~ I(x^1)")
+})
+
+test_that("polynomial_formula_build: degree-3 without covariates has 3 terms", {
+  f    <- SEMseeker:::polynomial_formula_build("y", "x", 3, character(0))
+  fstr <- paste(deparse(f), collapse = " ")
+  expect_true(grepl("I(x^1)", fstr, fixed = TRUE))
+  expect_true(grepl("I(x^2)", fstr, fixed = TRUE))
+  expect_true(grepl("I(x^3)", fstr, fixed = TRUE))
+})
+
+test_that("polynomial_formula_build: with covariates includes interaction terms", {
+  f    <- SEMseeker:::polynomial_formula_build("y", "x", 2, c("age", "sex"))
+  fstr <- paste(deparse(f), collapse = " ")  # deparse may split long formulas
+  expect_true(grepl("I(x^1):age", fstr, fixed = TRUE))
+  expect_true(grepl("I(x^2):sex", fstr, fixed = TRUE))
+})
+
+test_that("polynomial_formula_build: returns a formula object", {
+  f <- SEMseeker:::polynomial_formula_build("outcome", "predictor", 2, character(0))
+  expect_s3_class(f, "formula")
+})
+
+test_that("polynomial_formula_build: LHS is the dependent variable", {
+  f <- SEMseeker:::polynomial_formula_build("response", "x", 2, character(0))
+  expect_equal(as.character(f[[2]]), "response")
 })
