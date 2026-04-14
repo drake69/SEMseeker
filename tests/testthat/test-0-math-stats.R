@@ -1,8 +1,8 @@
 ## test-0-math-stats.R
 ## Unit tests for pure mathematical / statistical utility functions:
 ##   ssim, variation_of_information, convertTextToNumeric,
-##   split_and_clean, metrics_filter, substitute_infinite,
-##   calculate_collinearity_score
+##   split_and_clean, metrics_filter, normalize_minimize, normalize_maximize,
+##   substitute_infinite, calculate_collinearity_score
 ##
 ## These functions have no file I/O or network dependencies and can be
 ## exercised directly after devtools::load_all().
@@ -185,6 +185,68 @@ test_that("metrics_filter: non-'none' transformations return a sorted unique res
   metrics <- c("RMSE", "MAE", "COUNT_SIGN", "MAE")   # duplicate
   result <- SEMseeker:::metrics_filter(metrics, "log")
   expect_equal(result, sort(unique(result)))
+})
+
+# -----------------------------------------------------------------------
+# normalize_minimize / normalize_maximize
+# -----------------------------------------------------------------------
+test_that("normalize_minimize: min value maps to 1, max to 0", {
+  x <- c(1, 2, 3, 4, 5)
+  r <- SEMseeker:::normalize_minimize(x)
+  expect_equal(r[which.min(x)], 1)
+  expect_equal(r[which.max(x)], 0)
+})
+
+test_that("normalize_minimize: all values in [0, 1]", {
+  x <- c(10, 20, 15, 5, 25)
+  r <- SEMseeker:::normalize_minimize(x)
+  expect_true(all(r >= 0 & r <= 1))
+})
+
+test_that("normalize_minimize: range is [0, 1]", {
+  x <- c(3, 7, 1, 9, 5)
+  r <- SEMseeker:::normalize_minimize(x)
+  expect_equal(min(r), 0)
+  expect_equal(max(r), 1)
+})
+
+test_that("normalize_minimize: monotonically decreasing with input", {
+  x <- 1:10
+  r <- SEMseeker:::normalize_minimize(x)
+  expect_true(all(diff(r) < 0))
+})
+
+test_that("normalize_maximize: min value maps to 0, max to 1", {
+  x <- c(1, 2, 3, 4, 5)
+  r <- SEMseeker:::normalize_maximize(x)
+  expect_equal(r[which.min(x)], 0)
+  expect_equal(r[which.max(x)], 1)
+})
+
+test_that("normalize_maximize: all values in [0, 1]", {
+  x <- c(10, 20, 15, 5, 25)
+  r <- SEMseeker:::normalize_maximize(x)
+  expect_true(all(r >= 0 & r <= 1))
+})
+
+test_that("normalize_maximize: range is [0, 1]", {
+  x <- c(3, 7, 1, 9, 5)
+  r <- SEMseeker:::normalize_maximize(x)
+  expect_equal(min(r), 0)
+  expect_equal(max(r), 1)
+})
+
+test_that("normalize_maximize: monotonically increasing with input", {
+  x <- 1:10
+  r <- SEMseeker:::normalize_maximize(x)
+  expect_true(all(diff(r) > 0))
+})
+
+test_that("normalize_minimize and normalize_maximize are complementary", {
+  x <- c(2, 5, 1, 8, 3)
+  r_min <- SEMseeker:::normalize_minimize(x)
+  r_max <- SEMseeker:::normalize_maximize(x)
+  expect_equal(r_min + r_max, rep(1, length(x)))
 })
 
 # -----------------------------------------------------------------------
