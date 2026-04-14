@@ -33,6 +33,31 @@
     start of `analyze_population()` before the per-sample loop). Emitted once per batch:
     `input_positions | beta_range_positions | covered_by_inner_join`.
 
+### Bug fixes (A-09: bayes_analysis rewrite)
+
+- **`bayes_analysis()`: 9 bugs fixed** (A-09).
+  - **Loop off-by-one** (bug 1): `for (a in length(markers))` iterated only once
+    (`a = 2`, only "LESIONS"), silently skipping "MUTATIONS". Fixed with `seq_along()`.
+  - **Wrong file path** (bug 2): `read_delim(pivot_file_name)` passed the function
+    object instead of the local variable `pivot_filename` → runtime connection error.
+  - **Missing assignment** (bug 3): `tempDataFrame` used before being assigned from
+    `pivot` → "object not found" crash. Added `tempDataFrame <- pivot`.
+  - **`subset()` with string literal** (bug 4): `subset(df, "Sample_Group" != "Reference")`
+    is always `TRUE` → Reference samples never filtered → contaminated Bayes estimates.
+    Fixed to bare column reference `subset(df, Sample_Group != "Reference")`.
+  - **Column drop off-by-one** (bug 3 cont.): `[, c(-1,-3)]` dropped the first data
+    column or the `independent_variable` column depending on session config. Replaced
+    with `colnames != "Sample_ID"` (remove only the merge key).
+  - **`exists()` without scope** (bug 5): same pattern as E-01; fixed with
+    `inherits = FALSE, envir = environment()`.
+  - **Duplicate `max()` computation** (bug 6): `max_P_case` was computed twice,
+    `max_P_control` never computed → filtered output missed Control criterion.
+  - **Output filename typo** (bug 7): `"bayes_analisys"` → `"bayes_analysis"`.
+  - **`c` as loop variable** (bug 8): foreach variable named `c` shadowed the base
+    `c()` function. Renamed to `col_idx`.
+  - **Hardcoded thresholds** (bug 9): 0.9 / 0.1 are now `bayes_case_threshold` and
+    `bayes_control_threshold` parameters with the original values as defaults.
+
 ### Statistical model changes
 
 - **`lesions_get()`: replaced hypergeometric with binomial test** (A-01).
