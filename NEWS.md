@@ -1,5 +1,20 @@
 # semseeker NEWS
 
+## semseeker 0.12.0 (dev)
+
+### Statistical model changes
+
+- **`lesions_get()`: replaced hypergeometric with binomial test** (A-01).
+  The sliding window advances one probe at a time, so each probe participates
+  in up to `sliding_window_size` consecutive windows — sampling with
+  replacement. The hypergeometric distribution assumes sampling without
+  replacement and produced inflated (too-small) p-values. The new test is:
+  `P(X ≥ ENRICHMENT | Binomial(sliding_window_size, p0))` where
+  `p0 = MUTATIONS_COUNT / PROBES_COUNT` is the empirical background
+  mutation rate for the grouping unit (gene, chromosome, …). Expected
+  impact: more conservative lesion calls, better calibration for samples
+  with low or high global methylation variation.
+
 ## semseeker 0.11.0
 
 ### New features

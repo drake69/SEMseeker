@@ -56,8 +56,24 @@ lesions_get <- function(grouping_column, mutation_annotated_sorted)
 
   mutationAnnotatedSortedLocal$ENRICHMENT[ is.na(mutationAnnotatedSortedLocal$ENRICHMENT)] <- 0
 
-  lesionpValue <- suppressWarnings(stats::dhyper(mutationAnnotatedSortedLocal$ENRICHMENT, mutationAnnotatedSortedLocal$MUTATIONS_COUNT,
-    mutationAnnotatedSortedLocal$PROBES_COUNT, ssEnv$sliding_window_size))
+  # Background mutation rate per grouping unit (gene / chr / …).
+  # Using Binomial rather than Hypergeometric because the sliding window
+  # advances one probe at a time, so each probe participates in up to
+  # sliding_window_size consecutive windows — i.e. sampling WITH replacement.
+  # The hypergeometric distribution assumes sampling WITHOUT replacement and
+  # therefore produces inflated (too-small) p-values here.
+  #
+  # H0: ENRICHMENT ~ Binomial(sliding_window_size, p0)
+  # p0 = MUTATIONS_COUNT / PROBES_COUNT  (empirical background rate)
+  # p-value = P(X >= ENRICHMENT) = pbinom(ENRICHMENT - 1, size, p0, lower.tail = FALSE)
+  p0 <- mutationAnnotatedSortedLocal$MUTATIONS_COUNT / mutationAnnotatedSortedLocal$PROBES_COUNT
+
+  lesionpValue <- stats::pbinom(
+    mutationAnnotatedSortedLocal$ENRICHMENT - 1L,
+    size       = as.integer(ssEnv$sliding_window_size),
+    prob       = p0,
+    lower.tail = FALSE
+  )
 
   lesionpValue[is.nan(lesionpValue)] <- 1
   lesionpValue[is.na(lesionpValue)] <- 1
