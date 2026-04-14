@@ -44,7 +44,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
     res$statistic_parameter <- result_chisq$statistic
     degrees_of_freedom <- result_chisq$parameter
     effect_size <- sqrt(result_chisq$statistic/nrow(tempDataFrame))
-    rea$effect_size <- effect_size
+    res$effect_size <- effect_size
     power_result <- pwr::pwr.chisq.test(w = effect_size, N = nrow(tempDataFrame) , df = degrees_of_freedom, sig.level = as.numeric(ssEnv$alpha), power = )
     res$power <- power_result$power
   }
@@ -59,14 +59,14 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
     dependent_variable <- dep_var[[2]]
     independent_variable <- dep_var[[3]] # sample_group
 
-    bartlett.test <- suppressWarnings(stats::bartlett.test(x = dependent_variable, g = independent_variable))
-    res$pvalue <- bartlett.test$p.value
+    bartlett_result <- suppressWarnings(stats::bartlett.test(x = tempDataFrame[, dependent_variable], g = tempDataFrame[, independent_variable]))
+    res$pvalue <- bartlett_result$p.value
     res$r_model <- "bartlett.test"
-    res$statistic_parameter <- bartlett.test$statistic
-    degrees_of_freedom <- bartlett.test$parameter
-    effect_size <- sqrt(bartlett.test$statistic/nrow(tempDataFrame))
-    rea$effect_size <- effect_size
-    power_result <- pwr::pwr.chisq.test(w = effect_size, N = nrow(tempDataFrame) , df = degrees_of_freedom, sig.level = as.numeric(ssEnv$alpha), power = )
+    res$statistic_parameter <- bartlett_result$statistic
+    degrees_of_freedom <- bartlett_result$parameter
+    effect_size <- sqrt(bartlett_result$statistic/nrow(tempDataFrame))
+    res$effect_size <- effect_size
+    power_result <- pwr::pwr.chisq.test(w = effect_size, N = nrow(tempDataFrame) , df = degrees_of_freedom, sig.level = as.numeric(ssEnv$alpha), power = NULL)
     res$power <- power_result$power
   }
 
@@ -240,7 +240,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
     dep_var <- strsplit(gsub("\ ","",as.character(sig.formula)),"~")
     SPLIT <- split(tempDataFrame[,dep_var[[2]]], tempDataFrame[,dep_var[[3]]])
     res$statistic_parameter <- mean(SPLIT[[1]]) - mean(SPLIT[[2]])
-    power_result = pwr::pwr.t2n.test(d = statistic_parameter, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
+    power_result = pwr::pwr.t2n.test(d = res$statistic_parameter, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
     res$power <- power_result$power
   }
 
