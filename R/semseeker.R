@@ -58,6 +58,10 @@ semseeker <- function(sample_sheet,
   ssEnv$batch_count <- length(sample_sheet)
   ssEnv <- update_session_info(ssEnv)
 
+  # C-06: write session provenance metadata (genome_build, tech, version, …)
+  total_sample_n <- sum(sapply(sample_sheet, nrow))
+  session_metadata_write(result_folder, sample_n = total_sample_n)
+
   for(batch_id in seq_along(sample_sheet))
   {
     start_time <- Sys.time()

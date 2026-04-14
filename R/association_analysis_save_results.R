@@ -4,6 +4,15 @@ association_analysis_save_results <- function(results=NULL,fileNameResults, fami
     return()
 
   ssEnv <- get_session_info()
+
+  # C-06: stamp provenance columns so any downstream CSV stack retains build+tech
+  genome_build_val <- if (!is.null(ssEnv$genome_build) && nzchar(ssEnv$genome_build))
+    as.character(ssEnv$genome_build) else "hg19"
+  tech_val <- if (!is.null(ssEnv$tech) && nzchar(ssEnv$tech))
+    as.character(ssEnv$tech) else ""
+  results$GENOME_BUILD <- genome_build_val
+  results$TECH         <- tech_val
+
   utils::write.csv2(results,fileNameResults , row.names  =  FALSE)
   multiple_test_adj <- name_cleaning(ssEnv$multiple_test_adj)
   # there is a bug which mantain more family test in the same results file
@@ -75,7 +84,11 @@ association_analysis_save_results <- function(results=NULL,fileNameResults, fami
 
   # remove duplicates based on MARKER	FIGURE	AREA	SUBAREA	AREA_OF_TEST	FAMILY_TEST	TRANSFORMATION_Y	PVALUE	R_MODEL
   # calculating the max of all others columns
-  group_column <- c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST", "TRANSFORMATION_Y", "R_MODEL", "TRANSFORMATION_X", "INDEPENDENT_VARIABLE","COVARIATES")
+  # C-06: include provenance columns in the grouping key so summarise() preserves them
+  group_column <- c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",
+                    "TRANSFORMATION_Y", "R_MODEL", "TRANSFORMATION_X",
+                    "INDEPENDENT_VARIABLE", "COVARIATES",
+                    "GENOME_BUILD", "TECH")
   group_column <- group_column[group_column %in% colnames(results)]
 
   if(ncol(results[,!colnames(results) %in% group_column])>2)

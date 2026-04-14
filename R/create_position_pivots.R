@@ -147,6 +147,7 @@ create_position_pivots <- function(population, keys)
     pivot <- pivot$sort(c("CHR", "START"), descending = FALSE)
     pivot <- pivot$collect()
     pivot$write_parquet(pivot_filename)
+    pivot_sidecar_write(pivot_filename)   # C-06: write genome_build + tech sidecar
     rm(pivot)
   }
 }

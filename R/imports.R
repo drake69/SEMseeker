@@ -9,4 +9,5 @@
 #' @importFrom graphics abline
 #' @importFrom ggplot2 aes labs xlim
 #' @importFrom grid unit
+#' @importFrom jsonlite toJSON fromJSON
 NULL

@@ -2,6 +2,28 @@
 
 ## semseeker 0.12.0 (dev)
 
+### New features
+
+- **Session provenance metadata** (C-06).
+  Every `semseeker()` run now writes `session_metadata.json` to the result
+  folder at the start of analysis:
+  `{"genome_build":"hg19","tech":"K850","semseeker_version":"0.99.0","created":"...","sample_n":120}`
+  The file is human-readable and parseable without R, suitable for pipeline
+  auditing and automated compatibility checks.
+  Pivot files (parquet) additionally receive a sidecar `*_meta.json` with the
+  same build/tech stamp; pivot file names now include the genome build as a
+  suffix before the extension (e.g. `MUTATIONS_HYPER_GENE_TSS1500_hg19.parquet`)
+  as belt-and-suspenders provenance.
+  Inference CSV outputs gain two constant columns — `GENOME_BUILD` and `TECH`
+  — that survive any downstream merge or stack operation.
+  New exported function `check_session_compatibility(session_list)`:
+  **stops** if `genome_build` differs across sessions (physically incomparable
+  coordinates); **warns** if `tech` differs (cross-array meta-analysis is valid
+  on the probe intersection but must be explicit).
+  `association_to_association()` now calls this guard internally: stops with a
+  clear message when origin results carry a different `GENOME_BUILD` than the
+  current session.
+
 ### Bug fixes
 
 - **`exists("signal_data")` scoped to local environment in `analyze_batch()` and

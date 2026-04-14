@@ -47,6 +47,26 @@ association_to_association <- function(inference_details_origin, inference_detai
       pvalue_column="PVALUE_ADJ_ALL_FDR",adjustment_method = "BH", area ="GENE",
       omit_na = TRUE, significance = TRUE)
 
+    # C-06: stop if the origin results carry a GENOME_BUILD that differs from the
+    # current session.  Missing column = legacy run without provenance (warn only).
+    if (nrow(inference_source) > 0L && "GENOME_BUILD" %in% colnames(inference_source)) {
+      origin_builds <- unique(as.character(inference_source$GENOME_BUILD))
+      origin_builds <- origin_builds[!is.na(origin_builds) & nzchar(origin_builds)]
+      current_build <- if (!is.null(ssEnv$genome_build) && nzchar(ssEnv$genome_build))
+        ssEnv$genome_build else "hg19"
+      if (length(origin_builds) > 0L && !all(origin_builds == current_build))
+        stop(
+          "[association_to_association] genome_build mismatch: origin results use '",
+          paste(origin_builds, collapse = "/"), "' but current session uses '",
+          current_build, "'.\n",
+          "  Run liftover (C-07) before combining sessions from different assemblies."
+        )
+    } else if (nrow(inference_source) > 0L) {
+      log_event("WARNING: [association_to_association] Origin inference results",
+                " have no GENOME_BUILD column — legacy run without provenance.",
+                " Proceeding but cross-build safety cannot be guaranteed.")
+    }
+
     areas <- as.vector(unique(inference_source$AREA_OF_TEST))
 
     association_analysis( inference_details = inference_details, result_folder = result_folder, areas_selection=areas,
