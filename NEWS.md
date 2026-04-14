@@ -2,6 +2,18 @@
 
 ## semseeker 0.12.0 (dev)
 
+### Bug fixes
+
+- **`mutations_get()`: replaced positional row-zip with explicit Polars inner join** (A-10).
+  The previous implementation sorted both `values` and `thresholds` by CHR/START/END and
+  then compared them positionally. When `signal_thresholds` came from a different run
+  (cross-run analysis, e.g. Nanopore sample vs Illumina reference population), the two
+  position sets could differ in size or overlap, producing silently wrong mutation calls or
+  an out-of-bounds crash. The new implementation uses a Polars inner join on
+  `(CHR, START, END)` — correct for any overlap pattern and required for Nanopore bedmethyl
+  files (28M+ rows where base-R `merge()`/`match()` would be too slow). A coverage banner
+  is now emitted per call: `input_positions`, `beta_range_positions`, `covered_by_inner_join`.
+
 ### Statistical model changes
 
 - **`lesions_get()`: replaced hypergeometric with binomial test** (A-01).
