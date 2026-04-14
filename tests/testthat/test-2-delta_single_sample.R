@@ -8,7 +8,7 @@ test_that("delta_single_sample",{
 
   tt <- SEMseeker:::get_meth_tech(signal_data)
 
-  probe_features <<- SEMseeker::PROBES[SEMseeker::PROBES$PROBE %in% rownames(signal_data),]
+  probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
   if (!exists("signal_thresholds"))
   {
     signal_data <- SEMseeker:::inpute_missing_values(signal_data)

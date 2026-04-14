@@ -19,7 +19,7 @@ test_that("analize_batch", {
     signal_data <- SEMseeker:::inpute_missing_values(signal_data)
     signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
   }
-  probe_features <<- SEMseeker::PROBES[SEMseeker::PROBES$PROBE %in% rownames(signal_data),]
+  probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
   # ss <- mySampleSheet[mySampleSheet$Sample_Group!="Reference",]
 
