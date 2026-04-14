@@ -113,8 +113,8 @@ analyze_batch <- function(signal_data, sample_sheet)
       gc()
     }
   }
-  if(exists("signal_data"))
-    rm(signal_data)
+  if (exists("signal_data", envir = environment(), inherits = FALSE))
+    rm("signal_data", envir = environment())
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Batch completed:", batch_id)
 
 }

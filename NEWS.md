@@ -4,6 +4,17 @@
 
 ### Bug fixes
 
+- **`exists("signal_data")` scoped to local environment in `analyze_batch()` and
+  `analyze_population()`** (E-01).
+  The previous `exists("signal_data")` used `inherits = TRUE` (R default), which walked
+  all the way up to `.GlobalEnv`. If the user had a `signal_data` object in their session
+  (the normal case — they load data before calling `semseeker()`), the guard fired
+  even though the local copy had already been freed, and the subsequent `rm(signal_data)`
+  produced a spurious `"object not found"` warning. In the worst case (interactive session
+  where local and global scopes coincide) it could silently delete the user's data.
+  Fix: `exists("signal_data", envir = environment(), inherits = FALSE)` +
+  `rm("signal_data", envir = environment())` in both files.
+
 - **Polars inner join replaces positional zip in `mutations_get()`, `delta_single_sample()`,
   `deltar_single_sample()`; coverage banner in `analyze_population()`** (A-10).
   The previous implementation sorted both `values` and `thresholds` by CHR/START/END and

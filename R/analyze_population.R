@@ -156,8 +156,8 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
 
   gc()
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Row count result:", nrow(sample_sheet))
-  if(exists("signal_data"))
-    rm(signal_data)
+  if (exists("signal_data", envir = environment(), inherits = FALSE))
+    rm("signal_data", envir = environment())
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Completed population analysis ")
   end_time <- Sys.time()
