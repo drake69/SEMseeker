@@ -4,7 +4,10 @@
 #' @param thresholds data.frame of signal thresholds (from signal_range_values) with columns CHR, START, END,
 #'   signal_superior_thresholds, signal_inferior_thresholds, signal_median_values
 #' @param sample_detail named list/row with at least Sample_ID and Sample_Group fields
-#' @return invisibly NULL; results are written as bedgraph.gz files under the session data folder
+#' @return invisibly NULL; HYPER and HYPO delta results are written as bedgraph.gz files.
+#'   Only positions present in both \code{values} and \code{thresholds} are processed
+#'   (inner join on CHR, START, END via \code{join_values_to_thresholds}).
+#'   Returns \code{invisible(NULL)} early if there is no positional overlap.
 #'
 delta_single_sample <- function(values, thresholds, sample_detail) {
 

@@ -20,11 +20,11 @@ biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylatio
         GeneExpression, Pathways, MultipleComparison, Normalization,
         StatisticalMethod, Software
 Imports: dplyr, doFuture, doRNG, FactoMineR, factoextra, foreach, FSA,
-        fst, future, future.apply, ggplot2, ggvenn, gridExtra, gtools, Hmisc,
-        lqmm, plyr, polars, progressr, reshape, reshape2, R.utils, rlang,
-        stats, stringr, utils, withr, zoo, VennDiagram, effsize, pwr,
-        combinat, philentropy, parallelly, knitr, lmtest,
-        glmnet, sqldf, readr, tidyr, readxl, xtable
+        fst, future, future.apply, ggplot2, ggvenn, graphics, grDevices,
+        gridExtra, gtools, Hmisc, lqmm, plyr, polars, progressr,
+        reshape, reshape2, R.utils, rlang, stats, stringr, tools, utils,
+        withr, zoo, VennDiagram, effsize, pwr, combinat, philentropy,
+        parallelly, knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,

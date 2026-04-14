@@ -7,6 +7,9 @@
 #' @param probe_features probe_features detail from 27 to EPIC illumina dataset
 #' @param signal_thresholds thresholds defined to calculate epimutations
 #' @return files into the result folder with pivot table and bedgraph.
+#'   A BANNER is logged once per batch before the per-sample loop showing:
+#'   input_positions, beta_range_positions, covered_by_inner_join — allows
+#'   immediate audit of cross-run coverage (e.g. Nanopore sample vs Illumina reference).
 #' @importFrom doRNG %dorng%
 #'
 analyze_population <- function(signal_data, sample_sheet,signal_thresholds, probe_features) {
