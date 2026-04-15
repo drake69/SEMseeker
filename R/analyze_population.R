@@ -86,9 +86,11 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
       coverage_n_input  <- nrow(coverage_sig)
       coverage_n_ranges <- nrow(signal_thresholds)
       coverage_sig_lf <- polars::as_polars_df(
-        coverage_sig[, c("CHR", "START", "END")])$lazy()
+        coverage_sig[, c("CHR", "START", "END")])$
+        with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$lazy()
       coverage_thr_lf <- polars::as_polars_df(
-        signal_thresholds[, c("CHR", "START", "END")])$lazy()
+        signal_thresholds[, c("CHR", "START", "END")])$
+        with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$lazy()
       coverage_n_covered <- coverage_sig_lf$join(
         coverage_thr_lf, on = c("CHR", "START", "END"), how = "inner"
       )$collect()$height
