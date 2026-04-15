@@ -1,10 +1,10 @@
 metrics_ranking <- function (metric,data_frame, column_to_rank ="REBASED"){
 
   #
-  the_lower_the_better_markers <- toupper(semseeker::metrics_properties[semseeker::metrics_properties$Higher_the_Better==FALSE,"Metric"])
+  the_lower_the_better_markers <- toupper(SEMseeker::metrics_properties[SEMseeker::metrics_properties$Higher_the_Better==FALSE,"Metric"])
 
   # R_SQUARED	R_SQUARED_ADJ
-  the_higher_the_better_markers <-  toupper(semseeker::metrics_properties[semseeker::metrics_properties$Higher_the_Better==TRUE,"Metric"])
+  the_higher_the_better_markers <-  toupper(SEMseeker::metrics_properties[SEMseeker::metrics_properties$Higher_the_Better==TRUE,"Metric"])
 
   # replace -Inf with 1E-ssEnv$plot_resolution
   data_frame[data_frame == -Inf] <- 1E-300
@@ -64,6 +64,10 @@ metrics_ranking <- function (metric,data_frame, column_to_rank ="REBASED"){
 }
 
 
-# Normalization functions
+# Normalisation helpers used by metrics_ranking():
+#   normalize_minimize: maps x to [0,1] where the MAXIMUM of x → 0 and
+#     the MINIMUM → 1 (lower-is-better metrics get a higher normalised score).
+#   normalize_maximize: maps x to [0,1] where the MINIMUM of x → 0 and
+#     the MAXIMUM → 1 (higher-is-better metrics get a higher normalised score).
 normalize_minimize <- function(x) {(max(x) - x) / (max(x) - min(x))}
 normalize_maximize <- function(x) {(x - min(x)) / (max(x) - min(x))}

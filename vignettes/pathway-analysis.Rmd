@@ -14,8 +14,7 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment  = "#>",
-  eval     = FALSE
+  comment  = "#>"
 )
 ```
 
@@ -44,7 +43,7 @@ All functions are **session-aware**: they read the active semseeker session
 passing `result_folder` again — they pick it up automatically via
 `get_session_info()`.
 
----
+<hr>
 
 ## Workflow
 
@@ -63,14 +62,14 @@ The `inference_details` object passed to the pathway functions is the **same**
 data frame used in `association_analysis()`. It tells the pathway functions
 which statistical results to use as the gene list for enrichment.
 
----
+<hr>
 
 ## Installing optional backends
 
 Each pathway function requires a separate optional package. Install only what
 you need:
 
-```{r install}
+```{r install, eval=FALSE}
 # WebGestaltR — ORA / GSEA
 install.packages("WebGestaltR")
 
@@ -81,8 +80,6 @@ BiocManager::install("STRINGdb")
 
 # pathfindR — active subnetwork enrichment
 install.packages("pathfindR")
-# Or via pak:
-# pak::pkg_install("pathfindR")
 
 # ctdR — chemical-disease associations (GitHub)
 remotes::install_github("drake69/ctdR")
@@ -92,7 +89,7 @@ remotes::install_github("drake69/ctdR")
 > Each function checks for its backend with `requireNamespace()` and logs
 > an informative ERROR if it is missing.
 
----
+<hr>
 
 ## 1. `pathway_WebGestalt()` — Gene Ontology ORA and GSEA
 
@@ -101,7 +98,7 @@ Analysis (ORA) [@ORA-review] or Gene Set Enrichment Analysis (GSEA)
 [@GSEA2005] against Gene Ontology [@GO2000], KEGG [@KEGG2000], Reactome
 [@Reactome2020], and other databases.
 
-```{r webgestalt}
+```{r webgestalt, eval=FALSE}
 library(semseeker)
 
 # Run after association_analysis() — session is already active
@@ -168,7 +165,7 @@ result has a unified `SS_CATEGORY` column:
 | `GO-CC` | Gene Ontology Cellular Component |
 | `KEGG-ORA` | KEGG via ORA |
 
----
+<hr>
 
 ## 2. `pathway_STRINGdb()` — Protein-protein interaction network
 
@@ -176,7 +173,7 @@ STRINGdb [@STRINGdb2019; @STRINGdb2023] maps the significant genes onto the
 STRING protein-protein interaction network and identifies enriched functional
 categories, GO terms, KEGG pathways and tissue expressions.
 
-```{r stringdb}
+```{r stringdb, eval=FALSE}
 pathway_STRINGdb(
   study              = "my_study",
   inference_details  = inference_details,
@@ -204,7 +201,7 @@ pathway_STRINGdb(
 The default score threshold is **200** (medium confidence). Increase to 400
 or 700 for higher confidence interactions:
 
-```{r stringdb_score}
+```{r stringdb_score, eval=FALSE}
 # Higher confidence network (score >= 700)
 # Modify via the STRINGdb$new() call inside the function — currently fixed at 200
 # Use statistic_parameter to weight genes by their association score:
@@ -225,7 +222,7 @@ pathway_STRINGdb(
 | `GO-CC` | GO Cellular Component |
 | `KEGG-ORA` | KEGG pathway enrichment |
 
----
+<hr>
 
 ## 3. `pathway_pathfindR()` — Active subnetwork enrichment
 
@@ -234,7 +231,7 @@ pathfindR [@pathfindR2019] identifies enriched pathways by searching for
 simple gene list overlap. This approach captures pathway activity even when
 only a subset of pathway genes pass the significance threshold.
 
-```{r pathfindr}
+```{r pathfindr, eval=FALSE}
 pathway_pathfindR(
   study              = "my_study",
   path_dbs           = c("KEGG", "Reactome", "GO-BP", "GO-MF", "GO-CC"),
@@ -271,12 +268,12 @@ pathway_pathfindR(
 
 pathfindR requires `ggkegg` (Bioconductor). Install the full chain:
 
-```{r pathfindr_install}
+```{r pathfindr_install, eval=FALSE}
 BiocManager::install("ggkegg")
 install.packages("pathfindR")
 ```
 
----
+<hr>
 
 ## 4. `pathway_ctdR()` — Chemical-gene-disease associations
 
@@ -285,7 +282,7 @@ install.packages("pathfindR")
 associated with the significant genes. This is particularly useful for
 epigenetic studies involving environmental exposures.
 
-```{r ctdr}
+```{r ctdr, eval=FALSE}
 pathway_ctdR(
   study              = "my_study",
   inference_details  = inference_details,
@@ -310,7 +307,7 @@ pathway_ctdR(
 Results are normalised to `SS_CATEGORY = "CHEMICAL"`, linking significant
 epigenetic regions to chemical exposures and associated diseases.
 
----
+<hr>
 
 ## 5 & 6. Phenolyzer variants — disease-prioritised enrichment
 
@@ -322,7 +319,7 @@ prioritised list.
 Use these when you have a specific disease hypothesis and want to focus the
 enrichment on genes already known to be relevant to that disease:
 
-```{r phenolyzer}
+```{r phenolyzer, eval=FALSE}
 # Phenolyzer + WebGestalt
 pathway_Phenolyzer_WebGestalt(
   study            = "my_study",
@@ -351,11 +348,11 @@ pathway_Phenolyzer_STRINGdb(
 |---|---|
 | `disease` | Free-text disease name passed to Phenolyzer for gene prioritisation (e.g. `"lung cancer"`, `"Alzheimer"`, `"TCDD exposure"`) |
 
----
+<hr>
 
 ## Running all backends in one script
 
-```{r all_backends}
+```{r all_backends, eval=FALSE}
 library(semseeker)
 
 result_folder <- "~/semseeker_results/"
@@ -395,7 +392,7 @@ pathway_ctdR(
   pvalue_column="PVALUE_ADJ_ALL_BH", significance=TRUE)
 ```
 
----
+<hr>
 
 ## Output structure
 
@@ -436,7 +433,7 @@ Each CSV is processed by `enrichment_analysy_add_category()` which:
 | `PHENOTYPE` | `TRUE` if term description matches study label |
 | `SS_RANK` | Rank within `SS_CATEGORY` |
 
----
+<hr>
 
 ## Cross-study and cross-subsample comparison
 
@@ -445,7 +442,7 @@ Each CSV is processed by `enrichment_analysy_add_category()` which:
 Compares enriched pathways across two or more independent cohorts and produces
 Venn diagrams [@VennDiagram] of overlapping terms:
 
-```{r cross_studies}
+```{r cross_studies, eval=FALSE}
 pathway_cross_studies_compare(
   result_folder = "~/meta_results/",
   # studies A and B must already have Pathway/ results
@@ -458,7 +455,7 @@ Tests the **stability** of pathway enrichment under random subsampling of the
 cohort. Run this to assess how robust the enriched pathways are to sample
 variability:
 
-```{r cross_subsamples}
+```{r cross_subsamples, eval=FALSE}
 pathway_cross_subsamples_overlaps(
   inference_details  = inference_details,
   result_folder      = "~/semseeker_results/",
@@ -471,7 +468,7 @@ pathway_cross_subsamples_overlaps(
 )
 ```
 
----
+<hr>
 
 ## Choosing the right backend
 
@@ -487,6 +484,12 @@ pathway_cross_subsamples_overlaps(
 | Replication across cohorts | `pathway_cross_studies_compare()` |
 | Bootstrap stability check | `pathway_cross_subsamples_overlaps()` |
 
----
+## Session info
+
+```{r session_info}
+sessionInfo()
+```
+
+<hr>
 
 ## References

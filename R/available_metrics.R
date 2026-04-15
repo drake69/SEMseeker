@@ -26,7 +26,7 @@ available_metrics <- function(inference_details,result_folder, ...)
       fileNameResults <- inference_file_name(inference_detail, markers[a], ssEnv$result_folderInference)
       if (file.exists(fileNameResults))
       {
-        results_inference <- utils::read.csv2(fileNameResults, header  =  T, nrows = 1)
+        results_inference <- utils::read.csv2(fileNameResults, header  =  TRUE, nrows = 1)
       }
       colnames_ass <- toupper(colnames(results_inference))
       pvalue_col <- colnames_ass[grepl("PVALUE", colnames_ass)]

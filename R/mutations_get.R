@@ -1,28 +1,51 @@
 #' mutations_get
 #'
-#' @param values values of methylation
-#' @param figure figure to get Mutaions of HYPO or HYPER methylation
-#' @param thresholds threshold to use for comparison
-#' @param probe_features probe_features features probe, chr, start,end
+#' @param values values of methylation — data.frame with columns CHR, START, END
+#'   and a fourth numeric VALUE column.
+#' @param figure figure to get Mutations of HYPO or HYPER methylation
+#' @param thresholds threshold to use for comparison — data.frame with columns
+#'   CHR, START, END, signal_inferior_thresholds, signal_superior_thresholds.
 #' @param sampleName name of the sample
 #'
-#' @return mutations
+#' @return mutations data.frame with columns CHR, START, END, MUTATIONS (0/1).
+#'   Only positions present in BOTH values and thresholds are returned
+#'   (inner join on CHR, START, END via join_values_to_thresholds).
 #'
-#'
-mutations_get <- function(values, figure,thresholds, sampleName)
-{
-  # sort values and thresholds by chr and start
-  values <- sort_by_chr_and_start(values)
-  thresholds <- sort_by_chr_and_start(thresholds)
+mutations_get <- function(values, figure, thresholds, sampleName) {
 
+  # Polars inner join on (CHR, START, END).
+  # Coverage banner is emitted once per batch by analyze_population() before
+  # the per-sample loop — not repeated here to avoid log noise.
+  joined <- join_values_to_thresholds(values, thresholds)
+
+  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+    " [mutations_get] sample=", sampleName, " figure=", figure,
+    " covered=", nrow(joined), "/", nrow(values))
+
+  # ── Empty-result guard ──────────────────────────────────────────────────────
+  if (nrow(joined) == 0L) {
+    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+      " [mutations_get] No overlapping positions — returning empty result",
+      " for sample=", sampleName)
+    return(data.frame(CHR = character(), START = integer(),
+                      END = integer(),   MUTATIONS = integer(),
+                      stringsAsFactors = FALSE))
+  }
+
+  # ── Mutation call ────────────────────────────────────────────────────────────
   if (figure == "HYPO") {
-    mutation <- as.numeric(values[,4] < thresholds$signal_inferior_thresholds)
+    mutation <- as.numeric(joined$VALUE < joined$signal_inferior_thresholds)
+  } else {
+    mutation <- as.numeric(joined$VALUE > joined$signal_superior_thresholds)
   }
-  if (figure == "HYPER") {
-    mutation <- as.numeric(values[,4] > thresholds$signal_superior_thresholds)
-  }
-  mutationAnnotated <- data.frame("CHR" = thresholds$CHR,"START" = thresholds$START,"END"=thresholds$END, "MUTATIONS" = mutation)
-  mutation_annotated_sorted <- sort_by_chr_and_start(mutationAnnotated)
+
+  mutation_annotated_sorted <- sort_by_chr_and_start(data.frame(
+    CHR       = joined$CHR,
+    START     = joined$START,
+    END       = joined$END,
+    MUTATIONS = mutation,
+    stringsAsFactors = FALSE
+  ))
 
   return(mutation_annotated_sorted)
 }

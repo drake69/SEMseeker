@@ -21,8 +21,8 @@ test_that("inpute", {
 
   ####################################################################################
 
-  ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute="median")
-  signal_data_median <- semseeker:::inpute_missing_values(local_sig)
+  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute="median")
+  signal_data_median <- SEMseeker:::inpute_missing_values(local_sig)
 
   nrows_ex_post <- nrow(signal_data_median)
   ex_post <- sum(is.na(signal_data_median))
@@ -33,8 +33,8 @@ test_that("inpute", {
 
   ####################################################################################
 
-  ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute="mean")
-  signal_data_mean <- semseeker:::inpute_missing_values(local_sig)
+  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute="mean")
+  signal_data_mean <- SEMseeker:::inpute_missing_values(local_sig)
 
   nrows_ex_post <- nrow(signal_data_mean)
   ex_post <- sum(is.na(signal_data_mean))
@@ -45,7 +45,7 @@ test_that("inpute", {
 
   ####################################################################################
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder,recursive = TRUE)
 })
 

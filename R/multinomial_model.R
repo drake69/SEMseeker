@@ -6,7 +6,6 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  browser()
   ssEnv <- get_session_info()
 
   # multinomial_degree_partition-partition_percentage
@@ -40,15 +39,15 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
   # Coefficients and Confidence Intervals
   coefficients <- coef(multinomial_model_result)
 
-  # Ottieni i coefficienti e gli errori standard
+  # Extract coefficients and standard errors
   coefficients <- model_summary$coefficients
   std_errors <- model_summary$standard.errors
 
-  # Calcola z-score e p-value
+  # Compute z-scores and p-values
   z_scores <- coefficients / std_errors
   p_values <- 2 * (1 - pnorm(abs(z_scores)))
 
-  # Ricostruisci il data frame in formato lungo (long format)
+  # Reshape to long format
   results_df <- data.frame(
     classe = rep(rownames(coefficients), times = ncol(coefficients)),
     variabile = rep(colnames(coefficients), each = nrow(coefficients)),
@@ -61,14 +60,11 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
 
 
   res$pvalue <- 0
-  # browser()
   # for each degree extract the p-value
   for (i in 1:(nrow(coefficients))) {
     # i <- 1
-    # browser()
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
-    # browser()
     pval_name <- name_cleaning(paste0("pvalue_",row_name))
     pval_name <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ","",pval_name))
     pval_name <- name_cleaning(gsub("_RAW_EQ_TRUE","",pval_name))
@@ -94,7 +90,7 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
       # split each covariates by _
       if (long_covariates)
       {
-        covariates <- unlist(t(strsplit( gsub(" ","",covariates),split  =  "_", fixed  =  T)))
+        covariates <- unlist(t(strsplit( gsub(" ","",covariates),split  =  "_", fixed  =  TRUE)))
         covariates <- unique(covariates)
       }
       covariates <- paste(covariates, collapse = "_")
@@ -117,7 +113,6 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
         ggplot2::xlab(independent_variable) +
         ggplot2::ylab(dependent_variable) +
         ggplot2::ggtitle("")
-      # browser()
       # formula_string <- paste0(dependent_variable, " ~ poly(", independent_variable, ", ", degree, ", raw = TRUE)",
       #   ifelse(length(covariates) > 0, paste0(" + ", paste(covariates, collapse = " + ")), ""))
       #

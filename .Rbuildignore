@@ -9,3 +9,5 @@
 ^codecov\.yml$
 ^\.covrignore$
 ^README.Rmd
+^SEMseeker\.BiocCheck$
+^.*\.BiocCheck$

@@ -61,7 +61,7 @@ inpute_missing_values <- function(signal_data){
   }
   else if (grepl("knn", ssEnv$inpute))
   {
-    if (len(strsplit(ssEnv$inpute, ";")[[1]]) != 3)
+    if (length(strsplit(ssEnv$inpute, ";")[[1]]) != 3)
     {
       log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") ," Invalid inpute value. Please provide the number of centers and the number of clusters separated by a semicolon.")
       stop()

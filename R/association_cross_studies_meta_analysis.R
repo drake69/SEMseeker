@@ -1,9 +1,38 @@
+#' Cross-study meta-analysis of association results
+#'
+#' Combines inference results from multiple studies using a random-effects
+#' meta-analysis model (\code{\link[meta]{metagen}}).  For each unique
+#' combination of FIGURE, SUBAREA and AREA_OF_TEST, the function pools
+#' effect sizes (BETA) and standard errors across studies and reports
+#' fixed-effect and random-effect estimates with heterogeneity statistics.
+#'
+#' Requires at least two studies per stratum; strata with fewer studies are
+#' silently skipped.
+#'
+#' @param inference_details \code{data.frame} describing the inference
+#'   configuration (same format as used by \code{association_analysis}).
+#' @param statistic_parameter Character scalar: column name of the effect
+#'   size estimate in the inference results (default \code{"BETA"}).
+#' @param pvalue_column Character scalar: column name of the adjusted p-value
+#'   (default \code{"PVALUE_ADJ_ALL_BH"}).
+#' @param studies Character vector: study identifiers to include.
+#' @param studies_base_folder Character scalar: base directory containing
+#'   per-study result folders.
+#' @param result_folder Character scalar: output directory for the
+#'   meta-analysis results.
+#'
+#' @return Invisibly returns a \code{data.frame} with one row per stratum
+#'   containing pooled effect estimates, confidence intervals, p-values, and
+#'   heterogeneity statistics (\eqn{\tau^2}, Q-test p-value).
+#'
 association_cross_studies_meta_analysis <- function(inference_details,statistic_parameter="BETA", pvalue_column="PVALUE_ADJ_ALL_BH",studies,
   studies_base_folder, result_folder)
 {
 
-  library(meta)
-  library(tidyverse)
+  if (!requireNamespace("meta", quietly = TRUE))
+    stop("Package 'meta' is required for cross-study meta-analysis. Install it with install.packages('meta').")
+  if (!requireNamespace("tidyverse", quietly = TRUE))
+    stop("Package 'tidyverse' is required for cross-study meta-analysis. Install it with install.packages('tidyverse').")
   keys <- na.omit(unique(results_inference[,c("FIGURE","SUBAREA")]))
   for (k in 1:nrow(keys))
   {
@@ -24,14 +53,14 @@ association_cross_studies_meta_analysis <- function(inference_details,statistic_
       if(studies_count<2)
         next
       meta_model <- metagen(
-        TE = results_inference_subset[,statistic_parameter],   # l'effetto di ogni studio
-        seTE = results_inference_subset$STD.ERROR,  # lo standard error dell'effetto di ogni studio
-        studlab = results_inference_subset$STUDY,  # il nome di ogni studio
-        data = results_inference_subset,  # il dataframe che contiene tutti i dati
-        comb.fixed = FALSE, # utilizza il modello a effetti casuali
-        hakn = FALSE, # non applica la correzione di Hartung-Knapp
-        TE.targ = 1, # specifica che la stima dell'effetto è il coefficiente di regressione
-        pval = results_inference_subset[,pvalue_column],  # specifica la colonna del p-value nel dataframe
+        TE = results_inference_subset[,statistic_parameter],   # effect size for each study
+        seTE = results_inference_subset$STD.ERROR,  # standard error of the effect size for each study
+        studlab = results_inference_subset$STUDY,  # study label
+        data = results_inference_subset,  # data frame containing all data
+        comb.fixed = FALSE, # use random-effects model
+        hakn = FALSE, # do not apply Hartung-Knapp correction
+        TE.targ = 1, # target effect size is the regression coefficient
+        pval = results_inference_subset[,pvalue_column],  # p-value column in the data frame
         ncpus = 9
       )
       meta_analysis_results <- summary(meta_model)
@@ -46,7 +75,7 @@ association_cross_studies_meta_analysis <- function(inference_details,statistic_
       random.ci.upper <- meta_analysis_results$random$upper
       random.pval <- meta_analysis_results$pval.random
 
-      #test of heteroareaity
+      # test of heterogeneity
       pval.Q <- meta_analysis_results$pval.Q
       pval.fixed <- meta_analysis_results$pval.fixed
       k.study <- meta_analysis_results$k.study

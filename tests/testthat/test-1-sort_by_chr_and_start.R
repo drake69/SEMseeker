@@ -6,12 +6,12 @@ test_that("sort_by_chr_and_start", {
   probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep="_")
 
   #order not matching
-  second <- semseeker:::sort_by_chr_and_start( probe_features[order(probe_features$START),])
+  second <- SEMseeker:::sort_by_chr_and_start( probe_features[order(probe_features$START),])
 
-  testthat::expect_true( semseeker:::test_match_order( semseeker:::sort_by_chr_and_start(probe_features)$ABSOLUTE,second$ABSOLUTE))
+  testthat::expect_true( SEMseeker:::test_match_order( SEMseeker:::sort_by_chr_and_start(probe_features)$ABSOLUTE,second$ABSOLUTE))
 
   ####################################################################################
 
-  # semseeker:::close_env()
+  # SEMseeker:::close_env()
 }
 )

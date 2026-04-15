@@ -10,6 +10,8 @@ analyze_batch <- function(signal_data, sample_sheet)
   pivot_file_name <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION","WHOLE")
   if(!file.exists(pivot_file_name))
   {
+    # Transparent conversion: WGBS/LONGREAD coordinate input → synthetic probe IDs
+    signal_data <- normalize_signal_input(signal_data)
     signal_data <- substitute_infinite(signal_data)
     signal_data <- inpute_missing_values(signal_data)
   } else
@@ -22,20 +24,30 @@ analyze_batch <- function(signal_data, sample_sheet)
   signal_data <- as.data.frame(signal_data)
   ssEnv <- get_meth_tech(signal_data)
   ssEnv <- get_session_info()
-  # coverage_analysis(rownames(signal_data))
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work on:", nrow(signal_data), " PROBES.")
-  probe_features <- probe_features_get("PROBE")
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " loaded probe_features: PROBES")
 
-  probe_features <- probe_features[(probe_features$PROBE %in% rownames(signal_data)),]
-  # sort probe features by CHR START and END
-  probe_features <- sort_by_chr_and_start(probe_features)
-  signal_data <- signal_data[rownames(signal_data) %in% probe_features$PROBE, ]
-  probe_features <- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
-  signal_data <- signal_data[match(probe_features$PROBE, rownames(signal_data)), ]
+  # Build probe features — path depends on technology:
+  #   WGBS / LONGREAD: coordinates are encoded in the synthetic probe IDs;
+  #                    no Bioconductor annotation package is needed.
+  #   Illumina (K850/K450/K27): use Bioconductor annotation as before.
+  if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
+    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " building probe_features from synthetic probe IDs (", ssEnv$tech, ")")
+    probe_features <- coord_probe_features(rownames(signal_data))
+    probe_features <- sort_by_chr_and_start(probe_features)
+    signal_data    <- signal_data[match(probe_features$PROBE, rownames(signal_data)), ]
+  } else {
+    probe_features <- probe_features_get("PROBE")
+    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " loaded probe_features from Bioconductor annotation")
+    probe_features <- probe_features[(probe_features$PROBE %in% rownames(signal_data)), ]
+    probe_features <- sort_by_chr_and_start(probe_features)
+    signal_data    <- signal_data[rownames(signal_data) %in% probe_features$PROBE, ]
+    probe_features <- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
+    signal_data    <- signal_data[match(probe_features$PROBE, rownames(signal_data)), ]
+  }
 
-  # probe_features <- sort_by_chr_and_start(probe_features)
   if (!test_match_order(row.names(signal_data), probe_features$PROBE)) {
     log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Wrong order matching Probes and Methylation data!")
     stop()
@@ -78,7 +90,7 @@ analyze_batch <- function(signal_data, sample_sheet)
   sample_sheet <- rbind(otherSamples, referenceSamples)
   i <- 0
   variables_to_export <- c( "ssEnv", "sample_sheet", "signal_data", "analyze_population",
-    "populationControlRangeBetaValues", "PROBES","probe_features")
+    "populationControlRangeBetaValues", "probe_features")
   # resultSampleSheet <- foreach::foreach(i = seq_along(ssEnv$keys_sample_groups[,1]), .combine = rbind, .export = variables_to_export ) %dorng%
   for (i in seq_along(ssEnv$keys_sample_groups[,1]))
   {
@@ -101,8 +113,8 @@ analyze_batch <- function(signal_data, sample_sheet)
       gc()
     }
   }
-  if(exists("signal_data"))
-    rm(signal_data)
+  if (exists("signal_data", envir = environment(), inherits = FALSE))
+    rm("signal_data", envir = environment())
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Batch completed:", batch_id)
 
 }

@@ -7,10 +7,15 @@
 signal_range_values(populationMatrix, batch_id, probe_features)
 }
 \arguments{
-\item{populationMatrix}{matrix of methylation for the population under calculation}
+\item{populationMatrix}{matrix of methylation for the population under calculation (probes × samples)}
+
+\item{batch_id}{character string identifying the batch; used to name the cached parquet output file}
+
+\item{probe_features}{data.frame of probe annotations (from probe_features_get) with columns PROBE, CHR, START, END}
 }
 \value{
-methylation matrix as normalized distribution
+data.frame of per-probe thresholds with columns signal_inferior_thresholds,
+  signal_superior_thresholds, signal_median_values, iqr, q1, q3, PROBE, CHR, START, END
 }
 \description{
 calculate the range of signal values to define the outlier

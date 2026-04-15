@@ -109,7 +109,7 @@ covariates_model <- function(inference_detail, study_summary)
   if(length(covariates_to_remove) > 0)
   {
     log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " The following covariates are collinear and will be removed: ", paste(covariates_to_remove, collapse = ", "))
-    log_vent("JOURNAL: The following covariates are collinear and will be removed: ", paste(covariates_to_remove, collapse = ", "))
+    log_event("JOURNAL: The following covariates are collinear and will be removed: ", paste(covariates_to_remove, collapse = ", "))
     covariates <- setdiff(covariates, covariates_to_remove)
     if(length(covariates) == 0)
     {

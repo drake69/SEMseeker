@@ -1,17 +1,34 @@
-#' Title manhattan_plot_marker_per_sample
+#' Manhattan plot of SEM markers for a single sample
 #'
-#' @param sample_name name of the sample to be plotted
-#' @param probes_range range of probes to be plotted
-#' @param hyper_color color for hypermethylated probes
-#' @param hypo_color color for hypomethylated probes
-#' @param non_outlier_color color for non-outlier probes
-#' @param limit_label_color color for limit labels
-#' @param result_folder folder where the results are stored
-#' @param maxResources maximum number of resources to be used
-#' @param parallel_strategy strategy to be used for parallelization
-#' @param ... other parameters
+#' @param sample_name character. Sample identifier as it appears in the
+#'   sample sheet (default \code{"NAME"}).
+#' @param probes_range integer vector. Probe index range to display
+#'   (default \code{1000:2000}).
+#' @param hyper_color character. Colour for hypermethylated probes
+#'   (default \code{"blue"}).
+#' @param hypo_color character. Colour for hypomethylated probes
+#'   (default \code{"orange"}).
+#' @param non_outlier_color character. Colour for non-outlier probes
+#'   (default \code{"grey"}).
+#' @param limit_label_color character. Colour for threshold labels.
+#' @param result_folder character. Path to the SEMseeker result folder.
+#' @param maxResources numeric. Maximum percentage of CPU cores to use
+#'   (default 90).
+#' @param parallel_strategy character. Parallelisation backend
+#'   (default \code{"multicore"}).
+#' @param ... Additional arguments passed to \code{init_env()}.
 #'
-#' @return save plot in the result_folder/Chart/MARKER_PER_SAMPLE
+#' @return Invisibly \code{NULL}. A PNG plot is saved under
+#'   \code{Charts/MARKER_PER_SAMPLE/} in \code{result_folder}.
+#' @examples
+#' result_dir <- tempdir()
+#' \dontrun{
+#' manhattan_plot_marker_per_sample(
+#'   sample_name  = "CASE_001",
+#'   probes_range = 1:5000,
+#'   result_folder = result_dir
+#' )
+#' }
 #' @export
 #'
 manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_range = 1000:2000,

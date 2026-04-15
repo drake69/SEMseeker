@@ -11,14 +11,12 @@ analyze_single_sample(values, thresholds, figure, sample_detail)
 
 \item{thresholds}{threshold to use for comparison}
 
-\item{figure}{which figure's of sasmple will be analized HYPO or HYPER}
+\item{figure}{which figure of sample will be analysed: HYPO or HYPER}
 
 \item{sample_detail}{details of the sample to analyze}
-
-\item{probe_features}{probe_features details to be used}
 }
 \value{
-list of lesion count  and probe_features count
+list of lesion count and probe_features count
 }
 \description{
 analyze_single_sample

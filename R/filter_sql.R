@@ -1,7 +1,6 @@
 filter_sql <- function(sql_conditions, data_frame)
 {
 
-  # browser()
   # check if sql_conditions is am empty string
   if (length(sql_conditions) == 0 )
     return(data_frame)
@@ -26,12 +25,16 @@ filter_sql <- function(sql_conditions, data_frame)
             else
               sql_condition <- gsub("TABLE","data_frame", sql_condition)
           }
-          sql <- paste("select * from data_frame where ", sql_condition)
           columns <- toupper(colnames(data_frame))
           # drop duplicates columns
-          data_frame <- data_frame[,!duplicated(columns)]
+          data_frame <- data_frame[, !duplicated(columns), drop = FALSE]
           columns <- colnames(data_frame)
-          data_frame <- sqldf::sqldf(sql)
+          # Use an explicit environment with a simple table name so sqldf
+          # can reliably find the data frame regardless of calling context.
+          assign("ssdf_tmp", data_frame, envir = .GlobalEnv)
+          sql <- paste("select * from ssdf_tmp where ", sql_condition)
+          data_frame <- sqldf::sqldf(sql, envir = .GlobalEnv)
+          rm("ssdf_tmp", envir = .GlobalEnv)
           log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Executed sql: " , sql_condition)
         }
   }

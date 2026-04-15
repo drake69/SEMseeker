@@ -7,7 +7,7 @@ association_analysis_summary <- function(inference_details,destination_folder=""
   association_data <- association_data_extractor(inference_details, destination_folder, result_folder, ...)
 
 
-  available_metrics <- toupper(semseeker::metrics_properties[,"Metric"])
+  available_metrics <- toupper(SEMseeker::metrics_properties[,"Metric"])
 
   if(any(grepl("PVALUE",colnames(association_data))))
     available_metrics <- c(available_metrics, colnames(association_data)[grepl("PVALUE",colnames(association_data))])
@@ -21,7 +21,7 @@ association_analysis_summary <- function(inference_details,destination_folder=""
   #  create a summary table for the association analysis grouping by AREA,SUBAREA,MARKER,FIGURE and SAMPLES_SQL_CONDITION if exists
   if(any("SAMPLES_SQL_CONDITION" %in% colnames(association_data))) {
     summary_table <- association_data %>%
-      dplyr::group_by(AREA, SUBAREA, MARKER, FIGURE, SAMPLES_SQL_CONDITION) %>%
+      dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$SAMPLES_SQL_CONDITION) %>%
       dplyr::summarise(dplyr::across(available_metrics, list(
         max= ~max(., na.rm=TRUE),
         min= ~min(., na.rm=TRUE),
@@ -30,7 +30,7 @@ association_analysis_summary <- function(inference_details,destination_folder=""
         count_below_0.05 = ~sum(. < 0.05, na.rm = TRUE))))
   } else {
     summary_table <- association_data %>%
-      dplyr::group_by(AREA, SUBAREA, MARKER, FIGURE) %>%
+      dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE) %>%
       dplyr::summarise(dplyr::across(available_metrics, list(
         max= ~max(., na.rm=TRUE),
         min= ~min(., na.rm=TRUE),

@@ -1,14 +1,187 @@
+# ---------------------------------------------------------------------------
+# Behavioural unit tests for mutations_get() — A-10
+#
+# These tests verify:
+#   1. The Polars inner join correctly computes mutations over the
+#      intersection of input positions and beta-range positions.
+#   2. Extra positions in values (not in thresholds) are silently dropped.
+#   3. Extra positions in thresholds (not in values) are silently dropped.
+#   4. Zero overlap returns an empty data.frame without crashing.
+#   5. Both HYPO and HYPER directions work.
+#
+# All tests use synthetic, fully controlled data so expected outputs can be
+# verified analytically without loading real methylation data.
+# ---------------------------------------------------------------------------
+
+# Helper: minimal values data.frame (CHR, START, END, VALUE)
+.make_values_df_mut <- function(chr, starts, values_vec) {
+  data.frame(
+    CHR   = as.character(chr),
+    START = as.integer(starts),
+    END   = as.integer(starts),
+    VALUE = as.numeric(values_vec),
+    stringsAsFactors = FALSE
+  )
+}
+
+# Helper: minimal thresholds data.frame
+.make_thresholds_df_mut <- function(chr, starts, inf_thresh, sup_thresh) {
+  data.frame(
+    CHR                        = as.character(chr),
+    START                      = as.integer(starts),
+    END                        = as.integer(starts),
+    signal_inferior_thresholds = as.numeric(inf_thresh),
+    signal_superior_thresholds = as.numeric(sup_thresh),
+    stringsAsFactors           = FALSE
+  )
+}
+
+test_that("mutations_get (A-10): HYPO full overlap — correct mutation count", {
+  tf <- tempFolders[37]
+  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+
+  # 10 positions; threshold: inferior = 0.3, superior = 0.7
+  # Values 1-5: 0.1 (below 0.3 → HYPO mutation)
+  # Values 6-10: 0.5 (above inferior, below superior → no mutation)
+  starts    <- seq(1000L, by = 1000L, length.out = 10L)
+  values_df <- .make_values_df_mut("chr1", starts, c(rep(0.1, 5L), rep(0.5, 5L)))
+  thresh_df <- .make_thresholds_df_mut("chr1", starts,
+                                       inf_thresh = rep(0.3, 10L),
+                                       sup_thresh = rep(0.7, 10L))
+
+  result <- SEMseeker:::mutations_get(
+    values     = values_df,
+    figure     = "HYPO",
+    thresholds = thresh_df,
+    sampleName = "test_hypo_full"
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true(all(c("CHR", "START", "END", "MUTATIONS") %in% colnames(result)))
+  expect_equal(nrow(result), 10L)          # all 10 positions covered
+  expect_equal(sum(result$MUTATIONS), 5L)  # exactly 5 below-threshold positions
+})
+
+test_that("mutations_get (A-10): HYPER full overlap — correct mutation count", {
+  tf <- tempFolders[38]
+  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+
+  starts    <- seq(1000L, by = 1000L, length.out = 10L)
+  # Values 6-10: 0.9 (above 0.7 → HYPER mutation)
+  values_df <- .make_values_df_mut("chr1", starts, c(rep(0.5, 5L), rep(0.9, 5L)))
+  thresh_df <- .make_thresholds_df_mut("chr1", starts,
+                                       inf_thresh = rep(0.3, 10L),
+                                       sup_thresh = rep(0.7, 10L))
+
+  result <- SEMseeker:::mutations_get(
+    values     = values_df,
+    figure     = "HYPER",
+    thresholds = thresh_df,
+    sampleName = "test_hyper_full"
+  )
+
+  expect_equal(nrow(result), 10L)
+  expect_equal(sum(result$MUTATIONS), 5L)
+})
+
+test_that("mutations_get (A-10): values has extra positions → only intersection returned", {
+  tf <- tempFolders[39]
+  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+
+  # Cross-run scenario: 15 value positions, 10 threshold positions
+  # Only positions 1-10 are shared; positions 11-15 exist only in values.
+  all_starts    <- seq(1000L, by = 1000L, length.out = 15L)
+  shared_starts <- all_starts[1:10]
+
+  values_df <- .make_values_df_mut("chr1", all_starts, rep(0.1, 15L))
+  thresh_df <- .make_thresholds_df_mut("chr1", shared_starts,
+                                       inf_thresh = rep(0.3, 10L),
+                                       sup_thresh = rep(0.7, 10L))
+
+  result <- SEMseeker:::mutations_get(
+    values     = values_df,
+    figure     = "HYPO",
+    thresholds = thresh_df,
+    sampleName = "test_extra_values"
+  )
+
+  # Only the 10 shared positions should appear
+  expect_equal(nrow(result), 10L)
+  expect_equal(sum(result$MUTATIONS), 10L)
+  # Positions 11-15 (starts 11000+) must NOT appear in output
+  expect_true(all(result$START %in% shared_starts))
+})
+
+test_that("mutations_get (A-10): thresholds has extra positions → only intersection returned", {
+  tf <- tempFolders[40]
+  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+
+  # 10 value positions, 15 threshold positions — overlap = positions 1-10
+  all_starts    <- seq(1000L, by = 1000L, length.out = 15L)
+  shared_starts <- all_starts[1:10]
+
+  values_df <- .make_values_df_mut("chr1", shared_starts, rep(0.9, 10L))
+  thresh_df <- .make_thresholds_df_mut("chr1", all_starts,
+                                       inf_thresh = rep(0.3, 15L),
+                                       sup_thresh = rep(0.7, 15L))
+
+  result <- SEMseeker:::mutations_get(
+    values     = values_df,
+    figure     = "HYPER",
+    thresholds = thresh_df,
+    sampleName = "test_extra_thresholds"
+  )
+
+  expect_equal(nrow(result), 10L)
+  expect_equal(sum(result$MUTATIONS), 10L)
+  expect_true(all(result$START %in% shared_starts))
+})
+
+test_that("mutations_get (A-10): zero overlap → empty data.frame, no crash", {
+  tf <- tempFolders[41]
+  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+
+  # Values on chr1, thresholds on chr2 — no shared positions
+  values_df <- .make_values_df_mut("chr1",
+                                   seq(1000L, by = 1000L, length.out = 10L),
+                                   rep(0.1, 10L))
+  thresh_df <- .make_thresholds_df_mut("chr2",
+                                       seq(1000L, by = 1000L, length.out = 10L),
+                                       inf_thresh = rep(0.3, 10L),
+                                       sup_thresh = rep(0.7, 10L))
+
+  result <- SEMseeker:::mutations_get(
+    values     = values_df,
+    figure     = "HYPO",
+    thresholds = thresh_df,
+    sampleName = "test_zero_overlap"
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 0L)
+  expect_true(all(c("CHR", "START", "END", "MUTATIONS") %in% colnames(result)))
+})
+
+# ---------------------------------------------------------------------------
+# Original integration test (preserved unchanged)
+# ---------------------------------------------------------------------------
+
 test_that("mutations_get", {
 
   tempFolder <- tempFolders[1]
   tempFolders <- tempFolders[-1]
-  ssEnv <- semseeker:::init_env(result_folder = tempFolder, inpute = "median")
+  ssEnv <- SEMseeker:::init_env(result_folder = tempFolder, inpute = "median")
 
   if (!exists("signal_thresholds")) {
-    signal_data <- semseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- semseeker:::signal_range_values(signal_data, batch_id)
+    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
   }
-  probe_features <<- semseeker::PROBES[semseeker::PROBES$PROBE %in% rownames(signal_data), ]
+  probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
   values_df <- data.frame(
     CHR   = probe_features$CHR[match(rownames(signal_data), probe_features$PROBE)],
@@ -18,7 +191,7 @@ test_that("mutations_get", {
   )
 
   # ── HYPO: basic existence ──────────────────────────────────────────────────
-  mutations_hypo <- semseeker:::mutations_get(
+  mutations_hypo <- SEMseeker:::mutations_get(
     values     = values_df,
     figure     = "HYPO",
     thresholds = signal_thresholds,
@@ -38,7 +211,7 @@ test_that("mutations_get", {
   testthat::expect_true(nrow(mutations_hypo) > 0)
 
   # ── HYPER: symmetric test ──────────────────────────────────────────────────
-  mutations_hyper <- semseeker:::mutations_get(
+  mutations_hyper <- SEMseeker:::mutations_get(
     values     = values_df,
     figure     = "HYPER",
     thresholds = signal_thresholds,
@@ -54,7 +227,7 @@ test_that("mutations_get", {
   # ── Boundary: threshold = -Inf  →  zero HYPO mutations ────────────────────
   thresholds_zero <- signal_thresholds
   thresholds_zero$signal_inferior_thresholds <- -Inf
-  mutations_none <- semseeker:::mutations_get(
+  mutations_none <- SEMseeker:::mutations_get(
     values     = values_df,
     figure     = "HYPO",
     thresholds = thresholds_zero,
@@ -65,7 +238,7 @@ test_that("mutations_get", {
   # ── Boundary: threshold = +Inf  →  all HYPO mutations ─────────────────────
   thresholds_all <- signal_thresholds
   thresholds_all$signal_inferior_thresholds <- Inf
-  mutations_all <- semseeker:::mutations_get(
+  mutations_all <- SEMseeker:::mutations_get(
     values     = values_df,
     figure     = "HYPO",
     thresholds = thresholds_all,
@@ -73,6 +246,6 @@ test_that("mutations_get", {
   )
   testthat::expect_equal(sum(mutations_all$MUTATIONS), nrow(mutations_all))
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder, recursive = TRUE)
 })

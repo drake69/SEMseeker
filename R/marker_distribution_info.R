@@ -1,4 +1,4 @@
-#' @export
+# NOTE: currently internal — could be re-exported once @examples are added
 marker_distribution_info <- function(result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
 

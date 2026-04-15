@@ -11,6 +11,11 @@ create_position_pivots(population, keys)
 
 \item{keys}{markers and figure to create pivot of}
 }
+\value{
+A data.frame of genomic position pivots with chromosomal coordinates
+  and per-sample signal values; results are also written to parquet files on
+  disk. Returns invisibly.
+}
 \description{
 create pivot from samples' single bed for the PROBE (WHOLE)
 }

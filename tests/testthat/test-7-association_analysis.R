@@ -23,23 +23,23 @@
 # ---------------------------------------------------------------------------
 
 test_that("split_and_clean splits on + and cleans whitespace", {
-  expect_equal(semseeker:::split_and_clean("A+B+C"), c("A", "B", "C"))
-  expect_equal(semseeker:::split_and_clean("single"), "single")
-  expect_equal(semseeker:::split_and_clean("A + B"), c("A", "B"))   # leading/trailing space trimmed
+  expect_equal(SEMseeker:::split_and_clean("A+B+C"), c("A", "B", "C"))
+  expect_equal(SEMseeker:::split_and_clean("single"), "single")
+  expect_equal(SEMseeker:::split_and_clean("A + B"), c("A", "B"))   # leading/trailing space trimmed
 })
 
 test_that("split_and_clean removes empty parts", {
-  result <- semseeker:::split_and_clean("")
+  result <- SEMseeker:::split_and_clean("")
   expect_equal(length(result), 0)  # empty string → character(0) after filtering
 })
 
 test_that("split_and_clean deduplicates", {
-  result <- semseeker:::split_and_clean("A+A+B")
+  result <- SEMseeker:::split_and_clean("A+A+B")
   expect_equal(sort(result), c("A", "B"))
 })
 
 test_that("split_and_clean respects a custom split delimiter", {
-  result <- semseeker:::split_and_clean("X,Y,Z", split = ",")
+  result <- SEMseeker:::split_and_clean("X,Y,Z", split = ",")
   expect_equal(result, c("X", "Y", "Z"))
 })
 
@@ -50,52 +50,52 @@ test_that("split_and_clean respects a custom split delimiter", {
 test_that("validate_family_test accepts standard parametric families", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
-  expect_true(semseeker:::validate_family_test("gaussian"))
-  expect_true(semseeker:::validate_family_test("binomial"))
-  expect_true(semseeker:::validate_family_test("poisson"))
-  expect_true(semseeker:::validate_family_test("wilcoxon"))
-  expect_true(semseeker:::validate_family_test("t.test"))
-  expect_true(semseeker:::validate_family_test("pearson"))
-  expect_true(semseeker:::validate_family_test("spearman"))
-  expect_true(semseeker:::validate_family_test("kendall"))
+  expect_true(SEMseeker:::validate_family_test("gaussian"))
+  expect_true(SEMseeker:::validate_family_test("binomial"))
+  expect_true(SEMseeker:::validate_family_test("poisson"))
+  expect_true(SEMseeker:::validate_family_test("wilcoxon"))
+  expect_true(SEMseeker:::validate_family_test("t.test"))
+  expect_true(SEMseeker:::validate_family_test("pearson"))
+  expect_true(SEMseeker:::validate_family_test("spearman"))
+  expect_true(SEMseeker:::validate_family_test("kendall"))
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("validate_family_test accepts parametric family variants", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   # quantreg family (grepl match)
-  expect_true(semseeker:::validate_family_test("quantreg_0.5"))
+  expect_true(SEMseeker:::validate_family_test("quantreg_0.5"))
   # quantreg-permutation requires exactly 5 underscore-separated parts
-  expect_true(semseeker:::validate_family_test("quantreg-permutation_0.5_5_10_0.9"))
+  expect_true(SEMseeker:::validate_family_test("quantreg-permutation_0.5_5_10_0.9"))
   # polynomial / exp / log variants
-  expect_true(semseeker:::validate_family_test("polynomial_4_1"))
-  expect_true(semseeker:::validate_family_test("exp_1"))
-  expect_true(semseeker:::validate_family_test("log_1"))
+  expect_true(SEMseeker:::validate_family_test("polynomial_4_1"))
+  expect_true(SEMseeker:::validate_family_test("exp_1"))
+  expect_true(SEMseeker:::validate_family_test("log_1"))
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("validate_family_test rejects NULL, NA, and unknown strings", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
-  expect_false(semseeker:::validate_family_test(NULL))
-  expect_false(semseeker:::validate_family_test(NA))
-  expect_false(semseeker:::validate_family_test("not_a_valid_test"))
+  expect_false(SEMseeker:::validate_family_test(NULL))
+  expect_false(SEMseeker:::validate_family_test(NA))
+  expect_false(SEMseeker:::validate_family_test("not_a_valid_test"))
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
@@ -137,7 +137,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
   # POSITION area is required so study_summary_total() writes per-sample
   # mutation counts into sample_sheet_result.csv (depth=1 reads that file).
   # "sequential" makes the test work under both devtools::load_all() and CI.
-  semseeker:::semseeker(
+  SEMseeker:::semseeker(
     sample_sheet      = local_samples,
     signal_data       = local_sig,
     result_folder     = tempFolder,
@@ -168,7 +168,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
   # multiple_test_adj="BH" avoids qvalue::qvalue() which fails on few p-values
   # (pi0 bootstrap needs many observations; default "q" fails with ~1 p-value).
   testthat::expect_no_error(
-    semseeker:::association_analysis(
+    SEMseeker:::association_analysis(
       inference_details   = inference_details,
       result_folder       = tempFolder,
       parallel_strategy   = "sequential",
@@ -221,7 +221,7 @@ test_that("association_analysis skips gracefully when independent_variable absen
   local_sig2 <- as.data.frame(local_sig2)
   colnames(local_sig2) <- mySampleSheet$Sample_ID
 
-  semseeker:::semseeker(
+  SEMseeker:::semseeker(
     sample_sheet      = mySampleSheet,
     signal_data       = local_sig2,
     result_folder     = tempFolder,
@@ -245,7 +245,7 @@ test_that("association_analysis skips gracefully when independent_variable absen
 
   # Should log a WARNING and skip rather than crash
   testthat::expect_no_error(
-    semseeker:::association_analysis(
+    SEMseeker:::association_analysis(
       inference_details = inference_details,
       result_folder     = tempFolder,
       parallel_strategy = "sequential",

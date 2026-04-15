@@ -26,6 +26,6 @@
 #   boot.bca <- quantreg_summary(boot_vector, signal_full, as.data.frame(tempDataFrame), sig.formula, tau, independent_variable, lqm_control = lqm_control)
 #
 #   testthat::expect_true(sum(is.null(boot.bca))==0)
-#   semseeker:::close_env()
+#   SEMseeker:::close_env()
 # })
 #

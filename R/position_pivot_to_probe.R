@@ -1,7 +1,8 @@
 
 position_pivot_to_probe <- function(signal_data)
 {
-  probe_features <- semseeker::pp_tot[,c("PROBE","CHR","START","END","K27","K450","K850")]
+  ssEnv          <- get_session_info()
+  probe_features <- probe_annotation_build(ssEnv$tech)[, c("PROBE", "CHR", "START", "END", ssEnv$tech)]
   # transform signal_data into parquet
   signal_data_temp <- polars::as_polars_df(signal_data)
   signal_data_temp <- signal_data_temp$lazy()
@@ -16,9 +17,11 @@ position_pivot_to_probe <- function(signal_data)
   )
   signal_data_temp <- signal_data_temp$unique()$collect()
   signal_data_temp <- as.data.frame(signal_data_temp)
-  best_tech <- colSums(signal_data_temp[,c("K27","K450","K850")])
-  best_tech <-  c("K27","K450","K850")[which(best_tech==max(best_tech))]
-  signal_data_temp <- signal_data_temp[signal_data_temp[,best_tech]==TRUE,]
+  # Filter to probes matching the detected technology
+  tech_col <- ssEnv$tech
+  if (tech_col %in% colnames(signal_data_temp))
+    signal_data_temp <- signal_data_temp[
+      !is.na(signal_data_temp[[tech_col]]) & signal_data_temp[[tech_col]], ]
   signal_data_temp <- signal_data_temp[, !colnames(signal_data_temp) %in% cols_to_remove]
   # move PROBE as first column
   signal_data_temp <- signal_data_temp[,c("PROBE",colnames(signal_data_temp)[!(colnames(signal_data_temp)=="PROBE")])]

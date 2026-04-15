@@ -1,3 +1,32 @@
+#' Compute model performance metrics
+#'
+#' Calculates a comprehensive set of regression performance metrics for both
+#' the training set (fitted vs expected) and, optionally, a held-out test set
+#' (prediction vs prediction_expected).  Also detects possible overfitting by
+#' comparing train and test metrics.
+#'
+#' @param fitted_values Numeric vector of model-fitted (training) values.
+#' @param expected_values Numeric vector of observed (training) values.
+#' @param prediction_values Numeric vector of model predictions on the test set.
+#'   Pass an empty vector (\code{c()}) to skip test-set metrics.
+#' @param prediction_expected_values Numeric vector of observed values for the
+#'   test set.  Ignored when \code{prediction_values} is empty.
+#'
+#' @return A single-row \code{data.frame} with columns:
+#'   \describe{
+#'     \item{mse, rmse, mape, mpe, sse, mae}{Training-set error metrics.}
+#'     \item{r_squared, r_squared_adj}{Training-set goodness-of-fit.}
+#'     \item{msle}{Mean squared log error (training).}
+#'     \item{mse_test, rmse_test, \ldots}{Same metrics on test set (if provided).}
+#'     \item{overfitting}{Logical; \code{TRUE} if any test metric is worse than
+#'       the corresponding training metric.}
+#'   }
+#'
+#' @examples
+#' fitted   <- c(1.1, 1.9, 3.2, 3.8)
+#' expected <- c(1,   2,   3,   4  )
+#' SEMseeker:::model_performance(fitted, expected, c(), c())
+#'
 model_performance <- function(fitted_values, expected_values, prediction_values, prediction_expected_values)
 {
 

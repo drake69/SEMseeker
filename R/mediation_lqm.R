@@ -62,7 +62,7 @@ mediation_quantreg_model <- function(family_test,tempDataFrame, sig.formula, tra
   perms <- sort(unique(c(permutations_test, permutations)))
 
 
-  lqm_control <- list(loop_tol_ll = 1e-5, loop_max_iter = 10000, verbose = F )
+  lqm_control <- list(loop_tol_ll = 1e-5, loop_max_iter = 10000, verbose = FALSE )
 
 
   if(calculate_collinearity_score(df_outcome[, -which(colnames(df_outcome) == "outcome")]) > 0.5)
@@ -144,7 +144,7 @@ mediation_quantreg_model <- function(family_test,tempDataFrame, sig.formula, tra
         res$mediation_effect_ci_upper <- boot.res$bca[5]
         res$mediation_effect_significative <- !(boot.res$bca[4]<0 & boot.res$bca[5]>0)
 
-        #calcolo il prop
+        # Compute the proportion mediated
         prop_res <- boot::boot(data=df_outcome, statistic = prop_effect_fun, R=permutations, parallel = "no", ncpus=1)
         boot.res <- boot::boot.ci(prop_res, type="bca")
         res$prop_effect_ci_lower <- boot.res$bca[4]
@@ -153,13 +153,13 @@ mediation_quantreg_model <- function(family_test,tempDataFrame, sig.formula, tra
         # calculate pvalue
 
 
-        #calcolo del b1 il Total Effect
+        # Compute b1: Total Effect
         boot.res <- boot::boot.ci(b1_res, type="bca")
         res$total_effect_ci_lower <- boot.res$bca[4]
         res$total_effect_ci_upper <- boot.res$bca[5]
         res$total_effect_significative <- !(boot.res$bca[4]<0 & boot.res$bca[5]>0)
 
-        #calcolo del b3 il Direct Effect
+        # Compute b3: Direct Effect
         boot.res <- boot::boot.ci(b3_res, type="bca")
         res$direct_effect_ci_lower <- boot.res$bca[4]
         res$direct_effect_ci_upper <- boot.res$bca[5]

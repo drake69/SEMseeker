@@ -1,5 +1,7 @@
 metrics_name_collect <- function(data_frame)
 {
+  # NOTE: this function body is entirely commented out and currently does nothing.
+  # Kept for historical reference; candidate for removal in a future cleanup.
   # # # browser
   # metrics_temp <- toupper(colnames(data_frame))
   # # read from package cache

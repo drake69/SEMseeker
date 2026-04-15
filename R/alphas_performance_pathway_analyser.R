@@ -1,4 +1,4 @@
-#' @export
+# NOTE: currently internal — could be re-exported once @examples are added
 alphas_performance_pathway_analyser <- function(inference_details, result_folder, pvalue_column="PVALUE_ADJ_ALL_BH",
   significance = TRUE,disease_hpo, disease_description,keywords,stop_keywords,alphas,top=50,pathway_alpha=0.05, ...)
 {
@@ -44,9 +44,9 @@ alphas_performance_pathway_analyser <- function(inference_details, result_folder
           file_prfx <- paste(independent_variable, transformation_y,family_test,covariates, pvalue_column,keys[i,"MARKER"], sep="_")
 
 
-          for (a in alphas)
+          for (alpha in alphas)
           {
-            ssEnv$alpha <- a
+            ssEnv$alpha <- alpha
             update_session_info(ssEnv)
             file_name <- phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
               suffix="",
@@ -119,7 +119,6 @@ alphas_performance_pathway_analyser <- function(inference_details, result_folder
           # TO DO: manage comparison of pathways by FIGURE
           aggregated_patwhay_result_total <- subset(aggregated_patwhay_result_total, aggregated_patwhay_result_total$FIGURE =="HYPER_HYPO")
 
-          # browser()
           # keep only first top taxonomies
           aggregated_patwhay_result_total <- subset(aggregated_patwhay_result_total, aggregated_patwhay_result_total[,column_sorting] <= top)
 
@@ -132,7 +131,6 @@ alphas_performance_pathway_analyser <- function(inference_details, result_folder
           if(nrow(aggregated_patwhay_result_total) == 0)
             next
 
-          # browser()
           # if(any(aggregated_patwhay_result_total$by_keyword == TRUE))
           #   aggregated_patwhay_result_total <- subset(aggregated_patwhay_result_total, by_keyword == TRUE)
 
@@ -148,35 +146,4 @@ alphas_performance_pathway_analyser <- function(inference_details, result_folder
     }
   }
 }
-
-# Function to find unique gene sets for each key
-find_unique_gene_sets <- function(split_list) {
-  unique_sets <- list()
-  keys <- names(split_list)
-
-  for (k in seq_along(keys)) {
-
-    key <- keys[k]
-    # Start with the current key's gene sets
-    current_sets <- split_list[[key]]
-
-    # Get all other keys
-    other_keys <- setdiff(keys, key)
-
-    # Combine gene sets from all other keys
-    other_sets <- unlist(split_list[other_keys], use.names = FALSE)
-
-    # Find gene sets unique to the current key
-    unique_to_current <- setdiff(current_sets, other_sets)
-
-    # Store the unique gene sets with the key as the name
-    unique_sets[[key]] <- unique_to_current
-  }
-
-  # remove empty sets
-  unique_sets <- unique_sets[sapply(unique_sets, length) > 0]
-
-  return(unique_sets)
-}
-
 

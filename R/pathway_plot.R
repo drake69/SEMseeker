@@ -1,10 +1,6 @@
 pathway_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, column_sorting="SS_RANK")
 {
   ssEnv <- get_session_info()
-  # Load necessary libraries
-  library(ggplot2)
-  library(dplyr)
-  library(ggstance) # for position_dodgev
 
   column_of_id <- rules["column_of_id"]
   column_of_adj_pvalue <- rules["column_of_adj_pvalue"]
@@ -24,7 +20,7 @@ pathway_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50,
 
   # Transform highest_p to -log10(highest_p)
   data <- data %>%
-    mutate(log_fdr = -log10(P_Value))
+    dplyr::mutate(log_fdr = -log10(.data$P_Value))
 
   # sort by P_Value desc
   data <- data[order(data$log_fdr, decreasing = TRUE),]
@@ -33,7 +29,7 @@ pathway_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50,
   categories <- unique(data$SS_CATEGORY)
   for (c in categories)
   {
-    data_to_plot <- subset(data, SS_CATEGORY == c)
+    data_to_plot <- data[data$SS_CATEGORY == c, ]
 
     # if(any(data_to_plot$by_keyword))
     #   data_to_plot <- subset(data_to_plot, by_keyword == TRUE)
@@ -77,14 +73,12 @@ pathway_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50,
     # Define your custom colors
     custom_colors <- ssEnv$color_palette
 
-    library(ggplot2)
-    library(ggstance)  # Assuming position_dodgev is from ggstance
 
     # get for each Description the mean of log_fdr
     data_to_plot <- data_to_plot %>%
-      group_by(Description) %>%
-      mutate(mean_log_fdr = mean(log_fdr)) %>%
-      ungroup()
+      dplyr::group_by(.data$Description) %>%
+      dplyr::mutate(mean_log_fdr = mean(.data$log_fdr)) %>%
+      dplyr::ungroup()
     data_to_plot <- as.data.frame(data_to_plot)
     # Ensure the data_to_plot$Description is a factor and reorder it based on log_fdr
     # data_to_plot$Description <- reorder(data_to_plot$Description, data_to_plot$mean_log_fdr, decreasing = TRUE)
@@ -109,8 +103,8 @@ pathway_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50,
     data_to_plot$Description <- factor(data_to_plot$Description, levels = rev(levels(data_to_plot$Description)))
 
     # Create the lollipop plot with vertical dodge and shapes based on key
-    ggplot(data_to_plot, aes(x = log_fdr, y = Description, size = Enrichment, color = eval(parse(text=performance_category)))) +
-      geom_point(aes(shape = eval(parse(text=performance_category))),
+    ggplot2::ggplot(data_to_plot, ggplot2::aes(x = .data$log_fdr, y = .data$Description, size = .data$Enrichment, color = eval(parse(text=performance_category)))) +
+      ggplot2::geom_point(ggplot2::aes(shape = eval(parse(text=performance_category))),
         fill = NA,
         position = position_dodgev(height = 0.5),
         stroke = 1.5) +

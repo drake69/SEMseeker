@@ -71,7 +71,7 @@ create_heatmap <- function() {
               heatmap_data <- reshape2::melt(annotatedData, id.vars = "SAMPLE_GROUP")
 
               # Create the ggplot heatmap
-              p <- ggplot2::ggplot(heatmap_data, ggplot2::aes(x = variable, y = SAMPLE_GROUP, fill = value)) +
+              p <- ggplot2::ggplot(heatmap_data, ggplot2::aes(x = .data$variable, y = .data$SAMPLE_GROUP, fill = .data$value)) +
                 ggplot2::geom_tile() +
                 ggplot2::scale_fill_gradientn(colours = grDevices::cm.colors(256)) +
                 ggplot2::theme_minimal(base_size = 15) +

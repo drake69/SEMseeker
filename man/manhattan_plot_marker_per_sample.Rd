@@ -2,7 +2,7 @@
 % Please edit documentation in R/manhattan_plot_marker_per_sample.R
 \name{manhattan_plot_marker_per_sample}
 \alias{manhattan_plot_marker_per_sample}
-\title{Title manhattan_plot_marker_per_sample}
+\title{Manhattan plot of SEM markers for a single sample}
 \usage{
 manhattan_plot_marker_per_sample(
   sample_name = "NAME",
@@ -18,29 +18,47 @@ manhattan_plot_marker_per_sample(
 )
 }
 \arguments{
-\item{sample_name}{name of the sample to be plotted}
+\item{sample_name}{character. Sample identifier as it appears in the
+sample sheet (default \code{"NAME"}).}
 
-\item{probes_range}{range of probes to be plotted}
+\item{probes_range}{integer vector. Probe index range to display
+(default \code{1000:2000}).}
 
-\item{hyper_color}{color for hypermethylated probes}
+\item{hyper_color}{character. Colour for hypermethylated probes
+(default \code{"blue"}).}
 
-\item{hypo_color}{color for hypomethylated probes}
+\item{hypo_color}{character. Colour for hypomethylated probes
+(default \code{"orange"}).}
 
-\item{non_outlier_color}{color for non-outlier probes}
+\item{non_outlier_color}{character. Colour for non-outlier probes
+(default \code{"grey"}).}
 
-\item{limit_label_color}{color for limit labels}
+\item{limit_label_color}{character. Colour for threshold labels.}
 
-\item{result_folder}{folder where the results are stored}
+\item{result_folder}{character. Path to the SEMseeker result folder.}
 
-\item{maxResources}{maximum number of resources to be used}
+\item{maxResources}{numeric. Maximum percentage of CPU cores to use
+(default 90).}
 
-\item{parallel_strategy}{strategy to be used for parallelization}
+\item{parallel_strategy}{character. Parallelisation backend
+(default \code{"multicore"}).}
 
-\item{...}{other parameters}
+\item{...}{Additional arguments passed to \code{init_env()}.}
 }
 \value{
-save plot in the result_folder/Chart/MARKER_PER_SAMPLE
+Invisibly \code{NULL}. A PNG plot is saved under
+  \code{Charts/MARKER_PER_SAMPLE/} in \code{result_folder}.
 }
 \description{
-Title manhattan_plot_marker_per_sample
+Manhattan plot of SEM markers for a single sample
+}
+\examples{
+result_dir <- tempdir()
+\dontrun{
+manhattan_plot_marker_per_sample(
+  sample_name  = "CASE_001",
+  probes_range = 1:5000,
+  result_folder = result_dir
+)
+}
 }

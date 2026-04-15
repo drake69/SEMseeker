@@ -1,6 +1,6 @@
-#' @export
 #' @importFrom doRNG %dorng%
 #' @importFrom doFuture %dofuture%
+# NOTE: currently internal — could be re-exported once @examples are added
 marker_quantization_chart <- function(result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
   # result_folder, maxResources = 90, parallel_strategy  = "multisession", ...

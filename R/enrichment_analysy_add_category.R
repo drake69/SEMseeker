@@ -66,10 +66,8 @@ enrichment_analysy_add_category <- function(source, data)
       next
     # fdr
     column_to_rank <- key_enrichment_format[key_enrichment_format$label==source,"column_of_adj_pvalue"]
-    if(!any(column_to_rank %in% colnames(to_rank)))
-      browser()
-    # message(column_to_rank)
-    if(max(to_rank[,column_to_rank], na.rm=T) == min(to_rank[,column_to_rank], na.rm=T))
+    if (!any(column_to_rank %in% colnames(to_rank))) next
+    if(max(to_rank[,column_to_rank], na.rm=TRUE) == min(to_rank[,column_to_rank], na.rm=TRUE))
       to_rank$SS_RANK_FDR <- 1
     else
     {
@@ -83,10 +81,8 @@ enrichment_analysy_add_category <- function(source, data)
     to_rank$SS_RANK_FDR[to_rank[,column_to_rank] >= as.numeric(ssEnv$alpha)] <- max_rank_pvalue + 1
 
     column_to_rank <- key_enrichment_format[key_enrichment_format$label==source,"column_of_enrichment"]
-    if(!any(column_to_rank %in% colnames(to_rank)))
-      browser()
-    # message(column_to_rank)
-    if(max(to_rank[,column_to_rank], na.rm=T) == min(to_rank[,column_to_rank], na.rm=T))
+    if (!any(column_to_rank %in% colnames(to_rank))) next
+    if(max(to_rank[,column_to_rank], na.rm=TRUE) == min(to_rank[,column_to_rank], na.rm=TRUE))
       to_rank$SS_RANK_ENRICHMENT <- 1
     else
     {

@@ -5,25 +5,25 @@ test_that("signal_range_values", {
 
 
   # test range calculation with missed values: signal_range_values must error when data has NAs
-  ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes)
+  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes)
   # probe_features_get requires tech to be set; build equivalent manually
-  probe_features_local <- semseeker::PROBES[semseeker::PROBES$PROBE %in% rownames(signal_data), c("CHR","START","END","PROBE")]
+  probe_features_local <- probe_features[probe_features$PROBE %in% rownames(signal_data), c("CHR","START","END","PROBE")]
   probe_features_local <- probe_features_local[!is.na(probe_features_local$CHR),]
   probe_features_local$PROBE_WHOLE <- probe_features_local$PROBE
   signal_data_with_na <- signal_data
   signal_data_with_na[1, 1] <- NA  # inject one NA to trigger the error
-  testthat::expect_error(semseeker:::signal_range_values(signal_data_with_na, batch_id, probe_features_local), "^ERROR:")
+  testthat::expect_error(SEMseeker:::signal_range_values(signal_data_with_na, batch_id, probe_features_local), "^ERROR:")
 
-  ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "median")
-  signal_data <- semseeker:::inpute_missing_values(signal_data)
+  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "median")
+  signal_data <- SEMseeker:::inpute_missing_values(signal_data)
 
   ####################################################################################
-  signal_thresholds <<- semseeker:::signal_range_values(signal_data, batch_id, probe_features_local)
+  signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id, probe_features_local)
   testthat::expect_true(sum(colnames(signal_thresholds) %in% c("signal_inferior_thresholds","signal_superior_thresholds","signal_median_values","iqr","q1","q3"))==6)
 
   ####################################################################################
   # check thresholds file exists
-  testthat::expect_true(file.exists(semseeker:::file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")))
+  testthat::expect_true(file.exists(SEMseeker:::file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")))
 
   ####################################################################################
   # test no probe are lost
@@ -59,7 +59,7 @@ test_that("signal_range_values", {
   # test median is higher than Q1
   testthat::expect_true(sum(signal_thresholds$signal_median_values>signal_thresholds$q1)/nrow(signal_thresholds)>0.9)
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder,recursive = TRUE)
 })
 

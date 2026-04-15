@@ -62,6 +62,10 @@ manhattan_plot_marker_per_probe(
 
 \item{...}{other parameter}
 }
+\value{
+Invisibly \code{NULL}. The function saves PNG plot files to disk as a
+  side effect.
+}
 \description{
 Title manhattan_plot_marker_per_probe
 }

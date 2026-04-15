@@ -11,7 +11,8 @@ loadNamespace("stats")
 use_synthetic_data <- TRUE
 if (use_synthetic_data)
 {
-  nprobes <<- 6e4
+  # 2e4 keeps statistical validity while reducing setup+test time ~3x vs 6e4
+  nprobes <<- 2e4
   nsamples <<- 3e1
 
   # intersample_mean <- 5
@@ -19,14 +20,35 @@ if (use_synthetic_data)
   # perc_epimutation <- 0.05
 
   Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES')
-  probe_features <- semseeker::PROBES
-  probe_features <- probe_features[!is.na(probe_features$START),c("CHR","START","PROBE")]
-  probe_features <- unique(probe_features)
-  probe_features$END <- probe_features$START
-
-  nprobes <- min(nprobes, nrow(probe_features))
-  probe_features <- probe_features[probe_features$PROBE %in% sample(x=probe_features[,"PROBE"] , size=nprobes),]
-  probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep="_")
+  # Build probe_features from the K850 Bioconductor annotation when installed
+  # (CI always has it). This ensures tech-detection tests work correctly
+  # because the probe IDs match the real array manifest.
+  # Falls back to synthetic IDs in environments without the annotation package.
+  .k850_pkg <- "IlluminaHumanMethylationEPICanno.ilm10b4.hg19"
+  if (requireNamespace(.k850_pkg, quietly = TRUE)) {
+    .locs_env <- new.env(parent = emptyenv())
+    utils::data(list = "Locations", package = .k850_pkg, envir = .locs_env)
+    .locs_df  <- as.data.frame(.locs_env$Locations, stringsAsFactors = FALSE)
+    .sampled  <- sample(nrow(.locs_df), min(nprobes, nrow(.locs_df)))
+    probe_features <- data.frame(
+      PROBE = rownames(.locs_df)[.sampled],
+      CHR   = sub("^chr", "", .locs_df$chr[.sampled]),
+      START = as.integer(.locs_df$pos[.sampled]),
+      stringsAsFactors = FALSE
+    )
+    nprobes <<- nrow(probe_features)
+  } else {
+    # Synthetic fallback: fake cg IDs distributed across chr1-22, X, Y
+    .chrs <- as.character(c(1:22, "X", "Y"))
+    probe_features <- data.frame(
+      PROBE = paste0("cg", formatC(seq_len(nprobes), width = 8L, flag = "0")),
+      CHR   = .chrs[((seq_len(nprobes) - 1L) %% length(.chrs)) + 1L],
+      START = seq(1000000L, by = 1000L, length.out = nprobes),
+      stringsAsFactors = FALSE
+    )
+  }
+  probe_features$END      <- probe_features$START
+  probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep = "_")
 
   # test <- stats::rnorm(nsamples,mean = intersample_mean, sd = intersample_sd)
   # mean(test)
@@ -80,8 +102,9 @@ if (use_synthetic_data)
   mySampleSheet_batch <<- list(mySampleSheet, mySampleSheet, mySampleSheet)
   signal_data_batch <<- list(signal_data, signal_data, signal_data)
 
-  q1 <- apply(signal_data, 1, function (x) { stats::quantile(x, probs = 0.25, na.rm = TRUE) })
-  q3 <- apply(signal_data, 1, function (x) { stats::quantile(x, probs = 0.75, na.rm = TRUE) })
+  q1 <- apply(signal_data, 1, function(x) stats::quantile(x, probs = 0.25, na.rm = TRUE))
+  q3 <- apply(signal_data, 1, function(x) stats::quantile(x, probs = 0.75, na.rm = TRUE))
+  signal_medians <- apply(signal_data, 1, stats::median)
   iqr <- data.frame(q3 - q1)
 
   signal_superior_thresholds <- data.frame("HIGH" = q3 + 3 * iqr)
@@ -89,12 +112,8 @@ if (use_synthetic_data)
   colnames(signal_inferior_thresholds) <- "LOW"
   colnames(signal_superior_thresholds) <- "HIGH"
 
-  # sum(as.numeric(signal_data[,1] > signal_superior_thresholds))
-  # sum(as.numeric(signal_data[,1] < signal_inferior_thresholds))
-
   row.names(signal_superior_thresholds) <- probe_features$PROBE
   row.names(signal_inferior_thresholds) <- probe_features$PROBE
-  signal_medians <- apply(signal_data, 1, stats::median)
 
   signal_thresholds <- data.frame("signal_median_values"=signal_medians,
     "signal_inferior_thresholds"=signal_inferior_thresholds,
@@ -143,7 +162,7 @@ if (!use_synthetic_data) {
   signal_data <- signal_data[1:1000,]
   # count rows with all missing values
   nrow_missed <- sum(apply(signal_data, 1, function(x) all(is.na(x))))
-  probe_features <<- semseeker::PROBES[semseeker::PROBES$PROBE %in% rownames(signal_data),]
+  probe_features <<- SEMseeker::probe_annotation_build("K850")[rownames(signal_data), c("CHR","START","PROBE")]
   probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep="_")
   nprobes <<- nrow(signal_data) - nrow_missed
   nsamples <<- ncol(signal_data)

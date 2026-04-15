@@ -6,3 +6,4 @@ packrat/lib*/
 packrat/src/
 cache
 tmp
+.code_reader/

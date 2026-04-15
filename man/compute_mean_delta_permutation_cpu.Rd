@@ -2,7 +2,7 @@
 % Please edit documentation in R/mean_permutation_model.R
 \name{compute_mean_delta_permutation_cpu}
 \alias{compute_mean_delta_permutation_cpu}
-\title{Title}
+\title{Compute mean delta permutation (CPU)}
 \usage{
 compute_mean_delta_permutation_cpu(sig.formula, df, shuffle = FALSE)
 }
@@ -11,10 +11,12 @@ compute_mean_delta_permutation_cpu(sig.formula, df, shuffle = FALSE)
 
 \item{df}{dataframe to use}
 
-\item{tau}{tau at which apply the quantile regression}
-
-\item{lqm_control}{specification of the lqmm package}
+\item{shuffle}{logical; if TRUE, permute the independent variable before fitting}
+}
+\value{
+A numeric scalar: the observed mean difference between the two groups
+  (used as the test statistic in the permutation test).
 }
 \description{
-Title
+Compute mean delta permutation (CPU)
 }

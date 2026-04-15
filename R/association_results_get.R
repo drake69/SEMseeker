@@ -1,4 +1,8 @@
-association_results_get <- function (inference_detail, marker, adjust_per_area = F, adjust_globally = F,
+# NOTE: naming convention — `adjustment_method` (singular) is used in internal
+# helpers and result-retrieval functions where a single method string is expected.
+# High-level public functions (e.g. gene_impact_analysis()) use `adjustment_methods`
+# (plural) because they accept a vector to iterate over multiple corrections.
+association_results_get <- function (inference_detail, marker, adjust_per_area = FALSE, adjust_globally = FALSE,
   pvalue_column="PVALUE_ADJ_ALL_BH",adjustment_method = "BH", area ="GENE",
   omit_na = TRUE, significance = NULL)
 {
@@ -105,7 +109,6 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
   if ((length(entrez_ids_not_na) != length(results_inference$AREA_OF_TEST)))
   {
     lost_gene <- unique(results_inference$AREA_OF_TEST[is.na(entrez_ids)])
-    # browser()
   }
 
   results_inference <- filter_sql(inference_details$association_results_sql_condition, results_inference)

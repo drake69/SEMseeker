@@ -3,6 +3,10 @@
 #' @param population population data frame to use for creating pivot
 #' @param keys markers and figure to create pivot of
 #'
+#' @return A data.frame of genomic position pivots with chromosomal coordinates
+#'   and per-sample signal values; results are also written to parquet files on
+#'   disk. Returns invisibly.
+#'
 #' @importFrom doRNG %dorng%
 create_position_pivots <- function(population, keys)
 {
@@ -130,7 +134,6 @@ create_position_pivots <- function(population, keys)
       # message(pivot$columns)
       if ( s %% 100 == 0 )
       {
-        # browser()
         pivot <- pivot$collect()
         pivot <- pivot$sort(c("CHR", "START"), descending = FALSE)
         pivot$write_parquet(pivot_filename)
@@ -144,6 +147,7 @@ create_position_pivots <- function(population, keys)
     pivot <- pivot$sort(c("CHR", "START"), descending = FALSE)
     pivot <- pivot$collect()
     pivot$write_parquet(pivot_filename)
+    pivot_sidecar_write(pivot_filename)   # C-06: write genome_build + tech sidecar
     rm(pivot)
   }
 }

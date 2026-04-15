@@ -2,7 +2,7 @@
 % Please edit documentation in R/quantile_permutation_model.R
 \name{compute_quantile_delta_permutation}
 \alias{compute_quantile_delta_permutation}
-\title{Title}
+\title{Compute quantile delta permutation (CPU)}
 \usage{
 compute_quantile_delta_permutation(
   sig.formula,
@@ -16,10 +16,14 @@ compute_quantile_delta_permutation(
 
 \item{df}{dataframe to use}
 
-\item{tau}{tau at which apply the quantile regression}
+\item{shuffle}{logical; if TRUE, permute the independent variable before fitting}
 
-\item{lqm_control}{specification of the lqmm package}
+\item{quantile}{quantile level (0–1) at which to compute the group difference; default 0.5 (median)}
+}
+\value{
+A numeric scalar: the observed quantile difference between groups
+  (used as the test statistic in the permutation test).
 }
 \description{
-Title
+Compute quantile delta permutation (CPU)
 }

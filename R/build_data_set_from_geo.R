@@ -2,10 +2,20 @@
 #'
 #' @param GEOgse geo accession dataset identification
 #' @param result_folder where sample sheet and files will be saved
-#' @param downloadFiles 0 means download all files from Gene Expression Ombibus (GEO),
-#'  different than zero means how many download
+#' @param downloadFiles 0 means download all files from Gene Expression Omnibus (GEO),
+#'  different than zero means how many to download
+#' @param ... additional arguments passed to internal helpers
 #'
 #' @return samplesheet, and sample's file saved and samplesheet csv
+#' @examples
+#' result_dir <- tempdir()
+#' \dontrun{
+#' build_data_set_from_geo(
+#'   GEOgse        = "GSE55763",
+#'   downloadFiles = 1,
+#'   result_folder = tempdir()
+#' )
+#' }
 #' @export
 build_data_set_from_geo <-  function(GEOgse, downloadFiles = 0,result_folder, ...) {
 

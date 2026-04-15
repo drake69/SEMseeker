@@ -2,7 +2,7 @@
 % Please edit documentation in R/quantreg_model.R
 \name{quantreg_model}
 \alias{quantreg_model}
-\title{Title}
+\title{Quantile regression model (lqm)}
 \usage{
 quantreg_model(
   family_test,
@@ -16,7 +16,7 @@ quantreg_model(
 )
 }
 \arguments{
-\item{family_test}{family lqmm, quantreg}
+\item{family_test}{family test string encoding model type and quantile level (e.g. "quantreg_0.5")}
 
 \item{sig.formula}{formula of the model}
 
@@ -24,10 +24,19 @@ quantreg_model(
 
 \item{independent_variable}{name of regressor}
 
-\item{permutation_success}{number of success tests to calculate corrected confidence interval}
+\item{transformation_y}{transformation applied to the dependent variable (for labelling plots)}
 
-\item{tests_count}{count of total executed tests}
+\item{plot}{logical; if TRUE, generate diagnostic plots}
+
+\item{samples_sql_condition}{SQL condition string used to filter samples (used for plot file naming)}
+
+\item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers for this test}
+}
+\value{
+A list (as a data.frame row) with quantile regression model results
+  including tau, p-value, standard error, regression coefficient, confidence
+  interval bounds, and model performance metrics.
 }
 \description{
-Title
+Quantile regression model (lqm)
 }

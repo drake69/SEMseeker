@@ -23,12 +23,12 @@ remove_empty_folders <- function(path) {
 
   for (file in files) {
     if (file.info(file)$isdir) {
-      remove_empty_folders(file)  # Controlla ricorsivamente le sottocartelle
+      remove_empty_folders(file)  # Recursively check subdirectories
 
-      # Dopo il controllo, se la cartella è vuota, la rimuove
+      # After the check, remove the directory if empty
       if (length(list.files(file)) == 0) {
         unlink(file, recursive = TRUE)
-        # cat("Rimossa cartella vuota:", file, "\n")
+        # cat("Removed empty directory:", file, "\n")
       }
     }
   }

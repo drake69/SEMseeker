@@ -10,7 +10,12 @@
 #' @param session_folder where to save log file
 #' @param independent_variable independent variable name
 #' @param depth_analysis depth's analysis
+#' @param samples_sql_condition SQL condition string to filter samples
 #' @param ... extra parameters
+#'
+#' @return A data.frame with one row per tested genomic area, including columns
+#'   for p-value, adjusted p-value, test statistic, AIC, residuals, and model
+#'   metadata; returns \code{NULL} if no results could be computed.
 #'
 #' @importFrom doRNG %dorng%
 #' @importFrom doFuture %dofuture%
@@ -52,11 +57,17 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " Starting foreach with: ", g_end - g_start, " items")
 
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I'll perform:",g_end - g_start," tests." )
-  # browser()
   result_temp <- data.frame()
   result_temp <- foreach::foreach(g = g_start:g_end, .combine =  plyr::rbind.fill, .export = to_export) %dorng%
   # for(g in g_start:g_end)
-  {
+  tryCatch({
+    # NOTE: this tryCatch is intentional. doFuture internally wraps the foreach
+    # body in tryCatch(error = identity), which returns the error *condition*
+    # object as the task result. A simpleError has length 2 (message + call),
+    # causing doFuture to throw "parsing result not of length one, but 2".
+    # By catching errors ourselves and returning NULL, we prevent the condition
+    # object from reaching doFuture's result-combination logic.
+    # plyr::rbind.fill silently ignores NULL results.
     ssEnv <- get_session_info()
 
     burdenValue <- cols[g]
@@ -68,7 +79,6 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
       #
       sig.formula <- apply_stat_model_sig_formula(family_test, burdenValue, independent_variable, covariates)
-      # browser()
       model_result <- execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (g_end - g_start < 10), samples_sql_condition, key)
 
       #
@@ -97,15 +107,6 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
           colnames(local_result) <- toupper(colnames(local_result))
           local_result$PVALUE <- NA
         }
-
-        # local_result$CASE.LABEL <- if(exists("independent_variable1stLevel")) as.character(independent_variable1stLevel) else NA
-        # local_result$COUNT_CASE <- length(independent_variableData1stLevel)
-        # local_result$MEAN_CASE <- (mean(independent_variableData1stLevel))
-        # local_result$SD_CASE <- (stats::sd(independent_variableData1stLevel))
-        # local_result$CONTROL.LABEL <- as.character(independent_variable2ndLevel)
-        # local_result$COUNT_CONTROL <- length(stats::na.omit(independent_variableData2ndLevel))
-        # local_result$MEAN_CONTROL <- (mean(independent_variableData2ndLevel))
-        # local_result$SD_CONTROL <- (stats::sd(independent_variableData2ndLevel))
       }
 
       if (!is.family_dicotomic(family_test))
@@ -129,7 +130,12 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
       # result_temp <- plyr::rbind.fill(result_temp, local_result)
       local_result
     }
-  }
+  }, error = function(e) {
+    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " Skipping area '", if(exists("burdenValue")) burdenValue else "?",
+              "': ", conditionMessage(e))
+    NULL
+  })
 
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I performed:",g_end," tests." )

@@ -38,19 +38,44 @@ exploratory_analysis(
 
 \item{sample_id_column}{name of the column with sample ids}
 
+\item{delete_keyword}{character. Value in \code{values_mapping} that marks
+samples for removal (default \code{"REMOVE"}).}
+
 \item{exploration_phase}{numeric value to preserve history of exploratory analysis}
+
+\item{mapping_folder}{character. Optional path to folder containing mapping
+files; overrides \code{sample_sheet_mapping} / \code{values_mapping} if
+provided (default \code{NULL}).}
 
 \item{sample_sheet_mapping}{rules to rename and remove columns}
 
 \item{values_mapping}{rules to recode values and remove samples (source missed leave blank in the mapping file)}
+
+\item{removal_folder}{character. Optional path to folder containing removal
+rule files (default \code{NULL}).}
+
+\item{removal_rules}{character vector. Inline removal rules applied before
+mapping (default \code{c()}).}
 
 \item{result_folder}{path to the result folder}
 
 \item{...}{other parameters to define options for semseeker}
 }
 \value{
-reports of the exploratory analysis and sample sheet, signal data cleaned
+Invisibly \code{NULL}. Cleaned sample sheet and signal data are
+  written to the result folder together with exploratory summary reports.
 }
 \description{
 Preliminary exploratory analysys of the data
+}
+\examples{
+result_dir <- tempdir()
+\dontrun{
+exploratory_analysis(
+  categorical_variables = c("Sample_Group", "Sex"),
+  numerical_variables   = c("Age"),
+  sample_sheet          = sample_sheet,
+  signal_data           = beta_matrix
+)
+}
 }

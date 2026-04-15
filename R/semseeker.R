@@ -20,6 +20,20 @@
 #'   - `areas`: A vector of string specifying the areas to be used for the analysis. Default are "GENE","CHR","ISLAND","PROBE"
 #'
 #' @return The function writes multiple files to the specified `result_folder`, including the processed sample sheet and result files in CSV format, along with pivot tables and bedgraph files.
+#' @examples
+#' result_dir <- tempdir()
+#' \dontrun{
+#' sample_sheet <- data.frame(
+#'   Sample_ID    = c("S1", "S2", "S3"),
+#'   Sample_Name  = c("Case1", "Case2", "Ctrl1"),
+#'   Sample_Group = c("Case", "Case", "Control")
+#' )
+#' semseeker(
+#'   sample_sheet  = sample_sheet,
+#'   signal_data   = beta_matrix,
+#'   result_folder = tempdir()
+#' )
+#' }
 #' @export
 #' @importFrom doRNG %dorng%
 #'
@@ -44,9 +58,12 @@ semseeker <- function(sample_sheet,
   ssEnv$batch_count <- length(sample_sheet)
   ssEnv <- update_session_info(ssEnv)
 
+  # C-06: write session provenance metadata (genome_build, tech, version, …)
+  total_sample_n <- sum(sapply(sample_sheet, nrow))
+  session_metadata_write(result_folder, sample_n = total_sample_n)
+
   for(batch_id in seq_along(sample_sheet))
   {
-    # browser()
     start_time <- Sys.time()
     ssEnv$running_batch_id <- batch_id
     ssEnv <- update_session_info(ssEnv)

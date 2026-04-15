@@ -74,7 +74,7 @@ jobs:
         run: |
           Sys.setenv(NOT_CRAN = "true")
           install.packages(
-            c("remotes", "rcmdcheck", "testthat", "devtools"),
+            c("remotes", "rcmdcheck", "testthat", "devtools", "BiocManager"),
             repos = c(
               CRAN = "https://packagemanager.posit.co/cran/latest"
             )
@@ -85,6 +85,15 @@ jobs:
               rpolars = "https://community.r-multiverse.org",
               CRAN    = "https://packagemanager.posit.co/cran/latest"
             )
+          )
+          # Install Bioconductor annotation packages (in Suggests — needed for array tech detection)
+          BiocManager::install(
+            c(
+              "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
+              "IlluminaHumanMethylation450kanno.ilmn12.hg19",
+              "IlluminaHumanMethylation27kanno.ilmn12.hg19"
+            ),
+            ask = FALSE, update = FALSE
           )
         shell: Rscript {0}
 

@@ -1,6 +1,6 @@
 # compare inference associations of different sub samples
-association_cross_subsamples_overlaps <- function(inference_details,alpha = 0.05, adjust_per_area = F,
-  adjust_globally = F,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
+association_cross_subsamples_overlaps <- function(inference_details,alpha = 0.05, adjust_per_area = FALSE,
+  adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
   old_label = NULL, new_label = NULL, run_prefix = "",
   result_folder, ...)
 {
@@ -76,7 +76,7 @@ association_cross_subsamples_overlaps <- function(inference_details,alpha = 0.05
         tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",statistic_parameter, pvalue_column)]
         # get only "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH" common to SAMPLES_SQL_CONDITION
         tt <- tt %>%
-          dplyr::group_by(AREA, SUBAREA, MARKER, FIGURE, AREA_OF_TEST,DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE),
             statistic_parameter = mean(get(statistic_parameter), na.rm = TRUE)
@@ -89,7 +89,7 @@ association_cross_subsamples_overlaps <- function(inference_details,alpha = 0.05
         tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",pvalue_column)]
         # summarise grouping by "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST" and calculate the max of the pvalues
         tt <- tt %>%
-          dplyr::group_by(AREA, SUBAREA, MARKER, FIGURE, AREA_OF_TEST,DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE)
           ) %>%
@@ -103,7 +103,7 @@ association_cross_subsamples_overlaps <- function(inference_details,alpha = 0.05
       inference_detail$samples_sql_condition <- ""
       filename <- inference_file_name(inference_detail, marker, dest_folder ,prefix="" )
 
-      utils::write.csv2(tt, filename, row.names = F)
+      utils::write.csv2(tt, filename, row.names = FALSE)
     }
 
 
@@ -143,7 +143,7 @@ association_cross_subsamples_overlaps <- function(inference_details,alpha = 0.05
     #
     studies_to_comb <- na.omit(unique(aggregated_results$SAMPLES_SQL_CONDITION))
     # calculate the mean of the pvalues
-    aggregated_results_table[, pvalue_column] <- mean(aggregated_results_table[,studies_to_comb], na.rm = T)
+    aggregated_results_table[, pvalue_column] <- mean(aggregated_results_table[,studies_to_comb], na.rm = TRUE)
 
     # rename columns
     studies_to_comb_cols <- paste0(studies_to_comb,"_",pvalue_column)
@@ -153,7 +153,7 @@ association_cross_subsamples_overlaps <- function(inference_details,alpha = 0.05
     if(statistic_parameter != "")
     {
       aggregated_results_table_statistic_parameter <- reshape2::dcast(aggregated_results, AREA + SUBAREA + MARKER + FIGURE + AREA_OF_TEST ~ SAMPLES_SQL_CONDITION, value.var = statistic_parameter)
-      aggregated_results_table_statistic_parameter[, statistic_parameter] <- mean(aggregated_results_table_statistic_parameter[,studies_to_comb], na.rm = T)
+      aggregated_results_table_statistic_parameter[, statistic_parameter] <- mean(aggregated_results_table_statistic_parameter[,studies_to_comb], na.rm = TRUE)
 
       studies_to_comb_cols <- paste0(studies_to_comb,"_",statistic_parameter)
       colnames(aggregated_results_table_statistic_parameter) <- c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST",studies_to_comb_cols, statistic_parameter)
@@ -174,7 +174,7 @@ association_cross_subsamples_overlaps <- function(inference_details,alpha = 0.05
     # }
     filename <- inference_file_name(inference_detail, paste0(markers, collapse = "_") ,dest_folder,file_extension = "csv",
       suffix = "AGGREGATED", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
-    write.csv2(aggregated_results_table, filename, row.names = F)
+    write.csv2(aggregated_results_table, filename, row.names = FALSE)
     log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  aggregated files saved!")
     # for( j in 2:length(studies_to_comb))
     {

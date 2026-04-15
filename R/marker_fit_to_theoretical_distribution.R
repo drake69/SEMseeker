@@ -56,7 +56,7 @@ marker_fit_to_theoretical_distribution <- function()
         pivot_subfolder <- dir_check_and_create(result_folderPivot, key$MARKER)
         fname <- file_path_build( pivot_subfolder ,c(key$MARKER, key$FIGURE, key$AREA,key$SUBAREA),"csv", add_gz=TRUE)
 
-        data <- utils::read.csv2(gzfile(fname), header  =  T)
+        data <- utils::read.csv2(gzfile(fname), header  =  TRUE)
         data <- data[-1, -1]
         data <- as.numeric(as.vector(as.matrix(data)))
         if(remove_zeros[rz])
@@ -69,7 +69,7 @@ marker_fit_to_theoretical_distribution <- function()
         })
 
 
-        # Rimuove i NULL dai risultati (adattamenti falliti)
+        # Remove NULLs from results (failed fits)
         fits <- Filter(Negate(is.null), fits)
 
         if(length(fits) == 0)
@@ -80,28 +80,28 @@ marker_fit_to_theoretical_distribution <- function()
         }
         else
         {
-          # Calcola AIC per ogni distribuzione
+          # Compute AIC for each distribution
           aic_values <- sapply(fits, function(fit) { fit$distname = round(fit$aic,0)})
           aic_values <- t(as.data.frame(aic_values))
 
-          # salva i valori di AIC
+          # store AIC values
           if(length(aic_values) > 0)
             res_temp <- cbind (res_temp, aic_values)
 
-          # Determina la distribuzione con il valore di AIC più basso
+          # Select the distribution with the lowest AIC
           best_fit <- names(which.min(aic_values))
           res_temp$best_fit <- best_fit
 
-          # Stampa i parametri stimati per la distribuzione migliore
+          # Print estimated parameters for the best-fit distribution
           best_fit_dist <- fits[[which.min(aic_values)]]
           res_temp$best_fit_dist <- best_fit_dist$distname
 
-          # Ottiene i quantili teorici per la distribuzione migliore
+          # Obtain theoretical quantiles for the best-fit distribution
           # theoretical_quantiles <- get_theoretical_quantiles(best_fit_dist, data, best_fit)
 
-          # Verifica se ci sono NA nei quantili teorici
+          # Check for NA values in theoretical quantiles
           # if (any(is.na(theoretical_quantiles))) {
-          #   cat("Attenzione: i quantili teorici contengono valori NA.\n")
+          #   cat("Warning: theoretical quantiles contain NA values.\n")
           #   table(is.na(theoretical_quantiles))
           # } else
           # {
@@ -124,7 +124,7 @@ marker_fit_to_theoretical_distribution <- function()
         # p <- ggplot2::ggplot(data, ggplot2::aes(x = VALUE)) +
         #   ggplot2::geom_histogram(ggplot2::aes(y = ..density..), bins = 30, fill = "grey", alpha = 0.5, color = "black") +
         #   ggplot2::geom_density(adjust = 0.5, fill = "blue", alpha = 0.3) +
-        #   ggplot2::labs(title = "Istogramma dei dati con curve di distribuzione teoriche", x = "Value", y = "Density") +
+        #   ggplot2::labs(title = "Histogram with theoretical distribution curves", x = "Value", y = "Density") +
         #   ggplot2::theme_minimal()
         #
         #
@@ -148,8 +148,8 @@ marker_fit_to_theoretical_distribution <- function()
           grDevices::png(file =  filename, width = 2480,height = 2480, pointsize  =  15)
         if(ssEnv$plot_format == "eps")
           grDevices::postscript(file =  filename, width = 2480,height = 2480, pointsize  =  15)
-        graphics::hist(data, breaks = 100, probability = FALSE, col = "gray", main = "Istogramma dei dati con curve di distribuzione teoriche")
-        # Aggiunge curve di densità teoriche all'istogramma
+        graphics::hist(data, breaks = 100, probability = FALSE, col = "gray", main = "Histogram with theoretical distribution curves")
+        # Add theoretical density curves to the histogram
 
         legend_labels <- character(0)
         if(length(fits)>0)
@@ -164,7 +164,7 @@ marker_fit_to_theoretical_distribution <- function()
             }
             else
               legend_labels <- c(legend_labels, fits[[fd]]$distname)
-            # Legenda per il grafico
+            # Legend for the plot
             graphics::legend("topright", legend = legend_labels, col = colors_dist, lwd = 2)
           }
         grDevices::dev.off()
@@ -194,12 +194,29 @@ marker_fit_to_theoretical_distribution <- function()
   utils::write.csv2(result_temp, file = filename, row.names = FALSE)
 }
 
-# Funzione per aggiungere curve di distribuzione teoriche
+# Helper function to add theoretical distribution curves
 add_density_curve <- function(fit, dist_name, col) {
   graphics::curve(do.call(paste0("d", dist_name), c(list(x = x), as.list(fit$estimate))),col = col, lwd = 2, add = TRUE)
 }
 
-# Funzione per il fitting di una distribuzione con gestione delle eccezioni
+#' Fit a parametric distribution to data
+#'
+#' Wrapper around \code{\link[fitdistrplus]{fitdist}} that silently returns
+#' \code{NULL} on failure instead of stopping.  Used internally to try
+#' multiple candidate distributions and keep only the ones that converge.
+#'
+#' @param dist_name Character scalar: distribution name as accepted by
+#'   \code{fitdistrplus::fitdist} (e.g. \code{"norm"}, \code{"beta"},
+#'   \code{"gamma"}).
+#' @param data Numeric vector of observations to fit.
+#' @param start Named list of initial parameter values passed to
+#'   \code{fitdistrplus::fitdist}.  \code{NULL} lets the function choose
+#'   defaults.
+#'
+#' @return A \code{fitdist} object on success, or \code{NULL} if fitting
+#'   fails.
+#'
+# Fit a distribution with exception handling
 fit_distribution <- function(dist_name, data, start = NULL) {
   tryCatch({
     fit <- fitdistrplus::fitdist(data, dist_name, start = start)
@@ -209,7 +226,7 @@ fit_distribution <- function(dist_name, data, start = NULL) {
   })
 }
 
-# Funzione per ottenere i quantili teorici in base alla distribuzione adattata
+# Get theoretical quantiles for the fitted distribution
 get_theoretical_quantiles <- function(fit, data, dist_name) {
   # fit <- best_fit_dist
   # dist_name <- best_fit

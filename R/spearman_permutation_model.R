@@ -1,9 +1,11 @@
-#' Title
+#' Compute Spearman permutation statistic (CPU)
 #'
 #' @param sig.formula formula to apply
 #' @param df dataframe to use
-#' @param tau tau at which apply the quantile regression
-#' @param lqm_control specification of the lqmm package
+#' @param shuffle logical; if TRUE, permute the independent variable before computing the correlation
+#'
+#' @return A numeric scalar: the Spearman correlation coefficient between the
+#'   burden and the independent variable (used as the permutation test statistic).
 #'
 compute_spearman_permutation <- function(sig.formula,df, shuffle = FALSE)
 {
@@ -27,14 +29,17 @@ compute_spearman_permutation <- function(sig.formula,df, shuffle = FALSE)
 
 
 
-#' Title
+#' Spearman permutation model
 #'
-#' @param family_test family lqmm, spearman
+#' @param family_test family test string encoding model type and permutation parameters
 #' @param sig.formula formula of the model
 #' @param tempDataFrame data
 #' @param independent_variable name of regressor
-#' @param permutation_success number of success tests to calculate corrected confidence interval
-#' @param tests_count count of total executed tests
+#' @param plot logical; if TRUE, generate diagnostic plots
+#' @param samples_sql_condition SQL condition string used to filter samples (used for plot file naming)
+#' @param key named list with AREA, SUBAREA, MARKER and FIGURE identifiers for this test
+#'
+#' @return A numeric p-value from the permutation-based Spearman correlation test.
 #'
 spearman_permutation <- function(family_test, sig.formula, tempDataFrame, independent_variable,plot, samples_sql_condition=samples_sql_condition, key)
 {

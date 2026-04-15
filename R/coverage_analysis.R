@@ -90,7 +90,7 @@ coverage_analysis <- function(observed_probes)
   {
     number_areas <- stats::aggregate(temp_cov_result$COUNT, list(temp_cov_result$AREA,temp_cov_result$SUBAREA), FUN=sum)
     colnames(number_areas) <- c("AREA","SUBAREA","TOTAL_AREAS")
-    temp_cov_result <- merge(temp_cov_result, number_areas, by=c("AREA","SUBAREA"), all.x = T)
+    temp_cov_result <- merge(temp_cov_result, number_areas, by=c("AREA","SUBAREA"), all.x = TRUE)
     temp_cov_result$GENOMIC_AREA <- paste(temp_cov_result$AREA, temp_cov_result$SUBAREA, sep=" ")
     temp_cov_result$AREA_PERC <- round(100* temp_cov_result$COUNT / temp_cov_result$TOTAL_AREAS,2)
 

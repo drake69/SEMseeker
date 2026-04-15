@@ -7,20 +7,15 @@
 delta_single_sample(values, thresholds, sample_detail)
 }
 \arguments{
-\item{values}{values of methylation}
+\item{values}{data.frame of methylation values with columns CHR, START, END and signal value in column 4}
 
-\item{sample_detail}{details of sample to analyze}
+\item{thresholds}{data.frame of signal thresholds (from signal_range_values) with columns CHR, START, END,
+signal_superior_thresholds, signal_inferior_thresholds, signal_median_values}
 
-\item{high_thresholds}{highest threshold to use for comparison}
-
-\item{low_thresholds}{lowest threshold to use for comparison}
-
-\item{signal_medians}{median to use for calculation}
-
-\item{probe_features}{genomic position of probe_features}
+\item{sample_detail}{named list/row with at least Sample_ID and Sample_Group fields}
 }
 \value{
-summary detail about the analysis
+invisibly NULL; results are written as bedgraph.gz files under the session data folder
 }
 \description{
 delta_single_sample

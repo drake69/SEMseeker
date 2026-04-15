@@ -18,6 +18,9 @@
 #' @param parallel_strategy strategy to use for parallelization
 #' @param ... other parameter
 #' @param maxResources percentage of max system's resource to use
+#'
+#' @return Invisibly \code{NULL}. The function saves PNG plot files to disk as a
+#'   side effect.
 manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe_name_min = "cg11680158", max_sample=0, min_sample=0 , min_signal_probe=0, label_font_size=3,
   hyper_color = "blue", hypo_color = "orange",  non_outlier_color = "grey",  limit_label_color = "blue",
   limit_line_color = "red", limit_line_color_median = "black",

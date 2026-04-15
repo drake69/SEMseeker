@@ -40,7 +40,14 @@ apply_stat_model(
 
 \item{depth_analysis}{depth's analysis}
 
+\item{samples_sql_condition}{SQL condition string to filter samples}
+
 \item{...}{extra parameters}
+}
+\value{
+A data.frame with one row per tested genomic area, including columns
+  for p-value, adjusted p-value, test statistic, AIC, residuals, and model
+  metadata; returns \code{NULL} if no results could be computed.
 }
 \description{
 Title

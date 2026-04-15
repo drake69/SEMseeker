@@ -33,3 +33,18 @@ The function writes multiple files to the specified `result_folder`, including t
 \description{
 The `semseeker` function processes a methylation dataset to identify stochastic epigenetic mutations and generates output reports. This involves working with sample sheets and signal data to produce pivot tables and bedgraph files.
 }
+\examples{
+result_dir <- tempdir()
+\dontrun{
+sample_sheet <- data.frame(
+  Sample_ID    = c("S1", "S2", "S3"),
+  Sample_Name  = c("Case1", "Case2", "Ctrl1"),
+  Sample_Group = c("Case", "Case", "Control")
+)
+semseeker(
+  sample_sheet  = sample_sheet,
+  signal_data   = beta_matrix,
+  result_folder = tempdir()
+)
+}
+}

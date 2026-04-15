@@ -7,6 +7,9 @@
 #' @param probe_features probe_features detail from 27 to EPIC illumina dataset
 #' @param signal_thresholds thresholds defined to calculate epimutations
 #' @return files into the result folder with pivot table and bedgraph.
+#'   A BANNER is logged once per batch before the per-sample loop showing:
+#'   input_positions, beta_range_positions, covered_by_inner_join — allows
+#'   immediate audit of cross-run coverage (e.g. Nanopore sample vs Illumina reference).
 #' @importFrom doRNG %dorng%
 #'
 analyze_population <- function(signal_data, sample_sheet,signal_thresholds, probe_features) {
@@ -66,6 +69,45 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   }
   gc()
 
+  # ── Coverage banner — emitted ONCE before per-sample analysis ───────────────
+  # Shows how many positions in the current run are covered by signal_thresholds.
+  # Especially important for cross-run analysis (e.g. Nanopore sample vs an
+  # Illumina reference batch passed via populationControlRangeBetaValues):
+  # the user can immediately see if there is a partial or zero overlap.
+  # Uses the first sample's signal bed file (just written above) for positions.
+  {
+    coverage_first_sample <- sample_sheet[1L, ]
+    coverage_bed <- bed_file_name(coverage_first_sample$Sample_ID,
+                                  coverage_first_sample$Sample_Group,
+                                  "SIGNAL", "MEAN")
+    if (file.exists(coverage_bed)) {
+      coverage_sig <- utils::read.delim(coverage_bed, header = FALSE, sep = "\t")
+      colnames(coverage_sig) <- c("CHR", "START", "END", "VALUE")
+      coverage_n_input  <- nrow(coverage_sig)
+      coverage_n_ranges <- nrow(signal_thresholds)
+      coverage_sig_lf <- polars::as_polars_df(
+        coverage_sig[, c("CHR", "START", "END")])$
+        with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$lazy()
+      coverage_thr_lf <- polars::as_polars_df(
+        signal_thresholds[, c("CHR", "START", "END")])$
+        with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$lazy()
+      coverage_n_covered <- coverage_sig_lf$join(
+        coverage_thr_lf, on = c("CHR", "START", "END"), how = "inner"
+      )$collect()$height
+      log_event(
+        "BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
+        " [analyze_population] Coverage —",
+        " input_positions=", coverage_n_input,
+        " | beta_range_positions=", coverage_n_ranges,
+        " | covered_by_inner_join=", coverage_n_covered,
+        " | analysis will run on ", coverage_n_covered, "/", coverage_n_input, " positions"
+      )
+      rm(coverage_sig, coverage_sig_lf, coverage_thr_lf,
+         coverage_first_sample, coverage_bed,
+         coverage_n_input, coverage_n_ranges, coverage_n_covered)
+    }
+  }
+
   progress_bar <- NULL
   if(ssEnv$showprogress)
     progress_bar <- progressr::progressor(along = 1:nrow(sample_sheet))
@@ -116,8 +158,8 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
 
   gc()
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Row count result:", nrow(sample_sheet))
-  if(exists("signal_data"))
-    rm(signal_data)
+  if (exists("signal_data", envir = environment(), inherits = FALSE))
+    rm("signal_data", envir = environment())
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Completed population analysis ")
   end_time <- Sys.time()

@@ -1,0 +1,99 @@
+# Security CI — three checks:
+#   1. gitleaks   — scan for hardcoded secrets / API keys in the repository
+#   2. oysteR     — audit R package dependencies against OSS Index CVE database
+#   3. dependency-review — flag vulnerable deps introduced by a PR (PRs only)
+on:
+  push:
+    branches-ignore: [main, master]
+  pull_request:
+    branches: [main, master, develop]
+  schedule:
+    - cron: '0 3 * * 1'   # weekly, Monday 03:00 UTC (catch newly-disclosed CVEs)
+  workflow_dispatch:
+
+name: security
+
+jobs:
+
+  # ── 1. Secret scanning ────────────────────────────────────────────────────
+  gitleaks:
+    name: gitleaks — secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so gitleaks can scan all commits
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── 2. R dependency CVE audit ─────────────────────────────────────────────
+  oyster:
+    name: oysteR — dependency CVE audit
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_SANDBOX_ENABLED: false
+      RENV_ACTIVATE_PROJECT: 0
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Install system libraries
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libcurl4-openssl-dev libssl-dev libxml2-dev
+
+      - name: Install oysteR + package deps
+        run: |
+          install.packages(
+            c("remotes", "oysteR"),
+            repos = "https://packagemanager.posit.co/cran/latest"
+          )
+          remotes::install_deps(
+            dependencies = NA,
+            repos = c(
+              rpolars = "https://community.r-multiverse.org",
+              CRAN    = "https://packagemanager.posit.co/cran/latest"
+            )
+          )
+        shell: Rscript {0}
+
+      - name: Audit dependencies
+        run: |
+          tryCatch({
+            audit <- oysteR::audit_installed_r_pkgs()
+            vulns <- oysteR::get_vulnerabilities(audit)
+            if (nrow(vulns) > 0) {
+              print(vulns)
+              stop("Vulnerabilities found in R dependencies — merge blocked. ",
+                   "Review the table above, update the affected packages, or add ",
+                   "an exemption comment to this workflow if the CVE is not applicable.")
+            }
+            message("No known vulnerabilities found.")
+          }, error = function(e) {
+            if (grepl("vuln|Vulnerabilities found", conditionMessage(e))) stop(e)
+            message("oysteR audit skipped — OSS Index API unavailable: ", conditionMessage(e))
+          })
+        shell: Rscript {0}
+
+  # ── 3. PR dependency review ───────────────────────────────────────────────
+  dependency-review:
+    name: dependency-review — PR vuln check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high   # block PRs that add HIGH or CRITICAL vulns
+          # allow-licenses: MIT, Apache-2.0, GPL-2.0, GPL-3.0, LGPL-2.1

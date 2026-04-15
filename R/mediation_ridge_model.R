@@ -56,13 +56,13 @@ mediation_ridge_model <-  function(family_test,tempDataFrame, sig.formula, trans
 
   tryCatch(
     {
-      # Cross-validazione per trovare il miglior lambda
+      # Cross-validation to select the best lambda
       cv_model_mediator <- glmnet::cv.glmnet(x, z, alpha=0)
       # Visualizza il miglior valore di lambda
       best_lambda_mediator <- cv_model_mediator$lambda.min
       res$best_lambda_mediator <- best_lambda_mediator
 
-      # Cross-validazione per trovare il miglior lambda
+      # Cross-validation to select the best lambda
       cv_model_outcome <- glmnet::cv.glmnet(cbind(x, z), y, alpha=0)
       # Visualizza il miglior valore di lambda
       best_lambda_outcome<- cv_model_outcome$lambda.min

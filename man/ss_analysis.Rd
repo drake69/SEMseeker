@@ -2,7 +2,7 @@
 % Please edit documentation in R/ss_analysis.R
 \name{ss_analysis}
 \alias{ss_analysis}
-\title{sensitivity and sensibility analysis of SEMseeker's mutations and lesions}
+\title{Sensitivity and specificity analysis of SEMseeker mutations and lesions}
 \usage{
 ss_analysis(
   samples_sql_selection = "",
@@ -15,14 +15,40 @@ ss_analysis(
 )
 }
 \arguments{
-\item{result_folder}{where semseeker's results are stored, the root folder}
+\item{samples_sql_selection}{character. SQL-style filter expression to
+restrict which samples are included (default \code{""}, all samples).}
 
-\item{maxResources}{percentage of max system's resource to use}
+\item{combinations}{list of character vectors. Each element is a vector of
+sample group labels to compare (e.g. \code{list(c("CASE_A", "CASE_B"))}).}
 
-\item{parallel_strategy}{which strategy to use for parallel execution see future vignete: possible values, none, multisession,sequential, multicore, cluster}
+\item{result_folder}{character. Path to the SEMseeker result folder.}
 
-\item{...}{other options to filter elaborations}
+\item{independent_variable}{character. Sample sheet column defining the
+grouping variable (default \code{"Sample_Group"}).}
+
+\item{maxResources}{numeric. Maximum percentage of CPU cores to use
+(default 90).}
+
+\item{parallel_strategy}{character. Parallelisation backend; possible
+values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
+\code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).}
+
+\item{...}{Additional arguments passed to \code{init_env()}.}
+}
+\value{
+Invisibly \code{NULL}. Sensitivity / specificity tables are written
+  to the \code{Euristic/} sub-folder of \code{result_folder}.
 }
 \description{
-sensitivity and sensibility analysis of SEMseeker's mutations and lesions
+Sensitivity and specificity analysis of SEMseeker mutations and lesions
+}
+\examples{
+result_dir <- tempdir()
+\dontrun{
+ss_analysis(
+  combinations         = list(c("CASE_A", "CASE_B")),
+  result_folder        = "~/semseeker_results/",
+  independent_variable = "Sample_Group"
+)
+}
 }

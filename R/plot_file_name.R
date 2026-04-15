@@ -7,9 +7,9 @@ plot_file_name <- function(inference_detail, folder,file_extension="png", prefix
   figure <- as.character(key$FIGURE)
 
   covariates <- inference_detail$covariates
-  covariates <- if(length(covariates) !=  0 && !is.null(covariates)) unlist(t(strsplit( gsub(" ","",covariates),split  =  "+", fixed  =  T)))
+  covariates <- if(length(covariates) !=  0 && !is.null(covariates)) unlist(t(strsplit( gsub(" ","",covariates),split  =  "+", fixed  =  TRUE)))
   covariates_dummy <- inference_detail$covariates_dummy
-  covariates_dummy <- if(length(covariates_dummy) !=  0 && !is.null(covariates_dummy)) unlist(t(strsplit( gsub(" ","",covariates_dummy),split  =  "+", fixed  =  T)))
+  covariates_dummy <- if(length(covariates_dummy) !=  0 && !is.null(covariates_dummy)) unlist(t(strsplit( gsub(" ","",covariates_dummy),split  =  "+", fixed  =  TRUE)))
   covariates_pca <- ifelse(is.null(inference_detail$covariates_pca),FALSE,inference_detail$covariates_pca)
 
   family_test <- inference_detail$family_test
@@ -25,7 +25,7 @@ plot_file_name <- function(inference_detail, folder,file_extension="png", prefix
     # split each covariates by _
     if (long_covariates)
     {
-      covariates <- unlist(t(strsplit( gsub(" ","",covariates),split  =  "_", fixed  =  T)))
+      covariates <- unlist(t(strsplit( gsub(" ","",covariates),split  =  "_", fixed  =  TRUE)))
       covariates <- unique(covariates)
     }
     file_suffix <- paste(covariates, collapse = "_")
@@ -37,7 +37,7 @@ plot_file_name <- function(inference_detail, folder,file_extension="png", prefix
     # split each covariates_dummy by _
     if (long_covariates)
     {
-      covariates_dummy <- unlist(t(strsplit( gsub(" ","",covariates_dummy),split  =  "_", fixed  =  T)))
+      covariates_dummy <- unlist(t(strsplit( gsub(" ","",covariates_dummy),split  =  "_", fixed  =  TRUE)))
       covariates_dummy <- unique(covariates_dummy)
     }
     file_suffix <- c(file_suffix, paste(covariates_dummy, collapse = "_"))

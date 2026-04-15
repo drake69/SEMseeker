@@ -1,4 +1,4 @@
-#' @export
+# NOTE: currently internal — could be re-exported once @examples are added
 markers_performance_pathway_analyser <- function(inference_details, result_folder, pvalue_column="PVALUE_ADJ_ALL_BH",
   significance = TRUE,disease_hpo, disease_description,keywords,stop_keywords,alphas,top=50,pathway_alpha=0.05, ...)
 {
@@ -113,7 +113,6 @@ markers_performance_pathway_analyser <- function(inference_details, result_folde
           aggregated_patwhay_result_total <- plyr::rbind.fill(aggregated_patwhay_result_total, pathway_result)
         }
 
-        # browser()
 
         if(nrow(aggregated_patwhay_result_total)==0)
           next
@@ -124,7 +123,6 @@ markers_performance_pathway_analyser <- function(inference_details, result_folde
 
 
 
-        # browser()
         # keep only first top taxonomies
         if(key_enrichment_format[pt,"label"]!="phenolyzer")
           aggregated_patwhay_result_total <- subset(aggregated_patwhay_result_total, SS_RANK <= top)
@@ -139,7 +137,6 @@ markers_performance_pathway_analyser <- function(inference_details, result_folde
         if(key_enrichment_format[pt,"label"]=="pathfindR")
           aggregated_patwhay_result_total <- aggregated_patwhay_result_total[aggregated_patwhay_result_total$support > 0.5,]
 
-        # browser()
         # if(any(aggregated_patwhay_result_total$by_keyword == TRUE))
         #   aggregated_patwhay_result_total <- subset(aggregated_patwhay_result_total, by_keyword == TRUE)
 
@@ -421,35 +418,4 @@ markers_performance_pathway_analyser <- function(inference_details, result_folde
     }
   }
 }
-
-# Function to find unique gene sets for each key
-find_unique_gene_sets <- function(split_list) {
-  unique_sets <- list()
-  keys <- names(split_list)
-
-  for (k in seq_along(keys)) {
-
-    key <- keys[k]
-    # Start with the current key's gene sets
-    current_sets <- split_list[[key]]
-
-    # Get all other keys
-    other_keys <- setdiff(keys, key)
-
-    # Combine gene sets from all other keys
-    other_sets <- unlist(split_list[other_keys], use.names = FALSE)
-
-    # Find gene sets unique to the current key
-    unique_to_current <- setdiff(current_sets, other_sets)
-
-    # Store the unique gene sets with the key as the name
-    unique_sets[[key]] <- unique_to_current
-  }
-
-  # remove empty sets
-  unique_sets <- unique_sets[sapply(unique_sets, length) > 0]
-
-  return(unique_sets)
-}
-
 

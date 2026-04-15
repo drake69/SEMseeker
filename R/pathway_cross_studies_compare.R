@@ -124,7 +124,7 @@ pathway_cross_studies_compare <- function(result_folder, ...){
         filename = filename,
         output = TRUE,
         individuals.in.intersections = TRUE,
-        disable.logging = T
+        disable.logging = TRUE
       )
       sink()
     }

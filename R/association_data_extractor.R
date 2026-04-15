@@ -31,7 +31,7 @@ association_data_extractor <- function(inference_details,destination_folder="", 
       fileNameResults <- inference_file_name(inference_detail, markers[a], ssEnv$result_folderInference)
       if (file.exists(fileNameResults))
       {
-        results_inference <- utils::read.csv2(fileNameResults, header  =  T)
+        results_inference <- utils::read.csv2(fileNameResults, header  =  TRUE)
         results_inference <- subset(results_inference, FIGURE %in% keys$FIGURE)
         results_inference <- filter_sql(inference_detail$areas_sql_condition, results_inference)
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/association_analysis.R
 \name{association_analysis}
 \alias{association_analysis}
-\title{Association analysis of SEMseeker's results}
+\title{Association analysis of SEMseeker results}
 \usage{
 association_analysis(
   inference_details,
@@ -14,28 +14,66 @@ association_analysis(
 )
 }
 \arguments{
-\item{inference_details}{independent variable: deve essere nalla sample sheet passata a semseeker
-quando lo abbiamo eseguito la prima volta
-tipo di regressioni: gaussian, poisson, binomial,quantreg_tau_runs(both as number) eg quantreg_0.25_2000
-tipi di test: wilcoxon, stats::t.test,
-tipi di correlazioni: pearson, kendall, spearman
-MUTATIONS_* ~ tcdd_mother + exam_age
-transformation_y to be applied to dependent variable
-(mutations and lesions): scale, log, log2, log10, exp, none, quantile_quantiles(as number) eg quantile_3
-DEPTH analysis:
-1: sample level
-2: type level (gene, DMR, cpgisland) (includes 1)
-3: genomic area: gene, body, gene tss1550, gene whole, gene tss200,  (includes 1 and 2)
-filter_p_value report after adjusting saves only significant nominal p-value}
+\item{inference_details}{data.frame. Each row defines one analysis run.
+Required columns:
+\describe{
+  \item{independent_variable}{Sample sheet column used as grouping /
+    covariate variable.}
+  \item{family_test}{Statistical model: \code{"wilcoxon"},
+    \code{"stats::t.test"}, \code{"gaussian"}, \code{"poisson"},
+    \code{"binomial"}, \code{"pearson"}, \code{"kendall"},
+    \code{"spearman"}, or quantile regression as
+    \code{"quantreg_<tau>_<runs>"} (e.g. \code{"quantreg_0.25_2000"}).}
+  \item{transformation_y}{Transformation applied to the dependent variable:
+    \code{"none"}, \code{"scale"}, \code{"log"}, \code{"log2"},
+    \code{"log10"}, \code{"exp"}, or
+    \code{"quantile_<n>"} (e.g. \code{"quantile_3"}).}
+  \item{marker}{SEM metric column prefix (e.g. \code{"DELTARP"},
+    \code{"MUTATIONS"}).}
+  \item{depth_analysis}{Integer depth: \code{1} = sample level,
+    \code{2} = type level (gene, DMR, CpG island),
+    \code{3} = genomic area (TSS1550, WHOLE, TSS200, …).}
+}}
 
-\item{result_folder}{where semseeker's results are stored, the root folder}
+\item{result_folder}{character. Path to the SEMseeker result folder.}
 
-\item{maxResources}{percentage of max system's resource to use}
+\item{maxResources}{numeric. Maximum percentage of CPU cores to use
+(default 90).}
 
-\item{parallel_strategy}{which strategy to use for parallel execution see future vignette: possible values, none, multisession,sequential, multicore, cluster}
+\item{parallel_strategy}{character. Parallelisation backend; possible
+values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
+\code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).}
 
-\item{...}{other options to filter elaborations}
+\item{start_fresh}{logical. If \code{TRUE}, delete previous inference
+results before running (default \code{FALSE}).}
+
+\item{...}{Additional arguments passed to \code{init_env()}.}
+}
+\value{
+Invisibly \code{NULL}. Inference result CSV files are written to
+  the \code{Inference/} sub-folder of \code{result_folder}, one file per
+  marker/area/family combination defined in \code{inference_details}.
 }
 \description{
-Association analysis of SEMseeker's results
+Run statistical association models between SEM metrics and a phenotype
+variable. Supports group tests (Wilcoxon, t-test), GLM families (gaussian,
+poisson, binomial), quantile regression, correlations (Pearson, Kendall,
+Spearman), and multi-covariate formulas (e.g.
+\code{MUTATIONS_* ~ covariate1 + covariate2}).
+}
+\examples{
+result_dir <- tempdir()
+\dontrun{
+association_analysis(
+  inference_details = data.frame(
+    independent_variable = "Sample_Group",
+    family_test          = "wilcoxon",
+    transformation_y     = "none",
+    marker               = "DELTARP",
+    areas                = "GENE"
+  ),
+  result_folder     = "~/semseeker_results/",
+  multiple_test_adj = "BH"
+)
+}
 }

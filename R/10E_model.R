@@ -55,12 +55,12 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
 
 
   cov_temp <- covariates
-  ### modifiche
+  ### changes
   for (cov in cov_temp) {
     # apply pow10 on independent variable and covariates
     cov_temp[cov_temp==cov] <- paste0("pow(10,", cov, ")")
   }
-  ### modifiche
+  ### changes
 
   # Build dynamic formula for lm (to get starting values)
   if (length(covariates) > 0)
@@ -162,7 +162,7 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
 
     ggp <- ggplot2::ggplot(train.data, ggplot2::aes(x =!!ggplot2::sym(independent_variable), y =!!ggplot2::sym(dependent_variable))) +
       ggplot2::geom_point(color = ssEnv$color_palette[1]) +
-      ggplot2::geom_smooth(method = "lm", formula = y ~ pow(10,x), se = TRUE, color = ssEnv$color_palette_darker[2]) + # La linea sarà una curva esponenziale
+      ggplot2::geom_smooth(method = "lm", formula = y ~ pow(10,x), se = TRUE, color = ssEnv$color_palette_darker[2]) + # The fitted line will be an exponential curve
       ggplot2::labs(
         title = "", # Puoi lasciare vuoto o aggiungere un titolo
         x = independent_variable,

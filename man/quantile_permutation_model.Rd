@@ -24,9 +24,16 @@ quantile_permutation_model(
 
 \item{independent_variable}{name of regressor}
 
-\item{permutation_success}{number of success tests to calculate corrected confidence interval}
+\item{transformation_y}{transformation to apply to the dependent variable}
 
-\item{tests_count}{count of total executed tests}
+\item{plot}{logical; if TRUE, generate diagnostic plots}
+
+\item{samples_sql_condition}{SQL condition string used to filter samples (used for plot file naming)}
+
+\item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers for this test}
+}
+\value{
+A numeric p-value from the permutation-based quantile-difference test.
 }
 \description{
 quantile_permutation_model calculate differences between the same quantile of two distribution

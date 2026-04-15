@@ -1,14 +1,36 @@
-#' Title
+#' Manhattan plot of association results per genomic area
 #'
-#' @param marker investigated marker eg. MUTATIONS, DELTAR, DELTAQ
-#' @param figure HYPO, HYPER
-#' @param area genomic area (eg. GENE, ISLAND, DMR)
-#' @param subarea sub genomic area (TSS1550), depending on the genomic area
-#' @param family fullname of the family used for the association analysis
-#' @param adjust_method colnames of the pvalue adjusted to use
-#' @param phenotype variable to select from the sample_sheet to use for coloring point
-#' @param only_significant_areas TRUE if filter for pvalue < 0.05
+#' @param marker character. SEM metric to plot (e.g. \code{"MUTATIONS"},
+#'   \code{"DELTARP"}, \code{"DELTAR"}, \code{"DELTAQ"}).
+#' @param figure character. Mutation direction: \code{"HYPO"} or \code{"HYPER"}.
+#' @param area character. Genomic area level (e.g. \code{"GENE"},
+#'   \code{"ISLAND"}, \code{"DMR"}).
+#' @param subarea character. Sub-area within the area (e.g. \code{"TSS1550"},
+#'   \code{"WHOLE"}).
+#' @param family character. Statistical family used in the association analysis
+#'   (e.g. \code{"wilcoxon"}, \code{"gaussian"}).
+#' @param adjust_method character. Column name of the adjusted p-value to use
+#'   for colouring (e.g. \code{"BH"}).
+#' @param phenotype character. Sample sheet column used to colour points
+#'   (e.g. \code{"Sample_Group"}).
+#' @param only_significant_areas logical. If \code{TRUE}, show only regions
+#'   with adjusted p-value < 0.05 (default \code{FALSE}).
+#' @return Invisibly \code{NULL}. A Manhattan plot PNG is saved under
+#'   \code{Charts/MARKER_PER_AREA/} in the active result folder.
 #'
+#' @examples
+#' result_dir <- tempdir()
+#' \dontrun{
+#' manhattan_plot_per_area(
+#'   marker        = "DELTARP",
+#'   figure        = "HYPO",
+#'   area          = "GENE",
+#'   subarea       = "WHOLE",
+#'   family        = "wilcoxon",
+#'   adjust_method = "BH",
+#'   phenotype     = "Sample_Group"
+#' )
+#' }
 #' @export
 #'
 manhattan_plot_per_area <- function(marker,figure,area,subarea,family, adjust_method,phenotype, only_significant_areas=FALSE){

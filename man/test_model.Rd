@@ -2,7 +2,7 @@
 % Please edit documentation in R/test_model.R
 \name{test_model}
 \alias{test_model}
-\title{Title}
+\title{Statistical test model dispatcher}
 \usage{
 test_model(
   family_test,
@@ -17,16 +17,29 @@ test_model(
 )
 }
 \arguments{
-\item{family_test}{which family test to apply}
+\item{family_test}{which family test to apply (e.g. "wilcoxon", "t.test", "kruskal.test", "pearson", "spearman")}
 
 \item{tempDataFrame}{data frame to use with the test}
 
 \item{sig.formula}{formula to apply}
 
-\item{burdenValue}{burden colon name}
+\item{burdenValue}{name of the burden (dependent) column in tempDataFrame}
 
-\item{independent_variable}{independent variable for regressor}
+\item{independent_variable}{name of the independent variable column}
+
+\item{transformation_y}{transformation applied to the dependent variable (for labelling plots)}
+
+\item{plot}{logical; if TRUE, generate and save diagnostic box/scatter plots}
+
+\item{samples_sql_condition}{SQL condition string used to filter samples (used for plot file naming)}
+
+\item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers for this test}
+}
+\value{
+A list (as a data.frame row) with test results including the p-value,
+  test statistic, effect size, power, and model identifier; the exact fields
+  depend on the chosen \code{family_test}.
 }
 \description{
-Title
+Statistical test model dispatcher
 }

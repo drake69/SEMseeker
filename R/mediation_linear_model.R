@@ -1,3 +1,34 @@
+#' Mediation analysis using linear models
+#'
+#' Fits a causal mediation model via \code{\link[mediation]{mediate}}, testing
+#' whether the effect of \code{treatment} on \code{outcome} is (partially)
+#' mediated by a \code{mediator} variable.  The formula must follow the
+#' convention \code{mediator ~ outcome + treatment [+ covariates]}.
+#'
+#' The two-round permutation scheme mirrors the approach used in
+#' \code{mean_permutation} and \code{spearman_permutation}: a fast first round
+#' (\code{permutations_test}) establishes significance; if significant, a
+#' slower second round (\code{permutations}) refines the estimate.
+#'
+#' @param family_test Character string encoding the model type and permutation
+#'   counts, formatted as \code{"mediation_<permutations_test>_<permutations>"}.
+#' @param tempDataFrame \code{data.frame} containing all variables referenced
+#'   in \code{sig.formula}.
+#' @param sig.formula Formula of the form
+#'   \code{mediator ~ outcome + treatment [+ covariates]}.
+#' @param transformation_y Character scalar: transformation applied to the
+#'   dependent variable (e.g. \code{"none"}, \code{"log"}).
+#' @param plot Logical; if \code{TRUE}, generate diagnostic plots.
+#' @param samples_sql_condition Character scalar: SQL \code{WHERE} clause used
+#'   to subset samples (propagated to file-naming helpers).
+#' @param key Named list with elements \code{AREA}, \code{SUBAREA},
+#'   \code{MARKER}, and \code{FIGURE} identifying this test instance.
+#'
+#' @return A \code{data.frame} with one row containing mediation results:
+#'   ACME (average causal mediation effect), ADE (average direct effect),
+#'   total effect, proportion mediated, their confidence intervals and
+#'   p-values, plus the number of permutations used.
+#'
 # (family_test, tempDataFrame, sig.formula, transformation_y, plot)
 mediation_linear_model <- function(family_test,tempDataFrame, sig.formula, transformation_y, plot, samples_sql_condition=samples_sql_condition, key)
 {

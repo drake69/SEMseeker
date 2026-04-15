@@ -15,6 +15,10 @@ compute_quantreg_permutation(sig.formula, df, tau, lqm_control)
 
 \item{lqm_control}{specification of the lqmm package}
 }
+\value{
+A numeric scalar: the permuted quantile regression coefficient
+  (used as a single draw in the permutation distribution).
+}
 \description{
 Title
 }

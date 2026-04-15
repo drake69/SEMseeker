@@ -18,7 +18,7 @@ pathway_result_save <- function(result_pathway, pathway_report_path, pathway_pac
     }, error = function(e) {
 
     })
-    result_pathway$PHENOTYPE <- grepl(study,result_pathway[,description_column], ignore.case = T)
+    result_pathway$PHENOTYPE <- grepl(study,result_pathway[,description_column], ignore.case = TRUE)
     # REMOVE COLUMNS with NAMES X, X.1 and X.2
     result_pathway <- result_pathway[,!grepl("^X$|^X\\.[0-9]+$", colnames(result_pathway))]
     utils::write.csv2(result_pathway, pathway_report_path, row.names = FALSE)

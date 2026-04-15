@@ -1,0 +1,123 @@
+# semseeker NEWS
+
+## semseeker 0.12.0 (dev)
+
+### New features
+
+- **Session provenance metadata** (C-06).
+  Every `semseeker()` run now writes `session_metadata.json` to the result
+  folder at the start of analysis:
+  `{"genome_build":"hg19","tech":"K850","semseeker_version":"0.99.0","created":"...","sample_n":120}`
+  The file is human-readable and parseable without R, suitable for pipeline
+  auditing and automated compatibility checks.
+  Pivot files (parquet) additionally receive a sidecar `*_meta.json` with the
+  same build/tech stamp; pivot file names now include the genome build as a
+  suffix before the extension (e.g. `MUTATIONS_HYPER_GENE_TSS1500_hg19.parquet`)
+  as belt-and-suspenders provenance.
+  Inference CSV outputs gain two constant columns — `GENOME_BUILD` and `TECH`
+  — that survive any downstream merge or stack operation.
+  New exported function `check_session_compatibility(session_list)`:
+  **stops** if `genome_build` differs across sessions (physically incomparable
+  coordinates); **warns** if `tech` differs (cross-array meta-analysis is valid
+  on the probe intersection but must be explicit).
+  `association_to_association()` now calls this guard internally: stops with a
+  clear message when origin results carry a different `GENOME_BUILD` than the
+  current session.
+
+### Bug fixes
+
+- **`exists("signal_data")` scoped to local environment in `analyze_batch()` and
+  `analyze_population()`** (E-01).
+  The previous `exists("signal_data")` used `inherits = TRUE` (R default), which walked
+  all the way up to `.GlobalEnv`. If the user had a `signal_data` object in their session
+  (the normal case — they load data before calling `semseeker()`), the guard fired
+  even though the local copy had already been freed, and the subsequent `rm(signal_data)`
+  produced a spurious `"object not found"` warning. In the worst case (interactive session
+  where local and global scopes coincide) it could silently delete the user's data.
+  Fix: `exists("signal_data", envir = environment(), inherits = FALSE)` +
+  `rm("signal_data", envir = environment())` in both files.
+
+- **Polars inner join replaces positional zip in `mutations_get()`, `delta_single_sample()`,
+  `deltar_single_sample()`; coverage banner in `analyze_population()`** (A-10).
+  The previous implementation sorted both `values` and `thresholds` by CHR/START/END and
+  then compared them row-by-row (positional zip). When `signal_thresholds` came from a
+  different run (cross-run analysis, e.g. Nanopore sample vs Illumina reference batch passed
+  via `populationControlRangeBetaValues`), the two position sets could differ in size or
+  overlap, producing silently wrong mutation/delta calls or an out-of-bounds crash.
+  Changes:
+  - Added `join_values_to_thresholds()` — a private helper that performs a Polars lazy inner
+    join on `(CHR, START, END)`. Shared by all three per-sample functions to ensure consistent
+    intersection logic. Required for Nanopore bedmethyl files (28M+ rows where base-R
+    `merge()`/`match()` is too slow).
+  - `mutations_get()`, `delta_single_sample()`, `deltar_single_sample()` now use the helper;
+    zero-overlap guard returns an empty result rather than crashing.
+  - Coverage banner moved from per-sample (inside `mutations_get()`) to per-batch (at the
+    start of `analyze_population()` before the per-sample loop). Emitted once per batch:
+    `input_positions | beta_range_positions | covered_by_inner_join`.
+
+### Bug fixes (A-09: bayes_analysis rewrite)
+
+- **`bayes_analysis()`: 9 bugs fixed** (A-09).
+  - **Loop off-by-one** (bug 1): `for (a in length(markers))` iterated only once
+    (`a = 2`, only "LESIONS"), silently skipping "MUTATIONS". Fixed with `seq_along()`.
+  - **Wrong file path** (bug 2): `read_delim(pivot_file_name)` passed the function
+    object instead of the local variable `pivot_filename` → runtime connection error.
+  - **Missing assignment** (bug 3): `tempDataFrame` used before being assigned from
+    `pivot` → "object not found" crash. Added `tempDataFrame <- pivot`.
+  - **`subset()` with string literal** (bug 4): `subset(df, "Sample_Group" != "Reference")`
+    is always `TRUE` → Reference samples never filtered → contaminated Bayes estimates.
+    Fixed to bare column reference `subset(df, Sample_Group != "Reference")`.
+  - **Column drop off-by-one** (bug 3 cont.): `[, c(-1,-3)]` dropped the first data
+    column or the `independent_variable` column depending on session config. Replaced
+    with `colnames != "Sample_ID"` (remove only the merge key).
+  - **`exists()` without scope** (bug 5): same pattern as E-01; fixed with
+    `inherits = FALSE, envir = environment()`.
+  - **Duplicate `max()` computation** (bug 6): `max_P_case` was computed twice,
+    `max_P_control` never computed → filtered output missed Control criterion.
+  - **Output filename typo** (bug 7): `"bayes_analisys"` → `"bayes_analysis"`.
+  - **`c` as loop variable** (bug 8): foreach variable named `c` shadowed the base
+    `c()` function. Renamed to `col_idx`.
+  - **Hardcoded thresholds** (bug 9): 0.9 / 0.1 are now `bayes_case_threshold` and
+    `bayes_control_threshold` parameters with the original values as defaults.
+
+### Statistical model changes
+
+- **`lesions_get()`: replaced hypergeometric with binomial test** (A-01).
+  The sliding window advances one probe at a time, so each probe participates
+  in up to `sliding_window_size` consecutive windows — sampling with
+  replacement. The hypergeometric distribution assumes sampling without
+  replacement and produced inflated (too-small) p-values. The new test is:
+  `P(X ≥ ENRICHMENT | Binomial(sliding_window_size, p0))` where
+  `p0 = MUTATIONS_COUNT / PROBES_COUNT` is the empirical background
+  mutation rate for the grouping unit (gene, chromosome, …). Expected
+  impact: more conservative lesion calls, better calibration for samples
+  with low or high global methylation variation.
+
+## semseeker 0.11.0
+
+### New features
+
+- Added three pkgdown vignettes: Getting started, Association analysis (all 15+
+  model families), Pathway and enrichment analysis (all 6 backends).
+- Added GitHub Actions CI matrix: macOS, Ubuntu, Windows (`R-CMD-check.yml`).
+- Added test coverage workflow (`test-coverage.yml`) with Codecov upload.
+- Added `./ci-local.sh` for local Docker-based CI reproduction (`check` and
+  `coverage` modes).
+
+### Bug fixes
+
+- Fixed `future::plan(multicore, workers = 0)` crash when `availableCores()`
+  returns 1 (e.g. in covr subprocess): added `max(1L, nCore)` guard in
+  `parallel_session.R`.
+
+### Documentation
+
+- Corrected SEM citations: replaced Teschendorff with correct attribution to
+  Gentilini et al. 2015 (doi:10.18632/aging.100792) and Corsaro et al. 2023
+  (doi:10.3390/cancers15164109).
+- Added differential signal analysis section (SIGNAL_MEAN / SIGNAL_RANGE) to
+  getting-started vignette.
+
+## semseeker 0.10.0 and earlier
+
+See git log for earlier changes.

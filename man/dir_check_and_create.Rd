@@ -2,18 +2,23 @@
 % Please edit documentation in R/dir_check_and_create.R
 \name{dir_check_and_create}
 \alias{dir_check_and_create}
-\title{dir_check_and_create}
+\title{Create a directory path, building any missing intermediate directories}
 \usage{
 dir_check_and_create(baseFolder, subFolders)
 }
 \arguments{
-\item{baseFolder}{folder to look in}
+\item{baseFolder}{Character scalar: root directory path (need not exist yet).}
 
-\item{subFolders}{sub folders to create, complete tree}
+\item{subFolders}{Character vector: one or more subdirectory names to append
+below \code{baseFolder}.  Each element becomes one level of the hierarchy.}
 }
 \value{
-full path
+Character scalar: the normalised absolute path of the deepest
+  directory created (or already existing).
 }
 \description{
-dir_check_and_create
+Splits \code{baseFolder} into its path components, appends \code{subFolders},
+and creates each directory level that does not yet exist.  Equivalent to
+\code{dir.create(path, recursive = TRUE)} but also returns the final
+normalised absolute path.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/manhattan_plot_per_area.R
 \name{manhattan_plot_per_area}
 \alias{manhattan_plot_per_area}
-\title{Title}
+\title{Manhattan plot of association results per genomic area}
 \usage{
 manhattan_plot_per_area(
   marker,
@@ -16,22 +16,47 @@ manhattan_plot_per_area(
 )
 }
 \arguments{
-\item{marker}{investigated marker eg. MUTATIONS, DELTAR, DELTAQ}
+\item{marker}{character. SEM metric to plot (e.g. \code{"MUTATIONS"},
+\code{"DELTARP"}, \code{"DELTAR"}, \code{"DELTAQ"}).}
 
-\item{figure}{HYPO, HYPER}
+\item{figure}{character. Mutation direction: \code{"HYPO"} or \code{"HYPER"}.}
 
-\item{area}{genomic area (eg. GENE, ISLAND, DMR)}
+\item{area}{character. Genomic area level (e.g. \code{"GENE"},
+\code{"ISLAND"}, \code{"DMR"}).}
 
-\item{subarea}{sub genomic area (TSS1550), depending on the genomic area}
+\item{subarea}{character. Sub-area within the area (e.g. \code{"TSS1550"},
+\code{"WHOLE"}).}
 
-\item{family}{fullname of the family used for the association analysis}
+\item{family}{character. Statistical family used in the association analysis
+(e.g. \code{"wilcoxon"}, \code{"gaussian"}).}
 
-\item{adjust_method}{colnames of the pvalue adjusted to use}
+\item{adjust_method}{character. Column name of the adjusted p-value to use
+for colouring (e.g. \code{"BH"}).}
 
-\item{phenotype}{variable to select from the sample_sheet to use for coloring point}
+\item{phenotype}{character. Sample sheet column used to colour points
+(e.g. \code{"Sample_Group"}).}
 
-\item{only_significant_areas}{TRUE if filter for pvalue < 0.05}
+\item{only_significant_areas}{logical. If \code{TRUE}, show only regions
+with adjusted p-value < 0.05 (default \code{FALSE}).}
+}
+\value{
+Invisibly \code{NULL}. A Manhattan plot PNG is saved under
+  \code{Charts/MARKER_PER_AREA/} in the active result folder.
 }
 \description{
-Title
+Manhattan plot of association results per genomic area
+}
+\examples{
+result_dir <- tempdir()
+\dontrun{
+manhattan_plot_per_area(
+  marker        = "DELTARP",
+  figure        = "HYPO",
+  area          = "GENE",
+  subarea       = "WHOLE",
+  family        = "wilcoxon",
+  adjust_method = "BH",
+  phenotype     = "Sample_Group"
+)
+}
 }

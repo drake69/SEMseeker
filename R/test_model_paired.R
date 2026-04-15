@@ -3,7 +3,6 @@ test_model_paired <- function (family_test, tempDataFrame, sig.formula,burdenVal
   ssEnv <- get_session_info()
   res <- data.frame(pvalue=NA)
 
-  # browser()
   tempDataFrameOriginal <- tempDataFrame
   to_split <- family_test
   family_test <- strsplit(to_split, "@")[[1]][1]
@@ -46,7 +45,7 @@ test_model_paired <- function (family_test, tempDataFrame, sig.formula,burdenVal
     if (plot)
       box.plot(tempDataFrameOriginal, independent_variable,burdenValue, transformation_y, family_test, samples_sql_condition, key)
 
-    result_w  <- suppressWarnings(stats::wilcox.test(tempDataFrame[,first_category], tempDataFrame[,second_category], exact=TRUE, paired = T))
+    result_w  <- suppressWarnings(stats::wilcox.test(tempDataFrame[,first_category], tempDataFrame[,second_category], exact=TRUE, paired = TRUE))
     res$pvalue <- result_w$p.value
 
     #
@@ -93,13 +92,13 @@ test_model_paired <- function (family_test, tempDataFrame, sig.formula,burdenVal
     if (plot)
       box.plot(tempDataFrameOriginal, independent_variable,burdenValue, transformation_y, family_test, samples_sql_condition, key)
 
-    result_w  <-stats::t.test(formula= sig.formula, data = as.data.frame(tempDataFrame), paired = T)
+    result_w  <-stats::t.test(formula= sig.formula, data = as.data.frame(tempDataFrame), paired = TRUE)
     res$pvalue <- result_w$p.value
     res$r_model <- "stats_t.test"
     dep_var <- strsplit(gsub("\ ","",as.character(sig.formula)),"~")
     SPLIT <- split(tempDataFrame[,dep_var[[2]]], tempDataFrame[,dep_var[[3]]])
     res$statistic_parameter <- mean(SPLIT[[1]]) - mean(SPLIT[[2]])
-    power_result = pwr::pwr.t2n.test(d = statistic_parameter, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
+    power_result = pwr::pwr.t2n.test(d = res$statistic_parameter, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
     res$power <- power_result$power
   }
 

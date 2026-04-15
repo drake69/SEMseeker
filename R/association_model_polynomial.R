@@ -50,35 +50,10 @@ association_model_polynomial <- function (family_test, tempDataFrame, sig.formul
   train.data  <- tempDataFrame[training.samples, ]
   test.data <- tempDataFrame[-training.samples, ]
 
-  # browser()
   # Build the formula for the model
   if(length(covariates)>0)
   {
-    # formula <- as.formula(
-    #   paste(
-    #     dependent_variable,
-    #     "~ stats::poly(", independent_variable, ",", degree, ", raw = TRUE) +",
-    #     paste(covariates, collapse = " + ")
-    #   )
-    # )
-
-    # Build polynomial terms for x
-    polynomial_terms <- paste0("I(", independent_variable, "^", 1:degree, ")")
-
-    # Keep x terms separate in the formula
-    x_part <- paste(polynomial_terms, collapse = " + ")
-
-    # Build interaction terms: each poly(x) term crossed with each covariate
-    interaction_terms <- unlist(lapply(polynomial_terms, function(pt) {
-      paste0(pt, ":", covariates)
-    }))
-    interaction_part <- paste(interaction_terms, collapse = " + ")
-
-    # Final formula: x terms + x:covariate interactions (no standalone covariates)
-    formula_string <- paste(dependent_variable, "~", x_part, "+", interaction_part)
-    formula <- as.formula(formula_string)
-    # Build the polynomial model with covariates
-
+    formula <- polynomial_formula_build(dependent_variable, independent_variable, degree, covariates)
     polynomial_model_result <- stats::lm(formula, data = train.data, na.action = na.exclude)
   }
   else
@@ -106,14 +81,12 @@ association_model_polynomial <- function (family_test, tempDataFrame, sig.formul
   coefficients <- coef(summary(polynomial_model_result))
   # conf_int <- confint(polynomial_model_result)
 
-  # browser()
   # for each degree extract the p-value
   for (i in 1:(nrow(coefficients))) {
     # i <- 1
     p_value <- coefficients[i,4]
 
     row_name <- rownames(coefficients)[i]
-    # browser()
     pval_name <- name_cleaning(paste0(row_name,"_pvalue"))
     pval_name <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ","",pval_name))
     pval_name <- name_cleaning(gsub("_RAW_EQ_TRUE","",pval_name))
@@ -144,7 +117,7 @@ association_model_polynomial <- function (family_test, tempDataFrame, sig.formul
       # split each covariates by _
       if (long_covariates)
       {
-        covariates <- unlist(t(strsplit( gsub(" ","",covariates),split  =  "_", fixed  =  T)))
+        covariates <- unlist(t(strsplit( gsub(" ","",covariates),split  =  "_", fixed  =  TRUE)))
         covariates <- unique(covariates)
       }
       covariates <- paste(covariates, collapse = "_")

@@ -1,6 +1,10 @@
 ---
 title: "Getting started — epimutations and delta metrics"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+bibliography: getting-started.bib
 vignette: >
   %\VignetteIndexEntry{Getting started — epimutations and delta metrics}
   %\VignetteEngine{knitr::rmarkdown}
@@ -10,39 +14,62 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse  = TRUE,
-  comment   = "#>",
-  eval      = FALSE   # code is illustrative; not run during R CMD check
+  comment   = "#>"
 )
 ```
 
 ## What is semseeker?
 
-**semseeker** is an R package for detecting **Stochastic Epigenetic Mutations
-(SEMs)** — aberrant, sample-specific changes in DNA methylation that deviate
-from the expected population signal.
+**semseeker** is an R package for detecting, quantifying and analysing
+**Stochastic Epigenetic Mutations (SEMs)** from Illumina array-based DNA
+methylation data [@Corsaro2025thesis].
+
+### Background: what is a SEM?
+
+A **Stochastic Epigenetic Mutation** is a rare, sample-specific aberration in
+DNA methylation at a single CpG site — a probe that deviates from the
+population-level signal in an individual sample beyond what can be explained by
+normal biological or technical variability [@Gentilini2015].
+
+SEMs were first formally defined and quantified by Gentilini *et al.* (2015),
+who showed that SEM burden increases exponentially with age [@Gentilini2015].
+Subsequent work [@Corsaro2023; @Spada2020] extended the framework to disease
+association studies, introducing the concept of *lesions* (genomic clusters of
+co-occurring SEMs) and *delta metrics* for population-level variability
+summaries.
+
+**semseeker** implements this methodology and wraps it into a fully
+reproducible R workflow, from raw beta-value matrix to association analysis and
+pathway enrichment [@Corsaro2025thesis; @Corsaro2023].
+
+### What semseeker computes
 
 Starting from a normalised beta-value (or M-value) matrix, semseeker:
 
-1. Identifies **hypomethylated** and **hypermethylated** mutations at
+1. Derives **signal thresholds** (IQR-based) per probe from the reference
+   population.
+2. Identifies **hypomethylated** and **hypermethylated** SEMs at
    single-probe resolution.
-2. Aggregates adjacent mutations into **lesions** (genomic clusters of
+3. Aggregates adjacent SEMs into **lesions** (genomic clusters of
    co-occurring mutations).
-3. Computes population-level **delta metrics** (ΔBeta, ΔIV, ΔEV, ΔRV, ΔRP)
+4. Computes population-level **delta metrics** (ΔBeta, ΔIV, ΔEV, ΔRV, ΔRP)
    that summarise stochastic epigenetic variability per genomic region.
+5. Optionally analyses the **raw methylation signal** directly (mean and range
+   per region) for differential methylation without mutation calling.
 
 Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 (detected automatically from probe IDs).
 
----
+<hr>
 
 ## Installation
 
-```{r install}
+```{r install, eval=FALSE}
 # Install remotes if needed
 install.packages("remotes")
 
-# Install semseeker from GitHub
-remotes::install_github("drake69/semseeker")
+# Install SEMseeker from GitHub
+remotes::install_github("drake69/SEMseeker")
 ```
 
 > **Note:** semseeker requires the `polars` package from R-multiverse.
@@ -53,7 +80,7 @@ remotes::install_github("drake69/semseeker")
 > install.packages("polars", repos = "https://community.r-multiverse.org")
 > ```
 
----
+<hr>
 
 ## Step 1 — Prepare your data
 
@@ -62,7 +89,7 @@ remotes::install_github("drake69/semseeker")
 semseeker expects a **probe × sample** matrix of beta values (0–1) or M-values.
 Probe IDs must be Illumina CpG identifiers (e.g. `cg00000029`).
 
-```{r beta_matrix}
+```{r beta_matrix, eval=FALSE}
 # Example: load a pre-normalised matrix (rows = probes, columns = samples)
 beta_matrix <- readRDS("normalised_beta.rds")
 
@@ -73,7 +100,7 @@ beta_matrix[1:3, 1:3]
 If you are starting from raw IDAT files, normalise first with
 [ChAMP](https://bioconductor.org/packages/ChAMP/):
 
-```{r chamap_normalise}
+```{r chamap_normalise, eval=FALSE}
 library(ChAMP)
 
 myLoad <- champ.load(
@@ -102,7 +129,7 @@ A data frame with at minimum:
 | `Sample_Name` | Human-readable label |
 | `Sample_Group` | One of `"Case"`, `"Control"`, `"Reference"` |
 
-```{r sample_sheet}
+```{r sample_sheet, eval=FALSE}
 sample_sheet <- read.csv2("sample_sheet.csv")
 
 # Minimal required columns
@@ -112,14 +139,14 @@ head(sample_sheet[, c("Sample_ID", "Sample_Name", "Sample_Group")])
 > **Tip:** If you have no independent reference population, duplicate the
 > Control rows and set `Sample_Group = "Reference"` for the duplicates.
 
----
+<hr>
 
 ## Step 2 — Detect epimutations
 
 The main entry point is `semseeker()`. A single call runs the full pipeline:
 normalisation → mutation calling → lesion aggregation → delta metric computation.
 
-```{r run_semseeker}
+```{r run_semseeker, eval=FALSE}
 library(semseeker)
 
 semseeker(
@@ -143,7 +170,7 @@ semseeker(
 
 Example — run only probe-level mutations, sequential mode, 2 cores:
 
-```{r run_minimal}
+```{r run_minimal, eval=FALSE}
 semseeker(
   sample_sheet      = sample_sheet,
   signal_data       = beta_matrix,
@@ -154,7 +181,7 @@ semseeker(
 )
 ```
 
----
+<hr>
 
 ## Step 3 — Understand the output
 
@@ -182,7 +209,7 @@ Data/
 
 ### Reading results
 
-```{r read_results}
+```{r read_results, eval=FALSE}
 library(polars)
 
 # Read the DELTARP pivot table
@@ -193,7 +220,7 @@ deltarp <- as.data.frame(
 head(deltarp[, 1:6])
 ```
 
----
+<hr>
 
 ## Step 4 — Delta metrics explained
 
@@ -213,7 +240,7 @@ analysis: it combines mutation burden, lesion frequency and signal variability
 into a single ranked score per region, making it robust to outliers and
 suitable for association testing.
 
-```{r deltarp_example}
+```{r deltarp_example, eval=FALSE}
 # Load ΔRP at gene level
 deltarp_gene <- as.data.frame(
   pl$read_parquet("~/semseeker_results/Data/DELTARP_GENE_WHOLE.parquet")
@@ -227,10 +254,68 @@ head(deltarp_gene[order(-deltarp_gene$mean_deltarp),
                   c("CHR", "START", "END", "mean_deltarp")], 10)
 ```
 
----
+<hr>
+
+<hr>
+
+## Step 5 — Differential signal analysis
+
+Beyond mutation calling, semseeker also tracks the **raw methylation signal**
+per region. Two signal markers are computed automatically:
+
+| Marker | File pattern | Description |
+|---|---|---|
+| `SIGNAL_MEAN` | `SIGNAL_MEAN_*.parquet` | Per-region mean beta value per sample |
+| `SIGNAL_RANGE` | `SIGNAL_RANGE_*.parquet` | Per-region signal spread (max − min) per sample |
+
+These pivot tables have exactly the same structure as the mutation/delta tables
+and can be passed directly to `association_analysis()` — allowing you to test
+whether mean methylation (or intra-region spread) differs by phenotype, without
+any mutation-calling step.
+
+```{r signal_analysis, eval=FALSE}
+library(polars)
+
+# Read mean-signal pivot at gene level
+signal_mean <- as.data.frame(
+  pl$read_parquet("~/semseeker_results/Data/SIGNAL_MEAN_GENE_WHOLE.parquet")
+)
+
+# Run a Wilcoxon test between cases and controls on mean signal
+association_analysis(
+  result_folder   = "~/semseeker_results/",
+  sample_sheet    = sample_sheet,
+  marker          = c("SIGNAL_MEAN"),
+  areas           = c("GENE"),
+  stat_model      = list(type = "wilcoxon", alt = "two.sided"),
+  output_folder   = "~/semseeker_results/Stats/"
+)
+```
+
+This is particularly useful when you want to detect **differential methylation**
+at the region level (classic EWAS-style analysis) alongside the epimutation
+burden analysis, using a single unified framework.
+
+<hr>
+
+## References
+
+<!-- automatically generated from getting-started.bib -->
+
+<hr>
 
 ## Next steps
 
-- **Association analysis** (correlation, Wilcoxon test): see the
+- **Association analysis** (all statistical models): see the
   [Association analysis vignette](association-analysis.html).
+- **Pathway and enrichment analysis**: see the
+  [Pathway analysis vignette](pathway-analysis.html).
 - **Full function reference**: see the [Reference](../reference/index.html) page.
+
+<hr>
+
+## Session info
+
+```{r session_info}
+sessionInfo()
+```

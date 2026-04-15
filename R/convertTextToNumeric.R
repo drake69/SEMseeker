@@ -14,18 +14,15 @@ convertTextToNumeric <- function(text) {
     # Check if the text contains a decimal separator
     if (grepl("[.,]", text)) {
 
-      # Try to convert with "." as the decimal separator
-      # and  "," as thousands separator
-      converted_value <- suppressWarnings(gsub("\\.", "", text))
-
-      # If conversion successful, return the numeric value
+      # Multiple dots → European format: dots are thousands sep, comma is decimal
+      # e.g. "1.200.000,34" → remove dots → "1200000,34" → replace comma → 1200000.34
+      converted_value <- suppressWarnings(as.numeric(gsub(",", ".", gsub("\\.", "", text))))
       if (!is.na(converted_value))
         return(converted_value)
 
-      # Try to convert with "," as the decimal separator
-      converted_value <- suppressWarnings(gsub(",", "", text))
-
-      # If conversion successful, return the numeric value
+      # Multiple commas → US format: commas are thousands sep, dot is decimal
+      # e.g. "1,200,000.34" → remove commas → "1200000.34" → 1200000.34
+      converted_value <- suppressWarnings(as.numeric(gsub(",", "", text)))
       if (!is.na(converted_value))
         return(converted_value)
     }
@@ -54,8 +51,6 @@ convertTextToNumeric <- function(text) {
 
 
 
-text_value <-  "1,200,000.34"
- convertTextToNumeric(text_value)==1200000.34
-
-text_value <-  "1.200.000,34"
-convertTextToNumeric(text_value)==1200000.34
+# Examples (see unit tests test-0-math-stats.R):
+# convertTextToNumeric("1,200,000.34") == 1200000.34
+# convertTextToNumeric("1.200.000,34") == 1200000.34

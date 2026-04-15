@@ -2,7 +2,7 @@
 % Please edit documentation in R/association_model_glm.R
 \name{glm_model}
 \alias{glm_model}
-\title{Title}
+\title{GLM association model}
 \usage{
 glm_model(
   family_test,
@@ -15,12 +15,25 @@ glm_model(
 )
 }
 \arguments{
-\item{family_test}{regression model to apply}
+\item{family_test}{regression model family to apply (e.g. "gaussian", "binomial", "poisson")}
 
 \item{tempDataFrame}{data frame to use for the model}
 
 \item{sig.formula}{formula to apply the model}
+
+\item{transformation_y}{transformation applied to the dependent variable (for labelling plots)}
+
+\item{plot}{logical; if TRUE, generate and save a scatter/fit plot}
+
+\item{samples_sql_condition}{SQL condition string used to filter samples (used for plot file naming)}
+
+\item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers for this test}
+}
+\value{
+A list (as a data.frame row) with GLM fit results including AIC,
+  per-coefficient p-values and estimates, model performance metrics, and
+  optionally residual diagnostics.
 }
 \description{
-Title
+GLM association model
 }

@@ -9,10 +9,12 @@ source_data_get <- function(source_data, check_is_numeric=FALSE){
     message(paste("File ", source_data, " not found"))
     return(NULL)
   }
-  Sys.setenv("VROOM_CONNECTION_SIZE" = "5000000")  # Imposta 5 MB
   # check if ile extension is csv
   if ( grepl("\\.csv$", source_data))
-    source <- as.data.frame(readr::read_csv2(source_data))
+    source <- withr::with_envvar(
+      c(VROOM_CONNECTION_SIZE = "5000000"),
+      as.data.frame(readr::read_csv2(source_data))
+    )
 
   if ( grepl("\\.xls$", source_data) |  grepl("\\.xlsx$", source_data))
   {

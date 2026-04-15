@@ -56,12 +56,12 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
 
 
   cov_temp <- covariates
-  ### modifiche
+  ### changes
   for (cov in cov_temp) {
     # apply ", applied_function , "  on independent variable and covariates
     cov_temp[cov_temp==cov] <- paste0("", applied_function , " (", cov, ")")
   }
-  ### modifiche
+  ### changes
 
   # Build dynamic formula for lm (to get starting values)
   if (length(covariates) > 0)
@@ -165,7 +165,7 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
 
     ggp <- ggplot2::ggplot(train.data, ggplot2::aes(x =!!ggplot2::sym(independent_variable), y =!!ggplot2::sym(dependent_variable))) +
       ggplot2::geom_point(color = ssEnv$color_palette[1]) +
-      ggplot2::geom_smooth(method = "lm", formula = as.formula(paste0("y ~ ", applied_function , " (x)")), se = TRUE, color = ssEnv$color_palette_darker[2]) + # La linea sarà una curva esponenziale
+      ggplot2::geom_smooth(method = "lm", formula = as.formula(paste0("y ~ ", applied_function , " (x)")), se = TRUE, color = ssEnv$color_palette_darker[2]) + # The fitted line will be an exponential curve
       ggplot2::labs(
         title = "", # Puoi lasciare vuoto o aggiungere un titolo
         x = independent_variable,

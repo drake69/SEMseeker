@@ -29,7 +29,7 @@ batch_correlation_check <- function() {
         file_to_read <- file_path_build(tempresult_folderData, c("MULTIPLE", as.character(key$MARKER), as.character(key$FIGURE)), "fst")
         if(file.exists(file_to_read))
         {
-          temp <- fst::read_fst(file_to_read, as.data.table = T)
+          temp <- fst::read_fst(file_to_read, as.data.table = TRUE)
           if(key$MARKER=="MUTATIONS" | key$MARKER=="LESIONS")
             temp$VALUE <- 1
           # if(exists("total_data_for"))
@@ -105,7 +105,7 @@ batch_correlation_check <- function() {
     }
     pca_contrib <- as.data.frame(pca_contrib)
     result_file <- file_path_build(batch_analysis_folder, c("pca_contrib", as.character(key$MARKER), as.character(key$FIGURE)), "csv", add_gz=TRUE)
-    utils::write.csv2(gzfile(pca_contrib),result_file,row.names = F)
+    utils::write.csv2(gzfile(pca_contrib),result_file,row.names = FALSE)
 
     if(length(unique(t(unique(stats::na.omit(pca_contrib[,!(colnames(pca_contrib) %in% c("Batch_ID"))])))))==1
       | plyr::empty(stats::na.omit(pca_contrib)))
@@ -168,7 +168,7 @@ batch_correlation_check <- function() {
     rm(dunn.results)
 
     result_file <- file_path_build(batch_analysis_folder, c("batch_cor", as.character(key$MARKER), as.character(key$FIGURE)), "csv", add_gz=TRUE)
-    utils::write.csv2(gzfile(result_cor),result_file,row.names = F)
+    utils::write.csv2(gzfile(result_cor),result_file,row.names = FALSE)
 
     result_cor <- subset(result_cor, result_cor$p.value < as.numeric(ssEnv$alpha))
     result_cor <- subset(result_cor, result_cor$proportion < 0.7)
@@ -185,6 +185,6 @@ batch_correlation_check <- function() {
     # result_cor
   }
   result_file <- file_path_build(batch_analysis_folder, c("result","cor"), "csv", add_gz=TRUE)
-  utils::write.csv2(gzfile(summary_cor),result_file,row.names = F)
+  utils::write.csv2(gzfile(summary_cor),result_file,row.names = FALSE)
 
 }

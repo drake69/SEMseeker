@@ -1,4 +1,4 @@
-#' @export
+# NOTE: currently internal — could be re-exported once @examples are added
 markers_performance_association <- function(inference_details, result_folder, pvalue_column="PVALUE_ADJ_ALL_BH",
   aggr_fun ="mean",significance = TRUE,sql_conditions=c(),alphas, ...)
 {

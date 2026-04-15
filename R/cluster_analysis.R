@@ -55,7 +55,7 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
       # get the plot
       plot <- ggplot2::ggplot(
         tsne$data,
-        ggplot2::aes(x = X1, y = X2, color = as.factor(study_summary[, cluster_variable_name]))
+        ggplot2::aes(x = .data$X1, y = .data$X2, color = as.factor(study_summary[, cluster_variable_name]))
       ) +
         ggplot2::geom_point() +
         ggplot2::labs(

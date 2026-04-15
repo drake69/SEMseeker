@@ -1,25 +1,60 @@
-#' Association analysis of SEMseeker's results
+#' Association analysis of SEMseeker results
 #'
-#' @param inference_details
-#' independent variable: deve essere nalla sample sheet passata a semseeker
-#' quando lo abbiamo eseguito la prima volta
-#' tipo di regressioni: gaussian, poisson, binomial,quantreg_tau_runs(both as number) eg quantreg_0.25_2000
-#' tipi di test: wilcoxon, stats::t.test,
-#' tipi di correlazioni: pearson, kendall, spearman
-#' MUTATIONS_* ~ tcdd_mother + exam_age
-#' transformation_y to be applied to dependent variable
-#' (mutations and lesions): scale, log, log2, log10, exp, none, quantile_quantiles(as number) eg quantile_3
-#' DEPTH analysis:
-#' 1: sample level
-#' 2: type level (gene, DMR, cpgisland) (includes 1)
-#' 3: genomic area: gene, body, gene tss1550, gene whole, gene tss200,  (includes 1 and 2)
-#' filter_p_value report after adjusting saves only significant nominal p-value
-#' @param result_folder where semseeker's results are stored, the root folder
-#' @param maxResources percentage of max system's resource to use
-#' @param parallel_strategy which strategy to use for parallel execution see future vignette: possible values, none, multisession,sequential, multicore, cluster
-#' @param ... other options to filter elaborations
+#' Run statistical association models between SEM metrics and a phenotype
+#' variable. Supports group tests (Wilcoxon, t-test), GLM families (gaussian,
+#' poisson, binomial), quantile regression, correlations (Pearson, Kendall,
+#' Spearman), and multi-covariate formulas (e.g.
+#' \code{MUTATIONS_* ~ covariate1 + covariate2}).
 #'
+#' @param inference_details data.frame. Each row defines one analysis run.
+#'   Required columns:
+#'   \describe{
+#'     \item{independent_variable}{Sample sheet column used as grouping /
+#'       covariate variable.}
+#'     \item{family_test}{Statistical model: \code{"wilcoxon"},
+#'       \code{"stats::t.test"}, \code{"gaussian"}, \code{"poisson"},
+#'       \code{"binomial"}, \code{"pearson"}, \code{"kendall"},
+#'       \code{"spearman"}, or quantile regression as
+#'       \code{"quantreg_<tau>_<runs>"} (e.g. \code{"quantreg_0.25_2000"}).}
+#'     \item{transformation_y}{Transformation applied to the dependent variable:
+#'       \code{"none"}, \code{"scale"}, \code{"log"}, \code{"log2"},
+#'       \code{"log10"}, \code{"exp"}, or
+#'       \code{"quantile_<n>"} (e.g. \code{"quantile_3"}).}
+#'     \item{marker}{SEM metric column prefix (e.g. \code{"DELTARP"},
+#'       \code{"MUTATIONS"}).}
+#'     \item{depth_analysis}{Integer depth: \code{1} = sample level,
+#'       \code{2} = type level (gene, DMR, CpG island),
+#'       \code{3} = genomic area (TSS1550, WHOLE, TSS200, …).}
+#'   }
+#' @param result_folder character. Path to the SEMseeker result folder.
+#' @param maxResources numeric. Maximum percentage of CPU cores to use
+#'   (default 90).
+#' @param parallel_strategy character. Parallelisation backend; possible
+#'   values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
+#'   \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).
+#' @param start_fresh logical. If \code{TRUE}, delete previous inference
+#'   results before running (default \code{FALSE}).
+#' @param ... Additional arguments passed to \code{init_env()}.
+#'
+#' @return Invisibly \code{NULL}. Inference result CSV files are written to
+#'   the \code{Inference/} sub-folder of \code{result_folder}, one file per
+#'   marker/area/family combination defined in \code{inference_details}.
 #' @importFrom doRNG %dorng%
+#' @examples
+#' result_dir <- tempdir()
+#' \dontrun{
+#' association_analysis(
+#'   inference_details = data.frame(
+#'     independent_variable = "Sample_Group",
+#'     family_test          = "wilcoxon",
+#'     transformation_y     = "none",
+#'     marker               = "DELTARP",
+#'     areas                = "GENE"
+#'   ),
+#'   result_folder     = "~/semseeker_results/",
+#'   multiple_test_adj = "BH"
+#' )
+#' }
 #' @export
 association_analysis <- function(inference_details,result_folder, maxResources = 90,
   parallel_strategy  = "multicore",start_fresh = FALSE, ...)
@@ -189,7 +224,7 @@ association_analysis <- function(inference_details,result_folder, maxResources =
             log_event("JOURNAL:","Result saved into file:", fileNameResults, ".")
             if (sum(cols %in% colnames(study_summary))!=0)
             {
-              # temporaneamente filtriamo per le colonne esistenti
+              # temporarily filter to existing columns only
               cols <- cols[cols %in% colnames(study_summary)]
               keys$AREA  =  "SAMPLE_GROUP"
               keys$SUBAREA  =  "SAMPLE"
@@ -206,7 +241,7 @@ association_analysis <- function(inference_details,result_folder, maxResources =
               # clean keys from already done association
               if(file_good)
               {
-                old_results <- unique(utils::read.csv2(fileNameResults, header  =  T))
+                old_results <- unique(utils::read.csv2(fileNameResults, header  =  TRUE))
                 old_results_filtered <- old_results[old_results$DEPTH == 1,]
                 keys_markers_figures_areas_done <- unlist(apply(unique(old_results_filtered [, c("MARKER","FIGURE","AREA","SUBAREA")]), 1, function(x) paste(x, collapse  =  "_", sep  =  "")))
                 keys_to_be_done <- unlist(apply(keys[, c("MARKER","FIGURE","AREA","SUBAREA")], 1, function(x) paste(x, collapse  =  "_", sep  =  "")))
@@ -285,7 +320,7 @@ association_analysis <- function(inference_details,result_folder, maxResources =
 
                     if(file.exists(fileNameResults) && file.info(fileNameResults)$size  >10)
                     {
-                      old_results <- unique(utils::read.csv2(fileNameResults, header  =  T))
+                      old_results <- unique(utils::read.csv2(fileNameResults, header  =  TRUE))
                       area_to_remove <- old_results[old_results$MARKER==key$MARKER & old_results$FIGURE==key$FIGURE
                         & old_results$SUBAREA==key$SUBAREA & old_results$AREA==key$AREA,"AREA_OF_TEST"]
                       tempDataFrame <- tempDataFrame[!(tempDataFrame$AREA %in% area_to_remove),]

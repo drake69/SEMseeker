@@ -1,98 +1,133 @@
-get_meth_tech <- function(signal_data)
-{
-  ssEnv <- get_session_info()
+#' Detect the Illumina methylation array technology from a signal matrix
+#'
+#' Identifies whether a methylation signal matrix originates from a 27k, 450k,
+#' or EPIC 850k array (or WGBS data).  Detection runs in priority order:
+#'
+#' \enumerate{
+#'   \item \strong{Annotation-package overlap} — probe IDs are matched against
+#'     each installed \code{IlluminaHumanMethylation*anno} package; the
+#'     technology with the most matching probes wins.  Accurate for any subset
+#'     size (e.g. 20 k probes out of 866 k).
+#'   \item \strong{Row-count heuristics} — last resort for WGBS or unknown
+#'     probe naming schemes.
+#' }
+#'
+#' The detected technology and beta/M-value flag are written to the session
+#' environment.
+#'
+#' @param signal_data A numeric matrix or \code{data.frame} with CpG probes as
+#'   rows and samples as columns.  Row names must be probe identifiers (e.g.
+#'   \code{cg00000029}) unless a \code{PROBE} column is present.
+#'
+#' @return The updated session environment (\code{ssEnv}), invisibly.  The
+#'   detected technology is accessible via \code{get_session_info()$tech}.
+#'
+get_meth_tech <- function(signal_data) {
 
-  # if(ssEnv$tech != "")
-  # {
-  #   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " The tech is already defined as:", ssEnv$tech)
-  #   return(ssEnv)
-  # }
+  ssEnv    <- get_session_info()
+  n_probes <- nrow(signal_data)
 
-  if(nrow(signal_data) == 485512)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " seems a 450k dataset.")
+  # If technology was explicitly declared by the user in init_env(), respect it.
+  # This is required for LONGREAD (indistinguishable from WGBS by probe-ID pattern)
+  # and useful when the user wants to override heuristics.
+  .declared_techs <- c("K850", "K450", "K27", "WGBS", "LONGREAD")
+  if (!is.null(ssEnv$tech) && ssEnv$tech %in% .declared_techs) {
+    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+              "technology pre-declared as '", ssEnv$tech,
+              "'; skipping auto-detection.")
+    # Still detect beta vs M-values
+    exclude_cols <- c("PROBE","CHR","K27","K450","K850","k27","k450","k850")
+    signal_cols  <- signal_data[
+      seq_len(min(10000L, nrow(signal_data))),
+      !colnames(signal_data) %in% exclude_cols, drop = FALSE]
+    max_data   <- max(abs(c(max(signal_cols, na.rm = TRUE),
+                             min(signal_cols, na.rm = TRUE))))
+    ssEnv$beta <- max_data <= 1
+    ssEnv$probes_count <- n_probes
+    update_session_info(ssEnv)
+    return(ssEnv)
+  }
 
-  if(nrow(signal_data) == 27578)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " seems a 27k dataset.")
+  # Informational row-count hints
+  if (n_probes == 485512)
+    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+              "probe count matches 450k dataset.")
+  if (n_probes == 27578)
+    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+              "probe count matches 27k dataset.")
+  if (n_probes == 866562)
+    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+              "probe count matches EPIC 850k dataset.")
+  if (n_probes > 866562)
+    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+              "probe count exceeds EPIC 850k — treating as WGBS.")
 
-  if(nrow(signal_data) == 866562)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " seems an EPIC dataset.")
-
-  if(nrow(signal_data) > 866562)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " seems a WGBS dataset.")
-
-
-  probe_features <- semseeker::pp_tot[,c("PROBE","CHR","K27","K450","K850")]
-  # if doesn't exist column PROBE
-  if(!"PROBE" %in% colnames(signal_data))
-    signal_data_probe <- rownames(signal_data)
+  # Resolve probe identifiers
+  probe_ids <- if ("PROBE" %in% colnames(signal_data))
+    signal_data$PROBE
   else
-    signal_data_probe <- signal_data$PROBE
-
-  # get only probe_features that are in the signal_data_probe
-  probe_features <- probe_features[probe_features$PROBE %in% signal_data_probe,]
-  # signal_data_check <- merge(signal_data,probe_features, by="PROBE")
-  # if(exists("signal_data"))
-  #   rm(signal_data)
-  # rm(probe_features)
+    rownames(signal_data)
 
   tech <- ""
-  msg <- ""
-  if (nrow(probe_features)!=0)
-  {
-    probe_features <- subset(probe_features, "CHR" !="")
-    tech <- colSums(probe_features[,c("K27","K450","K850")])
-    tech <-  c("K27","K450","K850")[which(tech==max(tech))]
-    if (length(c(tech))>=1)
-    {
-      tech <- tech[1]
-      msg <- switch(
-        tech,
-        "K27"= paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "the dataset is a 27k dataset."),
-        "K450"= paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "the dataset is a 450k dataset."),
-        "K850"= paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "the dataset is a 850k dataset.")
-      )
+  msg  <- ""
+
+  # ---- Step 1: annotation-package overlap (most accurate) ----
+  tech <- .detect_tech_from_anno(probe_ids)
+  if (tech != "")
+    msg <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+                 "technology identified as", tech,
+                 "via annotation-package probe-ID overlap.")
+
+  # ---- Step 2: row-count heuristics (last resort) ----
+  if (tech == "") {
+    if (n_probes > 866562 ||
+        all(grepl("_", probe_ids[seq_len(min(1000L, length(probe_ids)))]))) {
+      tech <- "WGBS"
+      msg  <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+                    "dataset identified as WGBS (row count / probe ID pattern).")
+    } else if (n_probes <= 30000L) {
+      tech <- "K27"
+      msg  <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+                    "dataset identified as 27k array (row-count heuristic).")
+    } else if (n_probes <= 510000L) {
+      tech <- "K450"
+      msg  <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+                    "dataset identified as 450k array (row-count heuristic).")
+    } else {
+      tech <- "K850"
+      msg  <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+                    "dataset identified as EPIC 850k array (row-count heuristic).")
     }
   }
 
-  if (all(grepl("_", probe_features$PROBE[1:1000])))
-  {
-    tech <- "WGBS"
-    msg <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "the dataset is a WGBS dataset.")
-  }
-
-  if(tech == "")
-  {
-    tech <- "UNKNOWN"
-    msg <- paste("ERROR:", format(Sys.time(), "%a %b %d %X %Y"), "the dataset is an unknown dataset.")
+  if (tech == "") {
+    msg <- paste("ERROR:", format(Sys.time(), "%a %b %d %X %Y"),
+                 "could not determine array technology.")
     log_event(msg)
     stop(msg)
   }
 
   log_event(msg)
   ssEnv$tech <- tech
-  # remove column PROBE
-  signal_data_check <- signal_data
-  if("PROBE" %in% colnames(signal_data_check))
-    signal_data_check <- signal_data_check[,-which(colnames(signal_data_check)=="PROBE")]
 
-  log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " defining if meth is a beta or mvalue.")
-  exploratory_df <- signal_data_check[1:min(10000,nrow(signal_data_check)),!(colnames(signal_data_check) %in% c("PROBE","CHR","K27","K450","K850"))]
-  # get abs max
-  max_data <- max(exploratory_df, na.rm=TRUE)
-  min_data <- min(exploratory_df, na.rm=TRUE)
-  max_data <- max(abs(c(max_data, min_data)))
-  ssEnv$beta <- TRUE
-  if (max_data>1)
-  {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " The data are mValues.")
-    ssEnv$beta <- FALSE
-  }
+  # ---- Detect beta vs M-values ----
+  exclude_cols <- c("PROBE", "CHR", "K27", "K450", "K850", "k27", "k450", "k850")
+  signal_cols  <- signal_data[
+    seq_len(min(10000L, nrow(signal_data))),
+    !colnames(signal_data) %in% exclude_cols,
+    drop = FALSE
+  ]
+  max_data   <- max(abs(c(max(signal_cols, na.rm = TRUE),
+                          min(signal_cols, na.rm = TRUE))))
+  ssEnv$beta <- max_data <= 1
+
+  log_event(if (ssEnv$beta)
+    paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "values are beta (0-1).")
   else
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " The data are beta values.")
-  ssEnv$probes_count <- nrow(signal_data_check)
+    paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "values appear to be M-values."))
 
+  ssEnv$probes_count <- n_probes
   update_session_info(ssEnv)
-
-  log_event("JOURNAL: The tech is defined as:", ssEnv$tech)
+  log_event("JOURNAL: array technology set to:", ssEnv$tech)
   return(ssEnv)
 }

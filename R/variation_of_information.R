@@ -5,7 +5,7 @@ variation_of_information <- function(original, quantized) {
   quantized <- as.vector(quantized)
 
   entropy <- function(p) {
-    p <- p[p > 0]  # Rimuovi zeri per evitare log(0)
+    p <- p[p > 0]  # Remove zeros to avoid log(0)
     -sum(p * log2(p))
   }
 
@@ -18,7 +18,8 @@ variation_of_information <- function(original, quantized) {
   H_quantized <- entropy(quantized_prob)
   H_joint <- entropy(joint_prob)
 
-  VI <- H_original + H_quantized - 2 * H_joint
+  # VI = H(X|Y) + H(Y|X) = 2*H(X,Y) - H(X) - H(Y)  (always >= 0)
+  VI <- 2 * H_joint - H_original - H_quantized
 
 
   # # Function to calculate entropy

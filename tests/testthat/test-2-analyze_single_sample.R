@@ -2,15 +2,15 @@ test_that("analyze_single_sample", {
 
   tempFolder <- tempFolders[1]
   tempFolders <- tempFolders[-1]
-  ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute = "mean")
+  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute = "mean")
 
-  tt <- semseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::get_meth_tech(signal_data)
 
   if (!exists("signal_thresholds")) {
-    signal_data <- semseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- semseeker:::signal_range_values(signal_data, batch_id)
+    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
   }
-  probe_features <<- semseeker::PROBES[semseeker::PROBES$PROBE %in% rownames(signal_data), ]
+  probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
   values_df <- data.frame(
     CHR   = probe_features$CHR[match(rownames(signal_data), probe_features$PROBE)],
@@ -22,42 +22,42 @@ test_that("analyze_single_sample", {
   sample_detail <- mySampleSheet[1, c("Sample_ID", "Sample_Group")]
 
   # ── HYPO ──────────────────────────────────────────────────────────────────
-  semseeker:::analyze_single_sample(
+  SEMseeker:::analyze_single_sample(
     values        = values_df,
     thresholds    = signal_thresholds,
     figure        = "HYPO",
     sample_detail = sample_detail
   )
 
-  hypo_mutations_folder <- semseeker:::dir_check_and_create(ssEnv$result_folderData,
+  hypo_mutations_folder <- SEMseeker:::dir_check_and_create(ssEnv$result_folderData,
     c(sample_detail$Sample_Group, "MUTATIONS_HYPO"))
-  hypo_mutations_file <- semseeker:::file_path_build(
+  hypo_mutations_file <- SEMseeker:::file_path_build(
     hypo_mutations_folder, c(sample_detail$Sample_ID, "MUTATIONS", "HYPO"), "bed", add_gz = TRUE)
 
   # MUTATIONS bed file is always written (mutations exist for synthetic data)
   testthat::expect_true(file.exists(hypo_mutations_file))
 
   # LESIONS folder is always created even when no significant lesions exist
-  hypo_lesions_folder <- semseeker:::dir_check_and_create(ssEnv$result_folderData,
+  hypo_lesions_folder <- SEMseeker:::dir_check_and_create(ssEnv$result_folderData,
     c(sample_detail$Sample_Group, "LESIONS_HYPO"))
   testthat::expect_true(dir.exists(hypo_lesions_folder))
 
   # ── HYPER ──────────────────────────────────────────────────────────────────
-  semseeker:::analyze_single_sample(
+  SEMseeker:::analyze_single_sample(
     values        = values_df,
     thresholds    = signal_thresholds,
     figure        = "HYPER",
     sample_detail = sample_detail
   )
 
-  hyper_mutations_folder <- semseeker:::dir_check_and_create(ssEnv$result_folderData,
+  hyper_mutations_folder <- SEMseeker:::dir_check_and_create(ssEnv$result_folderData,
     c(sample_detail$Sample_Group, "MUTATIONS_HYPER"))
-  hyper_mutations_file <- semseeker:::file_path_build(
+  hyper_mutations_file <- SEMseeker:::file_path_build(
     hyper_mutations_folder, c(sample_detail$Sample_ID, "MUTATIONS", "HYPER"), "bed", add_gz = TRUE)
 
   testthat::expect_true(file.exists(hyper_mutations_file))
 
-  hyper_lesions_folder <- semseeker:::dir_check_and_create(ssEnv$result_folderData,
+  hyper_lesions_folder <- SEMseeker:::dir_check_and_create(ssEnv$result_folderData,
     c(sample_detail$Sample_Group, "LESIONS_HYPER"))
   testthat::expect_true(dir.exists(hyper_lesions_folder))
 
@@ -66,9 +66,9 @@ test_that("analyze_single_sample", {
   # analyze_single_sample writes .bed.gz; the BOTH file is empty but the
   # function must not error.
   testthat::expect_no_error(
-    semseeker:::analyze_single_sample_both(sample_detail, "MUTATIONS")
+    SEMseeker:::analyze_single_sample_both(sample_detail, "MUTATIONS")
   )
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder, recursive = TRUE)
 })

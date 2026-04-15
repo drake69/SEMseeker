@@ -1,8 +1,11 @@
 #--- signal_range_values ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #' calculate the range of signal values to define the outlier
-#' @param populationMatrix matrix of methylation for the population under calculation
+#' @param populationMatrix matrix of methylation for the population under calculation (probes × samples)
+#' @param batch_id character string identifying the batch; used to name the cached parquet output file
+#' @param probe_features data.frame of probe annotations (from probe_features_get) with columns PROBE, CHR, START, END
 #'
-#' @return methylation matrix as normalized distribution
+#' @return data.frame of per-probe thresholds with columns signal_inferior_thresholds,
+#'   signal_superior_thresholds, signal_median_values, iqr, q1, q3, PROBE, CHR, START, END
 #' @importFrom doRNG %dorng%
 
 signal_range_values <- function(populationMatrix, batch_id, probe_features) {

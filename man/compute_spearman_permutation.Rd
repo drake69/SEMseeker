@@ -2,7 +2,7 @@
 % Please edit documentation in R/spearman_permutation_model.R
 \name{compute_spearman_permutation}
 \alias{compute_spearman_permutation}
-\title{Title}
+\title{Compute Spearman permutation statistic (CPU)}
 \usage{
 compute_spearman_permutation(sig.formula, df, shuffle = FALSE)
 }
@@ -11,10 +11,12 @@ compute_spearman_permutation(sig.formula, df, shuffle = FALSE)
 
 \item{df}{dataframe to use}
 
-\item{tau}{tau at which apply the quantile regression}
-
-\item{lqm_control}{specification of the lqmm package}
+\item{shuffle}{logical; if TRUE, permute the independent variable before computing the correlation}
+}
+\value{
+A numeric scalar: the Spearman correlation coefficient between the
+  burden and the independent variable (used as the permutation test statistic).
 }
 \description{
-Title
+Compute Spearman permutation statistic (CPU)
 }

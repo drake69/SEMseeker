@@ -13,7 +13,27 @@
 #' @param sample_sheet_mapping rules to rename and remove columns
 #' @param values_mapping rules to recode values and remove samples (source missed leave blank in the mapping file)
 #'
-#' @returns reports of the exploratory analysis and sample sheet, signal data cleaned
+#' @param delete_keyword character. Value in \code{values_mapping} that marks
+#'   samples for removal (default \code{"REMOVE"}).
+#' @param mapping_folder character. Optional path to folder containing mapping
+#'   files; overrides \code{sample_sheet_mapping} / \code{values_mapping} if
+#'   provided (default \code{NULL}).
+#' @param removal_folder character. Optional path to folder containing removal
+#'   rule files (default \code{NULL}).
+#' @param removal_rules character vector. Inline removal rules applied before
+#'   mapping (default \code{c()}).
+#' @return Invisibly \code{NULL}. Cleaned sample sheet and signal data are
+#'   written to the result folder together with exploratory summary reports.
+#' @examples
+#' result_dir <- tempdir()
+#' \dontrun{
+#' exploratory_analysis(
+#'   categorical_variables = c("Sample_Group", "Sex"),
+#'   numerical_variables   = c("Age"),
+#'   sample_sheet          = sample_sheet,
+#'   signal_data           = beta_matrix
+#' )
+#' }
 #' @export
 #'
 exploratory_analysis <- function(categorical_variables,numerical_variables, sample_sheet,signal_data, max_missed_sample_sheet = 0.3,
@@ -130,21 +150,6 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
     stop("Sample ID column not found in the sample sheet")
   })
   signal_data_original <- signal_data
-
-  # describe the sample sheet
-  describe_dataframe <- function(df) {
-    data.frame(
-      Variable = names(df),
-      Class = sapply(df, class),
-      Missing_Values = sapply(df, function(x) sum(is.na(x))),
-      Missing_Values_Percent = round(sapply(df, function(x) sum(is.na(x)) / length(x) * 100),2),
-      Unique_Values = sapply(df, function(x) length(unique(x))),
-      Mean = round(sapply(df, function(x) if (is.numeric(x)) mean(x, na.rm = TRUE) else NA),2),
-      Median = round(sapply(df, function(x) if (is.numeric(x)) median(x, na.rm = TRUE) else NA),2),
-      Min = round(sapply(df, function(x) if (is.numeric(x)) min(x, na.rm = TRUE) else NA),2),
-      Max = round(sapply(df, function(x) if (is.numeric(x)) max(x, na.rm = TRUE) else NA),2)
-    )
-  }
 
   step <- step + 1
   # Run the function on your dataframe
@@ -289,7 +294,7 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
         next
       }
       # calculate mean and standard deviation
-      mean <- paste(round(mean(sample_sheet[,variable], na.rm = TRUE),2) ," ±",round(sd(sample_sheet[,variable], na.rm = TRUE),2))
+      mean <- paste(round(mean(sample_sheet[,variable], na.rm = TRUE),2) ," \u00b1",round(sd(sample_sheet[,variable], na.rm = TRUE),2))
       # calculate median
       median <- round(median(sample_sheet[,variable], na.rm = TRUE))
       # calculate min and max
@@ -300,7 +305,7 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
       # calculate number of missing values
       missing_values <- paste(round(sum(is.na(sample_sheet[,variable]))/length(sample_sheet[,variable])*100,2),"%")
       # build a table with the descriptive statistics
-      res_data <- data.frame(Statistic=c("Mean ± Std","Median","Min","Max","1st Quartile","2nd Quartile","3rd Quartile","Missing Values"),
+      res_data <- data.frame(Statistic=c("Mean \u00b1 Std","Median","Min","Max","1st Quartile","2nd Quartile","3rd Quartile","Missing Values"),
         Value=c(mean,median,min,max,quantiles,missing_values))
       res_data <- as.data.frame(t(res_data))
       colnames(res_data) <- res_data[1,]

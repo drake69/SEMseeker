@@ -4,10 +4,10 @@ test_that("create_position_pivots", {
   unlink(tempFolder, recursive = TRUE, force = TRUE)
   # message(tempFolder)
   tempFolders <- tempFolders[-1]
-  ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median", start_fresh =TRUE)
+  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median", start_fresh =TRUE)
 
   ####################################################################################
-  tt <- semseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::get_meth_tech(signal_data)
   ####################################################################################
 
   ss_reference <- subset(mySampleSheet,Sample_Group=="Reference")
@@ -19,26 +19,26 @@ test_that("create_position_pivots", {
 
   if (!exists("signal_thresholds"))
   {
-    signal_data <- semseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- semseeker:::signal_range_values(signal_data[,ss_reference$Sample_ID],batch_id)
+    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data[,ss_reference$Sample_ID],batch_id)
   }
-  probe_features <<- semseeker::PROBES[semseeker::PROBES$PROBE %in% rownames(signal_data),]
+  probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
-  sp <- semseeker:::analyze_population(
+  sp <- SEMseeker:::analyze_population(
     signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Case",],
     probe_features = probe_features
   )
 
-  sp <- semseeker:::analyze_population(
+  sp <- SEMseeker:::analyze_population(
     signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Control",],
     probe_features = probe_features
   )
 
-  ssEnv <- semseeker:::get_session_info()
+  ssEnv <- SEMseeker:::get_session_info()
 
   keys <- expand.grid(
     MARKER = c("DELTAS","DELTAR","LESIONS","MUTATIONS"),
@@ -50,10 +50,10 @@ test_that("create_position_pivots", {
   # prova con un subset di colonne che non ha le lesioni
 
   # test parial pivot creation
-  # semseeker:::create_position_pivots(mySampleSheet[1:10,],keys)
+  # SEMseeker:::create_position_pivots(mySampleSheet[1:10,],keys)
 
   # test complete
-  semseeker:::create_position_pivots(mySampleSheet,keys)
+  SEMseeker:::create_position_pivots(mySampleSheet,keys)
 
   # for (k in 1:nrow(keys))
   {
@@ -62,12 +62,12 @@ test_that("create_position_pivots", {
     marker <- as.character(key$MARKER)
     figure <- as.character(key$FIGURE)
 
-    mutations_pivot_file_name <- semseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
+    mutations_pivot_file_name <- SEMseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
     if(file.exists(mutations_pivot_file_name))
     {
       mutations_pivot <- as.data.frame(polars::pl$read_parquet(mutations_pivot_file_name))
 
-      pivot_file_name <- semseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
+      pivot_file_name <- SEMseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
       testthat::expect_true(file.exists(pivot_file_name))
       if(file.exists(pivot_file_name))
         pivot <- as.data.frame(polars::pl$read_parquet(pivot_file_name))
@@ -100,6 +100,6 @@ test_that("create_position_pivots", {
 
   ####################################################################################
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder, recursive = TRUE)
 })

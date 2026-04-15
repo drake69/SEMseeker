@@ -14,8 +14,6 @@ mutations_get(values, figure, thresholds, sampleName)
 \item{thresholds}{threshold to use for comparison}
 
 \item{sampleName}{name of the sample}
-
-\item{probe_features}{probe_features features probe, chr, start,end}
 }
 \value{
 mutations

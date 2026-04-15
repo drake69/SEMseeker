@@ -2,7 +2,7 @@
 #' @importFrom doFuture %dofuture%
 pathway_STRINGdb <- function(study,
   statistic_parameter="",
-  adjust_per_area = F, adjust_globally = F,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
+  adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
   inference_details, significance = TRUE, stringDBVersion = "12.0")
 {
 

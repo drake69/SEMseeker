@@ -2,16 +2,16 @@
 % Please edit documentation in R/deltaX_get.R
 \name{deltaX_get}
 \alias{deltaX_get}
-\title{Title}
+\title{Retrieve delta (epimutation) signal for all markers and areas}
 \usage{
 deltaX_get()
 }
-\arguments{
-\item{sample_sheet}{}
-}
 \value{
-summary of sample sheet
+A named list of data.frames, one per marker–figure combination,
+  each containing columns CHR, START, END and per-sample delta values.
 }
 \description{
-Title
+Loads per-sample delta values (DELTAS / DELTAR) for each marker–figure
+combination defined in the current session environment.  The sample sheet
+is fetched internally via \code{study_summary_get()}.
 }

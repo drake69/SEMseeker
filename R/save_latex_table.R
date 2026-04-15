@@ -1,7 +1,5 @@
 save_latex_table <- function(data, dest_file_name_csv, caption)
 {
-  library(xtable)
-
   # remove underscore from everywhere
   colnames(data) <- gsub("_", " ", colnames(data))
   rownames(data) <- gsub("_", " ", rownames(data))

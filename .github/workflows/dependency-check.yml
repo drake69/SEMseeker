@@ -1,0 +1,139 @@
+# Monthly dependency & environment check — opens a GitHub Issue if
+# renv packages are outdated or R/Bioconductor versions are mismatched.
+# No external secrets needed: uses GITHUB_TOKEN (automatic).
+on:
+  schedule:
+    - cron: '0 9 1 * *'   # 1st of every month at 09:00 UTC
+  workflow_dispatch:       # allow manual trigger
+
+name: dependency-check
+
+permissions:
+  issues: write
+
+jobs:
+  check-deps:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_SANDBOX_ENABLED: false
+      RENV_ACTIVATE_PROJECT: 0
+      NOT_CRAN: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Restore renv cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/R/renv
+          key: renv-${{ runner.os }}-${{ hashFiles('renv.lock') }}
+          restore-keys: renv-${{ runner.os }}-
+
+      - name: Install renv
+        run: install.packages("renv")
+        shell: Rscript {0}
+
+      - name: Check dependencies and environment
+        id: depcheck
+        run: |
+          report_lines <- character()
+          add <- function(...) report_lines <<- c(report_lines, paste0(...))
+
+          add("## SEMseeker Dependency Report — ", Sys.Date())
+          add("")
+
+          # ── R version ──
+          r_current <- paste0(R.version$major, ".", R.version$minor)
+          add("### R version")
+          add("- Running: R ", r_current)
+
+          # ── Bioconductor version ──
+          lf <- renv:::renv_lockfile_read("renv.lock")
+          bioc_urls <- grep("bioconductor.org", sapply(lf$R$Repositories, `[[`, "URL"), value = TRUE)
+          if (length(bioc_urls) > 0) {
+            bioc_lock <- sub(".*/packages/([0-9.]+)/.*", "\\1", bioc_urls[1])
+            add("- Bioconductor in lockfile: ", bioc_lock)
+            tryCatch({
+              install.packages("BiocManager", quiet = TRUE)
+              bioc_expected <- as.character(BiocManager::version())
+              add("- Bioconductor expected for this R: ", bioc_expected)
+              if (bioc_lock != bioc_expected) {
+                add("")
+                add("**WARNING: Bioconductor version mismatch!** ",
+                    "lockfile has ", bioc_lock, " but R ", r_current,
+                    " expects ", bioc_expected)
+              }
+            }, error = function(e) add("- Could not determine expected Bioc version"))
+          }
+          add("")
+
+          # ── Outdated packages ──
+          add("### Outdated packages")
+          tryCatch({
+            renv::restore(prompt = FALSE, clean = FALSE)
+          }, error = function(e) NULL)
+
+          status <- tryCatch(
+            utils::capture.output(renv::status()),
+            error = function(e) paste("renv::status() error:", e$message)
+          )
+          out_of_sync <- grep("out of sync|!=", status, value = TRUE)
+          if (length(out_of_sync) > 0) {
+            add("The following packages are out of sync (lockfile != library):")
+            add("")
+            for (line in out_of_sync) add(line)
+          }
+          add("")
+
+          # ── Check for available updates ──
+          add("### Available updates")
+          tryCatch({
+            old <- renv::update(check = TRUE)
+            if (is.data.frame(old) && nrow(old) > 0) {
+              add("Packages with newer versions available:")
+              add("")
+              add("| Package | Installed | Available |")
+              add("|---------|-----------|-----------|")
+              for (i in seq_len(nrow(old))) {
+                add("| ", old$Package[i], " | ", old$Installed[i],
+                    " | ", old$Available[i], " |")
+              }
+            } else {
+              add("All packages are up to date.")
+            }
+          }, error = function(e) add("Could not check for updates: ", e$message))
+
+          # ── Write report ──
+          report <- paste(report_lines, collapse = "\n")
+          cat(report, "\n")
+          writeLines(report, "dep-report.md")
+
+          has_issues <- any(grepl("WARNING|out of sync|!=|newer versions", report))
+          cat(paste0("has_issues=", tolower(has_issues), "\n"),
+              file = Sys.getenv("GITHUB_OUTPUT"), append = TRUE)
+        shell: Rscript {0}
+
+      - name: Open GitHub Issue
+        if: steps.depcheck.outputs.has_issues == 'true'
+        run: |
+          gh issue create \
+            --title "[dependency-check] Action needed — $(date +%Y-%m)" \
+            --label "dependencies" \
+            --body-file dep-report.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: dep-report.md

@@ -1,6 +1,6 @@
 pathway_pathfindR <- function(study,
   path_dbs,  iterations = 20, statistic_parameter="",
-  adjust_per_area = F, adjust_globally = F,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
+  adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
   inference_details, significance = TRUE)
 {
 
@@ -139,7 +139,7 @@ pathway_pathfindR <- function(study,
               output_dir = paste( tempFolder,"/pathfindR/",
                 study,
                 sep=""),
-              plot_enrichment_chart = F)
+              plot_enrichment_chart = FALSE)
             seq <- seq + 1
 
             if(nrow(output_temp)==0)

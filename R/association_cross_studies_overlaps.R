@@ -1,6 +1,6 @@
 # compare inference associations of differente studies
-association_cross_studies_overlaps <- function(inference_detail, studies,alpha = 0.05, adjust_per_area = F,
-  adjust_globally = F,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
+association_cross_studies_overlaps <- function(inference_detail, studies,alpha = 0.05, adjust_per_area = FALSE,
+  adjust_globally = FALSE,pvalue_column="PVALUE_ADJ_ALL_BH",statistic_parameter, adjustment_method = "BH",
   result_folder, ...)
 {
 
@@ -56,15 +56,15 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
     # write a file for each marker
     for (m in unique(aggregated_study_results$MARKER))
     {
-      tt <- subset(aggregated_study_results, MARKER == m)
-      tt <- subset(tt, DEPTH == 3 )
+      tt <- aggregated_study_results[aggregated_study_results$MARKER == m, ]
+      tt <- tt[tt$DEPTH == 3, ]
 
       tt$KEY <- paste0(tt$AREA,"_",tt$SUBAREA,"_",tt$MARKER,"_",tt$FIGURE,"_",tt$AREA_OF_TEST)
       SPLIT <- split(tt$KEY, tt$STUDY)
       # get the common keys
       common_keys <- Reduce(intersect, SPLIT)
       # get the common keys
-      tt <- subset(tt, KEY %in% common_keys)
+      tt <- tt[tt$KEY %in% common_keys, ]
       # remove KEY column
       tt$KEY <- NULL
 
@@ -73,7 +73,7 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
         tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",statistic_parameter, pvalue_column)]
         # get only "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH" common to STUDY
         tt <- tt %>%
-          dplyr::group_by(AREA, SUBAREA, MARKER, FIGURE, AREA_OF_TEST,DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE),
             statistic_parameter = mean(get(statistic_parameter), na.rm = TRUE)
@@ -86,7 +86,7 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
         tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",pvalue_column)]
         # summarise grouping by "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST" and calculate the max of the pvalues
         tt <- tt %>%
-          dplyr::group_by(AREA, SUBAREA, MARKER, FIGURE, AREA_OF_TEST,DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE)
           ) %>%
@@ -107,7 +107,7 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
         # remove KEY COLUMN
         tt$KEY <- NULL
       }
-      utils::write.csv2(tt, filename, row.names = F)
+      utils::write.csv2(tt, filename, row.names = FALSE)
     }
 
   aggregated_study_results <- data.frame()
@@ -150,7 +150,7 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
     #
     studies_to_comb <- na.omit(unique(aggregated_study_results$STUDY))
     # calculate the mean of the pvalues
-    aggregated_study_results_table[, pvalue_column] <- mean(aggregated_study_results_table[,studies_to_comb], na.rm = T)
+    aggregated_study_results_table[, pvalue_column] <- mean(aggregated_study_results_table[,studies_to_comb], na.rm = TRUE)
 
     # rename columns
     studies_to_comb_cols <- paste0(studies_to_comb,"_",pvalue_column)
@@ -160,7 +160,7 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
     if(statistic_parameter != "")
     {
       aggregated_study_results_table_statistic_parameter <- reshape2::dcast(aggregated_study_results, AREA + SUBAREA + MARKER + FIGURE + AREA_OF_TEST ~ STUDY, value.var = statistic_parameter)
-      aggregated_study_results_table_statistic_parameter[, statistic_parameter] <- mean(aggregated_study_results_table_statistic_parameter[,studies_to_comb], na.rm = T)
+      aggregated_study_results_table_statistic_parameter[, statistic_parameter] <- mean(aggregated_study_results_table_statistic_parameter[,studies_to_comb], na.rm = TRUE)
 
       studies_to_comb_cols <- paste0(studies_to_comb,"_",statistic_parameter)
       colnames(aggregated_study_results_table_statistic_parameter) <- c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST",studies_to_comb_cols, statistic_parameter)
@@ -182,7 +182,7 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
     #   write.csv2(aggregated_study_results_table_marker, filename, row.names = F)
     # }
     filename <- inference_file_name(inference_detail, paste0(markers, collapse = "_") ,ssEnv$result_folderInference,file_extension = "csv",suffix = "AGGREGATED", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
-    utils::write.csv2(aggregated_study_results_table, filename, row.names = F)
+    utils::write.csv2(aggregated_study_results_table, filename, row.names = FALSE)
     log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  aggregated files saved!")
     # for( j in 2:length(studies_to_comb))
     {

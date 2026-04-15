@@ -26,13 +26,23 @@ data_preparation(
 
 \item{independent_variable}{regressor}
 
-\item{g_start}{starting column of the dataframe}
+\item{g_start}{index of the first burden column in tempDataFrame}
 
-\item{dototal}{boolean to calculate the total burden test/regression}
+\item{g_end}{index of the last burden column in tempDataFrame}
+
+\item{dototal}{logical; if TRUE, append a column with the total (row-sum) burden}
 
 \item{covariates}{vector of covariates to be found in the sample sheet}
 
 \item{depth_analysis}{1 only sample, 2 chr, 3 alle genomic areas}
+
+\item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers (used to name TOTAL columns)}
+}
+\value{
+A named list with two elements: \code{tempDataFrame} (the prepared
+  and optionally transformed data.frame) and \code{independent_variableLevels}
+  (the factor levels of the independent variable, or \code{NULL} for continuous
+  outcomes).
 }
 \description{
 Title

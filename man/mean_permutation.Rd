@@ -2,7 +2,7 @@
 % Please edit documentation in R/mean_permutation_model.R
 \name{mean_permutation}
 \alias{mean_permutation}
-\title{Title}
+\title{Mean permutation model}
 \usage{
 mean_permutation(
   family_test,
@@ -15,7 +15,7 @@ mean_permutation(
 )
 }
 \arguments{
-\item{family_test}{family lqmm, mean}
+\item{family_test}{family test string encoding model type and permutation parameters}
 
 \item{sig.formula}{formula of the model}
 
@@ -23,10 +23,15 @@ mean_permutation(
 
 \item{independent_variable}{name of regressor}
 
-\item{permutation_success}{number of success tests to calculate corrected confidence interval}
+\item{plot}{logical; if TRUE, generate diagnostic plots}
 
-\item{tests_count}{count of total executed tests}
+\item{samples_sql_condition}{SQL condition string used to filter samples (used for plot file naming)}
+
+\item{key}{named list with AREA, SUBAREA, MARKER and FIGURE identifiers for this test}
+}
+\value{
+A numeric p-value from the permutation-based mean-difference test.
 }
 \description{
-Title
+Mean permutation model
 }

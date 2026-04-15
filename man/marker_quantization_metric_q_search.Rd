@@ -14,6 +14,25 @@ marker_quantization_metric_q_search(
   ...
 )
 }
+\arguments{
+\item{study}{character string identifying the study (used to build folder paths)}
+
+\item{qs}{integer vector of quantile/bin counts to evaluate; default c(2,4,8,16,32)}
+
+\item{result_folder}{character string path to the root result folder for the study}
+
+\item{maxResources}{maximum number of parallel workers to use}
+
+\item{parallel_strategy}{parallelisation strategy passed to \code{init_env} (e.g. "multisession", "sequential")}
+
+\item{start_fresh}{logical; if TRUE, ignore previously cached results and recompute from scratch}
+
+\item{...}{additional arguments passed to \code{init_env}}
+}
+\value{
+A data.frame of quantization metrics (scores per marker and
+  quantile/bin number); results are also written to CSV files on disk.
+}
 \description{
 calculate scores for a study across all the used quantile/bin number with result saved into a base folder
 }

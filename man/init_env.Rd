@@ -11,9 +11,9 @@ init_env(result_folder, maxResources = 90, ...)
 
 \item{maxResources}{percentage of how many available cores will be used default 90 percent, rounded to the lowest integer}
 
-\item{...}{other options to filter elaborations}
-
-\item{parallel_strategy}{which strategy to use for parallel executio see future vignete: possibile values, none, multisession,sequential, multicore, cluster}
+\item{...}{other options to filter elaborations, including \code{parallel_strategy}
+(parallelisation strategy for \pkg{future}: "sequential", "multisession",
+"multicore", "cluster"; default "sequential")}
 }
 \value{
 the working ssEnvonment
