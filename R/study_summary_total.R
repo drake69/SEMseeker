@@ -43,6 +43,8 @@ study_summary_total <- function()
       temp_result <- merge(temp_result, pivot, by="Sample_ID", all=TRUE)
     }
   }
+  if (!exists("temp_result"))
+    return()
   temp_result[is.na(temp_result)] <- 0
   # remove from summary all column excet Sample_ID from temp_result
   col_temp <- colnames(temp_result)[!(colnames(temp_result) == "Sample_ID")]

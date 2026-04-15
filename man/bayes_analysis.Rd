@@ -9,6 +9,8 @@ bayes_analysis(
   independent_variable = "Sample_Group",
   maxResources = 90,
   parallel_strategy = "multicore",
+  bayes_case_threshold = 0.9,
+  bayes_control_threshold = 0.1,
   ...
 )
 }
@@ -24,6 +26,12 @@ case/control grouping variable (default \code{"Sample_Group"}).}
 \item{parallel_strategy}{character. Parallelisation backend; possible
 values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
 \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).}
+
+\item{bayes_case_threshold}{numeric. Minimum P(case | epimutated) required
+to report a hit (default 0.9).}
+
+\item{bayes_control_threshold}{numeric. Maximum P(control | epimutated)
+allowed to report a hit (default 0.1).}
 
 \item{...}{Additional arguments passed to \code{init_env()}.}
 }

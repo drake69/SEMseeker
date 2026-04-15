@@ -53,6 +53,12 @@ deltaX_get <- function()
       next
 
     pivot_file_nameparquet <- pivot_file_name_parquet(source_marker,"HYPER",area_position,subarea_position)
+    if (!file.exists(pivot_file_nameparquet)) {
+      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        " [deltaX_get] Source parquet not found, skipping marker=", marker,
+        " source=", source_marker, " file=", pivot_file_nameparquet)
+      next
+    }
     pivot_hyper <- polars::pl$scan_parquet(pivot_file_nameparquet)
     positions_hyper <- as.data.frame(pivot_hyper$select(c("CHR","START","END"))$collect())
     pivot_hyper <- pivot_hyper$drop(c("CHR","START","END"))
@@ -64,6 +70,12 @@ deltaX_get <- function()
     length_hyper <- length(vector_shaped_hyper)
 
     pivot_file_nameparquet <- pivot_file_name_parquet(source_marker,"HYPO",area_position,subarea_position)
+    if (!file.exists(pivot_file_nameparquet)) {
+      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        " [deltaX_get] Source parquet not found, skipping marker=", marker,
+        " source=", source_marker, " figure=HYPO file=", pivot_file_nameparquet)
+      next
+    }
     pivot_hypo <- polars::pl$scan_parquet(pivot_file_nameparquet)
     positions_hypo <- as.data.frame(pivot_hypo$select(c("CHR","START","END"))$collect())
     pivot_hypo <- pivot_hypo$drop(c("CHR","START","END"))
