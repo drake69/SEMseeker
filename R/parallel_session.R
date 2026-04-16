@@ -4,6 +4,22 @@ parallel_session <- function()
   ssEnv <- get_session_info()
   parallel_strategy <- ssEnv$parallel_strategy
 
+  # ---- Guard: fork() + Polars C++ thread pool on macOS → silent crash -----
+  # `multicore` uses fork() on macOS. If Polars has already been loaded in
+  # the parent process (e.g. by a prior signal_save() call), its C++ thread
+  # pool makes fork() undefined behaviour — the child is killed by a Mach
+  # exception with no R-visible error. Force multisession to avoid this.
+  if (parallel_strategy == "multicore" &&
+      identical(Sys.info()[["sysname"]], "Darwin") &&
+      "polars" %in% loadedNamespaces())
+  {
+    log_event("WARNING: parallel_strategy='multicore' + Polars on macOS is ",
+              "unsafe (fork() on a process with active C++ thread pool ",
+              "causes silent crashes). Forcing parallel_strategy='multisession'.")
+    parallel_strategy <- "multisession"
+    ssEnv$parallel_strategy <- "multisession"
+  }
+
   # check if os is macos
   if (Sys.info()["sysname"] == "Darwin" & parallel_strategy != "sequential")
   {

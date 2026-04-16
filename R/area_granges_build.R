@@ -255,11 +255,18 @@
     )
     if (is.null(cb_obj) || !is.data.frame(cb_obj))
       stop("cytoband_hg19 data object not found in SEMseeker package.")
+    # cytoband_hg19$CHR is stored as factor with an empty level (""); convert
+    # to character and drop rows with missing/empty seqnames — GenomicRanges
+    # refuses GRanges construction if any seqlevel is NA or "".
+    cb_chr <- as.character(cb_obj$CHR)
+    valid  <- !is.na(cb_chr) & nzchar(cb_chr)
+    cb_obj <- cb_obj[valid, , drop = FALSE]
+    cb_chr <- cb_chr[valid]
     gr <- GenomicRanges::GRanges(
-      seqnames = cb_obj$CHR,
+      seqnames = cb_chr,
       ranges   = IRanges::IRanges(cb_obj$START, cb_obj$END)
     )
-    GenomicRanges::mcols(gr)$label <- cb_obj$CYTOBAND
+    GenomicRanges::mcols(gr)$label <- as.character(cb_obj$CYTOBAND)
     return(gr)
   }
 

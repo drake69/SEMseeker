@@ -7,8 +7,12 @@ test_that("semeeker", {
 
   ####################################################################################
 
-  SEMseeker:::semseeker( sample_sheet =  mySampleSheet ,signal_data =  signal_data,
-    result_folder = tempFolder, parallel_strategy = parallel_strategy)
+  SEMseeker::semseeker(
+    input         = signal_data,
+    sample_sheet  = mySampleSheet,
+    result_folder = tempFolder,
+    parallel_strategy = parallel_strategy
+  )
 
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures)
   # name_cleaning uppercases Sample_ID inside semseeker(); use the same for comparison

@@ -358,7 +358,7 @@ library(semseeker)
 result_folder <- "~/semseeker_results/"
 
 # 1. SEM detection
-semseeker(sample_sheet, beta_matrix, result_folder)
+semseeker(input = beta_matrix, sample_sheet = sample_sheet, result_folder = result_folder)
 
 # 2. Association analysis
 inference_details <- data.frame(

@@ -2,48 +2,102 @@
 % Please edit documentation in R/semseeker.R
 \name{semseeker}
 \alias{semseeker}
-\title{Calculate Stochastic Epigenetic Mutations from a Methylation Dataset}
+\title{Run SEMseeker on methylation data from any supported source}
 \usage{
-semseeker(sample_sheet, signal_data, result_folder, ...)
+semseeker(
+  input,
+  sample_sheet,
+  result_folder,
+  input_type = c("auto", "bedmethyl", "coord_df", "matrix"),
+  tech = NULL,
+  genome_build = "hg19",
+  auto_convert_mvalues = TRUE,
+  strict_build_check = TRUE,
+  ...
+)
 }
 \arguments{
-\item{sample_sheet}{A data frame containing at least a column named `Sample_ID` to identify samples. This can be a single data frame or a list of data frames.}
+\item{input}{Input signal data. See details for supported forms.}
 
-\item{signal_data}{A matrix of methylation data. This can be a single data frame or a list of data frames.}
+\item{sample_sheet}{Data frame (or list of data frames) with a
+\code{Sample_ID} column identifying samples.}
 
-\item{result_folder}{A string specifying the directory where the results will be saved.}
+\item{result_folder}{Output directory.}
 
-\item{...}{Additional arguments for further processing options, including:
-- `parallel_strategy`: Strategy for parallel execution. Possible values are `none`, `multisession`, `sequential`, `multicore`, and `cluster`.
-- `maxResources`: Percentage of available cores to be used, default is 90 percent, rounded to the lowest integer.
-- `sliding_window_size`: An integer specifying the size of the sliding window. Default is 11.
-- `alpha`: A numeric value specifying the alpha threshold for the analysis. Default is 0.05.
-- `showprogress`: A logical value indicating whether to show a progress bar. Default is `TRUE`.
-- `iqrTimes`: A numeric value specifying the interquartile range multiplier to identify aberration in the data. Default is 3.
-- `sex_chromosome_remove`: A logical value indicating whether to remove the sex chromosomes. Default is `TRUE`.
-- `plot_format`: A string specifying the plot format. Default is "png".
-- `verbosity`: A numeric value specifying the verbosity level. Default is 0.
-- `marker`: A vector of string specifying the marker to be used for the analysis. Default are "MUTATIONS", "LESIONS","DELTARQ","DELTAQ","DELTAS","DELTAR","MEAN","DELTARP","DELTAP"
-- `areas`: A vector of string specifying the areas to be used for the analysis. Default are "GENE","CHR","ISLAND","PROBE"}
+\item{input_type}{One of \code{"auto"} (default), \code{"bedmethyl"},
+\code{"coord_df"}, \code{"matrix"}. When \code{"auto"}, the type is
+inferred from the object class / file extension.}
+
+\item{tech}{Optional technology label (\code{"K850"}, \code{"K450"},
+\code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}). If \code{NULL} (default)
+it is auto-detected downstream by \code{get_meth_tech()}.}
+
+\item{genome_build}{Reference genome build. One of \code{"hg19"} (default),
+\code{"hg38"}, \code{"mm10"}, \code{"legacy"}.}
+
+\item{auto_convert_mvalues}{If \code{TRUE} (default) and the input values
+exceed the \code{[0, 1]} range, they are assumed to be M-values and
+converted to beta via \eqn{\beta = 2^M / (1 + 2^M)}. Set to \code{FALSE}
+to disable the check (the downstream pipeline will then run on raw values).}
+
+\item{strict_build_check}{If \code{TRUE} (default), impossible tech /
+genome_build combinations (e.g. \code{tech="LONGREAD"} with
+\code{genome_build="hg19"}) raise an error. If \code{FALSE}, a warning is
+emitted and the pipeline proceeds.}
+
+\item{...}{Additional arguments forwarded to \code{\link{semseeker_core}}
+and \code{init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
+\code{sliding_window_size}, \code{marker}, \code{areas}).}
 }
 \value{
-The function writes multiple files to the specified `result_folder`, including the processed sample sheet and result files in CSV format, along with pivot tables and bedgraph files.
+Invisibly \code{NULL}; writes output files to \code{result_folder}.
 }
 \description{
-The `semseeker` function processes a methylation dataset to identify stochastic epigenetic mutations and generates output reports. This involves working with sample sheets and signal data to produce pivot tables and bedgraph files.
+Public entry point. Accepts a wide range of inputs — bedmethyl files
+(modkit / nanopolish), coordinate-based data frames (WGBS / long-read),
+Illumina probe-indexed matrices, or already-loaded data frames — normalises
+them to the internal format, optionally converts M-values to beta values,
+validates the tech / genome_build combination, and delegates to the core
+pipeline \code{\link{semseeker_core}}.
+}
+\details{
+Supported \code{input} forms:
+\itemize{
+  \item Character vector of bedmethyl file paths (\code{.bed}/\code{.tsv}/
+    \code{.bedmethyl}) — parsed via \code{\link{bedmethyl_read}}.
+  \item Data frame with \code{CHR}/\code{START}[\code{/END}] columns
+    (WGBS / long-read coordinate format) — normalised via
+    \code{\link{normalize_signal_input}}.
+  \item Matrix or data frame with probe-ID rownames (Illumina array) —
+    passed through unchanged.
+  \item List of any of the above, one element per batch.
+}
 }
 \examples{
-result_dir <- tempdir()
 \dontrun{
-sample_sheet <- data.frame(
-  Sample_ID    = c("S1", "S2", "S3"),
-  Sample_Name  = c("Case1", "Case2", "Ctrl1"),
-  Sample_Group = c("Case", "Case", "Control")
-)
+# Bedmethyl (Nanopore / modkit):
 semseeker(
-  sample_sheet  = sample_sheet,
-  signal_data   = beta_matrix,
+  input = list.files("bedmethyl/", pattern = "\\\\.bed$", full.names = TRUE),
+  sample_sheet = ss,
+  result_folder = tempdir(),
+  tech = "LONGREAD",
+  genome_build = "hg38"
+)
+
+# Illumina beta matrix:
+semseeker(
+  input = beta_matrix,
+  sample_sheet = ss,
   result_folder = tempdir()
 )
+
+# WGBS coordinate data frame:
+semseeker(
+  input = wgbs_df,              # columns: CHR, START, END, sample1, ...
+  sample_sheet = ss,
+  result_folder = tempdir(),
+  tech = "WGBS"
+)
 }
+
 }

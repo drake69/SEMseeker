@@ -44,7 +44,6 @@ signal_range_values <- function(populationMatrix, batch_id, probe_features) {
 
   row.names(populationMatrix) <- rownames(populationMatrix)
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Starting signal thresholds calculation.")
   export = c("progress_bar","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","populationMatrix","ssEnv")
   r <- 1
 

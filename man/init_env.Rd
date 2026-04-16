@@ -7,13 +7,27 @@
 init_env(result_folder, maxResources = 90, ...)
 }
 \arguments{
-\item{result_folder}{where result of semseeker will bestored}
+\item{result_folder}{where result of semseeker will be stored}
 
-\item{maxResources}{percentage of how many available cores will be used default 90 percent, rounded to the lowest integer}
+\item{maxResources}{percentage of how many available cores will be used
+(default 90 percent, rounded to lowest integer)}
 
-\item{...}{other options to filter elaborations, including \code{parallel_strategy}
-(parallelisation strategy for \pkg{future}: "sequential", "multisession",
-"multicore", "cluster"; default "sequential")}
+\item{...}{additional session options, including:
+\describe{
+  \item{\code{parallel_strategy}}{parallelisation strategy for \pkg{future}:
+    \code{"sequential"} (default), \code{"multisession"}, \code{"multicore"},
+    \code{"cluster"}}
+  \item{\code{genome_build}}{reference genome assembly: \code{"hg19"} (default,
+    matches Illumina array annotation), \code{"hg38"} (GRCh38, typical for
+    long-read / Nanopore data), \code{"mm10"} (mouse — requires C-05).
+    Stored in \code{ssEnv$genome_build} and written to session provenance
+    metadata (C-06).}
+  \item{\code{tech}}{override technology auto-detection: \code{"K850"},
+    \code{"K450"}, \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}.
+    Required for long-read data because LONGREAD cannot be distinguished from
+    WGBS by probe-ID pattern alone.  Example:
+    \code{init_env(folder, tech = "LONGREAD", genome_build = "hg38")}}
+}}
 }
 \value{
 the working ssEnvonment

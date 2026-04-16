@@ -115,11 +115,8 @@ init_env <- function(result_folder, maxResources = 90, ...)
   if (!is.null(ssEnv$openai_api_key) && nzchar(ssEnv$openai_api_key))
     message("SEMseeker: set OPENAI_API_KEY in your environment to enable OpenAI features.")
 
-  # Warn when long-read technology is declared but genome_build is still hg19
-  if (identical(ssEnv$tech, "LONGREAD") && identical(ssEnv$genome_build, "hg19"))
-    log_event("WARNING: tech = 'LONGREAD' but genome_build = 'hg19'. ",
-              "Long-read sequencing (Nanopore/PacBio) typically aligns to GRCh38. ",
-              "Pass genome_build = 'hg38' to init_env() if your data uses hg38.")
+  # tech × genome_build validation is centralised in semseeker() (the public
+  # dispatcher); init_env() no longer duplicates the check.
 
   original_colors <- c('#b9e192', '#b3c7f7', '#f8b8d0','#f194b8', '#ffefb6', '#cfebb6','#b9ef92')
   original_colors <- rep(original_colors, 2)

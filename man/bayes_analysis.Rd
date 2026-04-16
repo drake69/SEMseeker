@@ -37,7 +37,7 @@ allowed to report a hit (default 0.1).}
 }
 \value{
 Invisibly \code{NULL}. Bayesian posterior probability tables
-  (\code{bayes_analisys_*.csv}) are written to the \code{Euristic/}
+  (\code{bayes_analysis_*.csv}) are written to the \code{Euristic/}
   sub-folder of \code{result_folder}.
 }
 \description{

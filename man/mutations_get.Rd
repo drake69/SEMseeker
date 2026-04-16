@@ -7,16 +7,20 @@
 mutations_get(values, figure, thresholds, sampleName)
 }
 \arguments{
-\item{values}{values of methylation}
+\item{values}{values of methylation — data.frame with columns CHR, START, END
+and a fourth numeric VALUE column.}
 
-\item{figure}{figure to get Mutaions of HYPO or HYPER methylation}
+\item{figure}{figure to get Mutations of HYPO or HYPER methylation}
 
-\item{thresholds}{threshold to use for comparison}
+\item{thresholds}{threshold to use for comparison — data.frame with columns
+CHR, START, END, signal_inferior_thresholds, signal_superior_thresholds.}
 
 \item{sampleName}{name of the sample}
 }
 \value{
-mutations
+mutations data.frame with columns CHR, START, END, MUTATIONS (0/1).
+  Only positions present in BOTH values and thresholds are returned
+  (inner join on CHR, START, END via join_values_to_thresholds).
 }
 \description{
 mutations_get

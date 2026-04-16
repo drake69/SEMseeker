@@ -150,8 +150,8 @@ normalisation → mutation calling → lesion aggregation → delta metric compu
 library(semseeker)
 
 semseeker(
+  input         = beta_matrix,
   sample_sheet  = sample_sheet,
-  signal_data   = beta_matrix,
   result_folder = "~/semseeker_results/"
 )
 ```
@@ -172,8 +172,8 @@ Example — run only probe-level mutations, sequential mode, 2 cores:
 
 ```{r run_minimal, eval=FALSE}
 semseeker(
+  input             = beta_matrix,
   sample_sheet      = sample_sheet,
-  signal_data       = beta_matrix,
   result_folder     = "~/semseeker_results/",
   parallel_strategy = "sequential",
   areas             = c("PROBE"),
