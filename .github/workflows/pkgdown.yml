@@ -35,7 +35,7 @@ jobs:
         run: |
           Sys.setenv(NOT_CRAN = "true")
           install.packages(
-            c("remotes", "pkgdown", "devtools"),
+            c("remotes", "pkgdown", "devtools", "BiocManager"),
             repos = "https://packagemanager.posit.co/cran/latest"
           )
           remotes::install_deps(
@@ -44,6 +44,16 @@ jobs:
               rpolars = "https://community.r-multiverse.org",
               CRAN    = "https://packagemanager.posit.co/cran/latest"
             )
+          )
+          # Bioconductor annotation packages — needed by probe_annotation_build()
+          # and examples in the reference documentation
+          BiocManager::install(
+            c(
+              "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
+              "IlluminaHumanMethylation450kanno.ilmn12.hg19",
+              "IlluminaHumanMethylation27kanno.ilmn12.hg19"
+            ),
+            ask = FALSE, update = FALSE
           )
         shell: Rscript {0}
 
