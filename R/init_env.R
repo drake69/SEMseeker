@@ -109,7 +109,6 @@ init_env <- function(result_folder, maxResources = 90, ...)
   arguments <- set_env_variable(arguments,"genome_build","hg19",
     c("hg19","hg38","mm10","legacy"))
   arguments <- set_env_variable(arguments,"showprogress",FALSE)
-  arguments <- set_env_variable(arguments,"signal_intrasample",FALSE)
   arguments <- set_env_variable(arguments,"openai_api_key","")
   arguments <- set_env_variable(arguments,"multiple_test_adj","q", c("BY", "fdr","BH","bonferroni","q"))
 

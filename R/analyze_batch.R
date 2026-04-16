@@ -73,15 +73,8 @@ analyze_batch <- function(signal_data, sample_sheet)
     stop()
   }
 
-  if(!ssEnv$signal_intrasample)
-  {
-    populationControlRangeBetaValues <- as.data.frame(signal_range_values(referencePopulationMatrix,batch_id, probe_features))
-    gc()
-  }
-  else
-  {
-    populationControlRangeBetaValues <- NULL
-  }
+  populationControlRangeBetaValues <- as.data.frame(signal_range_values(referencePopulationMatrix,batch_id, probe_features))
+  gc()
 
   # remove duplicated samples due to the reference population
   referenceSamples <- sample_sheet[sample_sheet$Sample_Group == "Reference",]

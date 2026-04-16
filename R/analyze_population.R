@@ -121,21 +121,6 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
     colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
 
-    if (ssEnv$signal_intrasample )
-    {
-      q <- stats::quantile(signal_values)
-      q1 <- as.numeric(q[2])
-      q3 <- as.numeric(q[4])
-      y_med <- as.numeric(q[3])
-      iqr <- stats::IQR(signal_values)
-      iqrmult <- 3
-      y_sup <- q3 + iqrmult * iqr
-      y_inf <- q1 - iqrmult * iqr
-      signal_superior_thresholds <- rep(y_sup,length(signal_values))
-      signal_inferior_thresholds <- rep(y_inf,length(signal_values))
-      signal_median_values <- rep(y_med,length(signal_values))
-    }
-
     bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER")
     if(!file.exists(bed_filename))
       analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPER", sample_detail = local_sample_detail)

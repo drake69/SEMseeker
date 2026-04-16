@@ -8,7 +8,6 @@
 #' @param ... Additional arguments for further processing options, including:
 #'   - `parallel_strategy`: Strategy for parallel execution. Possible values are `none`, `multisession`, `sequential`, `multicore`, and `cluster`.
 #'   - `maxResources`: Percentage of available cores to be used, default is 90 percent, rounded to the lowest integer.
-#'   - `signal_intrasample`: A logical value indicating whether the signal data is intrasample. Default is `FALSE`.
 #'   - `sliding_window_size`: An integer specifying the size of the sliding window. Default is 11.
 #'   - `alpha`: A numeric value specifying the alpha threshold for the analysis. Default is 0.05.
 #'   - `showprogress`: A logical value indicating whether to show a progress bar. Default is `TRUE`.
@@ -70,7 +69,6 @@ semseeker <- function(sample_sheet,
     sample_sheet_local <- source_data_get(sample_sheet[[batch_id]])
     sample_sheet_local$Sample_ID <- name_cleaning(sample_sheet_local$Sample_ID)
     utils::write.csv2(sample_sheet_local, file = file_path_build(ssEnv$result_folderData, paste0(batch_id,"_sample_sheet_original"),"csv",FALSE))
-    signal_intrasample <- TRUE
     analyze_batch(source_data_get(signal_data[[batch_id]]), sample_sheet_local)
     create_position_pivots(sample_sheet_local,ssEnv$keys_markers_figures)
     log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), "Batch Executed in:", difftime(time1 = Sys.time(), time2= start_time,units = "mins") , " minutes.")
