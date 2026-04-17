@@ -65,7 +65,7 @@ init_env <- function(result_folder, maxResources = 90, ...)
   arguments[["areas_selection"]] <- NULL
 
 
-  start_fresh <- TRUE
+  start_fresh <- FALSE
   if(!is.null(arguments[["start_fresh"]]))
     start_fresh <- arguments$start_fresh
   arguments[["start_fresh"]] <- NULL
@@ -75,8 +75,10 @@ init_env <- function(result_folder, maxResources = 90, ...)
     unlink(result_folder, recursive = TRUE, force = TRUE)
     ssEnv <- list()
   }
-  else
+  else if(dir.exists(result_folder))
     ssEnv <- get_session_info(result_folder)
+  else
+    ssEnv <- list()
 
   if(is.null(ssEnv$session_id))
     ssEnv$session_id <- 0
@@ -153,10 +155,15 @@ init_env <- function(result_folder, maxResources = 90, ...)
   ssEnv$session_folder <-  dir_check_and_create(result_folder,c("Log"))
   random_file_name <- paste(stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]"),".log", sep="")
 
-  if (sink.number() != 0)
-    sink(NULL)
-  file_name <- paste(as.character(Sys.info()["nodename"]),"_session_output.log", sep="")
-  sink(file.path(ssEnv$session_folder,file_name), split = TRUE, append = TRUE)
+  # Skip sink when running inside a callr child process — callr already
+  # redirects stdout/stderr to log.txt; opening a second sink fights with
+  # the redirect and can cause silent crashes on large I/O.
+  if (!identical(Sys.getenv("SEMSEEKER_CHILD"), "1")) {
+    if (sink.number() != 0)
+      sink(NULL)
+    file_name <- paste(as.character(Sys.info()["nodename"]),"_session_output.log", sep="")
+    sink(file.path(ssEnv$session_folder,file_name), split = TRUE, append = TRUE)
+  }
 
   foreachIndex <- 0
 

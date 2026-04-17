@@ -85,22 +85,27 @@ semseeker <- function(input,
 
   input_type <- match.arg(input_type)
 
-  # ---- Step 1: validate tech × genome_build ----------------------------
-  .validate_tech_build(tech, genome_build, strict_build_check)
-
-  # ---- Step 2: normalise input to SEMseeker signal_data ----------------
-  # Recurse for list inputs (multi-batch), unless the character vector is a
-  # list of bedmethyl paths (handled as a single batch inside .dispatch_one).
-  signal_data <- .dispatch_one(input, input_type, auto_convert_mvalues)
-
-  # ---- Step 3: delegate to core pipeline -------------------------------
-  semseeker_core(
-    sample_sheet  = sample_sheet,
-    signal_data   = signal_data,
+  # ---- Step 1: init_env FIRST — cleans folder (start_fresh), sets up
+  #      parallel plan, configures session. Must happen before any
+  #      data processing or file I/O. -----------------------------------
+  init_env(
     result_folder = result_folder,
     tech          = if (is.null(tech)) "" else tech,
     genome_build  = genome_build,
     ...
+  )
+
+  # ---- Step 2: validate tech × genome_build ----------------------------
+  .validate_tech_build(tech, genome_build, strict_build_check)
+
+  # ---- Step 3: normalise input to SEMseeker signal_data ----------------
+  signal_data <- .dispatch_one(input, input_type, auto_convert_mvalues)
+
+  # ---- Step 4: delegate to core pipeline -------------------------------
+  semseeker_core(
+    sample_sheet  = sample_sheet,
+    signal_data   = signal_data,
+    result_folder = result_folder
   )
 }
 

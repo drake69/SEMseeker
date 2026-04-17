@@ -10,20 +10,17 @@
 #' @param signal_data Methylation matrix or data frame with probe-ID rownames
 #'   (or list of such objects, one per batch).
 #' @param result_folder Output directory.
-#' @param ... Additional arguments forwarded to \code{init_env()}.
 #'
 #' @return Invisibly NULL; writes output files to \code{result_folder}.
 #' @keywords internal
 #' @importFrom doRNG %dorng%
 semseeker_core <- function(sample_sheet,
   signal_data,
-  result_folder,
-  ... ) {
+  result_folder) {
 
-  init_env( result_folder= result_folder, ...)
-
+  # init_env() is called by semseeker() before we get here.
   ssEnv <- get_session_info()
-  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will search MARKERS for project \n in ", ssEnv$result_folderData)
+  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will search MARKERS for project \n in ", ssEnv$result_folderData)
 
   # check if the input is a list of data frames
   if(!is.list(sample_sheet) | is.data.frame(sample_sheet))
