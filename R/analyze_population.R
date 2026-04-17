@@ -53,7 +53,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     "signal_superior_thresholds","deltar_single_sample","signal_inferior_thresholds","iqr","signal_median_values",
     "bt","bonferroni_threshold", "probe_features", "analyze_single_sample_both", "delta_single_sample", "progress_bar",
     "progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_single_sample",
-    "get_session_info","bed_file_name","signal_thresholds")
+    "get_session_info","bed_file_name","signal_thresholds","update_session_info","normalize_chr")
   i <- 1
 
   for(i in 1:nrow(sample_sheet)) {
@@ -83,6 +83,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     if (file.exists(coverage_bed)) {
       coverage_sig <- utils::read.delim(coverage_bed, header = FALSE, sep = "\t")
       colnames(coverage_sig) <- c("CHR", "START", "END", "VALUE")
+      coverage_sig$CHR <- normalize_chr(coverage_sig$CHR, "internal")
       coverage_n_input  <- nrow(coverage_sig)
       coverage_n_ranges <- nrow(signal_thresholds)
       coverage_sig_lf <- polars::as_polars_df(
@@ -115,11 +116,19 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   rm(signal_data)
   # for(i in 1:nrow(sample_sheet)) {
   foreach::foreach(i =1:nrow(sample_sheet), .export = variables_to_export) %dorng% {
+    # CRITICAL (E-14): multisession workers are fresh R processes where
+    # .pkgglobalenv$ssEnv is empty. All internal helpers (bed_file_name,
+    # analyze_single_sample, etc.) call get_session_info() which reads from
+    # .pkgglobalenv — NOT from the exported `ssEnv` variable. Without this
+    # call, multisession workers fail with "get_session_info called without
+    # result folder". See engineering-decisions.md §1.3.
+    update_session_info(ssEnv)
 
     local_sample_detail <- sample_sheet[i,]
     bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
     signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
     colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
+    signal_values$CHR <- normalize_chr(signal_values$CHR, "internal")
 
     bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER")
     if(!file.exists(bed_filename))

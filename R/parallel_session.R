@@ -4,36 +4,36 @@ parallel_session <- function()
   ssEnv <- get_session_info()
   parallel_strategy <- ssEnv$parallel_strategy
 
-  # ---- Guard: fork() + Polars C++ thread pool on macOS → silent crash -----
-  # `multicore` uses fork() on macOS. If Polars has already been loaded in
-  # the parent process (e.g. by a prior signal_save() call), its C++ thread
-  # pool makes fork() undefined behaviour — the child is killed by a Mach
-  # exception with no R-visible error. Force multisession to avoid this.
-  if (parallel_strategy == "multicore" &&
-      identical(Sys.info()[["sysname"]], "Darwin") &&
-      "polars" %in% loadedNamespaces())
-  {
-    log_event("WARNING: parallel_strategy='multicore' + Polars on macOS is ",
-              "unsafe (fork() on a process with active C++ thread pool ",
-              "causes silent crashes). Forcing parallel_strategy='multisession'.")
-    parallel_strategy <- "multisession"
-    ssEnv$parallel_strategy <- "multisession"
+  # NOTE: `multicore` on macOS uses fork() and is known to be unsafe in
+  # combination with Polars' C++ thread pool — forked children can be
+  # killed by a Mach exception with no R-visible error. Tests on macOS
+  # now default to `multisession` (see setup.R). End users on macOS
+  # should use `multisession` or `sequential`.
+  #
+  # E-14: `multisession` workers are fresh R processes — .pkgglobalenv$ssEnv
+  # starts empty. Every %dorng% foreach body must call
+  # update_session_info(ssEnv) as its first statement to populate the
+  # worker's namespace. See engineering-decisions.md §1.3.
+
+  # macOS: ensure OBJC_DISABLE_INITIALIZE_FORK_SAFETY is set for any
+  # non-sequential parallel strategy (some packages still attempt fork internally)
+  if (Sys.info()["sysname"] == "Darwin" && parallel_strategy != "sequential") {
+    env_var <- Sys.getenv("OBJC_DISABLE_INITIALIZE_FORK_SAFETY")
+    if (env_var != "YES") {
+      Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES")
+      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " Set OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES automatically.")
+    }
   }
 
-  # check if os is macos
-  if (Sys.info()["sysname"] == "Darwin" & parallel_strategy != "sequential")
-  {
-    env_var <- Sys.getenv("OBJC_DISABLE_INITIALIZE_FORK_SAFETY")
-    if (env_var != "YES")
-    {
-      log_event("ERROR: Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY must be YES to work in multiprocess. \n
-        execute: export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES at shell or
-         Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES') ! ")
-      # Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY="YES")
-      stop("Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY must be YES to work in multiprocess. \n
-        execute: export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES at shell or
-         Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES') !")
-    }
+  # E-13: multicore (fork) on macOS is unsafe with Polars' C++ thread pool —
+  # forked children are killed by Mach exceptions with no R-visible error.
+  # Force multisession (separate R processes) instead.
+  if (Sys.info()["sysname"] == "Darwin" && parallel_strategy == "multicore") {
+    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " multicore (fork) is unsafe on macOS with Polars. Switching to multisession.")
+    parallel_strategy <- "multisession"
+    ssEnv$parallel_strategy <- parallel_strategy
   }
 
   if(parallelly::supportsMulticore())

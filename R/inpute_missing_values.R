@@ -33,31 +33,22 @@ inpute_missing_values <- function(signal_data){
   n_item = nrow(signal_data)*ncol(signal_data)/100
   log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y") ," Imputing missing values using ", ssEnv$inpute , " method. Number of missing values: ", n_na, " corresponding to: ", round(n_na/n_item, 2), " % of the data.")
   log_event("JOURNAL: Imputing missing values using ", ssEnv$inpute , " method. Number of missing values: ", n_na, " corresponding to: ", round(n_na/n_item, 2), " % of the data.")
-  if (ssEnv$inpute=="median")
-  {
-    # Assuming signal_data is a matrix or data frame
-    for (i in seq(1, nrow(signal_data), by = chunk_size)) {
-      # Define the chunk
-      chunk_indices <- i:min(i + chunk_size - 1, nrow(signal_data))
-      # Process the chunk
-      row_medians <- apply(signal_data[chunk_indices, ], 1, stats::median, na.rm = TRUE)
-      row_id <- row(signal_data[chunk_indices, ])[is.na(signal_data[chunk_indices, ])]
-      signal_data[chunk_indices, ][is.na(signal_data[chunk_indices, ])] <- row_medians[row_id]
-      if(ssEnv$showprogress)
-        progress_bar(sprintf("Inputed: %s positions", stringr::str_pad(max(chunk_indices), 10, pad = " ")))
+  mat <- as.matrix(signal_data)
 
-    }
-  }
-  else if (ssEnv$inpute=="mean")
+  if (ssEnv$inpute == "median")
   {
-    for (i in seq(1, nrow(signal_data), by = chunk_size)) {
-      # Define the chunk
-      chunk_indices <- i:min(i + chunk_size - 1, nrow(signal_data))
-      # Process the chunk
-      row_medians <- apply(signal_data[chunk_indices, ], 1, mean, na.rm = TRUE)
-      signal_data[chunk_indices, ][is.na(signal_data[chunk_indices, ])] <-
-        row_medians[row(signal_data[chunk_indices, ])[is.na(signal_data[chunk_indices, ])]]
-    }
+    # Vectorized: matrixStats::rowMedians is C-level, ~10x faster than apply
+    row_med <- matrixStats::rowMedians(mat, na.rm = TRUE)
+    na_idx  <- which(is.na(mat), arr.ind = TRUE)
+    mat[na_idx] <- row_med[na_idx[, 1L]]
+    signal_data <- as.data.frame(mat)
+  }
+  else if (ssEnv$inpute == "mean")
+  {
+    row_mn <- matrixStats::rowMeans2(mat, na.rm = TRUE)
+    na_idx <- which(is.na(mat), arr.ind = TRUE)
+    mat[na_idx] <- row_mn[na_idx[, 1L]]
+    signal_data <- as.data.frame(mat)
   }
   else if (grepl("knn", ssEnv$inpute))
   {
@@ -68,12 +59,14 @@ inpute_missing_values <- function(signal_data){
     }
     centers <- strsplit(ssEnv$inpute, ";")[[1]][2]
     k <- strsplit(ssEnv$inpute, ";")[[1]][3]
-    signal_matrix <- as.matrix(signal_data)
-    imputed_matrix <- KMEANS.KNN::kmeans_knn(signal_matrix, centers = centers, k = k)
+    imputed_matrix <- KMEANS.KNN::kmeans_knn(mat, centers = centers, k = k)
+    signal_data <- as.data.frame(imputed_matrix)
   }
-  else if (ssEnv$inpute=="none")
+  else if (ssEnv$inpute == "none")
   {
-    signal_data <- signal_data[complete.cases(signal_data),]
+    # Vectorized: rowAnys(is.na) avoids creating full logical matrix copy
+    has_na <- matrixStats::rowAnyNAs(mat)
+    signal_data <- signal_data[!has_na, ]
   }
   else
   {
@@ -81,10 +74,12 @@ inpute_missing_values <- function(signal_data){
     stop()
   }
 
+  rm(mat)
   gc()
 
-  # drop rows with all NA
-  signal_data <- signal_data[!apply(signal_data, 1, function(x) all(is.na(x))), ]
+  # drop rows with all NA (vectorized)
+  all_na <- matrixStats::rowAlls(is.na(as.matrix(signal_data)))
+  signal_data <- signal_data[!all_na, ]
   nrows_ex_post <- nrow(signal_data)
   if (nrows_ex_post < nrow_ex_ante)
   {

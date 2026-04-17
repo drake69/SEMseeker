@@ -63,9 +63,9 @@ probe_annotation_build <- function(tech, force = FALSE) {
   # ---- Technology flag ----
   anno_df[[tech]] <- TRUE
 
-  # ---- GENE columns ----
-  gene_groups <- strsplit(as.character(anno_df$UCSC_RefGene_Group), ";")
-  gene_names  <- strsplit(as.character(anno_df$UCSC_RefGene_Name),  ";")
+  # ---- GENE columns (vectorized via data.table for speed at 485k+ probes) ----
+  group_str <- as.character(anno_df$UCSC_RefGene_Group)
+  name_str  <- as.character(anno_df$UCSC_RefGene_Name)
 
   gene_region_map <- c(
     GENE_BODY    = "Body",
@@ -76,18 +76,30 @@ probe_annotation_build <- function(tech, force = FALSE) {
     GENE_3UTR    = "3'UTR",
     GENE_EXONBND = "ExonBnd"
   )
-  for (col in names(gene_region_map)) {
-    region <- gene_region_map[[col]]
-    anno_df[[col]] <- mapply(function(groups, genes) {
-      hits <- unique(genes[groups == region & genes != ""])
+
+  # Pre-split once (not per-column)
+  gene_groups <- strsplit(group_str, ";", fixed = TRUE)
+  gene_names  <- strsplit(name_str,  ";", fixed = TRUE)
+
+  # Helper: extract unique gene names matching a region, vectorized via vapply
+  .extract_genes_for_region <- function(region, groups_list, names_list) {
+    vapply(seq_along(groups_list), function(i) {
+      g <- groups_list[[i]]
+      n <- names_list[[i]]
+      hits <- unique(n[g == region & n != ""])
       if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
-    }, gene_groups, gene_names, SIMPLIFY = TRUE)
+    }, character(1))
   }
 
-  anno_df$GENE_WHOLE <- mapply(function(genes) {
+  for (col in names(gene_region_map)) {
+    anno_df[[col]] <- .extract_genes_for_region(
+      gene_region_map[[col]], gene_groups, gene_names)
+  }
+
+  anno_df$GENE_WHOLE <- vapply(gene_names, function(genes) {
     hits <- unique(genes[genes != "" & !is.na(genes)])
     if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
-  }, gene_names, SIMPLIFY = TRUE)
+  }, character(1))
 
   # ---- ISLAND columns ----
   island_rel <- as.character(anno_df$Relation_to_Island)
@@ -100,24 +112,23 @@ probe_annotation_build <- function(tech, force = FALSE) {
   anno_df$ISLAND_S_SHELF <- ifelse(island_rel == "S_Shelf", island_name, NA_character_)
 
   # ---- CHR_CYTOBAND ----
-  # Assigned by range overlap against the bundled cytoband_hg19 table
-  # (829 rows, one per cytogenetic band in hg19).
+  # Assigned by range overlap against the bundled cytoband_hg19 table.
+  # Vectorized: one findInterval per chromosome instead of nested loops.
   cb        <- SEMseeker::cytoband_hg19
+  cb        <- cb[!is.na(cb$CHR) & cb$CHR != "", ]
   chr_vec   <- anno_df$CHR
   start_vec <- anno_df$START
   cytoband_vec <- rep(NA_character_, nrow(anno_df))
 
   for (chr_val in unique(chr_vec[!is.na(chr_vec)])) {
-    cb_chr   <- cb[cb$CHR == chr_val, , drop = FALSE]
+    cb_chr <- cb[cb$CHR == chr_val, , drop = FALSE]
     if (nrow(cb_chr) == 0L) next
+    cb_chr <- cb_chr[order(cb_chr$START), ]
     idx_anno <- which(chr_vec == chr_val)
-    for (i in seq_len(nrow(cb_chr))) {
-      in_band <- idx_anno[
-        start_vec[idx_anno] >= cb_chr$START[i] &
-        start_vec[idx_anno] <= cb_chr$END[i]
-      ]
-      cytoband_vec[in_band] <- cb_chr$CYTOBAND[i]
-    }
+    # findInterval: O(n log m) instead of O(n × m)
+    band_idx <- findInterval(start_vec[idx_anno], cb_chr$START)
+    valid <- band_idx > 0L & start_vec[idx_anno] <= cb_chr$END[band_idx]
+    cytoband_vec[idx_anno[valid]] <- cb_chr$CYTOBAND[band_idx[valid]]
   }
   anno_df$CHR_CYTOBAND <- cytoband_vec
 

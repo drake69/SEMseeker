@@ -19,6 +19,7 @@ analyze_single_sample_both <- function( sample_detail, marker) {
     if(file.exists(fileName))
     {
       data_to_saveTemp <- utils::read.table(fileName, sep="\t", col.names =c("CHR", "START", "END") )
+      data_to_saveTemp$CHR <- normalize_chr(data_to_saveTemp$CHR, "internal")
       data_to_save <- rbind(data_to_save, data_to_saveTemp )
     }
   }

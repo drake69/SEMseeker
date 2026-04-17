@@ -49,12 +49,9 @@
   )
 }
 
-# Normalise chromosome names: strip leading "chr"/"Chr"/"CHR" prefix.
-.norm_chr <- function(chr_vec) sub("^[Cc][Hh][Rr]", "", as.character(chr_vec))
-
 # Build synthetic probe ID.
 .make_probe_id <- function(chr_vec, start_vec) {
-  paste0(.norm_chr(chr_vec), "_", as.character(start_vec))
+  paste0(normalize_chr(chr_vec, "internal"), "_", as.character(start_vec))
 }
 
 # ---------------------------------------------------------------------------
