@@ -28,7 +28,7 @@ markers_performance_association_q_search <- function(inference_details, result_f
   #
   result_folder_temp <- paste0(result_folder,"/", study, folder_key, qs[1], sep="")
   ssEnv <- init_env( result_folder =  result_folder_temp, maxResources =  90, parallel_strategy  =  "sequential", start_fresh = FALSE)
-  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will search evaluate the best quantile/bin post association analysis for project \n in ", ssEnv$result_folderData)
+  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will search evaluate the best quantile/bin post association analysis for project \n in ", ssEnv$result_folderData)
 
   markers <- unique(ssEnv$keys_areas_subareas_markers_figures$MARKER)
   markers <- sort(markers, decreasing = TRUE)

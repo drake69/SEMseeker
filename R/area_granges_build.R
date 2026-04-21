@@ -125,12 +125,19 @@
 
 .build_gene_area <- function(subarea, txdb) {
   # TSS = single-base GRanges at each gene's transcription start (strand-aware)
-  all_genes <- GenomicRanges::genes(txdb, single.strand.genes.only = FALSE)
+  all_genes <- GenomicFeatures::genes(txdb, single.strand.genes.only = FALSE)
   # genes() can return a GRangesList for multi-strand genes; keep only GRanges
   if (is(all_genes, "GRangesList"))
     all_genes <- unlist(all_genes)
 
-  symbols <- .entrez_to_symbol(GenomicRanges::mcols(all_genes)$gene_id)
+  # After unlist(), gene_ids live in names(all_genes); direct GRanges from
+  # genes() also has them in mcols$gene_id. Prefer names when available.
+  gene_ids <- if (!is.null(names(all_genes)) &&
+                  length(names(all_genes)) == length(all_genes))
+    names(all_genes)
+  else
+    GenomicRanges::mcols(all_genes)$gene_id
+  symbols <- .entrez_to_symbol(gene_ids)
 
   tss <- GenomicRanges::resize(all_genes, 1L, fix = "start")
 
@@ -139,11 +146,21 @@
       GenomicRanges::flank(tss, 200L)
     },
     TSS1500 = {
-      # Ring: 200-1500 bp upstream of TSS (exclude the TSS200 window)
-      GenomicRanges::setdiff(
-        GenomicRanges::flank(tss, 1500L),
-        GenomicRanges::flank(tss, 200L)
-      )
+      # Ring: 201-1500 bp upstream of TSS (exclude the TSS200 window).
+      # Build strand-aware by flanking 1500 bp then narrowing the TSS-proximal
+      # 200 bp off. narrow() is NOT strand-aware, so split by strand:
+      #   +strand: TSS is at higher coords → TSS-proximal end = end(range)
+      #   -strand: TSS is at lower coords  → TSS-proximal end = start(range)
+      # Preserves 1-to-1 correspondence with tss, so per-gene symbols remain
+      # aligned with the output ranges.
+      up_1500 <- GenomicRanges::flank(tss, 1500L)
+      is_plus <- as.character(GenomicRanges::strand(up_1500)) %in% c("+", "*")
+      out <- up_1500
+      if (any(is_plus))
+        out[is_plus]  <- GenomicRanges::narrow(up_1500[is_plus],  end   = -201L)
+      if (any(!is_plus))
+        out[!is_plus] <- GenomicRanges::narrow(up_1500[!is_plus], start =  201L)
+      out
     },
     `1STEXON` = {
       exons_by <- GenomicFeatures::exonsBy(txdb, by = "gene")

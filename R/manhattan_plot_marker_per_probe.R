@@ -31,7 +31,7 @@ manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe
   ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE,
     figures=c("HYPER","HYPO"), areas="PROBE", ...)
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will generate images for significative probes \n")
+  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will generate images for significative probes \n")
 
   study_summary <-   study_summary_get()
   annotate_position_pivots()

@@ -27,7 +27,7 @@ pathway_cross_subsamples_overlaps <- function(inference_details,pathways_sql_sel
   family_test <- as.character(inference_details[1,"family_test"])
   independent_variable <- as.character(inference_details[1,"independent_variable"])
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will perform the pathway analysys for sub samples overlaps.")
+  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the pathway analysys for sub samples overlaps.")
 
   color_palette <- ssEnv$color_palette
   localKeys <- unique(ssEnv$keys_for_pathway)

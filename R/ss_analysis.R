@@ -172,6 +172,7 @@ ss_analysis <-
               # for (c in 2:ncol(tempDataFrameComb))
               results_temp <- foreach::foreach(c  =  2:ncol(tempDataFrameComb), .combine  =  rbind, .export  =  var_to_export) %dorng%
               {
+                update_session_info(ssEnv)
                 area_of_test = names(tempDataFrameComb)[c]
                 if(ssEnv$showprogress)
                 {

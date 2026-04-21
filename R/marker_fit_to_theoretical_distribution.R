@@ -30,6 +30,7 @@ marker_fit_to_theoretical_distribution <- function()
     result_temp <- foreach::foreach(k = 1:nkeys, .combine =  plyr::rbind.fill, .export = to_export) %dorng%
       # for (k in 1:nkeys)
       {
+        update_session_info(ssEnv)
         # k <- 1
         key <- keys [k,]
         log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), "Processing key: ", key$MARKER," ", key$FIGURE," ", key$AREA," ", key$SUBAREA)

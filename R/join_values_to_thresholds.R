@@ -25,8 +25,14 @@
 #         Returns 0-row data.frame if there is no positional overlap.
 join_values_to_thresholds <- function(values, thresholds) {
 
+  # E-13: Normalise CHR — strip "chr" prefix so bed-file values (chr1) match
+  # threshold values (1). dump_sample_as_bed_file() prepends "chr" when writing
+  # bed files, but signal_thresholds retains bare chromosome numbers from the
+  # probe annotation. Without this normalisation the inner join returns 0 rows.
+  strip_chr <- function(x) sub("^chr", "", as.character(x), ignore.case = TRUE)
+
   vals <- data.frame(
-    CHR   = as.character(values$CHR),
+    CHR   = strip_chr(values$CHR),
     START = as.integer(values$START),
     END   = as.integer(values$END),
     VALUE = values[, 4L],
@@ -42,7 +48,7 @@ join_values_to_thresholds <- function(values, thresholds) {
     colnames(thresholds)
   )
   thr <- thresholds[, keep_cols, drop = FALSE]
-  thr$CHR   <- as.character(thr$CHR)
+  thr$CHR   <- strip_chr(thr$CHR)
   thr$START <- as.integer(thr$START)
   thr$END   <- as.integer(thr$END)
 

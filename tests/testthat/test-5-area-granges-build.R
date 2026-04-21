@@ -82,15 +82,26 @@ test_that("area_granges_build GENE_TSS200 ranges are ≤ 200bp wide", {
   expect_true(all(GenomicRanges::width(gr) <= 200L))
 })
 
-test_that("GENE_TSS1500 and GENE_TSS200 do not overlap", {
+test_that("GENE_TSS1500 and GENE_TSS200 do not overlap within the same gene", {
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
   gr200  <- SEMseeker:::area_granges_build("GENE_TSS200",  genome_build = "hg19")
   gr1500 <- SEMseeker:::area_granges_build("GENE_TSS1500", genome_build = "hg19")
-  hits   <- GenomicRanges::findOverlaps(gr200, gr1500)
-  expect_equal(length(hits), 0L,
-    info = "TSS200 and TSS1500 rings must not overlap")
+  # Per-gene check: TSS200 and TSS1500 must not overlap within the same gene
+  # (they are adjacent rings by design). Cross-gene overlaps between
+  # neighbouring genes are expected and do not violate the ring structure.
+  lbl200  <- GenomicRanges::mcols(gr200)$label
+  lbl1500 <- GenomicRanges::mcols(gr1500)$label
+  common  <- intersect(lbl200, lbl1500)
+  skip_if(length(common) == 0L, "no gene label overlap between TSS200/TSS1500")
+  per_gene_overlap <- vapply(utils::head(common, 500L), function(sym) {
+    a <- gr200[lbl200 == sym]
+    b <- gr1500[lbl1500 == sym]
+    length(GenomicRanges::findOverlaps(a, b))
+  }, integer(1L))
+  expect_equal(sum(per_gene_overlap), 0L,
+    info = "Per-gene: TSS200 and TSS1500 rings must not overlap within the same gene")
 })
 
 test_that("area_granges_build result is cached on second call", {

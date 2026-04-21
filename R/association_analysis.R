@@ -73,7 +73,7 @@ association_analysis <- function(inference_details,result_folder, maxResources =
 
   ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will perform the association analysys for project \n in ", ssEnv$result_folderData)
+  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the association analysys for project \n in ", ssEnv$result_folderData)
 
   if(start_fresh)
     unlink(ssEnv$result_folderInference, recursive = TRUE)

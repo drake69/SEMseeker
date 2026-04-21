@@ -25,6 +25,7 @@ create_heatmap <- function() {
     foreach::foreach(j = 1:nrow(localKeys), .export = variables_to_export_nested) %dorng%
     # for(j in 1:nrow(localKeys))
     {
+      update_session_info(ssEnv)
       area <- localKeys[j,"AREA"]
       subarea <- localKeys[j,"SUBAREA"]
       marker <- localKeys[j,"MARKER"]
