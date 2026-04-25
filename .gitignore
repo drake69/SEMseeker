@@ -7,3 +7,18 @@ packrat/src/
 cache
 tmp
 .code_reader/
+
+# macOS
+.DS_Store
+
+# R CMD check output
+*.Rcheck/
+
+# CI check output
+ci-check-output/
+
+# Test artifacts
+tests/testthat/_problems/
+
+# Secrets (blueprint §17)
+secrets/
