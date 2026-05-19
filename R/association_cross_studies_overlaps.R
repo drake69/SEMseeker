@@ -17,7 +17,7 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
   ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
   cross_study_env <- ssEnv
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will perform the cross study association analysys for projects \n ", paste0(studies$STUDY, collapse = ", "))
+  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the cross study association analysys for projects \n ", paste0(studies$STUDY, collapse = ", "))
 
   color_palette <- ssEnv$color_palette
   localKeys <- unique(ssEnv$keys_areas_subareas_markers_figures[,c("MARKER","AREA")])

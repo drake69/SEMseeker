@@ -49,7 +49,7 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
   init_env( result_folder= result_folder, ...)
 
   ssEnv <- get_session_info()
-  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will explore your data for project \n in ", ssEnv$result_folderData)
+  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will explore your data for project \n in ", ssEnv$result_folderData)
   folder_path <- dir_check_and_create(ssEnv$result_folderData,paste0("Exploratory_", exploration_phase))
 
   # remove Sample_Group and unique

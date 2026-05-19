@@ -24,6 +24,7 @@ batch_correlation_check <- function() {
     total_data_for <- foreach::foreach(g = seq_along(sample_groups), .combine = rbind, .export = sub_export ) %dorng%
       # for(g in seq_along(sample_groups))
       {
+        update_session_info(ssEnv)
         pop <- sample_groups[g]
         tempresult_folderData <- dir_check_and_create(ssEnv$result_folderData,c(as.character(pop) ,paste(as.character(key$MARKER),"_",as.character(key$FIGURE),sep="")))
         file_to_read <- file_path_build(tempresult_folderData, c("MULTIPLE", as.character(key$MARKER), as.character(key$FIGURE)), "fst")

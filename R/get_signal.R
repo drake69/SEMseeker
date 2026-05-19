@@ -13,7 +13,7 @@ source_data_get <- function(source_data, check_is_numeric=FALSE){
   if ( grepl("\\.csv$", source_data))
     source <- withr::with_envvar(
       c(VROOM_CONNECTION_SIZE = "5000000"),
-      as.data.frame(readr::read_csv2(source_data))
+      as.data.frame(readr::read_csv2(source_data, show_col_types = FALSE))
     )
 
   if ( grepl("\\.xls$", source_data) |  grepl("\\.xlsx$", source_data))
@@ -25,7 +25,7 @@ source_data_get <- function(source_data, check_is_numeric=FALSE){
   # check if the file is gz or rds
   if ( grepl("\\.gz$", source_data))
   {
-    source <- as.data.frame(readr::read_delim(source_data))
+    source <- as.data.frame(readr::read_delim(source_data, show_col_types = FALSE))
   }
   if ( grepl("\\.rds$", source_data) ||  grepl("\\.RDS$", source_data))
     source <- as.data.frame(readRDS(source_data))
@@ -46,6 +46,10 @@ source_data_get <- function(source_data, check_is_numeric=FALSE){
     log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") , " source_data ", source_data, " is missed !")
     stop()
   }
+
+  # Normalize CHR to bare internal format if present
+  if ("CHR" %in% colnames(source))
+    source$CHR <- normalize_chr(source$CHR, "internal")
 
   # check all values are numeric
   if (check_is_numeric & !all(sapply(source, is.numeric)))

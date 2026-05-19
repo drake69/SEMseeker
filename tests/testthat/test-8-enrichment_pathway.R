@@ -223,9 +223,9 @@ test_that("pathway_ctdR runs without error on synthetic association results", {
   colnames(local_sig_ep) <- mySampleSheet$Sample_ID
 
   # ── semseeker ─────────────────────────────────────────────────────────────
-  SEMseeker:::semseeker(
+  SEMseeker::semseeker(
+    input             = local_sig_ep,
     sample_sheet      = mySampleSheet,
-    signal_data       = local_sig_ep,
     result_folder     = tempFolder,
     parallel_strategy = "sequential",
     areas             = c("GENE", "POSITION"),

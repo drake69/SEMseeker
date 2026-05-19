@@ -24,7 +24,30 @@
   clear message when origin results carry a different `GENOME_BUILD` than the
   current session.
 
+### Breaking changes
+
+- **`start_fresh` defaults to `FALSE`.**
+  `init_env()` no longer deletes the result folder before starting. Existing
+  results are preserved unless the caller explicitly passes `start_fresh = TRUE`.
+  The Shiny UI exposes this as a checkbox ("Delete result folder before running",
+  unchecked by default).
+
 ### Bug fixes
+
+- **macOS: tests default to `multisession` instead of `multicore`** (E-14).
+  `multicore` (fork) is unsafe on macOS with Polars' C++ thread pool — forked
+  children can be killed by Mach exceptions. `setup.R` now selects `multisession`
+  on Darwin, `multicore` on Linux. All `%dorng%` foreach bodies now call
+  `update_session_info(ssEnv)` as their first statement to populate the worker's
+  `.pkgglobalenv` — required because `multisession` workers are fresh R processes
+  where the session singleton is empty.
+
+- **`chr` prefix mismatch in Polars join** (E-13).
+  `dump_sample_as_bed_file()` prepends `chr` to chromosome names, but
+  `signal_thresholds` retains bare numbers from probe annotations. The inner
+  join in `join_values_to_thresholds()` returned 0 rows → no mutations detected.
+  Fix: `join_values_to_thresholds()` now strips the `chr` prefix from both sides
+  before joining.
 
 - **`exists("signal_data")` scoped to local environment in `analyze_batch()` and
   `analyze_population()`** (E-01).

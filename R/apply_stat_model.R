@@ -68,6 +68,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
     # By catching errors ourselves and returning NULL, we prevent the condition
     # object from reaching doFuture's result-combination logic.
     # plyr::rbind.fill silently ignores NULL results.
+    update_session_info(ssEnv)
     ssEnv <- get_session_info()
 
     burdenValue <- cols[g]

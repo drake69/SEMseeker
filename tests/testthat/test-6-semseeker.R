@@ -3,13 +3,17 @@ test_that("semeeker", {
   tempFolder <- tempFolders[1]
   unlink(tempFolder,recursive = TRUE)
   tempFolders <- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, showprogress=showprogress, verbosity=verbosity)
 
   ####################################################################################
 
-  SEMseeker:::semseeker( sample_sheet =  mySampleSheet ,signal_data =  signal_data,
-    result_folder = tempFolder, parallel_strategy = parallel_strategy)
+  SEMseeker::semseeker(
+    input         = signal_data,
+    sample_sheet  = mySampleSheet,
+    result_folder = tempFolder,
+    parallel_strategy = parallel_strategy
+  )
 
+  ssEnv <- SEMseeker:::get_session_info()
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures)
   # name_cleaning uppercases Sample_ID inside semseeker(); use the same for comparison
   cleaned_sample_ids <- SEMseeker:::name_cleaning(mySampleSheet$Sample_ID)

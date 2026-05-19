@@ -65,7 +65,7 @@ init_env <- function(result_folder, maxResources = 90, ...)
   arguments[["areas_selection"]] <- NULL
 
 
-  start_fresh <- TRUE
+  start_fresh <- FALSE
   if(!is.null(arguments[["start_fresh"]]))
     start_fresh <- arguments$start_fresh
   arguments[["start_fresh"]] <- NULL
@@ -75,8 +75,10 @@ init_env <- function(result_folder, maxResources = 90, ...)
     unlink(result_folder, recursive = TRUE, force = TRUE)
     ssEnv <- list()
   }
-  else
+  else if(dir.exists(result_folder))
     ssEnv <- get_session_info(result_folder)
+  else
+    ssEnv <- list()
 
   if(is.null(ssEnv$session_id))
     ssEnv$session_id <- 0
@@ -115,11 +117,8 @@ init_env <- function(result_folder, maxResources = 90, ...)
   if (!is.null(ssEnv$openai_api_key) && nzchar(ssEnv$openai_api_key))
     message("SEMseeker: set OPENAI_API_KEY in your environment to enable OpenAI features.")
 
-  # Warn when long-read technology is declared but genome_build is still hg19
-  if (identical(ssEnv$tech, "LONGREAD") && identical(ssEnv$genome_build, "hg19"))
-    log_event("WARNING: tech = 'LONGREAD' but genome_build = 'hg19'. ",
-              "Long-read sequencing (Nanopore/PacBio) typically aligns to GRCh38. ",
-              "Pass genome_build = 'hg38' to init_env() if your data uses hg38.")
+  # tech × genome_build validation is centralised in semseeker() (the public
+  # dispatcher); init_env() no longer duplicates the check.
 
   original_colors <- c('#b9e192', '#b3c7f7', '#f8b8d0','#f194b8', '#ffefb6', '#cfebb6','#b9ef92')
   original_colors <- rep(original_colors, 2)
@@ -156,10 +155,15 @@ init_env <- function(result_folder, maxResources = 90, ...)
   ssEnv$session_folder <-  dir_check_and_create(result_folder,c("Log"))
   random_file_name <- paste(stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]"),".log", sep="")
 
-  if (sink.number() != 0)
-    sink(NULL)
-  file_name <- paste(as.character(Sys.info()["nodename"]),"_session_output.log", sep="")
-  sink(file.path(ssEnv$session_folder,file_name), split = TRUE, append = TRUE)
+  # Skip sink when running inside a callr child process — callr already
+  # redirects stdout/stderr to log.txt; opening a second sink fights with
+  # the redirect and can cause silent crashes on large I/O.
+  if (!identical(Sys.getenv("SEMSEEKER_CHILD"), "1")) {
+    if (sink.number() != 0)
+      sink(NULL)
+    file_name <- paste(as.character(Sys.info()["nodename"]),"_session_output.log", sep="")
+    sink(file.path(ssEnv$session_folder,file_name), split = TRUE, append = TRUE)
+  }
 
   foreachIndex <- 0
 

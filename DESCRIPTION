@@ -21,9 +21,9 @@ biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylatio
         StatisticalMethod, Software
 Imports: dplyr, doFuture, doRNG, FactoMineR, factoextra, foreach, FSA,
         fst, future, future.apply, ggplot2, ggvenn, graphics, grDevices,
-        gridExtra, gtools, Hmisc, jsonlite, lqmm, plyr, polars, progressr,
-        reshape, reshape2, R.utils, rlang, stats, stringr, tools, utils,
-        withr, zoo, VennDiagram, effsize, pwr, combinat, philentropy,
+        gridExtra, gtools, Hmisc, jsonlite, lqmm, matrixStats, plyr, polars,
+        progressr, reshape, reshape2, R.utils, rlang, stats, stringr, tools,
+        utils, withr, zoo, VennDiagram, effsize, pwr, combinat, philentropy,
         parallelly, knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
@@ -31,7 +31,7 @@ Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
         stringi, testthat, WebGestaltR, rmarkdown, pkgdown, STRINGdb,
         AnnotationDbi, KMEANS.KNN, M3C, UpSetR, boot, car, circlize,
         fastDummies, fitdistrplus, ggpubr, mediation, meta, nnet,
-        org.Hs.eg.db, quantreg, qvalue, tidyverse, matrixStats,
+        org.Hs.eg.db, quantreg, qvalue, tidyverse,
         IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
         IlluminaHumanMethylation450kanno.ilmn12.hg19,
         IlluminaHumanMethylation27kanno.ilmn12.hg19,

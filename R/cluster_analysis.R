@@ -3,7 +3,7 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
 {
   ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will perform the cluster analysys for project \n in ", ssEnv$result_folderData)
+  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the cluster analysys for project \n in ", ssEnv$result_folderData)
 
   if(start_fresh)
     unlink(ssEnv$result_folderInference, recursive = TRUE)
@@ -80,6 +80,6 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
         progress_bar(sprintf("Cluster analysis of area: %s, subarea: %s, marker: %s and figure: %s",key$AREA, key$SUBAREA, key$MARKER, key$FIGURE ))
     }
   }
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker finished the cluster analysis for project \n in ", ssEnv$result_folderData)
+  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker finished the cluster analysis for project \n in ", ssEnv$result_folderData)
   return(invisible())
 }

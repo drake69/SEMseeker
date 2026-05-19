@@ -177,6 +177,7 @@ bayes_analysis <- function(
         .combine = rbind,
         .export  = var_to_export
       ) %dorng% {
+        update_session_info(ssEnv)
 
         area <- names(tempDataFrame)[col_idx]
         if (ssEnv$showprogress)

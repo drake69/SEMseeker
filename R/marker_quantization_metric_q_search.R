@@ -30,7 +30,7 @@ marker_quantization_metric_q_search <- function(study, qs=c(2,4,8,16,32), result
     progress_bar <- progressr::progressor(along = 1:(nkeys))
   else
     progress_bar <- ""
-  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will evaluate the best quantile/bin as deltas/deltar discretisation for project \n in ", ssEnv$result_folderData)
+  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will evaluate the best quantile/bin as deltas/deltar discretisation for project \n in ", ssEnv$result_folderData)
 
 
   dest_folder <- dir_check_and_create(ssEnv$result_folderData,c("Q_Search"))

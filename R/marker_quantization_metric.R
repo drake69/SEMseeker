@@ -42,6 +42,7 @@ marker_quantization_metric <- function(result_folder, maxResources = 90, paralle
   result_temp <- foreach::foreach(k = 1:nkeys, .combine =  plyr::rbind.fill, .export = to_export) %dorng%
     # for (k in 1:nkeys)
     {
+      update_session_info(ssEnv)
 
       # k <- 1
       key <- keys [k,]

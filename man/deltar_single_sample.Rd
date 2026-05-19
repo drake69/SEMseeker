@@ -15,7 +15,10 @@ signal_superior_thresholds, signal_inferior_thresholds, signal_median_values}
 \item{sample_detail}{named list/row with at least Sample_ID and Sample_Group fields}
 }
 \value{
-invisibly NULL; relative-delta results are written as bedgraph.gz files under the session data folder
+invisibly NULL; HYPER and HYPO relative-delta results are written as bedgraph.gz files.
+  Only positions present in both \code{values} and \code{thresholds} are processed
+  (inner join on CHR, START, END via \code{join_values_to_thresholds}).
+  Returns \code{invisible(NULL)} early if there is no positional overlap.
 }
 \description{
 deltar_single_sample

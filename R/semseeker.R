@@ -1,83 +1,201 @@
-#' Calculate Stochastic Epigenetic Mutations from a Methylation Dataset
+#' Run SEMseeker on methylation data from any supported source
 #'
-#' The `semseeker` function processes a methylation dataset to identify stochastic epigenetic mutations and generates output reports. This involves working with sample sheets and signal data to produce pivot tables and bedgraph files.
+#' Public entry point. Accepts a wide range of inputs — bedmethyl files
+#' (modkit / nanopolish), coordinate-based data frames (WGBS / long-read),
+#' Illumina probe-indexed matrices, or already-loaded data frames — normalises
+#' them to the internal format, optionally converts M-values to beta values,
+#' validates the tech / genome_build combination, and delegates to the core
+#' pipeline \code{\link{semseeker_core}}.
 #'
-#' @param sample_sheet A data frame containing at least a column named `Sample_ID` to identify samples. This can be a single data frame or a list of data frames.
-#' @param signal_data A matrix of methylation data. This can be a single data frame or a list of data frames.
-#' @param result_folder A string specifying the directory where the results will be saved.
-#' @param ... Additional arguments for further processing options, including:
-#'   - `parallel_strategy`: Strategy for parallel execution. Possible values are `none`, `multisession`, `sequential`, `multicore`, and `cluster`.
-#'   - `maxResources`: Percentage of available cores to be used, default is 90 percent, rounded to the lowest integer.
-#'   - `sliding_window_size`: An integer specifying the size of the sliding window. Default is 11.
-#'   - `alpha`: A numeric value specifying the alpha threshold for the analysis. Default is 0.05.
-#'   - `showprogress`: A logical value indicating whether to show a progress bar. Default is `TRUE`.
-#'   - `iqrTimes`: A numeric value specifying the interquartile range multiplier to identify aberration in the data. Default is 3.
-#'   - `sex_chromosome_remove`: A logical value indicating whether to remove the sex chromosomes. Default is `TRUE`.
-#'   - `plot_format`: A string specifying the plot format. Default is "png".
-#'   - `verbosity`: A numeric value specifying the verbosity level. Default is 0.
-#'   - `marker`: A vector of string specifying the marker to be used for the analysis. Default are "MUTATIONS", "LESIONS","DELTARQ","DELTAQ","DELTAS","DELTAR","MEAN","DELTARP","DELTAP"
-#'   - `areas`: A vector of string specifying the areas to be used for the analysis. Default are "GENE","CHR","ISLAND","PROBE"
+#' Supported \code{input} forms:
+#' \itemize{
+#'   \item Character vector of bedmethyl file paths (\code{.bed}/\code{.tsv}/
+#'     \code{.bedmethyl}) — parsed via \code{\link{bedmethyl_read}}.
+#'   \item Data frame with \code{CHR}/\code{START}[\code{/END}] columns
+#'     (WGBS / long-read coordinate format) — normalised via
+#'     \code{\link{normalize_signal_input}}.
+#'   \item Matrix or data frame with probe-ID rownames (Illumina array) —
+#'     passed through unchanged.
+#'   \item List of any of the above, one element per batch.
+#' }
 #'
-#' @return The function writes multiple files to the specified `result_folder`, including the processed sample sheet and result files in CSV format, along with pivot tables and bedgraph files.
+#' @param input Input signal data. See details for supported forms.
+#' @param sample_sheet Data frame (or list of data frames) with a
+#'   \code{Sample_ID} column identifying samples.
+#' @param result_folder Output directory.
+#' @param input_type One of \code{"auto"} (default), \code{"bedmethyl"},
+#'   \code{"coord_df"}, \code{"matrix"}. When \code{"auto"}, the type is
+#'   inferred from the object class / file extension.
+#' @param tech Optional technology label (\code{"K850"}, \code{"K450"},
+#'   \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}). If \code{NULL} (default)
+#'   it is auto-detected downstream by \code{get_meth_tech()}.
+#' @param genome_build Reference genome build. One of \code{"hg19"} (default),
+#'   \code{"hg38"}, \code{"mm10"}, \code{"legacy"}.
+#' @param auto_convert_mvalues If \code{TRUE} (default) and the input values
+#'   exceed the \code{[0, 1]} range, they are assumed to be M-values and
+#'   converted to beta via \eqn{\beta = 2^M / (1 + 2^M)}. Set to \code{FALSE}
+#'   to disable the check (the downstream pipeline will then run on raw values).
+#' @param strict_build_check If \code{TRUE} (default), impossible tech /
+#'   genome_build combinations (e.g. \code{tech="LONGREAD"} with
+#'   \code{genome_build="hg19"}) raise an error. If \code{FALSE}, a warning is
+#'   emitted and the pipeline proceeds.
+#' @param ... Additional arguments forwarded to \code{\link{semseeker_core}}
+#'   and \code{init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
+#'   \code{sliding_window_size}, \code{marker}, \code{areas}).
+#'
+#' @return Invisibly \code{NULL}; writes output files to \code{result_folder}.
+#'
 #' @examples
-#' result_dir <- tempdir()
 #' \dontrun{
-#' sample_sheet <- data.frame(
-#'   Sample_ID    = c("S1", "S2", "S3"),
-#'   Sample_Name  = c("Case1", "Case2", "Ctrl1"),
-#'   Sample_Group = c("Case", "Case", "Control")
-#' )
+#' # Bedmethyl (Nanopore / modkit):
 #' semseeker(
-#'   sample_sheet  = sample_sheet,
-#'   signal_data   = beta_matrix,
+#'   input = list.files("bedmethyl/", pattern = "\\.bed$", full.names = TRUE),
+#'   sample_sheet = ss,
+#'   result_folder = tempdir(),
+#'   tech = "LONGREAD",
+#'   genome_build = "hg38"
+#' )
+#'
+#' # Illumina beta matrix:
+#' semseeker(
+#'   input = beta_matrix,
+#'   sample_sheet = ss,
 #'   result_folder = tempdir()
 #' )
-#' }
-#' @export
-#' @importFrom doRNG %dorng%
 #'
-semseeker <- function(sample_sheet,
-  signal_data,
-  result_folder,
-  ... ) {
+#' # WGBS coordinate data frame:
+#' semseeker(
+#'   input = wgbs_df,              # columns: CHR, START, END, sample1, ...
+#'   sample_sheet = ss,
+#'   result_folder = tempdir(),
+#'   tech = "WGBS"
+#' )
+#' }
+#'
+#' @export
+semseeker <- function(input,
+                      sample_sheet,
+                      result_folder,
+                      input_type = c("auto", "bedmethyl", "coord_df", "matrix"),
+                      tech = NULL,
+                      genome_build = "hg19",
+                      auto_convert_mvalues = TRUE,
+                      strict_build_check = TRUE,
+                      ...) {
 
-  init_env( result_folder= result_folder, ...)
+  input_type <- match.arg(input_type)
 
-  ssEnv <- get_session_info()
-  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SemSeeker will search MARKERS for project \n in ", ssEnv$result_folderData)
+  # ---- Step 1: init_env FIRST — cleans folder (start_fresh), sets up
+  #      parallel plan, configures session. Must happen before any
+  #      data processing or file I/O. -----------------------------------
+  init_env(
+    result_folder = result_folder,
+    tech          = if (is.null(tech)) "" else tech,
+    genome_build  = genome_build,
+    ...
+  )
 
-  # check if the input is a list of data frames
-  if(!is.list(sample_sheet) | is.data.frame(sample_sheet))
-    sample_sheet <- list(sample_sheet)
-  if(!is.list(signal_data) | is.data.frame(signal_data))
-    signal_data <- list(signal_data)
+  # ---- Step 2: validate tech × genome_build ----------------------------
+  .validate_tech_build(tech, genome_build, strict_build_check)
 
+  # ---- Step 3: normalise input to SEMseeker signal_data ----------------
+  signal_data <- .dispatch_one(input, input_type, auto_convert_mvalues)
 
-  batch_id <- 1
-  ssEnv$batch_count <- length(sample_sheet)
-  ssEnv <- update_session_info(ssEnv)
+  # ---- Step 4: delegate to core pipeline -------------------------------
+  semseeker_core(
+    sample_sheet  = sample_sheet,
+    signal_data   = signal_data,
+    result_folder = result_folder
+  )
+}
 
-  # C-06: write session provenance metadata (genome_build, tech, version, …)
-  total_sample_n <- sum(sapply(sample_sheet, nrow))
-  session_metadata_write(result_folder, sample_n = total_sample_n)
+# --- Internal helpers --------------------------------------------------------
 
-  for(batch_id in seq_along(sample_sheet))
-  {
-    start_time <- Sys.time()
-    ssEnv$running_batch_id <- batch_id
-    ssEnv <- update_session_info(ssEnv)
-    sample_sheet_local <- source_data_get(sample_sheet[[batch_id]])
-    sample_sheet_local$Sample_ID <- name_cleaning(sample_sheet_local$Sample_ID)
-    utils::write.csv2(sample_sheet_local, file = file_path_build(ssEnv$result_folderData, paste0(batch_id,"_sample_sheet_original"),"csv",FALSE))
-    analyze_batch(source_data_get(signal_data[[batch_id]]), sample_sheet_local)
-    create_position_pivots(sample_sheet_local,ssEnv$keys_markers_figures)
-    log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), "Batch Executed in:", difftime(time1 = Sys.time(), time2= start_time,units = "mins") , " minutes.")
+#' @keywords internal
+.dispatch_one <- function(input, input_type, auto_convert_mvalues) {
+
+  # Auto-detect when requested
+  if (identical(input_type, "auto")) {
+    input_type <- .detect_input_type(input)
   }
 
-  deltaX_get()
-  study_summary_total()
-  annotate_position_pivots()
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " Saving Sample Sheet with Results! ")
+  signal_data <- switch(
+    input_type,
+    bedmethyl = bedmethyl_read(input),
+    coord_df  = normalize_signal_input(input),
+    matrix    = input,
+    stop(".dispatch_one(): unknown input_type '", input_type, "'.")
+  )
 
-  close_env()
+  # coord_df path: normalize_signal_input() returns probe-ID-indexed df already
+  # bedmethyl path: returns coord df → also run through normalize_signal_input
+  if (identical(input_type, "bedmethyl")) {
+    signal_data <- normalize_signal_input(signal_data)
+  }
+
+  # ---- M-value detection & conversion --------------------------------
+  if (isTRUE(auto_convert_mvalues) && .looks_like_mvalues(signal_data)) {
+    message("semseeker(): detected M-values (|x| > 1); converting to beta via 2^M / (1 + 2^M).")
+    signal_data <- mvalue_to_beta(signal_data, coord_cols = c("CHR","START","END"))
+  }
+
+  signal_data
+}
+
+#' @keywords internal
+.detect_input_type <- function(input) {
+  # List of inputs → apply per element; dispatcher delegates one-by-one
+  # (semseeker_core itself iterates lists, so we just need each element
+  # normalised before being wrapped again.)
+  if (is.character(input)) {
+    exts <- tolower(tools::file_ext(input))
+    if (all(exts %in% c("bed", "tsv", "bedmethyl", "gz")))
+      return("bedmethyl")
+    stop(".detect_input_type(): character input with unsupported extensions: ",
+         paste(unique(exts), collapse = ", "))
+  }
+  if (is.data.frame(input) && is_coord_format(input))
+    return("coord_df")
+  if (is.matrix(input) || is.data.frame(input))
+    return("matrix")
+  stop(".detect_input_type(): cannot infer input_type for object of class '",
+       class(input)[1L], "'. Pass input_type explicitly.")
+}
+
+#' @keywords internal
+.looks_like_mvalues <- function(signal_data) {
+  coord_cols <- c("CHR", "START", "END")
+  numeric_cols <- if (is.data.frame(signal_data)) {
+    setdiff(colnames(signal_data), coord_cols)
+  } else {
+    colnames(signal_data)
+  }
+  if (!length(numeric_cols)) return(FALSE)
+
+  sample_rows <- seq_len(min(10000L, nrow(signal_data)))
+  chunk <- if (is.data.frame(signal_data)) {
+    as.matrix(signal_data[sample_rows, numeric_cols, drop = FALSE])
+  } else {
+    signal_data[sample_rows, , drop = FALSE]
+  }
+  mx <- suppressWarnings(max(abs(chunk), na.rm = TRUE))
+  is.finite(mx) && mx > 1
+}
+
+#' @keywords internal
+.validate_tech_build <- function(tech, genome_build, strict) {
+  if (is.null(tech) || !nzchar(tech)) return(invisible(NULL))
+
+  bad <- (identical(tech, "LONGREAD") && identical(genome_build, "hg19"))
+
+  if (bad) {
+    msg <- paste0(
+      "tech = 'LONGREAD' with genome_build = 'hg19' is almost certainly wrong: ",
+      "long-read methylation pipelines (Nanopore / PacBio) align to GRCh38. ",
+      "Set genome_build = 'hg38' in init_env() / semseeker()."
+    )
+    if (isTRUE(strict)) stop(msg) else warning(msg)
+  }
+
+  invisible(NULL)
 }

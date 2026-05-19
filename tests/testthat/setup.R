@@ -150,10 +150,16 @@ sliding_window_size <<- 11
 bonferroni_threshold <<- 0.1
 batch_id <<- 1
 iqrTimes <<- 3
-# "multicore" is the only strategy compatible with devtools::load_all()
-# (multisession workers can't find package functions unless the package is installed).
-# Switch to "multisession" after devtools::install() or in R CMD check / CI.
-parallel_strategy <<- "multicore"
+# "multicore" (fork) is unsafe on macOS with Polars' C++ thread pool — forked
+# children can be killed by Mach exceptions.  Use "multisession" when the
+# package is installed (R CMD check, CI, devtools::install()).  Fall back to
+# "multicore" only when running under devtools::load_all() on non-macOS,
+# because multisession workers cannot see load_all()'d internals.
+if (Sys.info()[["sysname"]] == "Darwin") {
+  parallel_strategy <<- "multisession"
+} else {
+  parallel_strategy <<- "multicore"
+}
 markers <<- c("MUTATIONS","DELTAQ","DELTARQ","DELTAP","DELTARP","LESIONS")
 
 if (!use_synthetic_data) {

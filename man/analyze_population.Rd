@@ -24,6 +24,9 @@ selector followed by selection value,}
 }
 \value{
 files into the result folder with pivot table and bedgraph.
+  A BANNER is logged once per batch before the per-sample loop showing:
+  input_positions, beta_range_positions, covered_by_inner_join — allows
+  immediate audit of cross-run coverage (e.g. Nanopore sample vs Illumina reference).
 }
 \description{
 Calculate stochastic epi mutations from a methylation dataset as outcome

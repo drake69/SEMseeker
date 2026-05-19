@@ -102,6 +102,11 @@ create_position_pivots <- function(population, keys)
           polars::pl$col("X4")$alias(sample_id)
         )
 
+        # Strip "chr" prefix → bare numbers for internal consistency
+        data <- data$with_columns(
+          polars::pl$col("CHR")$str$replace("^(?i)chr", "")$alias("CHR")
+        )
+
         # Apply filters
         data <- data$filter(
           polars::pl$col("CHR")$is_not_null() &

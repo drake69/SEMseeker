@@ -137,9 +137,9 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
   # POSITION area is required so study_summary_total() writes per-sample
   # mutation counts into sample_sheet_result.csv (depth=1 reads that file).
   # "sequential" makes the test work under both devtools::load_all() and CI.
-  SEMseeker:::semseeker(
+  SEMseeker::semseeker(
+    input             = local_sig,
     sample_sheet      = local_samples,
-    signal_data       = local_sig,
     result_folder     = tempFolder,
     parallel_strategy = "sequential",
     areas             = c("GENE", "POSITION"),
@@ -221,9 +221,9 @@ test_that("association_analysis skips gracefully when independent_variable absen
   local_sig2 <- as.data.frame(local_sig2)
   colnames(local_sig2) <- mySampleSheet$Sample_ID
 
-  SEMseeker:::semseeker(
+  SEMseeker::semseeker(
+    input             = local_sig2,
     sample_sheet      = mySampleSheet,
-    signal_data       = local_sig2,
     result_folder     = tempFolder,
     parallel_strategy = "sequential",
     areas             = c("GENE", "POSITION"),
