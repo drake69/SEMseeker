@@ -2,9 +2,9 @@ name: BiocCheck
 
 on:
   push:
-    branches: [main]
+    branches-ignore: [main, master]      # direct push to main/master is blocked
   pull_request:
-    branches: [main]
+    branches: [main, master, develop]
   workflow_dispatch:
 
 permissions:
