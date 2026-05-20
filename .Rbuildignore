@@ -11,4 +11,4 @@
 ^README.Rmd
 ^SEMseeker\.BiocCheck$
 ^.*\.BiocCheck$
-^tests/aa_debug_.*\.R$
+^dev$
