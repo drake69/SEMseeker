@@ -141,7 +141,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
     input             = local_sig,
     sample_sheet      = local_samples,
     result_folder     = tempFolder,
-    parallel_strategy = "sequential",
+    parallel_strategy = parallel_strategy,
     areas             = c("GENE", "POSITION"),
     markers           = c("MUTATIONS"),
     start_fresh       = TRUE,
@@ -202,7 +202,222 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
 })
 
 # ---------------------------------------------------------------------------
-# 4. association_analysis — missing independent_variable is handled gracefully
+# Helper: build a small semseeker result with injected hypomethylated
+# outliers, large enough to populate GENE pivots. Returns the tempFolder.
+# ---------------------------------------------------------------------------
+
+.aa_setup_result_folder <- function(seed = 777, n_probes = 200L, areas = c("GENE", "POSITION")) {
+  tempFolder <- tempFolders[1]
+  tempFolders <<- tempFolders[-1]
+  unlink(tempFolder, recursive = TRUE)
+
+  set.seed(seed)
+  local_probes <- probe_features[seq_len(n_probes), ]
+  local_sig <- matrix(stats::rbeta(n_probes * nsamples, 90L, 10L),
+                       nrow = n_probes, ncol = nsamples)
+  # Inject HYPO outliers in first 50 probes × first 5 samples
+  local_sig[1:50, 1:5] <- stats::rbeta(50L * 5L, 1L, 100L)
+  rownames(local_sig) <- local_probes$PROBE
+  local_sig <- as.data.frame(local_sig)
+  colnames(local_sig) <- mySampleSheet$Sample_ID
+
+  SEMseeker::semseeker(
+    input             = local_sig,
+    sample_sheet      = mySampleSheet,
+    result_folder     = tempFolder,
+    parallel_strategy = parallel_strategy,   # global from setup.R (multisession on macOS)
+    areas             = areas,
+    markers           = c("MUTATIONS"),
+    start_fresh       = TRUE,
+    showprogress      = showprogress,
+    verbosity         = verbosity
+  )
+  tempFolder
+}
+
+# ---------------------------------------------------------------------------
+# T1 — depth=3 + spearman: exercises pivot parquet read / chunk / merge path
+#      (same branch as depth=2; covers both)
+# ---------------------------------------------------------------------------
+
+test_that("association_analysis depth=3 reads area pivots and writes inference CSV", {
+  tempFolder <- .aa_setup_result_folder()
+
+  inference_details <- data.frame(
+    independent_variable = "Phenotest",
+    family_test          = "spearman",
+    transformation_y     = "",
+    transformation_x     = "",
+    depth_analysis       = 3L,
+    filter_p_value       = FALSE,
+    stringsAsFactors     = FALSE
+  )
+
+  testthat::expect_no_error(
+    SEMseeker:::association_analysis(
+      inference_details = inference_details,
+      result_folder     = tempFolder,
+      parallel_strategy = parallel_strategy,
+      markers           = c("MUTATIONS"),
+      figures           = c("HYPO"),
+      multiple_test_adj = "BH",
+      showprogress      = showprogress,
+      verbosity         = verbosity
+    )
+  )
+
+  inference_dir <- file.path(tempFolder, "Inference")
+  testthat::expect_true(dir.exists(inference_dir))
+
+  csv_files <- list.files(inference_dir, pattern = "\\.csv$", recursive = TRUE,
+                           full.names = TRUE)
+  testthat::expect_true(length(csv_files) > 0)
+
+  # depth=3 must produce rows with DEPTH > 1 (area-level), not only DEPTH=1
+  result_csv <- csv_files[!grepl("(?i)covariates_model", csv_files)][1]
+  if (!is.na(result_csv) && file.exists(result_csv) && file.info(result_csv)$size > 10) {
+    result_df <- utils::read.csv2(result_csv)
+    if ("DEPTH" %in% colnames(result_df) && nrow(result_df) > 0) {
+      testthat::expect_true(any(result_df$DEPTH > 1))
+    }
+  }
+
+  unlink(tempFolder, recursive = TRUE)
+})
+
+# ---------------------------------------------------------------------------
+# T2 — polynomial_2_1 family: exercises execute_model dispatch beyond GLM
+# ---------------------------------------------------------------------------
+
+test_that("association_analysis polynomial family runs without error", {
+  tempFolder <- .aa_setup_result_folder()
+
+  inference_details <- data.frame(
+    independent_variable = "Phenotest",
+    family_test          = "polynomial_2_1",
+    transformation_y     = "",
+    transformation_x     = "",
+    depth_analysis       = 1L,
+    filter_p_value       = FALSE,
+    stringsAsFactors     = FALSE
+  )
+
+  testthat::expect_no_error(
+    SEMseeker:::association_analysis(
+      inference_details = inference_details,
+      result_folder     = tempFolder,
+      parallel_strategy = parallel_strategy,
+      markers           = c("MUTATIONS"),
+      figures           = c("HYPO"),
+      multiple_test_adj = "BH",
+      showprogress      = showprogress,
+      verbosity         = verbosity
+    )
+  )
+
+  inference_dir <- file.path(tempFolder, "Inference")
+  csv_files <- list.files(inference_dir, pattern = "\\.csv$", recursive = TRUE,
+                           full.names = TRUE)
+  testthat::expect_true(length(csv_files) > 0)
+
+  unlink(tempFolder, recursive = TRUE)
+})
+
+# ---------------------------------------------------------------------------
+# T3 — covariates: exercises covariates_model (collinearity check, sample filter)
+# ---------------------------------------------------------------------------
+
+test_that("association_analysis with covariates runs and produces a covariates_model side-file", {
+  tempFolder <- .aa_setup_result_folder()
+
+  inference_details <- data.frame(
+    independent_variable = "Phenotest",
+    family_test          = "spearman",
+    covariates           = "Covariates1+Covariates2",
+    transformation_y     = "",
+    transformation_x     = "",
+    depth_analysis       = 1L,
+    filter_p_value       = FALSE,
+    collinearity_check   = TRUE,
+    stringsAsFactors     = FALSE
+  )
+
+  testthat::expect_no_error(
+    SEMseeker:::association_analysis(
+      inference_details = inference_details,
+      result_folder     = tempFolder,
+      parallel_strategy = parallel_strategy,
+      markers           = c("MUTATIONS"),
+      figures           = c("HYPO"),
+      multiple_test_adj = "BH",
+      showprogress      = showprogress,
+      verbosity         = verbosity
+    )
+  )
+
+  inference_dir <- file.path(tempFolder, "Inference")
+  csv_files <- list.files(inference_dir, pattern = "\\.csv$", recursive = TRUE,
+                           full.names = TRUE)
+  testthat::expect_true(length(csv_files) > 0)
+
+  unlink(tempFolder, recursive = TRUE)
+})
+
+# ---------------------------------------------------------------------------
+# T4 — resumption / idempotency: second identical run must not duplicate rows
+#      Exercises the "keys already done" branch (association_analysis.R:239-249)
+# ---------------------------------------------------------------------------
+
+test_that("association_analysis is idempotent: second run on same folder does not duplicate results", {
+  tempFolder <- .aa_setup_result_folder()
+
+  inference_details <- data.frame(
+    independent_variable = "Phenotest",
+    family_test          = "spearman",
+    transformation_y     = "",
+    transformation_x     = "",
+    depth_analysis       = 1L,
+    filter_p_value       = FALSE,
+    stringsAsFactors     = FALSE
+  )
+
+  run_once <- function() {
+    SEMseeker:::association_analysis(
+      inference_details = inference_details,
+      result_folder     = tempFolder,
+      parallel_strategy = parallel_strategy,
+      markers           = c("MUTATIONS"),
+      figures           = c("HYPO"),
+      multiple_test_adj = "BH",
+      showprogress      = showprogress,
+      verbosity         = verbosity
+    )
+  }
+
+  testthat::expect_no_error(run_once())
+
+  inference_dir <- file.path(tempFolder, "Inference")
+  csv_files <- list.files(inference_dir, pattern = "\\.csv$", recursive = TRUE,
+                           full.names = TRUE)
+  result_csv <- csv_files[!grepl("(?i)covariates_model", csv_files)][1]
+  testthat::skip_if(is.na(result_csv) || !file.exists(result_csv),
+                    "No primary result CSV produced — cannot verify idempotency")
+
+  rows_run1 <- nrow(unique(utils::read.csv2(result_csv)))
+  testthat::expect_true(rows_run1 > 0)
+
+  # Second run on the same folder, same inference — must skip already-done keys
+  testthat::expect_no_error(run_once())
+  rows_run2 <- nrow(unique(utils::read.csv2(result_csv)))
+
+  # Idempotency: row count must not grow (allow == for skip, never grow)
+  testthat::expect_equal(rows_run2, rows_run1)
+
+  unlink(tempFolder, recursive = TRUE)
+})
+
+# ---------------------------------------------------------------------------
+# 5. association_analysis — missing independent_variable is handled gracefully
 # ---------------------------------------------------------------------------
 
 test_that("association_analysis skips gracefully when independent_variable absent from sample sheet", {
@@ -225,7 +440,7 @@ test_that("association_analysis skips gracefully when independent_variable absen
     input             = local_sig2,
     sample_sheet      = mySampleSheet,
     result_folder     = tempFolder,
-    parallel_strategy = "sequential",
+    parallel_strategy = parallel_strategy,
     areas             = c("GENE", "POSITION"),
     markers           = c("MUTATIONS"),
     start_fresh       = TRUE,
@@ -248,7 +463,7 @@ test_that("association_analysis skips gracefully when independent_variable absen
     SEMseeker:::association_analysis(
       inference_details = inference_details,
       result_folder     = tempFolder,
-      parallel_strategy = "sequential",
+      parallel_strategy = parallel_strategy,
       markers           = c("MUTATIONS"),
       figures           = c("HYPO"),
       showprogress      = showprogress,
