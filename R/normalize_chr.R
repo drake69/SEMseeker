@@ -28,6 +28,7 @@
 #' # => c("chr1", "chrX")  — already prefixed, unchanged
 #'
 #' @keywords internal
+#' @noRd
 normalize_chr <- function(x, direction = c("internal", "output")) {
   direction <- match.arg(direction)
   x <- as.character(x)
