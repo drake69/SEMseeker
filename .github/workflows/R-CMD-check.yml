@@ -76,6 +76,11 @@ jobs:
       - name: Install R dependencies
         run: |
           Sys.setenv(NOT_CRAN = "true")
+          # Serial install: parallel install on the Windows runner caused
+          # bumphunter to be load-tested before its dep AnnotationDbi was
+          # installed (install.packages did not respect the topological
+          # dependency order under Ncpus > 1).
+          options(Ncpus = 1L)
           # Use the repos configured by setup-r@v2 (with use-public-rspm: true,
           # on Linux this is the distro-specific P3M URL serving binaries).
           # The previous explicit "cran/latest" URL served source on Linux
