@@ -27,6 +27,9 @@ jobs:
       RENV_ACTIVATE_PROJECT: 0
       # Required by polars installer (not on CRAN)
       NOT_CRAN: "true"
+      # Fallback for `fs` when uv.h is missing on Linux runners
+      # (no-op when P3M binary is used)
+      USE_BUNDLED_LIBUV: 1
 
     steps:
       - uses: actions/checkout@v4
@@ -73,17 +76,19 @@ jobs:
       - name: Install R dependencies
         run: |
           Sys.setenv(NOT_CRAN = "true")
+          # Use the repos configured by setup-r@v2 (with use-public-rspm: true,
+          # on Linux this is the distro-specific P3M URL serving binaries).
+          # The previous explicit "cran/latest" URL served source on Linux
+          # and forced `fs` (and 8 transitive deps) to compile from source,
+          # which failed because libuv headers were not on the runner.
           install.packages(
-            c("remotes", "rcmdcheck", "testthat", "devtools", "BiocManager"),
-            repos = c(
-              CRAN = "https://packagemanager.posit.co/cran/latest"
-            )
+            c("remotes", "rcmdcheck", "testthat", "devtools", "BiocManager")
           )
           remotes::install_deps(
             dependencies = NA,
             repos = c(
               rpolars = "https://community.r-multiverse.org",
-              CRAN    = "https://packagemanager.posit.co/cran/latest"
+              getOption("repos")
             )
           )
           # Install Bioconductor annotation packages (in Suggests — needed for array tech detection)
