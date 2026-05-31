@@ -34,14 +34,14 @@
 
 test_that("test_model t.test returns a data.frame with pvalue", {
   tf <- tempFolders[1]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df  <- .two_group_df()
   key <- .make_key()
   f   <- stats::as.formula("BURDEN ~ GROUP")
 
-  res <- SEMseeker:::test_model(
+  res <- semseeker:::test_model(
     family_test = "t.test", tempDataFrame = df,
     sig.formula = f, burdenValue = "BURDEN",
     independent_variable = "GROUP", transformation_y = "",
@@ -56,8 +56,8 @@ test_that("test_model t.test returns a data.frame with pvalue", {
 
 test_that("test_model t.test: clearly separated groups give small p-value", {
   tf <- tempFolders[2]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(99)
   df <- data.frame(
@@ -67,7 +67,7 @@ test_that("test_model t.test: clearly separated groups give small p-value", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- semseeker:::test_model(
     "t.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
   expect_lt(res$pvalue, 0.001)
@@ -79,8 +79,8 @@ test_that("test_model t.test: clearly separated groups give small p-value", {
 
 test_that("test_model chisq.test returns a data.frame with pvalue", {
   tf <- tempFolders[3]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # Discrete burden values so the contingency table is meaningful
   df <- data.frame(
@@ -91,7 +91,7 @@ test_that("test_model chisq.test returns a data.frame with pvalue", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- semseeker:::test_model(
     "chisq.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 
@@ -107,14 +107,14 @@ test_that("test_model chisq.test returns a data.frame with pvalue", {
 
 test_that("test_model bartlett.test returns a data.frame with pvalue", {
   tf <- tempFolders[4]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df  <- .two_group_df(seed = 7L)
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- semseeker:::test_model(
     "bartlett.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 
@@ -126,8 +126,8 @@ test_that("test_model bartlett.test returns a data.frame with pvalue", {
 
 test_that("test_model bartlett.test: equal-variance groups give large p-value", {
   tf <- tempFolders[5]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(42)
   df <- data.frame(
@@ -137,7 +137,7 @@ test_that("test_model bartlett.test: equal-variance groups give large p-value", 
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- semseeker:::test_model(
     "bartlett.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
   expect_gt(res$pvalue, 0.05)
@@ -149,14 +149,14 @@ test_that("test_model bartlett.test: equal-variance groups give large p-value", 
 
 test_that("test_model wilcoxon returns pvalue and effect_size columns", {
   tf <- tempFolders[6]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df  <- .two_group_df(seed = 3L)
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- semseeker:::test_model(
     "wilcoxon", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 
@@ -171,8 +171,8 @@ test_that("test_model wilcoxon returns pvalue and effect_size columns", {
 
 test_that("test_model kruskal.test with 3 groups returns pvalue", {
   tf <- tempFolders[7]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(11)
   df <- data.frame(
@@ -182,7 +182,7 @@ test_that("test_model kruskal.test with 3 groups returns pvalue", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- semseeker:::test_model(
     "kruskal.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 
@@ -193,8 +193,8 @@ test_that("test_model kruskal.test with 3 groups returns pvalue", {
 
 test_that("test_model kruskal.test with single group returns NA pvalue", {
   tf <- tempFolders[8]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(
     BURDEN = stats::rnorm(10),
@@ -203,7 +203,7 @@ test_that("test_model kruskal.test with single group returns NA pvalue", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- semseeker:::test_model(
     "kruskal.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 

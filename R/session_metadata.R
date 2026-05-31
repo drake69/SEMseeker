@@ -34,7 +34,7 @@ session_metadata_write <- function(result_folder, sample_n = 0L) {
   meta <- list(
     genome_build      = genome_build,
     tech              = tech,
-    semseeker_version = as.character(utils::packageVersion("SEMseeker")),
+    semseeker_version = as.character(utils::packageVersion("semseeker")),
     created           = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"),
     sample_n          = as.integer(sample_n)
   )
@@ -75,7 +75,7 @@ pivot_sidecar_write <- function(pivot_path) {
   meta <- list(
     genome_build      = genome_build,
     tech              = tech,
-    semseeker_version = as.character(utils::packageVersion("SEMseeker")),
+    semseeker_version = as.character(utils::packageVersion("semseeker")),
     pivot_file        = basename(pivot_path),
     created           = format(Sys.time(), "%Y-%m-%dT%H:%M:%S")
   )

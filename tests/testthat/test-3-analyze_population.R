@@ -2,23 +2,23 @@ test_that("analyze_population", {
 
   tempFolder <- tempFolders[1]
   tempFolders <- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
+  ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
 
   ####################################################################################
 
-  tt <- SEMseeker:::get_meth_tech(signal_data)
+  tt <- semseeker:::get_meth_tech(signal_data)
 
   ####################################################################################
 
   if (!exists("signal_thresholds"))
   {
-    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
+    signal_data <- semseeker:::inpute_missing_values(signal_data)
+    signal_thresholds <<- semseeker:::signal_range_values(signal_data, batch_id)
   }
   probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
   mySampleSheet <- mySampleSheet[mySampleSheet$Sample_Group!="Reference",]
-  sp <- SEMseeker:::analyze_population(
+  sp <- semseeker:::analyze_population(
     signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet,
@@ -33,7 +33,7 @@ test_that("analyze_population", {
 
   ####################################################################################
 
-  SEMseeker:::close_env()
+  semseeker:::close_env()
   unlink(tempFolder,recursive = TRUE)
 
 })

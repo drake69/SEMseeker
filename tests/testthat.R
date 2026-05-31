@@ -1,4 +1,4 @@
 library(testthat)
 library(future)
-library(SEMseeker)
-test_check("SEMseeker")
+library(semseeker)
+test_check("semseeker")

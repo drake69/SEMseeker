@@ -33,15 +33,15 @@
 
 test_that("quantreg_model returns a data.frame with tau column", {
   tf <- tempFolders[20]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(10)
   df  <- data.frame(x = stats::rnorm(40), y = stats::rnorm(40))
   f   <- stats::as.formula("y ~ x")
   key <- .make_key2()
 
-  res <- SEMseeker:::quantreg_model(
+  res <- semseeker:::quantreg_model(
     family_test           = "quantreg_0.5",
     sig.formula           = f,
     tempDataFrame         = df,
@@ -59,15 +59,15 @@ test_that("quantreg_model returns a data.frame with tau column", {
 
 test_that("quantreg_model: tau is preserved correctly for 0.25 quantile", {
   tf <- tempFolders[21]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(11)
   df  <- data.frame(x = stats::rnorm(40), y = stats::rnorm(40))
   f   <- stats::as.formula("y ~ x")
   key <- .make_key2()
 
-  res <- SEMseeker:::quantreg_model(
+  res <- semseeker:::quantreg_model(
     family_test           = "quantreg_0.25",
     sig.formula           = f,
     tempDataFrame         = df,
@@ -88,15 +88,15 @@ test_that("quantreg_model: tau is preserved correctly for 0.25 quantile", {
 
 test_that("mean_permutation returns a data.frame with pvalue", {
   tf <- tempFolders[22]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(5)
   df  <- .two_group_cont(n = 15L)
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key2()
 
-  res <- SEMseeker:::mean_permutation(
+  res <- semseeker:::mean_permutation(
     family_test           = "mean-permutation_20_20_0.95",
     sig.formula           = f,
     tempDataFrame         = df,
@@ -113,8 +113,8 @@ test_that("mean_permutation returns a data.frame with pvalue", {
 
 test_that("mean_permutation: well-separated groups give small p-value", {
   tf <- tempFolders[23]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # Group 0 = 0, group 1 = 10: delta should be extreme and unique across permutations
   df <- data.frame(
@@ -124,7 +124,7 @@ test_that("mean_permutation: well-separated groups give small p-value", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key2()
 
-  res <- SEMseeker:::mean_permutation(
+  res <- semseeker:::mean_permutation(
     family_test           = "mean-permutation_50_50_0.95",
     sig.formula           = f,
     tempDataFrame         = df,
@@ -143,8 +143,8 @@ test_that("mean_permutation: well-separated groups give small p-value", {
 
 test_that("test_model_paired wilcoxon.paired returns data.frame with pvalue", {
   tf <- tempFolders[24]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # 5 patients, pre/post measurements
   df <- data.frame(
@@ -155,7 +155,7 @@ test_that("test_model_paired wilcoxon.paired returns data.frame with pvalue", {
   key <- .make_key2()
   f   <- stats::as.formula("BURDEN ~ GROUP")
 
-  res <- SEMseeker:::test_model_paired(
+  res <- semseeker:::test_model_paired(
     family_test           = "wilcoxon.paired@PATIENT_ID",
     tempDataFrame         = df,
     sig.formula           = f,
@@ -174,8 +174,8 @@ test_that("test_model_paired wilcoxon.paired returns data.frame with pvalue", {
 
 test_that("test_model_paired wilcoxon.paired: pre/post shift gives small p-value", {
   tf <- tempFolders[25]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # 20 patients, post = pre + 5 (strong systematic shift)
   set.seed(42)
@@ -190,7 +190,7 @@ test_that("test_model_paired wilcoxon.paired: pre/post shift gives small p-value
   key <- .make_key2()
   f   <- stats::as.formula("BURDEN ~ GROUP")
 
-  res <- SEMseeker:::test_model_paired(
+  res <- semseeker:::test_model_paired(
     family_test           = "wilcoxon.paired@PATIENT_ID",
     tempDataFrame         = df,
     sig.formula           = f,
@@ -207,8 +207,8 @@ test_that("test_model_paired wilcoxon.paired: pre/post shift gives small p-value
 
 test_that("test_model_paired: >2 group levels returns NA pvalue early", {
   tf <- tempFolders[26]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(
     BURDEN     = 1:15,
@@ -218,7 +218,7 @@ test_that("test_model_paired: >2 group levels returns NA pvalue early", {
   key <- .make_key2()
   f   <- stats::as.formula("BURDEN ~ GROUP")
 
-  res <- SEMseeker:::test_model_paired(
+  res <- semseeker:::test_model_paired(
     family_test           = "wilcoxon.paired@PATIENT_ID",
     tempDataFrame         = df,
     sig.formula           = f,
@@ -239,8 +239,8 @@ test_that("test_model_paired: >2 group levels returns NA pvalue early", {
 
 test_that("covariates_model: no-op returns list with covariates and study_summary", {
   tf <- tempFolders[27]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(7)
   study_summary <- data.frame(
@@ -264,7 +264,7 @@ test_that("covariates_model: no-op returns list with covariates and study_summar
     samples_sql_condition = NULL
   )
 
-  result <- SEMseeker:::covariates_model(inference_detail, study_summary)
+  result <- semseeker:::covariates_model(inference_detail, study_summary)
 
   expect_type(result, "list")
   expect_true("covariates" %in% names(result))
@@ -280,15 +280,15 @@ test_that("association_model_polynomial: degree-2 no-covariate returns PL_DEGREE
   skip_if_not_installed("caret")
 
   tf <- tempFolders[28]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(3)
   df  <- data.frame(x = seq_len(40), y = seq_len(40) + stats::rnorm(40))
   f   <- stats::as.formula("y ~ x")
   key <- .make_key2()
 
-  res <- SEMseeker:::association_model_polynomial(
+  res <- semseeker:::association_model_polynomial(
     family_test           = "polynomial_2_0.8",
     tempDataFrame         = df,
     sig.formula           = f,
@@ -307,8 +307,8 @@ test_that("association_model_polynomial: with covariate exercises polynomial_for
   skip_if_not_installed("caret")
 
   tf <- tempFolders[29]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  semseeker:::init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ semseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(9)
   n  <- 40
@@ -320,7 +320,7 @@ test_that("association_model_polynomial: with covariate exercises polynomial_for
   f   <- stats::as.formula("y ~ x + cov")
   key <- .make_key2()
 
-  res <- SEMseeker:::association_model_polynomial(
+  res <- semseeker:::association_model_polynomial(
     family_test           = "polynomial_2_0.8",
     tempDataFrame         = df,
     sig.formula           = f,

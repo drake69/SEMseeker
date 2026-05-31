@@ -168,7 +168,7 @@ if (!use_synthetic_data) {
   signal_data <- signal_data[1:1000,]
   # count rows with all missing values
   nrow_missed <- sum(apply(signal_data, 1, function(x) all(is.na(x))))
-  probe_features <<- SEMseeker::probe_annotation_build("K850")[rownames(signal_data), c("CHR","START","PROBE")]
+  probe_features <<- semseeker::probe_annotation_build("K850")[rownames(signal_data), c("CHR","START","PROBE")]
   probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep="_")
   nprobes <<- nrow(signal_data) - nrow_missed
   nsamples <<- ncol(signal_data)

@@ -28,7 +28,7 @@ identical region semantics with Illumina array analyses.
 \details{
 Results are cached in memory for the duration of the R session to avoid
 repeated package loads. CpG island tracks downloaded from AnnotationHub
-are also cached on disk in \code{tools::R_user_dir("SEMseeker", "cache")}.
+are also cached on disk in \code{tools::R_user_dir("semseeker", "cache")}.
 }
 \section{PROBE_WHOLE semantics by technology}{
 

@@ -4,7 +4,7 @@
 # for MARKER=MUTATIONS.
 # Run: Rscript tests/aa_debug_depth3.R
 
-library(SEMseeker)
+library(semseeker)
 source("tests/testthat/setup.R")
 
 # Reduced to 50 probes for speed
@@ -23,7 +23,7 @@ colnames(local_sig) <- mySampleSheet$Sample_ID
 
 cat("\n=== STEP 1: semseeker ===\n")
 t0 <- Sys.time()
-SEMseeker::semseeker(
+semseeker::semseeker(
   input             = local_sig,
   sample_sheet      = mySampleSheet,
   result_folder     = tempFolder,
@@ -38,9 +38,9 @@ cat(sprintf("semseeker: %.1f sec\n", as.numeric(Sys.time() - t0, units = "secs")
 
 # ── STEP 2: inspect ssEnv state AFTER semseeker (must reinit) ────────────────
 cat("\n=== STEP 2: re-init ssEnv (semseeker closes it on exit) ===\n")
-SEMseeker:::init_env(tempFolder, parallel_strategy = "sequential",
+semseeker:::init_env(tempFolder, parallel_strategy = "sequential",
                      showprogress = FALSE, verbosity = 1)
-ssEnv <- SEMseeker:::get_session_info()
+ssEnv <- semseeker:::get_session_info()
 cat("ssEnv$genome_build =", paste(ssEnv$genome_build), "\n")
 cat("ssEnv$tech         =", paste(ssEnv$tech), "\n")
 cat("ssEnv has keys_areas_subareas_markers_figures? ",
@@ -63,7 +63,7 @@ if (!is.null(keys_all)) {
   mut_gene <- keys_all[keys_all$MARKER == "MUTATIONS" & keys_all$AREA == "GENE", ]
   for (k in seq_len(min(nrow(mut_gene), 5))) {
     row <- mut_gene[k, ]
-    path <- SEMseeker:::pivot_file_name_parquet(row$MARKER, row$FIGURE, row$AREA, row$SUBAREA)
+    path <- semseeker:::pivot_file_name_parquet(row$MARKER, row$FIGURE, row$AREA, row$SUBAREA)
     cat(sprintf("  %s_%s_%s_%s\n    expected:%s\n    exists  :%s\n",
                 row$MARKER, row$FIGURE, row$AREA, row$SUBAREA,
                 basename(path), file.exists(path)))

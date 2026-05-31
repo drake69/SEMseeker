@@ -3,7 +3,7 @@
 # bypassing the slow full test file.
 # Run from package root: Rscript tests/aa_debug_t1_kruskal.R
 
-library(SEMseeker)
+library(semseeker)
 source("tests/testthat/setup.R")
 
 # ── Inline copy of .aa_setup_result_folder ────────────────────────────────────
@@ -26,7 +26,7 @@ colnames(local_sig) <- mySampleSheet$Sample_ID
 
 cat("\n=== STEP 1: semseeker (areas=GENE+POSITION, markers=MUTATIONS) ===\n")
 t0 <- Sys.time()
-SEMseeker::semseeker(
+semseeker::semseeker(
   input             = local_sig,
   sample_sheet      = mySampleSheet,
   result_folder     = tempFolder,
@@ -58,7 +58,7 @@ inference_details <- data.frame(
 
 cat("\n=== STEP 2: association_analysis(depth=3, kruskal.test) ===\n")
 t1 <- Sys.time()
-SEMseeker:::association_analysis(
+semseeker:::association_analysis(
   inference_details = inference_details,
   result_folder     = tempFolder,
   parallel_strategy = parallel_strategy,
