@@ -82,7 +82,7 @@ association_analysis_save_results <- function(results=NULL,fileNameResults, fami
   if(filter_p_value)
     results <- subset(results, SIGNIFICATIVE_ADJ)
 
-  # remove duplicates based on MARKER	FIGURE	AREA	SUBAREA	AREA_OF_TEST	FAMILY_TEST	TRANSFORMATION_Y	PVALUE	R_MODEL
+  # remove duplicates based on MARKER   FIGURE  AREA    SUBAREA AREA_OF_TEST    FAMILY_TEST TRANSFORMATION_Y    PVALUE  R_MODEL
   # calculating the max of all others columns
   # C-06: include provenance columns in the grouping key so summarise() preserves them
   group_column <- c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",

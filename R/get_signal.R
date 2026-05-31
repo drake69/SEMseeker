@@ -6,7 +6,7 @@ source_data_get <- function(source_data, check_is_numeric=FALSE){
 
   if (!file.exists(source_data))
   {
-    message(paste("File ", source_data, " not found"))
+    message("File ", source_data, " not found")
     return(NULL)
   }
   # check if ile extension is csv

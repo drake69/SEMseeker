@@ -124,13 +124,13 @@ marker_quantization_metric <- function(result_folder, maxResources = 90, paralle
       # result_temp <- plyr::rbind.fill(result_temp, res_temp)
 
       # Errore Assoluto Medio (MAE)
-      # •	Willmott, C. J., & Matsuura, K. (2005). Advantages of the mean absolute error (MAE) over the root mean square error (RMSE) in assessing average model performance. Climate Research, 30(1), 79-82.
-      # 2.	Indice di Similarità Strutturale (SSIM)
-      # •	Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004). Image quality assessment: From error visibility to structural similarity. IEEE Transactions on Image Processing, 13(4), 600-612.
-      # •	Avanaki, M. R. N. (2009). Exact calculation of the structural similarity index for image quality assessment. Journal of Mathematical Imaging and Vision, 34(2), 121-131.
-      # 3.	Variazione dell’Informazione (VI)
-      # •	Meilă, M. (2007). Comparing clusterings—an information based distance. Journal of Multivariate Analysis, 98(5), 873-895.
-      # •	Vinh, N. X., Epps, J., & Bailey, J. (2010). Information theoretic measures for clusterings comparison: Variants, properties, normalization and correction for chance. Journal of Machine Learning Research, 11(10), 2837-2854.
+      # •   Willmott, C. J., & Matsuura, K. (2005). Advantages of the mean absolute error (MAE) over the root mean square error (RMSE) in assessing average model performance. Climate Research, 30(1), 79-82.
+      # 2.  Indice di Similarità Strutturale (SSIM)
+      # •   Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004). Image quality assessment: From error visibility to structural similarity. IEEE Transactions on Image Processing, 13(4), 600-612.
+      # •   Avanaki, M. R. N. (2009). Exact calculation of the structural similarity index for image quality assessment. Journal of Mathematical Imaging and Vision, 34(2), 121-131.
+      # 3.  Variazione dell’Informazione (VI)
+      # •   Meilă, M. (2007). Comparing clusterings—an information based distance. Journal of Multivariate Analysis, 98(5), 873-895.
+      # •   Vinh, N. X., Epps, J., & Bailey, J. (2010). Information theoretic measures for clusterings comparison: Variants, properties, normalization and correction for chance. Journal of Machine Learning Research, 11(10), 2837-2854.
 
 
     }
