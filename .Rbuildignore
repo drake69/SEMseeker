@@ -12,3 +12,4 @@
 ^SEMseeker\.BiocCheck$
 ^.*\.BiocCheck$
 ^dev$
+^bench$
