@@ -16,13 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # macos-latest (arm64) is disabled: tcltk on R 4.6 links to
-          # /opt/X11/lib/libX11.6.dylib and segfaults at test_check() startup
-          # ('address 0x8, cause invalid permissions'). The crash is triggered
-          # by a transitive dep loading tcltk; SEMseeker code itself does not
-          # use it. Re-enable when an upstream tcltk/XQuartz fix lands or when
-          # we drop the offending dep.
-          # - {os: macos-latest,   r: 'release'}
+          - {os: macos-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,  r: 'release'}
 

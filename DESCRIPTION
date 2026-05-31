@@ -19,9 +19,9 @@ BugReports: https://github.com/drake69/semseeker/issues
 biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylation,
         GeneExpression, Pathways, MultipleComparison, Normalization,
         StatisticalMethod, Software
-Imports: dplyr, doFuture, doRNG, FactoMineR, factoextra, foreach, FSA,
+Imports: dplyr, doFuture, doRNG, foreach, FSA,
         fst, future, future.apply, ggplot2, ggvenn, graphics, grDevices,
-        gridExtra, gtools, Hmisc, jsonlite, lqmm, matrixStats, plyr, polars,
+        gridExtra, gtools, jsonlite, lqmm, matrixStats, plyr, polars,
         progressr, reshape, reshape2, R.utils, rlang, stats, stringr, tools,
         utils, withr, zoo, VennDiagram, effsize, pwr, combinat, philentropy,
         parallelly, knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
