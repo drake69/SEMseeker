@@ -15,6 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     name: BiocCheck
 
+    # BiocCheck's checkBBScompatibility requires the on-disk directory name
+    # to match the Package: field in DESCRIPTION (SEMseeker, CamelCase, makes
+    # the SEM = Stochastic Epigenetic Mutations acronym readable). We check
+    # out into a SEMseeker/ subdirectory so the dirname matches the package
+    # name and run all R steps from there.
+    defaults:
+      run:
+        working-directory: SEMseeker
+
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
@@ -28,6 +37,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          path: SEMseeker
 
       # System libs needed by transitive deps (cairo/fontconfig for gdtools,
       # libxml2/libssl for various Bioc packages, libgit2 for remotes).
@@ -50,7 +61,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-bioccheck-${{ hashFiles('DESCRIPTION') }}
+          key: ${{ runner.os }}-r-bioccheck-${{ hashFiles('SEMseeker/DESCRIPTION') }}
           restore-keys: ${{ runner.os }}-r-bioccheck-
 
       # Use remotes (not pak/setup-r-dependencies) so DESCRIPTION's
