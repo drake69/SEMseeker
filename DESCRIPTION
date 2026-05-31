@@ -48,7 +48,7 @@ SystemRequirements: libuv (>= 1) — build-time dependency of the 'fs'
         package on Linux when not using bundled libuv (set
         USE_BUNDLED_LIBUV=1 to skip).
 Additional_repositories: https://community.r-multiverse.org
-LazyData: false
+LazyData: true
 LazyDataCompression: xz
 Config/testthat/parallel: false
 Config/testthat/edition: 3

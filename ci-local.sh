@@ -163,7 +163,7 @@ REOF
 
     case "$TARGET" in
       smoke)
-        echo "==> Native smoke: load_all + source setup.R ..."
+        echo "==> Native smoke: load_all + setup.R + data sanity ..."
         cat > "$RSCRIPT_TMP" <<'REOF'
 cat("R:", R.version$version.string, "\n")
 cat("sysname:", Sys.info()[["sysname"]], "\n\n")
@@ -175,7 +175,19 @@ cat("=== source('tests/testthat/setup.R') ===\n")
 source("tests/testthat/setup.R")
 cat("OK\n")
 cat("probe_features dim:", paste(dim(probe_features), collapse = "x"), "\n")
-cat("first 3 probes:", paste(head(probe_features$PROBE, 3), collapse = ", "), "\n")
+cat("first 3 probes:", paste(head(probe_features$PROBE, 3), collapse = ", "), "\n\n")
+cat("=== data files reachable through namespace ===\n")
+# Each .rda in data/ must be auto-loadable when LazyData: true.
+# This catches regressions where DESCRIPTION drops LazyData and breaks
+# `package::dataset` access (silently passes load_all but fails CI).
+for (obj in c("metrics_properties", "cytoband_hg19", "dmr_annotation")) {
+  x <- tryCatch(get(obj, envir = asNamespace("SEMseeker")),
+                error = function(e) NULL)
+  cat(sprintf("  %-24s %s\n", obj,
+              if (is.null(x)) "MISSING (LazyData broken?)"
+              else sprintf("OK (%s)", paste(class(x), collapse = "/"))))
+  if (is.null(x)) quit(status = 1)
+}
 REOF
         ;;
 
