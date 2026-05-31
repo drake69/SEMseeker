@@ -6,8 +6,18 @@
 Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES')
 
 rm(list = ls())
+# DEBUG: trace setup.R progress so we can see (in the macOS run log) at
+# which step GEOquery / tcltk loading is triggered. AI-017 tracking.
+.trace_step <- function(msg) {
+  cat(sprintf("[SETUP-TRACE %s] %s\n",
+              format(Sys.time(), "%H:%M:%OS3"), msg))
+  flush.console()
+}
+.trace_step("setup.R BEGIN")
 loadNamespace("future")
+.trace_step("after loadNamespace(future)")
 loadNamespace("stats")
+.trace_step("after loadNamespace(stats)")
 use_synthetic_data <- TRUE
 if (use_synthetic_data)
 {
@@ -31,8 +41,10 @@ if (use_synthetic_data)
   # startup ('address 0x161000013, cause invalid alignment'). Force the
   # synthetic-IDs branch on Darwin so we never load the annotation pkg.
   .k850_pkg <- "IlluminaHumanMethylationEPICanno.ilm10b4.hg19"
+  .trace_step("before .can_load_anno check (Illumina anno requireNamespace)")
   .can_load_anno <- Sys.info()[["sysname"]] != "Darwin" &&
                     requireNamespace(.k850_pkg, quietly = TRUE)
+  .trace_step(sprintf("after .can_load_anno check, value=%s", .can_load_anno))
   if (.can_load_anno) {
     .locs_env <- new.env(parent = emptyenv())
     utils::data(list = "Locations", package = .k850_pkg, envir = .locs_env)
