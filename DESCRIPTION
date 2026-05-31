@@ -2,19 +2,20 @@ Package: SEMseeker
 Type: Package
 Title: Stochastic Epigenetic Mutations SEM Seeker
 Version: 0.99.0
-Authors@R: c(
-    person("Luigi", "Corsaro",
-        email = "lcorsaro69@gmail.com",
-        role  = c("aut", "cre"),
-        comment = c(ORCID = "0000-0003-1218-230X")),
-    person("Centro Diagnostico Italiano S.p.A. - Genetic Medical Laboratory - Milan - Italy",
-        role = "fnd"))
+Authors@R: person("Luigi", "Corsaro",
+    email = "lcorsaro69@gmail.com",
+    role  = c("aut", "cre"),
+    comment = c(ORCID = "0000-0003-1218-230X"))
 Description: Detection, quantification and association analysis of Stochastic
-    Epigenetic Mutations (SEMs) from Illumina DNA methylation array data
-    (EPIC 850k, 450k, 27k). Computes binary SEM calls and continuous deviation
-    metrics (DeltaR, DeltaRP, DeltaRQ), aggregates mutations into genomic
-    lesions, and provides downstream association analysis and pathway
-    enrichment via multiple backends (WebGestalt, STRINGdb, pathfindR, CTD).
+    Epigenetic Mutations (SEMs) from DNA methylation data of any source —
+    Illumina methylation arrays (EPIC 850k, 450k, 27k), whole-genome
+    bisulfite sequencing (WGBS / RRBS), and long-read sequencing
+    (Oxford Nanopore, PacBio) consumed either as bedmethyl files or as
+    any BAM with per-site methylation calls. Computes binary SEM calls
+    and continuous deviation metrics (DeltaR, DeltaRP, DeltaRQ),
+    aggregates mutations into genomic lesions, and provides downstream
+    association analysis and pathway enrichment via multiple backends
+    (WebGestalt, STRINGdb, pathfindR, CTD).
 License: AGPL-3
 Encoding: UTF-8
 URL: https://github.com/drake69/semseeker
