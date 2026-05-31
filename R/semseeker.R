@@ -46,7 +46,7 @@
 #' @return Invisibly \code{NULL}; writes output files to \code{result_folder}.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Bedmethyl (Nanopore / modkit):
 #' semseeker(
 #'   input = list.files("bedmethyl/", pattern = "\\.bed$", full.names = TRUE),

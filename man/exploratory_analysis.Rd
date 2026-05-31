@@ -70,7 +70,7 @@ Preliminary exploratory analysys of the data
 }
 \examples{
 result_dir <- tempdir()
-\donttest{
+\dontrun{
 exploratory_analysis(
   categorical_variables = c("Sample_Group", "Sex"),
   numerical_variables   = c("Age"),

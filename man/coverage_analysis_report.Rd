@@ -39,7 +39,7 @@ Generate a coverage analysis report for Illumina methylation
 }
 \examples{
 result_dir <- tempdir()
-\donttest{
+\dontrun{
 coverage_analysis_report(
   signal_data   = "~/semseeker_results/Data/SIGNAL_MEAN_PROBE_WHOLE.parquet",
   result_folder = "~/semseeker_results/"

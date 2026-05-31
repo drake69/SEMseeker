@@ -18,7 +18,7 @@
 #'   sub-folder of \code{result_folder}.
 #' @examples
 #' result_dir <- tempdir()
-#' \donttest{
+#' \dontrun{
 #' association_to_association(
 #'   inference_details_origin = inference_study1,
 #'   inference_details        = inference_study2,

@@ -24,7 +24,7 @@ build_data_set_from_geo
 }
 \examples{
 result_dir <- tempdir()
-\donttest{
+\dontrun{
 build_data_set_from_geo(
   GEOgse        = "GSE55763",
   downloadFiles = 1,

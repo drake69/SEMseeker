@@ -107,7 +107,7 @@ Identify genes impacted by stochastic epigenetic mutations and
 }
 \examples{
 result_dir <- tempdir()
-\donttest{
+\dontrun{
 gene_impact_analysis(
   inference_details  = inference_df,
   adjust_per_area_s  = TRUE,

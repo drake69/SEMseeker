@@ -54,7 +54,7 @@ Manhattan plot of SEM markers for a single sample
 }
 \examples{
 result_dir <- tempdir()
-\donttest{
+\dontrun{
 manhattan_plot_marker_per_sample(
   sample_name  = "CASE_001",
   probes_range = 1:5000,

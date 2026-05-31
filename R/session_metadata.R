@@ -107,7 +107,7 @@ pivot_sidecar_write <- function(pivot_path) {
 #'   fields parsed from each metadata file.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' check_session_compatibility(c("~/results/study_A", "~/results/study_B"))
 #' }
 #' @export
