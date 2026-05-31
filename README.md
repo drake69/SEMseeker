@@ -39,6 +39,21 @@ library(devtools)
 install_github("drake69/semseeker")
 ```
 
+### System requirements (Linux, build-from-source)
+
+Building from source on Linux requires `libuv` ≥ 1, a build-time dependency
+of the `fs` package (a transitive dep of `rmarkdown`/`pkgdown`/`bslib`).
+Either install it system-wide:
+
+```sh
+sudo apt-get install libuv1-dev          # Debian / Ubuntu
+sudo dnf install libuv-devel             # Fedora / RHEL
+```
+
+…or skip the system dep entirely by exporting `USE_BUNDLED_LIBUV=1` before
+installing — `fs` will then build its own bundled libuv. This is what the
+project's CI workflows do.
+
 ### Dependencies
 
 semseeker relies on several CRAN packages. Install them before the first use:

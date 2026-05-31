@@ -20,6 +20,11 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
       # polars is on community.r-multiverse.org, not CRAN
       NOT_CRAN: "true"
+      # 'fs' (transitive dep of rmarkdown/bslib/pkgdown) needs libuv at build
+      # time. Use the bundled libuv shipped with 'fs' instead of system
+      # libuv1-dev — same approach as R-CMD-check.yml. Documented in
+      # DESCRIPTION SystemRequirements.
+      USE_BUNDLED_LIBUV: "1"
 
     steps:
       - uses: actions/checkout@v6
@@ -79,15 +84,28 @@ jobs:
 
       - name: Install SEMseeker (needed by BiocCheck man-page namespace load)
         run: |
-          remotes::install_local(
-            ".",
-            dependencies = FALSE,
-            upgrade = "never",
-            repos = c(
-              rpolars = "https://community.r-multiverse.org",
-              CRAN    = "https://packagemanager.posit.co/cran/latest"
-            )
+          tryCatch(
+            remotes::install_local(
+              ".",
+              dependencies = NA,
+              upgrade = "never",
+              repos = c(
+                rpolars = "https://community.r-multiverse.org",
+                CRAN    = "https://packagemanager.posit.co/cran/latest"
+              )
+            ),
+            error = function(e) {
+              cat("install_local failed:", conditionMessage(e), "\n")
+              quit(status = 1)
+            }
           )
+          # remotes raises warnings (not errors) on cascading dep failures,
+          # so the shell step exits 0 even when SEMseeker did not install.
+          # Verify the namespace loads — fail loudly otherwise.
+          if (!requireNamespace("SEMseeker", quietly = TRUE)) {
+            cat("ERROR: SEMseeker namespace not available after install\n")
+            quit(status = 1)
+          }
         shell: Rscript {0}
 
       - name: Run BiocCheckGitClone

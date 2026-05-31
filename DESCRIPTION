@@ -40,6 +40,9 @@ Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
         TxDb.Hsapiens.UCSC.hg19.knownGene,
         TxDb.Hsapiens.UCSC.hg38.knownGene
 Depends: R (>= 4.5.0)
+SystemRequirements: libuv (>= 1) — build-time dependency of the 'fs'
+        package on Linux when not using bundled libuv (set
+        USE_BUNDLED_LIBUV=1 to skip).
 Additional_repositories: https://community.r-multiverse.org
 LazyData: true
 LazyDataCompression: xz
