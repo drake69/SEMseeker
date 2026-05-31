@@ -77,6 +77,19 @@ jobs:
           )
         shell: Rscript {0}
 
+      - name: Install SEMseeker (needed by BiocCheck man-page namespace load)
+        run: |
+          remotes::install_local(
+            ".",
+            dependencies = FALSE,
+            upgrade = "never",
+            repos = c(
+              rpolars = "https://community.r-multiverse.org",
+              CRAN    = "https://packagemanager.posit.co/cran/latest"
+            )
+          )
+        shell: Rscript {0}
+
       - name: Run BiocCheckGitClone
         run: |
           gc <- BiocCheck::BiocCheckGitClone(".")

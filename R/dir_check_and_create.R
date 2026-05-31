@@ -12,40 +12,11 @@
 #' @return Character scalar: the normalised absolute path of the deepest
 #'   directory created (or already existing).
 #'
-dir_check_and_create <- function  (baseFolder, subFolders)
+dir_check_and_create <- function(baseFolder, subFolders)
 {
-
-
-  folderSep <- as.character(.Platform$file.sep)
-  parts <- unlist(strsplit(as.character(baseFolder), folderSep))
-  # do.call(file.path, as.list(c(parts[seq_along(parts) - 1], subFolders)))
   subFolders <- as.vector(sapply(subFolders, as.character))
-  subFolders <-c(parts[seq_along(parts)], subFolders)
-
-  for( y in seq_along(subFolders))
-  {
-
-    subFolder <- subFolders[y]
-
-    # if(subFolder=="c(\"Reference\", \"Control\", \"Case\")")
-    #   #
-
-    # # browser
-    if(!exists("subF"))
-      subF <- file.path(subFolder)
-    else
-    {
-      subF <- file.path(subF, subFolder)
-      if(!dir.exists(subF))
-        dir.create(subF, recursive = FALSE)
-    }
-  }
-
-
-  res <- file.path(as.character(subF))
-
-  # transform to absolute path
-  res <- file.path(normalizePath(res))
-
-  return(res)
+  path <- do.call(file.path, c(list(as.character(baseFolder)), as.list(subFolders)))
+  if (!dir.exists(path))
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  normalizePath(path, mustWork = FALSE)
 }

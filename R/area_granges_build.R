@@ -384,7 +384,8 @@
 #'     \code{genome_build}.
 #' }
 #'
-#' @section Required packages (install via \code{BiocManager::install()}):
+#' @section Required packages:
+#' Install via \code{BiocManager::install()}.
 #' \describe{
 #'   \item{GENE areas}{\code{TxDb.Hsapiens.UCSC.hg19.knownGene} (or hg38/mm10),
 #'     \code{GenomicFeatures}, \code{GenomicRanges}, \code{IRanges}.
