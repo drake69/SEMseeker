@@ -24,11 +24,12 @@ biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylatio
         GeneExpression, Pathways, MultipleComparison, Normalization,
         StatisticalMethod, Software, Coverage
 Imports: dplyr, doFuture, doRNG, foreach, FSA,
-        fst, future, future.apply, ggplot2, ggvenn, graphics, grDevices,
-        gridExtra, gtools, jsonlite, lqmm, matrixStats, plyr, polars,
-        progressr, reshape, reshape2, R.utils, rlang, stats, stringr, tools,
-        utils, withr, zoo, VennDiagram, effsize, pwr, combinat, philentropy,
-        parallelly, knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
+        fst, future, future.apply, GenomicRanges, ggplot2, ggvenn,
+        graphics, grDevices, gridExtra, gtools, jsonlite, lqmm,
+        matrixStats, plyr, polars, progressr, reshape, reshape2,
+        R.utils, rlang, stats, stringr, tools, utils, withr, zoo,
+        VennDiagram, effsize, pwr, combinat, philentropy, parallelly,
+        knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
@@ -39,7 +40,7 @@ Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
         IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
         IlluminaHumanMethylation450kanno.ilmn12.hg19,
         IlluminaHumanMethylation27kanno.ilmn12.hg19,
-        GenomicRanges, IRanges, S4Vectors, GenomicFeatures, GenomeInfoDb,
+        IRanges, S4Vectors, GenomicFeatures, GenomeInfoDb,
         AnnotationHub,
         TxDb.Hsapiens.UCSC.hg19.knownGene,
         TxDb.Hsapiens.UCSC.hg38.knownGene

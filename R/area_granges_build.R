@@ -395,6 +395,7 @@
 #'   \item{CHR / DMR areas}{no extra packages needed.}
 #' }
 #'
+#' @importFrom GenomicRanges GRanges
 area_granges_build <- function(area_subarea, genome_build = NULL) {
 
   if (is.null(genome_build)) {
