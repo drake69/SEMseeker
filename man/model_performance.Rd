@@ -42,6 +42,6 @@ comparing train and test metrics.
 \examples{
 fitted   <- c(1.1, 1.9, 3.2, 3.8)
 expected <- c(1,   2,   3,   4  )
-semseeker:::model_performance(fitted, expected, c(), c())
+SEMseeker:::model_performance(fitted, expected, c(), c())
 
 }

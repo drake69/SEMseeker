@@ -4,13 +4,13 @@ test_that("deltaX_get", {
   unlink(tempFolder, recursive = TRUE)
   # message(tempFolder)
   tempFolders <- tempFolders[-1]
-  ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
     bonferroni_threshold = bonferroni_threshold,
     inpute="median", start_fresh=TRUE)
 
   ####################################################################################
 
-  tt <- semseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::get_meth_tech(signal_data)
 
   ####################################################################################
   sliding_window_size <- 11
@@ -18,35 +18,35 @@ test_that("deltaX_get", {
 
   if (!exists("signal_thresholds"))
   {
-    signal_data <- semseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- semseeker:::signal_range_values(signal_data, batch_id)
+    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
   }
   probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
   keys <- ssEnv$keys_markers_figures_default
-  sp <- semseeker:::analyze_population(signal_data=signal_data,
+  sp <- SEMseeker:::analyze_population(signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Case",],
     probe_features = probe_features
   )
-  semseeker:::create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Case",],keys)
+  SEMseeker:::create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Case",],keys)
 
-  sp <- semseeker:::analyze_population(signal_data=signal_data,
+  sp <- SEMseeker:::analyze_population(signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Control",],
     probe_features = probe_features
   )
 
-  semseeker:::create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
+  SEMseeker:::create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
 
   # deltaX_get() calls study_summary_get() which reads the sample sheet CSV.
   # analyze_population is called directly here (bypassing analyze_batch which writes it),
   # so we write it manually with original mixed-case Sample_IDs.
-  ssEnv2 <- semseeker:::get_session_info()
-  sample_sheet_csv <- semseeker:::file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
+  ssEnv2 <- SEMseeker:::get_session_info()
+  sample_sheet_csv <- SEMseeker:::file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
   utils::write.csv2(mySampleSheet, file=sample_sheet_csv)
 
-  ss <- semseeker:::deltaX_get()
+  ss <- SEMseeker:::deltaX_get()
 
   # analyze_population bypasses analyze_batch so Sample_IDs remain in original case
   cleaned_sample_ids <- mySampleSheet$Sample_ID
@@ -68,13 +68,13 @@ test_that("deltaX_get", {
     area <- as.character(key$AREA)
     subarea <- as.character(key$SUBAREA)
 
-    mutations_pivot_file_name <- semseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
+    mutations_pivot_file_name <- SEMseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
     if(file.exists(mutations_pivot_file_name))
       mutations_pivot <- as.data.frame(polars::pl$read_parquet(mutations_pivot_file_name))
     else
       next
 
-    pivot_file_name <- semseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
+    pivot_file_name <- SEMseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
     # derived markers may not exist with sparse synthetic data
     if(!file.exists(pivot_file_name))
       next
@@ -116,17 +116,17 @@ test_that("deltaX_get", {
       {
         sample_id <- mySampleSheet[c,"Sample_ID"]  # original case (analyze_population not via analyze_batch)
         sample_group <- mySampleSheet[c,"Sample_Group"]
-        mutation_bed_file_name <- semseeker:::bed_file_name(sample_id,sample_group,"MUTATIONS",figure)
+        mutation_bed_file_name <- SEMseeker:::bed_file_name(sample_id,sample_group,"MUTATIONS",figure)
         if(file.exists(mutation_bed_file_name))
         {
-          marker_bed_file_name <- semseeker:::bed_file_name(sample_id,sample_group,marker,figure)
+          marker_bed_file_name <- SEMseeker:::bed_file_name(sample_id,sample_group,marker,figure)
           testthat::expect_true(file.exists(marker_bed_file_name))
         }
       }
 
   }
 
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 

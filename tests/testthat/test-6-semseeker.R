@@ -6,17 +6,17 @@ test_that("semeeker", {
 
   ####################################################################################
 
-  semseeker::semseeker(
+  SEMseeker::semseeker(
     input         = signal_data,
     sample_sheet  = mySampleSheet,
     result_folder = tempFolder,
     parallel_strategy = parallel_strategy
   )
 
-  ssEnv <- semseeker:::get_session_info()
+  ssEnv <- SEMseeker:::get_session_info()
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures)
   # name_cleaning uppercases Sample_ID inside semseeker(); use the same for comparison
-  cleaned_sample_ids <- semseeker:::name_cleaning(mySampleSheet$Sample_ID)
+  cleaned_sample_ids <- SEMseeker:::name_cleaning(mySampleSheet$Sample_ID)
 
   for (k in 1:nrow(keys))
   {
@@ -27,13 +27,13 @@ test_that("semeeker", {
     area <- as.character(key$AREA)
     subarea <- as.character(key$SUBAREA)
 
-    mutations_pivot_file_name <- semseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
+    mutations_pivot_file_name <- SEMseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
     if(file.exists(mutations_pivot_file_name))
       mutations_pivot <- as.data.frame(polars::pl$read_parquet(mutations_pivot_file_name))
     else
       next
 
-    pivot_file_name <- semseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
+    pivot_file_name <- SEMseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
     # derived markers (LESIONS, DELTA*) may not exist when mutations are too sparse
     if(!file.exists(pivot_file_name))
       next
@@ -74,12 +74,12 @@ test_that("semeeker", {
     if(marker!="MUTATIONS")
       for(c in 1:(nrow(mySampleSheet)))
       {
-        sample_id <- semseeker:::name_cleaning(mySampleSheet[c,"Sample_ID"])
+        sample_id <- SEMseeker:::name_cleaning(mySampleSheet[c,"Sample_ID"])
         sample_group <- mySampleSheet[c,"Sample_Group"]
-        mutation_bed_file_name <- semseeker:::bed_file_name(sample_id,sample_group,"MUTATIONS",figure)
+        mutation_bed_file_name <- SEMseeker:::bed_file_name(sample_id,sample_group,"MUTATIONS",figure)
         if(file.exists(mutation_bed_file_name))
         {
-          marker_bed_file_name <- semseeker:::bed_file_name(sample_id,sample_group,marker,figure)
+          marker_bed_file_name <- SEMseeker:::bed_file_name(sample_id,sample_group,marker,figure)
           testthat::expect_true(file.exists(marker_bed_file_name))
         }
       }
@@ -87,7 +87,7 @@ test_that("semeeker", {
   }
 
   ####################################################################################
-  semseeker:::close_env()
+  SEMseeker:::close_env()
   unlink(tempFolder,recursive = TRUE)
 })
 

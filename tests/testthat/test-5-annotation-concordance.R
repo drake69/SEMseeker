@@ -29,14 +29,14 @@
 # -------------------------------------------------------------------------
 .with_session <- function(expr, envir = parent.frame()) {
   tempFolder <- tempfile(pattern = "semseeker_concordance_")
-  semseeker:::init_env(
+  SEMseeker:::init_env(
     result_folder     = tempFolder,
     parallel_strategy = "sequential",
     showprogress      = FALSE,
     verbosity         = 0
   )
   withr::defer({
-    try(semseeker:::close_env(), silent = TRUE)
+    try(SEMseeker:::close_env(), silent = TRUE)
     unlink(tempFolder, recursive = TRUE)
   }, envir = envir)
   force(expr)
@@ -52,7 +52,7 @@ test_that("annotation_concordance: CHR_CYTOBAND is 100% identical (bundled)", {
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
 
-  report <- .with_session(semseeker:::annotation_concordance_report(
+  report <- .with_session(SEMseeker:::annotation_concordance_report(
     tech         = "K850",
     n_probes     = 500L,
     genome_build = "hg19",
@@ -69,7 +69,7 @@ test_that("annotation_concordance: DMR_WHOLE is 100% identical (bundled)", {
   skip_if_not_installed(.req_illumina)
   skip_if_not_installed("GenomicRanges")
 
-  report <- .with_session(semseeker:::annotation_concordance_report(
+  report <- .with_session(SEMseeker:::annotation_concordance_report(
     tech         = "K850",
     n_probes     = 500L,
     genome_build = "hg19",
@@ -85,7 +85,7 @@ test_that("annotation_concordance: DMR_DMR is 100% identical (bundled)", {
   skip_if_not_installed(.req_illumina)
   skip_if_not_installed("GenomicRanges")
 
-  report <- .with_session(semseeker:::annotation_concordance_report(
+  report <- .with_session(SEMseeker:::annotation_concordance_report(
     tech         = "K850",
     n_probes     = 500L,
     genome_build = "hg19",
@@ -107,7 +107,7 @@ test_that("annotation_concordance_report returns correct structure", {
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
 
-  report <- .with_session(semseeker:::annotation_concordance_report(
+  report <- .with_session(SEMseeker:::annotation_concordance_report(
     tech         = "K850",
     n_probes     = 100L,
     genome_build = "hg19",

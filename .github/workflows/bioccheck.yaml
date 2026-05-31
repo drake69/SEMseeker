@@ -102,7 +102,7 @@ jobs:
           # remotes raises warnings (not errors) on cascading dep failures,
           # so the shell step exits 0 even when SEMseeker did not install.
           # Verify the namespace loads — fail loudly otherwise.
-          if (!requireNamespace("semseeker", quietly = TRUE)) {
+          if (!requireNamespace("SEMseeker", quietly = TRUE)) {
             cat("ERROR: SEMseeker namespace not available after install\n")
             quit(status = 1)
           }

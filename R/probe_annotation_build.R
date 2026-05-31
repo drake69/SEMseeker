@@ -114,7 +114,7 @@ probe_annotation_build <- function(tech, force = FALSE) {
   # ---- CHR_CYTOBAND ----
   # Assigned by range overlap against the bundled cytoband_hg19 table.
   # Vectorized: one findInterval per chromosome instead of nested loops.
-  cb        <- semseeker::cytoband_hg19
+  cb        <- SEMseeker::cytoband_hg19
   cb        <- cb[!is.na(cb$CHR) & cb$CHR != "", ]
   chr_vec   <- anno_df$CHR
   start_vec <- anno_df$START
@@ -133,7 +133,7 @@ probe_annotation_build <- function(tech, force = FALSE) {
   anno_df$CHR_CYTOBAND <- cytoband_vec
 
   # ---- DMR columns from bundled dmr_annotation ----
-  dmr <- semseeker::dmr_annotation
+  dmr <- SEMseeker::dmr_annotation
   anno_df <- merge(anno_df, dmr, by = "PROBE", all.x = TRUE)
 
   # ---- Select final columns ----

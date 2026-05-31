@@ -5,7 +5,7 @@
 #   parallel_strategy <- "multicore"
 #   # 10.161.5.13
 #   # 192.168.37.207
-#   ssEnv <- semseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+#   ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
 #     areas = c("GENE"), subareas= c("BODY"), showprogress=FALSE, start_fresh=TRUE,
 #     cluster_workers=c("localhost"))
 #
@@ -13,7 +13,7 @@
 #
 #   funcA <- function()
 #   {
-#     semseeker:::get_session_info()
+#     SEMseeker:::get_session_info()
 #   }
 #
 #   funcB <- function()
@@ -26,7 +26,7 @@
 #     funcB()
 #   }
 #
-#   res <- foreach::foreach(i = 1:10, .combine = rbind, .export =c("funcA","funcB","funcC","semseeker:::get_session_info")) %dorng% {
+#   res <- foreach::foreach(i = 1:10, .combine = rbind, .export =c("funcA","funcB","funcC","SEMseeker:::get_session_info")) %dorng% {
 #     funcA()
 #   }
 #
@@ -45,7 +45,7 @@
 #     #   geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
 #     #   geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
 #     # ggplotly(p)
-#     semseeker:::get_session_info()
+#     SEMseeker:::get_session_info()
 #   }
 #   testthat::expect_true(gg1$cluster_workers=="192.168.37.207")
 #   testthat::expect_true(gg1$result_folderData==paste(tempFolder,"/Data",sep=""))

@@ -25,6 +25,6 @@ If it does not exist, a new column is appended. Handles empty data frames
 }
 \examples{
 df <- data.frame(a = 1:3)
-semseeker:::data.frame_add.column(df, "b", c(4, 5, 6))
+SEMseeker:::data.frame_add.column(df, "b", c(4, 5, 6))
 
 }

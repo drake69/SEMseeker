@@ -90,7 +90,7 @@
     stop("AnnotationHub is required for island areas.\n",
          "Install with: BiocManager::install('AnnotationHub')")
 
-  cache_dir  <- tools::R_user_dir("semseeker", "cache")
+  cache_dir  <- tools::R_user_dir("SEMseeker", "cache")
   cache_file <- file.path(cache_dir,
                           paste0("cpg_islands_", genome_build, ".rds"))
 
@@ -267,7 +267,7 @@
   if (subarea == "CYTOBAND") {
     # Use bundled cytoband_hg19 data (available in data/)
     cb_obj <- tryCatch(
-      get("cytoband_hg19", envir = asNamespace("semseeker")),
+      get("cytoband_hg19", envir = asNamespace("SEMseeker")),
       error = function(e) NULL
     )
     if (is.null(cb_obj) || !is.data.frame(cb_obj))
@@ -294,7 +294,7 @@
   # dmr_annotation maps Illumina probe IDs to DMR names (PROBE, DMR_WHOLE, DMR_DMR).
   # To get genomic coordinates we join with the K850 "Locations" table.
   dmr_obj <- tryCatch(
-    get("dmr_annotation", envir = asNamespace("semseeker")),
+    get("dmr_annotation", envir = asNamespace("SEMseeker")),
     error = function(e) NULL
   )
   if (is.null(dmr_obj) || !is.data.frame(dmr_obj))
@@ -359,7 +359,7 @@
 #'
 #' Results are cached in memory for the duration of the R session to avoid
 #' repeated package loads. CpG island tracks downloaded from AnnotationHub
-#' are also cached on disk in \code{tools::R_user_dir("semseeker", "cache")}.
+#' are also cached on disk in \code{tools::R_user_dir("SEMseeker", "cache")}.
 #'
 #' @param area_subarea Character scalar: area and subarea joined by \code{"_"}
 #'   (e.g. \code{"GENE_BODY"}, \code{"ISLAND_N_SHORE"}, \code{"CHR_CYTOBAND"}).

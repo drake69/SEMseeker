@@ -26,7 +26,7 @@ dependent variable.  Scale-sensitive metrics (e.g. MAE, RMSE) are
 meaningless after a non-linear transformation because their units change.
 }
 \examples{
-semseeker:::metrics_filter(c("MAE", "RMSE", "COUNT_SIGN"), "none")
-semseeker:::metrics_filter(c("MAE", "RMSE", "COUNT_SIGN"), "log")
+SEMseeker:::metrics_filter(c("MAE", "RMSE", "COUNT_SIGN"), "none")
+SEMseeker:::metrics_filter(c("MAE", "RMSE", "COUNT_SIGN"), "log")
 
 }

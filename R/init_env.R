@@ -129,7 +129,7 @@ init_env <- function(result_folder, maxResources = 90, ...)
   arguments <- set_env_variable(arguments,"color_palette_darker",darker_colors)
   arguments <- set_env_variable(arguments,"cluster_workers",NULL)
 
-  model_metrics <- toupper(as.vector(semseeker::metrics_properties$Metric))
+  model_metrics <- toupper(as.vector(SEMseeker::metrics_properties$Metric))
   arguments <- set_env_variable(arguments,"model_metrics",model_metrics)
 
   # get ssEnv

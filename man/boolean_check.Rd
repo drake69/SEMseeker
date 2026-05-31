@@ -19,9 +19,9 @@ a proper R logical value. Returns \code{FALSE} for \code{NA}, empty string,
 or \code{NULL}.
 }
 \examples{
-semseeker:::boolean_check("TRUE")   # TRUE
-semseeker:::boolean_check("false")  # FALSE
-semseeker:::boolean_check(1)        # TRUE
-semseeker:::boolean_check(NA)       # FALSE
+SEMseeker:::boolean_check("TRUE")   # TRUE
+SEMseeker:::boolean_check("false")  # FALSE
+SEMseeker:::boolean_check(1)        # TRUE
+SEMseeker:::boolean_check(NA)       # FALSE
 
 }

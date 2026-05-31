@@ -7,7 +7,7 @@ association_analysis_summary <- function(inference_details,destination_folder=""
   association_data <- association_data_extractor(inference_details, destination_folder, result_folder, ...)
 
 
-  available_metrics <- toupper(semseeker::metrics_properties[,"Metric"])
+  available_metrics <- toupper(SEMseeker::metrics_properties[,"Metric"])
 
   if(any(grepl("PVALUE",colnames(association_data))))
     available_metrics <- c(available_metrics, colnames(association_data)[grepl("PVALUE",colnames(association_data))])

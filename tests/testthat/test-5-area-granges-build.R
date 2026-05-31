@@ -10,7 +10,7 @@
 
 test_that("area_granges_build errors on unknown area", {
   expect_error(
-    semseeker:::area_granges_build("FOOBAR_WHOLE", genome_build = "hg19"),
+    SEMseeker:::area_granges_build("FOOBAR_WHOLE", genome_build = "hg19"),
     regexp = "Unknown area"
   )
 })
@@ -20,7 +20,7 @@ test_that("area_granges_build errors on unknown GENE subarea", {
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
   expect_error(
-    semseeker:::area_granges_build("GENE_FOOBAR", genome_build = "hg19"),
+    SEMseeker:::area_granges_build("GENE_FOOBAR", genome_build = "hg19"),
     regexp = "Unknown GENE subarea"
   )
 })
@@ -29,7 +29,7 @@ test_that("area_granges_build errors on unknown ISLAND subarea", {
   skip_if_not_installed("AnnotationHub")
   skip_if_not_installed("GenomicRanges")
   expect_error(
-    semseeker:::area_granges_build("ISLAND_FOOBAR", genome_build = "hg19"),
+    SEMseeker:::area_granges_build("ISLAND_FOOBAR", genome_build = "hg19"),
     regexp = "Unknown ISLAND subarea"
   )
 })
@@ -41,7 +41,7 @@ test_that("area_granges_build appends _WHOLE when no underscore", {
   # "GENE" alone should be treated as "GENE_WHOLE"
   # We just check it doesn't throw a "unknown area" error
   expect_error(
-    semseeker:::area_granges_build("GENE", genome_build = "hg19"),
+    SEMseeker:::area_granges_build("GENE", genome_build = "hg19"),
     NA   # no error expected
   )
 })
@@ -53,7 +53,7 @@ test_that("area_granges_build appends _WHOLE when no underscore", {
 test_that("area_granges_build DMR_WHOLE returns GRanges with label", {
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("IRanges")
-  gr <- semseeker:::area_granges_build("DMR_WHOLE", genome_build = "hg19")
+  gr <- SEMseeker:::area_granges_build("DMR_WHOLE", genome_build = "hg19")
   expect_s4_class(gr, "GRanges")
   expect_true(length(gr) > 0)
   expect_true("label" %in% names(GenomicRanges::mcols(gr)))
@@ -68,7 +68,7 @@ test_that("area_granges_build GENE_BODY returns valid GRanges", {
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
-  gr <- semseeker:::area_granges_build("GENE_BODY", genome_build = "hg19")
+  gr <- SEMseeker:::area_granges_build("GENE_BODY", genome_build = "hg19")
   expect_s4_class(gr, "GRanges")
   expect_true(length(gr) > 1000L)
   expect_true("label" %in% names(GenomicRanges::mcols(gr)))
@@ -78,7 +78,7 @@ test_that("area_granges_build GENE_TSS200 ranges are ≤ 200bp wide", {
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
-  gr <- semseeker:::area_granges_build("GENE_TSS200", genome_build = "hg19")
+  gr <- SEMseeker:::area_granges_build("GENE_TSS200", genome_build = "hg19")
   expect_true(all(GenomicRanges::width(gr) <= 200L))
 })
 
@@ -86,8 +86,8 @@ test_that("GENE_TSS1500 and GENE_TSS200 do not overlap within the same gene", {
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
-  gr200  <- semseeker:::area_granges_build("GENE_TSS200",  genome_build = "hg19")
-  gr1500 <- semseeker:::area_granges_build("GENE_TSS1500", genome_build = "hg19")
+  gr200  <- SEMseeker:::area_granges_build("GENE_TSS200",  genome_build = "hg19")
+  gr1500 <- SEMseeker:::area_granges_build("GENE_TSS1500", genome_build = "hg19")
   # Per-gene check: TSS200 and TSS1500 must not overlap within the same gene
   # (they are adjacent rings by design). Cross-gene overlaps between
   # neighbouring genes are expected and do not violate the ring structure.
@@ -108,8 +108,8 @@ test_that("area_granges_build result is cached on second call", {
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
-  gr1 <- semseeker:::area_granges_build("GENE_BODY", genome_build = "hg19")
-  gr2 <- semseeker:::area_granges_build("GENE_BODY", genome_build = "hg19")
+  gr1 <- SEMseeker:::area_granges_build("GENE_BODY", genome_build = "hg19")
+  gr2 <- SEMseeker:::area_granges_build("GENE_BODY", genome_build = "hg19")
   expect_identical(gr1, gr2)  # exact same object from cache
 })
 
@@ -120,7 +120,7 @@ test_that("area_granges_build result is cached on second call", {
 test_that("area_granges_build CHR_CYTOBAND returns GRanges with label", {
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
-  gr <- semseeker:::area_granges_build("CHR_CYTOBAND", genome_build = "hg19")
+  gr <- SEMseeker:::area_granges_build("CHR_CYTOBAND", genome_build = "hg19")
   expect_s4_class(gr, "GRanges")
   expect_true(length(gr) > 100L)
   expect_true("label" %in% names(GenomicRanges::mcols(gr)))
