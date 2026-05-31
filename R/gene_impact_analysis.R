@@ -49,7 +49,7 @@
 #'   pathway sub-folder of \code{result_folder}.
 #' @examples
 #' result_dir <- tempdir()
-#' \dontrun{
+#' \donttest{
 #' gene_impact_analysis(
 #'   inference_details  = inference_df,
 #'   adjust_per_area_s  = TRUE,

@@ -20,7 +20,7 @@
 #'
 #' @examples
 #' result_dir <- tempdir()
-#' \dontrun{
+#' \donttest{
 #' manhattan_plot_per_area(
 #'   marker        = "DELTARP",
 #'   figure        = "HYPO",

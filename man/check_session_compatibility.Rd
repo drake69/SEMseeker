@@ -30,7 +30,7 @@ A missing \code{session_metadata.json} raises a warning (legacy runs
 without provenance data are tolerated but flagged).
 }
 \examples{
-\dontrun{
+\donttest{
 check_session_compatibility(c("~/results/study_A", "~/results/study_B"))
 }
 }

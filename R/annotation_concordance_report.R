@@ -77,10 +77,12 @@ annotation_concordance_report <- function(tech         = "K850",
   # --- Ground truth: Illumina manifest annotation ------------------------
   anno <- probe_annotation_build(tech)
 
-  set.seed(seed)
+  # Bioconductor packages must not call set.seed() in package code (it
+  # mutates the user's RNG state); withr::with_seed scopes the seed to
+  # the sampling expression only.
   n_total <- nrow(anno)
   idx <- if (is.null(n_probes) || n_probes >= n_total) seq_len(n_total)
-         else sort(sample.int(n_total, n_probes))
+         else withr::with_seed(seed, sort(sample.int(n_total, n_probes)))
   subset_df <- anno[idx, , drop = FALSE]
 
   # The CpG GRanges is rebuilt per area because different area_gr builders use

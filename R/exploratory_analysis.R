@@ -26,7 +26,7 @@
 #'   written to the result folder together with exploratory summary reports.
 #' @examples
 #' result_dir <- tempdir()
-#' \dontrun{
+#' \donttest{
 #' exploratory_analysis(
 #'   categorical_variables = c("Sample_Group", "Sex"),
 #'   numerical_variables   = c("Age"),

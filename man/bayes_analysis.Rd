@@ -47,7 +47,7 @@ association analysis.
 }
 \examples{
 result_dir <- tempdir()
-\dontrun{
+\donttest{
 bayes_analysis(
   result_folder        = "~/semseeker_results/",
   independent_variable = "Sample_Group"

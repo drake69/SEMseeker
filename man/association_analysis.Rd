@@ -63,7 +63,7 @@ Spearman), and multi-covariate formulas (e.g.
 }
 \examples{
 result_dir <- tempdir()
-\dontrun{
+\donttest{
 association_analysis(
   inference_details = data.frame(
     independent_variable = "Sample_Group",

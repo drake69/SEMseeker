@@ -45,7 +45,7 @@ Re-run association analysis focusing on genomic regions that are
 }
 \examples{
 result_dir <- tempdir()
-\dontrun{
+\donttest{
 association_to_association(
   inference_details_origin = inference_study1,
   inference_details        = inference_study2,

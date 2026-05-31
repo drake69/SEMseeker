@@ -19,7 +19,7 @@
 #' @importFrom doRNG %dorng%
 #' @examples
 #' result_dir <- tempdir()
-#' \dontrun{
+#' \donttest{
 #' ss_analysis(
 #'   combinations         = list(c("CASE_A", "CASE_B")),
 #'   result_folder        = "~/semseeker_results/",

@@ -48,7 +48,7 @@ Manhattan plot of association results per genomic area
 }
 \examples{
 result_dir <- tempdir()
-\dontrun{
+\donttest{
 manhattan_plot_per_area(
   marker        = "DELTARP",
   figure        = "HYPO",

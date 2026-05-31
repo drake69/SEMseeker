@@ -74,7 +74,7 @@ Supported \code{input} forms:
 }
 }
 \examples{
-\dontrun{
+\donttest{
 # Bedmethyl (Nanopore / modkit):
 semseeker(
   input = list.files("bedmethyl/", pattern = "\\\\.bed$", full.names = TRUE),
