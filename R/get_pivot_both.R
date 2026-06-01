@@ -1,31 +1,34 @@
 get_pivot_both <- function(marker)
 {
-  # marker <- "DELTAP"
-  # ssEnv <- get_session_info("~/Documents/Dati_Lavoro/osteoporosis/results/GSE99624")
-  # update_session_info(ssEnv)
   ssEnv <- get_session_info()
   is_discrete <- unique(ssEnv$keys_markers_figures_default[ssEnv$keys_markers_figures_default$MARKER==marker,"DISCRETE"])
 
+  # Migrated 2026-06-01 to use the new read_pivot() dispatcher (AI-027).
+  # Branch (a): BOTH already materialised (cache).
   pivot_file_name_both <- pivot_file_name_parquet(marker,"BOTH","PROBE","WHOLE")
   if(file.exists(pivot_file_name_both))
     return(as.data.frame(polars::pl$read_parquet(pivot_file_name_both)))
 
-  pivot_file_name_hyper <- pivot_file_name_parquet(marker,"HYPER","PROBE","WHOLE")
-  pivot_file_name_hypo <- pivot_file_name_parquet(marker,"HYPO","PROBE","WHOLE")
+  # Branch (b): build BOTH from HYPER+HYPO. read_pivot() transparently handles
+  # both the cached-parquet and the bed-streaming-merge backends; if neither
+  # the parquet nor the per-sample bed files exist for a figure, it returns
+  # NULL and we treat that figure as empty.
+  pivot_hyper <- read_pivot(marker, "HYPER", area = "PROBE", subarea = "WHOLE")
+  pivot_hypo  <- read_pivot(marker, "HYPO",  area = "PROBE", subarea = "WHOLE")
 
-  if(!file.exists(pivot_file_name_hyper) && !file.exists(pivot_file_name_hypo))
+  if (is.null(pivot_hyper) && is.null(pivot_hypo))
     return(data.frame())
-  pivot_hyper <- polars::pl$scan_parquet(pivot_file_name_hyper)
-  pivot_hypo <- polars::pl$scan_parquet(pivot_file_name_hypo)
+  # Drop the NULL side(s); polars concat requires non-NULL operands
+  parts <- Filter(Negate(is.null), list(pivot_hyper, pivot_hypo))
 
-  # Union (concatenate) the two DataFrames.
+  # Union (concatenate) the available figures.
   # NOTA polars 1.11 (e già da 1.x): pl$concat() vuole i frame come varargs (...),
-  # non come list. Passare list(a, b) → "Invalid `...` elements. All elements must
-  # be of the same class". Usiamo do.call per espandere la lista in posizionali.
-  pivot_both <- do.call(polars::pl$concat, list(pivot_hyper, pivot_hypo))$collect()
+  # non come list. Usiamo do.call per espandere la lista in posizionali.
+  pivot_both <- do.call(polars::pl$concat, parts)$collect()
   pivot_both <- pivot_both$group_by("AREA", .maintain_order=FALSE)$sum()
 
   pivot_both$write_parquet(pivot_file_name_both)
+  # Sidecar JSON is materialised by ensure_sidecars() at pipeline end.
 
   # pivot_both <- pivot_both$group_by("AREA", maintain_order=FALSE)$agg(
   #   pl$all()$exclude("AREA")$sum()
