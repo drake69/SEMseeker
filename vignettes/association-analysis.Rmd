@@ -18,6 +18,19 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r synthetic_setup, include=FALSE}
+# Tiny synthetic sample sheet so chunks below can be evaluated without
+# requiring real cohort data on disk.
+sample_sheet <- data.frame(
+  Sample_ID    = paste0("S", sprintf("%03d", 1:6)),
+  Sample_Group = c("Reference","Reference","Reference","Case","Case","Case"),
+  age          = c(34, 41, 29, 52, 47, 61),
+  bmi          = c(22.1, 25.4, 19.8, 28.6, 26.3, 31.1),
+  sex          = c("F","M","F","M","F","M"),
+  stringsAsFactors = FALSE
+)
+```
+
 ## Overview
 
 `association_analysis()` is the downstream statistical engine of semseeker.
@@ -47,8 +60,9 @@ You need a completed semseeker run (see the
 The sample sheet used in the original `semseeker()` call must already contain
 the clinical variable(s) you want to test:
 
-```{r sample_sheet, eval=FALSE}
-sample_sheet <- read.csv2("sample_sheet.csv")
+```{r sample_sheet}
+# In practice: sample_sheet <- read.csv2("sample_sheet.csv").
+# Here we use the synthetic sample sheet defined in the hidden setup chunk.
 
 # Required: Sample_ID, Sample_Group
 # Plus any clinical covariates you plan to test:
@@ -102,9 +116,7 @@ Any semseeker output metric can be the dependent variable in `formula`:
 
 ### Correlation
 
-```{r correlation_examples, eval=FALSE}
-library(semseeker)
-
+```{r correlation_examples}
 # Spearman rank correlation (recommended for non-normal SEM metrics)
 inf <- data.frame(formula="DELTARP ~ age", family="spearman",
                   transformation_y="none", depth_analysis=3,
@@ -131,7 +143,8 @@ inf <- data.frame(formula="DELTARP ~ Sample_Group", family="jsd",
                   transformation_y="none", depth_analysis=2,
                   filter_p_value=TRUE)
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Run the analysis (uncomment when you have a real semseeker results folder):
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 Spearman [@spearman1904] is the default recommendation for SEM metrics because
