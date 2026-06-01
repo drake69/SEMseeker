@@ -4,7 +4,7 @@
 \alias{semseeker_core}
 \title{Core SEMseeker pipeline (internal)}
 \usage{
-semseeker_core(sample_sheet, signal_data, result_folder, ...)
+semseeker_core(sample_sheet, signal_data, result_folder)
 }
 \arguments{
 \item{sample_sheet}{Data frame (or list of data frames) with a \code{Sample_ID} column.}
@@ -13,8 +13,6 @@ semseeker_core(sample_sheet, signal_data, result_folder, ...)
 (or list of such objects, one per batch).}
 
 \item{result_folder}{Output directory.}
-
-\item{...}{Additional arguments forwarded to \code{init_env()}.}
 }
 \value{
 Invisibly NULL; writes output files to \code{result_folder}.

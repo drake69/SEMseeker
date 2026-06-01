@@ -69,6 +69,15 @@ read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
   }
 
   # --- Branch 2: per-sample bed/bedgraph files -------------------------------
+  # NB: this branch builds a wide pivot with CHR/START/END as the key columns
+  # (a POSITION-shape table). It is only valid when area == "POSITION";
+  # PROBE/GENE/ISLAND/... pivots have an AREA key column and are produced by
+  # annotate_position_pivots() from the POSITION pivot. Trying to fall back to
+  # stream_merge_bed for non-POSITION areas would write a POSITION-shape file
+  # under a PROBE-shape filename and silently corrupt downstream reads.
+  if (!identical(area, "POSITION")) {
+    return(NULL)
+  }
   bed_files <- list_bed_files_for_marker_figure(marker, figure)
   if (length(bed_files) > 0) {
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),

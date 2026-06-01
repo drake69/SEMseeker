@@ -24,7 +24,11 @@ get_pivot_both <- function(marker)
   # Union (concatenate) the available figures.
   # NOTA polars 1.11 (e già da 1.x): pl$concat() vuole i frame come varargs (...),
   # non come list. Usiamo do.call per espandere la lista in posizionali.
-  pivot_both <- do.call(polars::pl$concat, parts)$collect()
+  # how="diagonal" allinea schemi diversi (HYPER e HYPO hanno set di sample
+  # diversi: solo i sample con outlier in quella figura compaiono come colonna).
+  # I sample mancanti nell'altra figura diventano null e il sum() successivo
+  # li ignora correttamente.
+  pivot_both <- do.call(polars::pl$concat, c(parts, list(how = "diagonal_relaxed")))$collect()
   pivot_both <- pivot_both$group_by("AREA", .maintain_order=FALSE)$sum()
 
   pivot_both$write_parquet(pivot_file_name_both)

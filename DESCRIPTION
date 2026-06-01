@@ -30,7 +30,6 @@ Imports: dplyr, doFuture, doRNG, foreach, FSA,
         R.utils, rlang, stats, stringr, tools, utils, withr, zoo,
         VennDiagram, effsize, pwr, combinat, philentropy, parallelly,
         knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
-RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
         stringi, testthat, WebGestaltR, rmarkdown, pkgdown, STRINGdb,
@@ -57,3 +56,4 @@ LazyDataCompression: xz
 Config/testthat/parallel: false
 Config/testthat/edition: 3
 NeedsCompilation: no
+Config/roxygen2/version: 8.0.0

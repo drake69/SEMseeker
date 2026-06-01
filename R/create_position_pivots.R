@@ -31,8 +31,11 @@ create_position_pivots <- function(population, keys) {
   ssEnv <- get_session_info()
 
   # Restrict to base markers — derived markers (DELTAP/DELTARP/DELTAQ/DELTARQ)
-  # are built by deltaX_get() post-SEM, not here.
-  selection <- c("MUTATIONS", "DELTAR", "DELTAS")
+  # are built by deltaX_get() post-SEM, not here. LESIONS is treated as a
+  # base marker too: its per-sample bed files are written by lesions_get()
+  # during analyze_population, and we need a POSITION pivot for annotate_*
+  # to derive the PROBE/GENE/... aggregations later.
+  selection <- c("MUTATIONS", "DELTAR", "DELTAS", "LESIONS")
   keys <- keys[order(keys$MARKER), ]
   keys <- subset(keys, MARKER %in% selection)
   if (nrow(keys) == 0L) return(invisible())

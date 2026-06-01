@@ -36,7 +36,7 @@ get_meth_tech <- function(signal_data) {
               "technology pre-declared as '", ssEnv$tech,
               "'; skipping auto-detection.")
     # Still detect beta vs M-values
-    exclude_cols <- c("PROBE","CHR","K27","K450","K850","k27","k450","k850")
+    exclude_cols <- c("AREA","PROBE","CHR","START","END","K27","K450","K850","k27","k450","k850")
     signal_cols  <- signal_data[
       seq_len(min(10000L, nrow(signal_data))),
       !colnames(signal_data) %in% exclude_cols, drop = FALSE]
@@ -111,7 +111,7 @@ get_meth_tech <- function(signal_data) {
   ssEnv$tech <- tech
 
   # ---- Detect beta vs M-values ----
-  exclude_cols <- c("PROBE", "CHR", "K27", "K450", "K850", "k27", "k450", "k850")
+  exclude_cols <- c("AREA", "PROBE", "CHR", "START", "END", "K27", "K450", "K850", "k27", "k450", "k850")
   signal_cols  <- signal_data[
     seq_len(min(10000L, nrow(signal_data))),
     !colnames(signal_data) %in% exclude_cols,

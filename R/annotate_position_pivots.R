@@ -49,8 +49,12 @@ annotate_position_pivots <- function ()
     {
       log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " File does not exists: ", dest_pivot_filename)
       probe_features <- probe_features_get(area_subarea)
-      probe_features$CHR <- paste0("chr", probe_features$CHR)
-      # probe_features <-subset(probe_features, !is.na(eval(parse(text=area_subarea))))
+      # NB (AI-027/AI-030): create_position_pivots + stream_merge_bed strip the
+      # "chr" prefix from CHR for internal consistency, so the source pivot's
+      # CHR is "1", "X" … without prefix. probe_features_get() may return CHR
+      # either with or without prefix depending on the manifest table; we
+      # normalise both sides to no-prefix before the inner join to avoid
+      # 0-row joins.
 
       # annotate file
       if(file.exists(source_pivot_filename))
@@ -63,14 +67,14 @@ annotate_position_pivots <- function ()
         probe_features <- probe_features$with_columns(
           polars::pl$col("START")$cast(polars::pl$Int32),
           polars::pl$col("END")$cast(polars::pl$Int32),
-          polars::pl$col("CHR")$cast(polars::pl$String)
+          polars::pl$col("CHR")$cast(polars::pl$String)$str$replace("^(?i)chr", "")
         )
 
         pivot <- polars::pl$scan_parquet(source_pivot_filename)
         pivot <- pivot$with_columns(
           polars::pl$col("START")$cast(polars::pl$Int32),
           polars::pl$col("END")$cast(polars::pl$Int32),
-          polars::pl$col("CHR")$cast(polars::pl$String)
+          polars::pl$col("CHR")$cast(polars::pl$String)$str$replace("^(?i)chr", "")
         )
         # pivot <- polars::pl$read_parquet(source_pivot_filename)
         pivot <- probe_features$join(
