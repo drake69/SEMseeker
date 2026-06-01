@@ -19,6 +19,25 @@ log_event <- function(...)
   log_event_to_save <- gsub("  "," ", log_event_to_save)
   log_event_to_save <- gsub("  "," ", log_event_to_save)
   log_event_to_save <- gsub("  "," ", log_event_to_save)
+
+  # Auto-augment DEBUG messages with memory + CPU usage. Calling `gc()` and
+  # `ps` is cheap enough for debug-level granularity but is intentionally NOT
+  # done for INFO/WARNING/ERROR to keep hot paths fast and logs compact.
+  if (grepl("^DEBUG", log_event_to_save)) {
+    mem_mb <- tryCatch(
+      sum(gc(verbose = FALSE, full = FALSE)[, "(Mb)"]),
+      error = function(e) NA_real_
+    )
+    cpu_pct <- tryCatch(
+      as.numeric(trimws(system(
+        sprintf("ps -p %d -o %%cpu=", Sys.getpid()),
+        intern = TRUE)[1])),
+      error = function(e) NA_real_
+    )
+    log_event_to_save <- paste0(log_event_to_save,
+      " [mem=", round(mem_mb, 1), "MB cpu=", round(cpu_pct, 1), "%]")
+  }
+
   file_name <- paste(as.character(Sys.info()["nodename"]),"_session_output.log", sep="")
   log_file <- file.path(ssEnv$session_folder,file_name)
 

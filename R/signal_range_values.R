@@ -26,12 +26,12 @@ signal_range_values <- function(populationMatrix, batch_id, probe_features) {
     stop(msg)
   }
 
-  populationMatrix <- as.data.frame(populationMatrix)
-  populationMatrix <- populationMatrix[, !(colnames(populationMatrix) %in% "PROBE")]
-
   # Vectorized threshold computation via matrixStats (C-level, ~10x faster
   # than row-wise apply). Scales to 28M positions (whole-genome WGBS).
-  mat <- as.matrix(populationMatrix)
+  # Caller passes a probe-indexed data.frame or matrix (no PROBE column);
+  # probe IDs live in rownames. as.matrix() forces numeric matrix needed by
+  # matrixStats but is a no-op if input is already a matrix.
+  mat <- if (is.matrix(populationMatrix)) populationMatrix else as.matrix(populationMatrix)
   iqr_times <- as.numeric(ssEnv$iqrTimes)
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
