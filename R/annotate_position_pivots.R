@@ -5,9 +5,7 @@
 annotate_position_pivots <- function ()
 {
   start_time <- Sys.time()
-  # ssEnv <- get_session_info()
-  ssEnv <- get_session_info("~/Documents/Dati_Lavoro/cancer_stage/results/ewas_data_hub/")
-  update_session_info(ssEnv)
+  ssEnv <- get_session_info()
   # area and subarea are defined using the filename
   localKeys <-ssEnv$keys_areas_subareas_markers_figures
 
