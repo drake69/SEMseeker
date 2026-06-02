@@ -23,7 +23,7 @@ BugReports: https://github.com/drake69/semseeker/issues
 biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylation,
         GeneExpression, Pathways, MultipleComparison, Normalization,
         StatisticalMethod, Software, Coverage, Sequencing
-Imports: dplyr, doFuture, doRNG, foreach, FSA,
+Imports: caret, dplyr, doFuture, doRNG, fastDummies, foreach, FSA,
         fst, future, future.apply, GenomicRanges, ggplot2, ggvenn,
         graphics, grDevices, gridExtra, gtools, jsonlite, lqmm,
         matrixStats, plyr, polars, progressr, reshape, reshape2,
@@ -31,10 +31,10 @@ Imports: dplyr, doFuture, doRNG, foreach, FSA,
         VennDiagram, effsize, pwr, combinat, philentropy, parallelly,
         knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
 VignetteBuilder: knitr
-Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
+Suggests: ctdR, openai, pathfindR, wordcloud, GEOquery, OpenCL,
         stringi, testthat, WebGestaltR, rmarkdown, pkgdown, STRINGdb,
         AnnotationDbi, KMEANS.KNN, M3C, UpSetR, boot, car, circlize,
-        fastDummies, fitdistrplus, ggpubr, mediation, meta, nnet,
+        fitdistrplus, ggpubr, mediation, meta, nnet,
         org.Hs.eg.db, quantreg, qvalue, tidyverse,
         IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
         IlluminaHumanMethylation450kanno.ilmn12.hg19,
