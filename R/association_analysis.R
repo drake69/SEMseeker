@@ -117,7 +117,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
 
       if (prep$depth_analysis > 1) {
         dn <- run_depth_n_marker(prep, marker, family_test, fileNameResults,
-          filter_p_value, ssEnv, areas_selection,
+          filter_p_value, ssEnv, selected_areas = areas_selection,
           results, start_time, processed_items, ...)
         results <- dn$results
         processed_items <- dn$processed_items

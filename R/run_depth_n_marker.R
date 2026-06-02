@@ -11,7 +11,7 @@
 #' @param fileNameResults character. Path of the output CSV.
 #' @param filter_p_value logical.
 #' @param ssEnv list. Session environment.
-#' @param areas_selection character vector or empty.
+#' @param selected_areas character vector or empty.
 #' @param results data.frame. Accumulator carried over from depth=1.
 #' @param start_time POSIXct. Job start, used by association_analysis_log().
 #' @param processed_items integer. Counter carried over from depth=1.
@@ -20,7 +20,7 @@
 #'   Side effect: writes the CSV via association_analysis_save_results().
 #' @keywords internal
 run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
-                                filter_p_value, ssEnv, areas_selection,
+                                filter_p_value, ssEnv, selected_areas,
                                 results, start_time, processed_items, ...) {
 
   localKeys_1 <- ssEnv$keys_areas_subareas_markers_figures
@@ -42,7 +42,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
       next
     }
 
-    areas_selection_temp <- areas_selection
+    selected_areas_temp <- selected_areas
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Starting to read pivot:", pivot_filename, ".")
     tempDataFrame <- as.data.frame(polars::pl$read_parquet(pivot_filename))
@@ -62,17 +62,17 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
       " Read pivot:", pivot_filename, " with ", nrow(tempDataFrame), " rows.")
     tempDataFrame[is.na(tempDataFrame)] <- 0
 
-    # filter by areas_selection (range or list)
-    if (length(areas_selection_temp) > 0) {
-      if (any(grepl(":", areas_selection_temp))) {
-        areas_selection_temp <- areas_selection_temp[grepl(":", areas_selection_temp)][1]
-        areas_selection_temp <- unlist(strsplit(areas_selection_temp, ":"))
-        min_col <- min(as.numeric(areas_selection_temp[1]), nrow(tempDataFrame))
-        max_col <- min(as.numeric(areas_selection_temp[2]), nrow(tempDataFrame))
-        areas_selection_temp <- seq(from = min_col, to = max_col)
-        tempDataFrame <- tempDataFrame[areas_selection_temp, ]
+    # filter by selected_areas (range or list)
+    if (length(selected_areas_temp) > 0) {
+      if (any(grepl(":", selected_areas_temp))) {
+        selected_areas_temp <- selected_areas_temp[grepl(":", selected_areas_temp)][1]
+        selected_areas_temp <- unlist(strsplit(selected_areas_temp, ":"))
+        min_col <- min(as.numeric(selected_areas_temp[1]), nrow(tempDataFrame))
+        max_col <- min(as.numeric(selected_areas_temp[2]), nrow(tempDataFrame))
+        selected_areas_temp <- seq(from = min_col, to = max_col)
+        tempDataFrame <- tempDataFrame[selected_areas_temp, ]
       } else {
-        tempDataFrame <- tempDataFrame[tempDataFrame$AREA %in% areas_selection_temp, ]
+        tempDataFrame <- tempDataFrame[tempDataFrame$AREA %in% selected_areas_temp, ]
       }
       if (nrow(tempDataFrame) == 0) {
         log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -124,7 +124,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
           covariates      = prep$covariates,
           key             = key,
           transformation_y = prep$transformation_y,
-          dototal         = (length(areas_selection_temp) == 0),
+          dototal         = (length(selected_areas_temp) == 0),
           session_folder  = ssEnv$session_folder,
           prep$independent_variable,
           prep$depth_analysis,
