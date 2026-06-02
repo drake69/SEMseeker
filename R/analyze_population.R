@@ -129,7 +129,9 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     # .pkgglobalenv — NOT from the exported `ssEnv` variable. Without this
     # call, multisession workers fail with "get_session_info called without
     # result folder". See engineering-decisions.md §1.3.
-    SEMseeker:::update_session_info(ssEnv)
+    # AI-041: in-memory only; saveRDS would happen N_samples × N_workers
+    # times per SEM step otherwise (15 MB per write → catastrophic I/O).
+    SEMseeker:::update_session_info(ssEnv, save_to_disk = FALSE)
 
     local_sample_detail <- sample_sheet[i,]
     bed_filename <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
@@ -161,6 +163,10 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Row count result:", nrow(sample_sheet))
   if (exists("signal_data", envir = environment(), inherits = FALSE))
     rm("signal_data", envir = environment())
+
+  # AI-041: end-of-batch disk snapshot (workers used save_to_disk=FALSE
+  # inside the foreach; here we persist the session exactly once).
+  update_session_info(ssEnv, save_to_disk = TRUE)
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Completed population analysis ")
   end_time <- Sys.time()

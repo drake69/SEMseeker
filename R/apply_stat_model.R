@@ -76,7 +76,9 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
     # By catching errors ourselves and returning NULL, we prevent the condition
     # object from reaching doFuture's result-combination logic.
     # plyr::rbind.fill silently ignores NULL results.
-    SEMseeker:::update_session_info(ssEnv)
+    # AI-041: in-memory only; saveRDS happens at end-of-batch in the caller,
+    # not per-gene (was the hot-path culprit causing ~5-7x slowdown).
+    SEMseeker:::update_session_info(ssEnv, save_to_disk = FALSE)
     ssEnv <- SEMseeker:::get_session_info()
 
     burdenValue <- cols[g]
@@ -149,6 +151,10 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I performed:",g_end," tests." )
 
+  # AI-041: end-of-foreach disk snapshot (workers used save_to_disk=FALSE
+  # inside the per-gene loop; here we persist the session exactly once after
+  # the parallel section closes).
+  update_session_info(ssEnv, save_to_disk = TRUE)
 
   # & !is.null(result_temp)
   if(exists("result_temp") & !is.null(result_temp))
