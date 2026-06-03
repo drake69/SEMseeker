@@ -107,9 +107,16 @@ pivot_sidecar_write <- function(pivot_path) {
 #'   fields parsed from each metadata file.
 #'
 #' @examples
-#' \dontrun{
-#' check_session_compatibility(c("~/results/study_A", "~/results/study_B"))
-#' }
+#' # Two fake session folders with provenance metadata
+#' d1 <- file.path(tempdir(), "study_A"); dir.create(d1, showWarnings = FALSE)
+#' d2 <- file.path(tempdir(), "study_B"); dir.create(d2, showWarnings = FALSE)
+#' writeLines(jsonlite::toJSON(list(genome_build = "hg19", tech = "K450"),
+#'                             auto_unbox = TRUE),
+#'            file.path(d1, "session_metadata.json"))
+#' writeLines(jsonlite::toJSON(list(genome_build = "hg19", tech = "K450"),
+#'                             auto_unbox = TRUE),
+#'            file.path(d2, "session_metadata.json"))
+#' check_session_compatibility(c(d1, d2))
 #' @export
 check_session_compatibility <- function(session_list) {
   if (length(session_list) < 2L) {
