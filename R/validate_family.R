@@ -74,6 +74,14 @@ validate_family_test <- function(family_test){
   if(grepl("polynomial_",family_test))
     return(TRUE)
 
+  # AI-040: limma_<degree>[_<partition>] and voom_<degree>[_<partition>].
+  # Same parser shape as polynomial; the actual guard against missing
+  # limma installation lives at the dispatch point (apply_stat_model
+  # for the batch path, execute_model for the per-area path) following
+  # the AI-038 dispatch=guard convention.
+  if (grepl("^(limma|voom)_", family_test))
+    return(TRUE)
+
   if (grepl("exp_",family_test))
     return(TRUE)
 
