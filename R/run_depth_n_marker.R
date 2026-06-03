@@ -62,6 +62,51 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     }
 
     selected_areas_temp <- selected_areas
+
+    # AI-061: low-memory lazy path for limma_/voom_ families. Bypass the
+    # full pivot materialisation + transpose + sample_sheet merge that
+    # the legacy chunked loop runs below, all of which together peak at
+    # ~30× the raw matrix on a 366k-probe pivot. apply_stat_model_batch_lazy()
+    # consumes the LazyFrame directly, applies the AI-043 resume filter
+    # in polars, and materialises ONE R matrix only.
+    is_batch_family <- grepl("^(limma|voom)_", family_test)
+    if (is_batch_family) {
+      area_to_remove <- character(0)
+      if (nrow(old_results_global) > 0) {
+        area_to_remove <- old_results_global[
+          old_results_global$MARKER  == key$MARKER &
+          old_results_global$FIGURE  == key$FIGURE &
+          old_results_global$SUBAREA == key$SUBAREA &
+          old_results_global$AREA    == key$AREA, "AREA_OF_TEST"]
+      }
+      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " Batch family '", family_test,
+                "': lazy polars path (AI-061). area_to_remove=",
+                length(area_to_remove))
+
+      result_temp_local_batch <- apply_stat_model_batch_lazy(
+        pivot_lazy           = pivot_lazy,
+        sample_sheet         = prep$sample_names,
+        family_test          = family_test,
+        covariates           = prep$covariates,
+        key                  = key,
+        transformation_y     = prep$transformation_y,
+        independent_variable = prep$independent_variable,
+        area_to_remove       = area_to_remove
+      )
+      if (!is.null(result_temp_local_batch) && nrow(result_temp_local_batch) > 0L) {
+        results <- plyr::rbind.fill(results, result_temp_local_batch)
+        results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
+      }
+      association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
+
+      association_analysis_log(cbind(prep$inference_detail, keys[k, ]),
+        start_time, Sys.time(), processed_items)
+      if (nrow(results) != 0)
+        results <- subset(results, MARKER == key$MARKER)
+      next
+    }
+
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Starting to read pivot:", pivot_filename, ".")
     tempDataFrame <- as.data.frame(pivot_lazy$collect())
