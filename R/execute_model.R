@@ -36,6 +36,20 @@ execute_model <- function(family_test, tempDataFrame, sig.formula, burdenValue, 
   if(grepl("polynomial",family_test))
     model_result <- association_model_polynomial(family_test, tempDataFrame, sig.formula, transformation_y, plot, samples_sql_condition=samples_sql_condition,key)
 
+  # AI-040 Fase 1: limma_<degree>[_<partition>] backend (Suggests:limma).
+  # Dispatcher = guard point (AI-038): fail fast with install hint if the
+  # opt-in dependency is missing, before constructing any design matrix.
+  if (grepl("^limma_", family_test)) {
+    if (!requireNamespace("limma", quietly = TRUE)) {
+      stop("family_test='", family_test,
+           "' requires the 'limma' package. Install it with:\n",
+           "  BiocManager::install('limma')")
+    }
+    model_result <- association_model_limma(
+      family_test, tempDataFrame, sig.formula, transformation_y, plot,
+      samples_sql_condition = samples_sql_condition, key)
+  }
+
   if(family_test=="multinomial")
     model_result <- multinomial_model(family_test, tempDataFrame, sig.formula, transformation_y, plot, samples_sql_condition=samples_sql_condition,key)
 
