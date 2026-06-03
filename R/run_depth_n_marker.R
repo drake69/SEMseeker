@@ -108,7 +108,21 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
       " Starting to execute required test for:",
       key$MARKER, key$FIGURE, key$AREA, key$SUBAREA, ".")
 
-    chunk_size <- ceiling(6000000 / ncol(tempDataFrame))
+    # AI-040 Fase 3: limma_<N> and voom_<N> need the WHOLE pivot at once
+    # for eBayes shrinkage to be statistically meaningful. Per-chunk
+    # limma estimates the prior variance from a chunk-specific subset,
+    # so p-values become dependent on chunk boundaries — leaky for the
+    # empirical-Bayes interpretation. Force batch families to a single
+    # whole-pivot pass instead of the default chunked loop.
+    chunk_size <- if (grepl("^(limma|voom)_", family_test)) {
+      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " Batch family '", family_test,
+                "': bypassing chunking, passing whole pivot (",
+                nrow(tempDataFrame), " areas) to apply_stat_model_batch.")
+      nrow(tempDataFrame)
+    } else {
+      ceiling(6000000 / ncol(tempDataFrame))
+    }
     for (i in seq(1, nrow(tempDataFrame), by = chunk_size)) {
       chunk_indices <- i:min(i + chunk_size - 1, nrow(tempDataFrame))
       batch_df <- as.data.frame(tempDataFrame)[chunk_indices, ]

@@ -39,6 +39,10 @@ execute_model <- function(family_test, tempDataFrame, sig.formula, burdenValue, 
   # AI-040 Fase 1: limma_<degree>[_<partition>] backend (Suggests:limma).
   # Dispatcher = guard point (AI-038): fail fast with install hint if the
   # opt-in dependency is missing, before constructing any design matrix.
+  # NOTE: in normal pipeline runs limma_<N> is intercepted upstream by
+  # apply_stat_model() and routed through the batch path. This per-area
+  # branch is kept for direct execute_model() calls (unit tests, custom
+  # downstream callers).
   if (grepl("^limma_", family_test)) {
     if (!requireNamespace("limma", quietly = TRUE)) {
       stop("family_test='", family_test,
@@ -48,6 +52,18 @@ execute_model <- function(family_test, tempDataFrame, sig.formula, burdenValue, 
     model_result <- association_model_limma(
       family_test, tempDataFrame, sig.formula, transformation_y, plot,
       samples_sql_condition = samples_sql_condition, key)
+  }
+
+  # AI-040 Fase 2: voom_<degree> is BATCH-ONLY. Per-area voom can't
+  # estimate its mean-variance trend (lowess on 1 point), so any per-area
+  # entry point is an architectural mistake. Refuse explicitly instead
+  # of returning a degenerate result.
+  if (grepl("^voom_", family_test)) {
+    stop("family_test='", family_test,
+         "' is batch-only: voom estimates its mean-variance trend across ",
+         "many genomic areas at once. Call apply_stat_model() instead of ",
+         "execute_model() — apply_stat_model dispatches batch families ",
+         "to apply_stat_model_batch() automatically.")
   }
 
   if(family_test=="multinomial")

@@ -24,8 +24,41 @@
 apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = NULL, key, transformation_y, dototal,
   session_folder, independent_variable, depth_analysis=3,samples_sql_condition, ...)
 {
-  ssEnv <- get_session_info()
   arguments <- list(...)
+
+  # AI-040 Fase 2+3: limma_<N> and voom_<N> bypass the per-area foreach.
+  # limma needs the full M x N response matrix for eBayes shrinkage to
+  # mean anything; voom literally cannot estimate its mean-variance
+  # trend on a 1-row matrix. apply_stat_model_batch() fits once on the
+  # whole chunk and returns N rows with the same schema the foreach
+  # would have produced. The guard mirrors the AI-038 dispatch=guard
+  # pattern: fail fast with install hint if limma is missing.
+  if (grepl("^(limma|voom)_", family_test)) {
+    if (!requireNamespace("limma", quietly = TRUE)) {
+      stop("family_test='", family_test,
+           "' requires the 'limma' package. Install it with:\n",
+           "  BiocManager::install('limma')")
+    }
+    return(apply_stat_model_batch(
+      tempDataFrame        = tempDataFrame,
+      g_start              = g_start,
+      family_test          = family_test,
+      covariates           = covariates,
+      key                  = key,
+      transformation_y     = transformation_y,
+      dototal              = dototal,
+      session_folder       = session_folder,
+      independent_variable = independent_variable,
+      depth_analysis       = depth_analysis,
+      samples_sql_condition = samples_sql_condition,
+      ...
+    ))
+  }
+
+  # Session info is only needed for the per-area (foreach) path —
+  # the batch path above is intentionally session-independent so it
+  # can be exercised in unit tests without a materialised session.
+  ssEnv <- get_session_info()
 
   g_end <- ncol(tempDataFrame)
   prepared_data <- data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, FALSE, covariates, depth_analysis, key)
