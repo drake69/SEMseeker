@@ -74,13 +74,26 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
 
   arguments <- list(...)
 
-  # check adjust_per_area_s, adjust_globally_s, pvalue_columns, adjustment_methods,alphas have the same length
-  if (length(adjust_per_area_s) != length(adjust_globally_s)
-    | length(adjust_per_area_s) != length(pvalue_columns)
-    | length(adjust_per_area_s) != length(adjustment_methods))
-  {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y")  ," adjust_per_area_s, adjust_globally_s, pvalue_columns, adjustment_methods must have the same length !")
-    stop()
+  # The 4 parameter arrays must have the same length: each index i defines
+  # one (pvalue_column, adjustment_method, adjust_per_area, adjust_globally)
+  # tuple to iterate over. Diagnostic shows the actual length of each so the
+  # user knows exactly which line of their setup needs fixing.
+  lens <- c(
+    pvalue_columns     = length(pvalue_columns),
+    adjustment_methods = length(adjustment_methods),
+    adjust_per_area_s  = length(adjust_per_area_s),
+    adjust_globally_s  = length(adjust_globally_s)
+  )
+  if (length(unique(lens)) != 1) {
+    msg <- sprintf(
+      paste0("Parameter array lengths must match across:\n  %s\n",
+             "Each entry of pvalue_columns needs a matching entry in ",
+             "adjustment_methods, adjust_per_area_s, adjust_globally_s. ",
+             "Fix this in the inference setup file (typically `02_setup_<study>.R`)."),
+      paste(sprintf("%s (length=%d)", names(lens), lens), collapse = "\n  ")
+    )
+    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " ", msg)
+    stop(msg, call. = FALSE)
   }
 
 

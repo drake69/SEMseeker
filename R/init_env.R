@@ -155,13 +155,49 @@
 
 .init_env_validate_args <- function(arguments) {
   arguments <- Filter(function(x) !is.null(x) && !identical(x, character(0)), arguments)
-  if (length(arguments) != 0) {
-    .log_info(" This options are not recognized: ",
-              paste(arguments, collapse = " ", sep = " "))
-    stop("ERROR: This options are not recognized: ",
-         paste(arguments, collapse = " ", sep = " "))
+  if (length(arguments) == 0) {
+    return(invisible())
   }
-  invisible()
+
+  # Build "name = value" pairs so the diagnostic shows WHICH argument is
+  # unrecognised, not just its value. Previously the error printed only
+  # the values (e.g. "ERROR: This options are not recognized: FALSE"),
+  # which made typos like `phenolyser = FALSE` undebuggable without
+  # diving into the source.
+  unknown_names <- names(arguments)
+  pairs <- vapply(seq_along(arguments), function(i) {
+    n <- if (!is.null(unknown_names) && nzchar(unknown_names[i]))
+           unknown_names[i] else "?"
+    v <- paste(format(arguments[[i]]), collapse = ", ")
+    if (nchar(v) > 60) v <- paste0(substr(v, 1, 57), "...")
+    sprintf("%s = %s", n, v)
+  }, character(1))
+
+  # Identify the user-facing caller (semseeker / association_analysis /
+  # enrichment_analysis / ...) by walking up the call stack until we
+  # leave the .init_env_* internals. This makes the error point at the
+  # SEMseeker entry point the user actually called.
+  caller <- "SEMseeker"
+  for (depth in seq_len(20)) {
+    parent <- tryCatch(sys.call(-depth), error = function(e) NULL)
+    if (is.null(parent)) break
+    fn <- tryCatch(deparse(parent[[1]])[1], error = function(e) "")
+    if (!grepl("^(\\.init_env|init_env|eval|tryCatch|do\\.call|withCallingHandlers|sys\\.call|local|source|withVisible)", fn)) {
+      caller <- fn
+      break
+    }
+  }
+
+  msg <- sprintf(
+    paste0("Unrecognised argument(s) in call to %s():\n  %s\n",
+           "Check spelling and case. Common causes: typo ",
+           "(e.g. 'phenolyser' vs 'phenolyzer'), case mismatch ",
+           "(e.g. 'stringdb' vs 'STRINGdb'), or a parameter renamed in a ",
+           "newer SEMseeker version."),
+    caller, paste(pairs, collapse = "\n  ")
+  )
+  .log_info(msg)
+  stop(msg, call. = FALSE)
 }
 
 .init_env_handle_dry_run <- function(ssEnv) {
