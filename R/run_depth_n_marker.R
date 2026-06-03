@@ -71,12 +71,21 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # old_results into the running 'results' accumulator either — that was the
     # source of cross-iteration row doubling. The file's content was already
     # folded into 'results' once, before the for-k loop opened.
+    #
+    # AI-062: gene names with '-' (e.g. 'HLA-A', 'ANKHD1-EIF4EBP3') are
+    # rewritten to '_' by data_preparation()'s colname sanitisation, so the
+    # AREA_OF_TEST that lands in the CSV uses underscores while the AREA
+    # column inside the freshly-read pivot still has the dash. Without
+    # normalising both sides of the %in% test, ~281 genes with dashes were
+    # re-fitted on every resume run. Apply the same gsub to tempDataFrame
+    # so the membership test matches the on-disk convention.
     if (nrow(old_results_global) > 0) {
       area_to_remove <- old_results_global[old_results_global$MARKER == key$MARKER &
                                             old_results_global$FIGURE == key$FIGURE &
                                             old_results_global$SUBAREA == key$SUBAREA &
                                             old_results_global$AREA == key$AREA, "AREA_OF_TEST"]
-      tempDataFrame <- tempDataFrame[!(tempDataFrame$AREA %in% area_to_remove), ]
+      tempDataFrame_AREA_norm <- gsub("-", "_", tempDataFrame$AREA)
+      tempDataFrame <- tempDataFrame[!(tempDataFrame_AREA_norm %in% area_to_remove), ]
     }
 
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
