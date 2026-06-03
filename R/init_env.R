@@ -41,7 +41,7 @@
   result_folderData       = "Data",
   result_folderChart      = "Chart",
   result_folderInference  = "Inference",
-  result_folderPathway    = "Pathway",
+  result_folderEnrichment = "Enrichment",
   result_folderPhenotype  = "Phenotype",
   result_folderEuristic   = "Euristic",
   session_folder          = "Log"

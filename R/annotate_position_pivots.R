@@ -103,6 +103,26 @@ annotate_position_pivots <- function ()
         pivot <- pivot$drop(cols_to_remove)
         # drop row where AREA is NA
         pivot <- pivot$drop_nulls("AREA")
+
+        # AI-050: Bioconductor anno-packages assign some probes to multiple
+        # genes (intergenic overlaps, antisense, etc), producing composite
+        # AREA strings like "NUDT6;SPATA5". Treating the composite as a
+        # single gene was a regression that (a) caused apply_stat_model to
+        # fail parsing (PVALUE=NA), (b) inflated false positives downstream
+        # because a single p-value got smeared across N enrichment hits.
+        # Fix: split on ";", explode to N rows, strip whitespace — each
+        # multi-mapped probe now contributes separately to every gene's
+        # burden, and the group_by below produces clean mono-gene rows.
+        pivot <- pivot$with_columns(
+          polars::pl$col("AREA")$str$split(";")
+        )$explode("AREA")
+        pivot <- pivot$with_columns(
+          polars::pl$col("AREA")$str$strip_chars()
+        )
+        # Drop rows where AREA became empty after split/strip (e.g. trailing
+        # semicolons from malformed annotations).
+        pivot <- pivot$filter(polars::pl$col("AREA")$str$len_chars() > 0)
+
         pivot <- pivot$sort(c("AREA"), descending = FALSE)$collect()
 
         if (localKeys[i, "DISCRETE"]) {
