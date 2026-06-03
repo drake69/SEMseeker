@@ -149,7 +149,18 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
   })
 
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I performed:",g_end," tests." )
+  # Report the actual count of non-NULL fits, not the chunk upper bound.
+  # Before this change the log said "I performed: 1512 tests" even on chunks
+  # where every gene was filtered out via area_to_remove or fitted to NULL,
+  # which was confusing during resume runs that legitimately had 0 work left.
+  n_done <- if (is.null(result_temp)) 0L else nrow(result_temp)
+  if (n_done > 0L) {
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " I performed:", n_done, " tests." )
+  } else {
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " No new tests to perform in this chunk (already cached)." )
+  }
 
   # AI-041: end-of-foreach disk snapshot (workers used save_to_disk=FALSE
   # inside the per-gene loop; here we persist the session exactly once after

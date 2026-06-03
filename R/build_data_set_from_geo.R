@@ -106,7 +106,10 @@ build_data_set_from_geo <-  function(GEOgse, downloadFiles = 0,result_folder, ..
               extra = getOption("download.file.extra"),
               headers = NULL
             )
-            GEOquery::gunzip(localFileName, overwrite = TRUE)
+            # AI-022: GEOquery dropped the gunzip re-export in recent versions
+            # (R.utils::gunzip is the original delegate). Calling the source
+            # directly avoids the runtime "not an exported object" error.
+            R.utils::gunzip(localFileName, overwrite = TRUE)
           }
         }
         downloadedFiles <- downloadedFiles + 1

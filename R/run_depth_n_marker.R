@@ -29,6 +29,21 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
   if (nkeys == 0)
     return(list(results = results, processed_items = processed_items))
 
+  # AI-043: Read the existing inference file ONCE before the per-key loop. The
+  # previous design re-read the file inside every iteration AND rbind.fill'd its
+  # entire content into the running `results` accumulator, so on a run that
+  # iterates over (HYPO, HYPER) for the same marker the file got the
+  # already-saved rows added twice — visible as N x 2 duplication in the
+  # output CSV (e.g. DELTARQ_HYPO with 35292 rows instead of 17646).
+  # Reading once + using the pre-loaded snapshot for the area_to_remove filter
+  # keeps both behaviours correct without growing `results` across iterations.
+  if (file.exists(fileNameResults) && file.info(fileNameResults)$size > 10) {
+    old_results_global <- unique(utils::read.csv2(fileNameResults, header = TRUE))
+    results <- plyr::rbind.fill(results, old_results_global)
+  } else {
+    old_results_global <- data.frame()
+  }
+
   for (k in seq_len(nkeys)) {
     key <- keys[k, ]
     if (key$AREA == "POSITION") next
@@ -51,15 +66,17 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
       " Starting to read pivot:", pivot_filename, ".")
     tempDataFrame <- as.data.frame(pivot_lazy$collect())
 
-    if (file.exists(fileNameResults) && file.info(fileNameResults)$size > 10) {
-      old_results <- unique(utils::read.csv2(fileNameResults, header = TRUE))
-      area_to_remove <- old_results[old_results$MARKER == key$MARKER &
-                                     old_results$FIGURE == key$FIGURE &
-                                     old_results$SUBAREA == key$SUBAREA &
-                                     old_results$AREA == key$AREA, "AREA_OF_TEST"]
+    # AI-043: use the pre-loaded snapshot (old_results_global) for the
+    # area_to_remove filter, NOT a fresh re-read of the file. Don't rbind.fill
+    # old_results into the running 'results' accumulator either — that was the
+    # source of cross-iteration row doubling. The file's content was already
+    # folded into 'results' once, before the for-k loop opened.
+    if (nrow(old_results_global) > 0) {
+      area_to_remove <- old_results_global[old_results_global$MARKER == key$MARKER &
+                                            old_results_global$FIGURE == key$FIGURE &
+                                            old_results_global$SUBAREA == key$SUBAREA &
+                                            old_results_global$AREA == key$AREA, "AREA_OF_TEST"]
       tempDataFrame <- tempDataFrame[!(tempDataFrame$AREA %in% area_to_remove), ]
-      results <- plyr::rbind.fill(results, old_results)
-      rm(old_results)
     }
 
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
