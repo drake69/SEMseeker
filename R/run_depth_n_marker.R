@@ -34,7 +34,11 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     if (key$AREA == "POSITION") next
     pivot_filename <- pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
 
-    if (!file.exists(pivot_filename)) {
+    # AI-027: read via unified dispatcher. Returns NULL when neither the
+    # cached parquet nor per-sample bed/bedgraph files are available,
+    # which is the case run_depth_n_marker needs to skip with a warning.
+    pivot_lazy <- read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+    if (is.null(pivot_lazy)) {
       log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
         " File not found:", pivot_filename, ".")
       association_analysis_log(cbind(prep$inference_detail, keys[k, ]),
@@ -45,7 +49,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     selected_areas_temp <- selected_areas
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Starting to read pivot:", pivot_filename, ".")
-    tempDataFrame <- as.data.frame(polars::pl$read_parquet(pivot_filename))
+    tempDataFrame <- as.data.frame(pivot_lazy$collect())
 
     if (file.exists(fileNameResults) && file.info(fileNameResults)$size > 10) {
       old_results <- unique(utils::read.csv2(fileNameResults, header = TRUE))

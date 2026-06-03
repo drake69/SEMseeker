@@ -3,11 +3,11 @@ get_pivot_both <- function(marker)
   ssEnv <- get_session_info()
   is_discrete <- unique(ssEnv$keys_markers_figures_default[ssEnv$keys_markers_figures_default$MARKER==marker,"DISCRETE"])
 
-  # Migrated 2026-06-01 to use the new read_pivot() dispatcher (AI-027).
+  # Migrated 2026-06-01 / 2026-06-03 to use the new read_pivot() dispatcher (AI-027).
   # Branch (a): BOTH already materialised (cache).
-  pivot_file_name_both <- pivot_file_name_parquet(marker,"BOTH","PROBE","WHOLE")
-  if(file.exists(pivot_file_name_both))
-    return(as.data.frame(polars::pl$read_parquet(pivot_file_name_both)))
+  pivot_both_lazy <- read_pivot(marker, "BOTH", area = "PROBE", subarea = "WHOLE")
+  if (!is.null(pivot_both_lazy))
+    return(as.data.frame(pivot_both_lazy$collect()))
 
   # Branch (b): build BOTH from HYPER+HYPO. read_pivot() transparently handles
   # both the cached-parquet and the bed-streaming-merge backends; if neither

@@ -101,7 +101,9 @@ ss_analysis <-
             #     AREA = readr::col_character(),
             #   ),
             #   show_col_types=FALSE, progress=FALSE)
-            tempDataFrame <- as.data.frame(polars::pl$read_parquet(fname))
+            # AI-027: read via unified dispatcher.
+            ss_pivot_lazy <- read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+            tempDataFrame <- as.data.frame(ss_pivot_lazy$collect())
             row.names(tempDataFrame) <- tempDataFrame$AREA
             if (length(areas_selection) > 0)
               tempDataFrame <-tempDataFrame[tempDataFrame[, 1] %in% areas_selection,]

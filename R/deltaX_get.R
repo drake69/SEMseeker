@@ -109,8 +109,10 @@ deltaX_get <- function(markers = NULL) {
               if (endsWith(mar, "P")) "P/equal-width" else "Q/quantile",
               ") direct from ", src, " pivots")
 
-    lf_h <- polars::pl$scan_parquet(src_h)
-    lf_o <- polars::pl$scan_parquet(src_o)
+    # AI-027: read via unified dispatcher. The file.exists() guard above
+    # has already filtered out cases where neither source pivot exists.
+    lf_h <- read_pivot(src, "HYPER", area, subarea)
+    lf_o <- read_pivot(src, "HYPO",  area, subarea)
     cols_h <- setdiff(names(lf_h$collect_schema()), c("CHR", "START", "END"))
     cols_o <- setdiff(names(lf_o$collect_schema()), c("CHR", "START", "END"))
 

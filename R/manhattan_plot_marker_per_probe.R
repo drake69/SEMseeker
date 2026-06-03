@@ -152,8 +152,14 @@ manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe
   utils::write.csv2(probes_stat, probes_stat_fname, row.names = FALSE)
   # remove SIGNAL from tempKeys
   tempKeys <- tempKeys[!grepl("SIGNAL", tempKeys)]
+  # AI-027: read via unified dispatcher; cached parquet is the normal
+  # path (CASE 1). The fname variable is kept for the error message below.
   fname <- pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE","WHOLE")
-  signal_data <- as.data.frame(polars::pl$read_parquet(fname))
+  signal_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
+  if (is.null(signal_pivot_lazy))
+    stop("SIGNAL_MEAN PROBE pivot not found at ", fname,
+         " — manhattan plot requires the SEM signal pivot.")
+  signal_data <- as.data.frame(signal_pivot_lazy$collect())
 
   # threshold_data <- fst::read_fst(file_path_build( ssEnv$result_folderData,"1_signal_thresholds","fst"))
   threshold_data <- as.data.frame(polars::pl$read_parquet(file_path_build( ssEnv$result_folderData,"1_signal_thresholds","parquet")))

@@ -66,7 +66,9 @@ signal_save <- function(signal_data, sample_sheet, batch_id)
   gc()
   log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-probe-write+gc  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
-  signal_data <- polars::pl$scan_parquet(pivot_file_name_probe)
+  # AI-027: read via unified dispatcher. The PROBE pivot was just
+  # written above (line 62), so CASE 1 (cached parquet) is always taken.
+  signal_data <- read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
   pp          <- polars::as_polars_df(probe_features_get("PROBE"))$lazy()
   signal_data <- signal_data$with_columns(polars::pl$col("AREA")$alias("PROBE"))
   signal_data <- pp$join(signal_data, on = "PROBE", how = "inner")

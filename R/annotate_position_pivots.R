@@ -81,13 +81,16 @@ annotate_position_pivots <- function ()
           polars::pl$col("CHR")$cast(polars::pl$String)$str$replace("^(?i)chr", "")
         )
 
-        pivot <- polars::pl$scan_parquet(source_pivot_filename)
+        # AI-027: read via unified dispatcher. CASE 1 (cached parquet) is
+        # the normal path here; CASE 2 (streaming merge from bed/bedgraph)
+        # makes this resilient to a missing materialised pivot when raw
+        # per-sample files still exist.
+        pivot <- read_pivot(marker, figure, "POSITION", "WHOLE")
         pivot <- pivot$with_columns(
           polars::pl$col("START")$cast(polars::pl$Int32),
           polars::pl$col("END")$cast(polars::pl$Int32),
           polars::pl$col("CHR")$cast(polars::pl$String)$str$replace("^(?i)chr", "")
         )
-        # pivot <- polars::pl$read_parquet(source_pivot_filename)
         pivot <- probe_features$join(
           pivot,
           on = c("CHR", "START", "END"),

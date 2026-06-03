@@ -7,16 +7,18 @@ analyze_batch <- function(signal_data, sample_sheet)
   colnames(signal_data) <- name_cleaning(colnames(signal_data))
   # Keep Sample_ID in sync with name_cleaning so sample_group_check passes
   sample_sheet$Sample_ID <- name_cleaning(sample_sheet$Sample_ID)
-  pivot_file_name <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION","WHOLE")
-  if(!file.exists(pivot_file_name))
-  {
+  # AI-027: read via unified dispatcher; CASE 2 (streaming merge) lets
+  # the SEM step pick up raw bed/bedgraph files when the SIGNAL_MEAN
+  # pivot has not been materialised yet.
+  signal_pivot <- read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
+  if (is.null(signal_pivot)) {
     # Transparent conversion: WGBS/LONGREAD coordinate input → synthetic probe IDs
     signal_data <- normalize_signal_input(signal_data)
     signal_data <- substitute_infinite(signal_data)
     signal_data <- inpute_missing_values(signal_data)
   } else
   {
-    signal_data <- as.data.frame(polars::pl$read_parquet(pivot_file_name))
+    signal_data <- as.data.frame(signal_pivot$collect())
     if("CHR" %in% colnames(signal_data))
       signal_data <- position_pivot_to_probe(signal_data)
   }
