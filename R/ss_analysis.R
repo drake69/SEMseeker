@@ -174,7 +174,8 @@ ss_analysis <-
               # for (c in 2:ncol(tempDataFrameComb))
               results_temp <- foreach::foreach(c  =  2:ncol(tempDataFrameComb), .combine  =  rbind, .export  =  var_to_export) %dorng%
               {
-                update_session_info(ssEnv)
+                # AI-056: workers must NOT saveRDS on every iteration.
+                update_session_info(ssEnv, save_to_disk = FALSE)
                 area_of_test = names(tempDataFrameComb)[c]
                 if(ssEnv$showprogress)
                 {
@@ -254,6 +255,8 @@ ss_analysis <-
                 results_temp
               }
 
+              # AI-056: post-foreach end-of-batch snapshot (matches AI-041 pattern).
+              update_session_info(ssEnv, save_to_disk = TRUE)
 
               results_temp <- as.data.frame(results_temp)
               colnames(results_temp) <- result_colnames

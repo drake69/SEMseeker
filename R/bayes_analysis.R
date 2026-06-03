@@ -177,7 +177,10 @@ bayes_analysis <- function(
         .combine = rbind,
         .export  = var_to_export
       ) %dorng% {
-        update_session_info(ssEnv)
+        # AI-056: workers must NOT saveRDS on every iteration (the worker-copy
+        # of ssEnv can't propagate to master anyway, and the per-iter disk
+        # write is the AI-041 performance trap).
+        update_session_info(ssEnv, save_to_disk = FALSE)
 
         area <- names(tempDataFrame)[col_idx]
         if (ssEnv$showprogress)
@@ -211,6 +214,9 @@ bayes_analysis <- function(
             P_to_be_Control_cond_to_be_Epimutated = P_notA_B
           )
       }
+
+      # AI-056: post-foreach end-of-batch snapshot (matches AI-041 pattern).
+      update_session_info(ssEnv, save_to_disk = TRUE)
 
       if (is.null(dim(results_temp))) next
       results_temp <- as.data.frame(results_temp)
