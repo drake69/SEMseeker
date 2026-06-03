@@ -291,6 +291,10 @@ init_env <- function(result_folder, maxResources = 90, ...) {
 
   .init_env_log_focus(ssEnv)
   .init_env_validate_args(arguments)
+  # AI-060: one-line WARNING when R is linked against a single-thread BLAS.
+  # Hot for the AI-040 batch families (limma_/voom_) — solve()/crossprod()
+  # inside lmFit scale ~linearly with cores on Accelerate/OpenBLAS/MKL.
+  .warn_blas_single_thread()
   if (dry_run) .init_env_handle_dry_run(ssEnv)
 
   update_session_info(ssEnv)
