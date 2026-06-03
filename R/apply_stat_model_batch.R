@@ -105,12 +105,11 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
     return(NULL)
   }
 
-  # Design matrix: poly(IV, degree) + covariates
+  # Design matrix: poly(IV, degree) + covariates. Use 'I_<IV>_<n>'
+  # naming to match the association_model_polynomial CSV schema.
   iv_vec <- as.numeric(td[, independent_variable])
   poly_mat <- stats::poly(iv_vec, degree, raw = TRUE)
-  colnames(poly_mat) <- paste0("STATS_POLY_EVAL_PARSE_TEXT_EQ_",
-                                independent_variable,
-                                "_EQ_RAW_EQ_TRUE_", seq_len(degree))
+  colnames(poly_mat) <- paste0("I_", independent_variable, "_", seq_len(degree))
 
   cov_used <- character(0)
   if (length(covariates) > 0L && any(nzchar(covariates))) {

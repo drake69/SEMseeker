@@ -109,21 +109,22 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
 
   # Pull the AREA column out as an R character vector (small), then
   # work on the value-only DataFrame.
-  gene_names <- as.character(pivot_df$select("AREA")$to_series()$to_r())
+  # NOTE: polars R 1.x exposes series -> R via as.character() / as.vector()
+  # directly; there is no $to_r() method — earlier draft using it crashed
+  # at runtime with rlang::abort.
+  gene_names <- as.character(pivot_df$select("AREA")$to_series())
   pivot_vals <- pivot_df$drop("AREA")
   sample_cols <- names(pivot_vals)
   rm(pivot_df)
 
-  # Convert in ONE step to a numeric matrix. as.matrix(as.data.frame(.))
-  # passes through a data.frame intermediate which is the avoidable copy
-  # on this path; instead we build the matrix column-wise so the only
-  # R-side allocation is the final matrix.
+  # Convert column-by-column to the final numeric matrix. as.vector() on a
+  # numeric polars Series returns an R double vector; we never go through
+  # an intermediate data.frame for the value side. The only sample-by-gene
+  # allocation alive at once is y_mat itself.
   y_mat <- matrix(NA_real_, nrow = n_genes, ncol = length(sample_cols),
                    dimnames = list(gene_names, sample_cols))
   for (i in seq_along(sample_cols)) {
-    y_mat[, i] <- as.numeric(
-      pivot_vals$select(sample_cols[i])$to_series()$to_r()
-    )
+    y_mat[, i] <- as.vector(pivot_vals$select(sample_cols[i])$to_series())
   }
   rm(pivot_vals)
   gc(verbose = FALSE)
@@ -147,12 +148,15 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
   ss <- ss[keep, , drop = FALSE]
   y_mat <- y_mat[, keep, drop = FALSE]
 
-  # Design matrix: poly(IV, degree, raw=TRUE) + covariates
+  # Design matrix: poly(IV, degree, raw=TRUE) + covariates.
+  # Name the polynomial columns the same way association_model_polynomial's
+  # I(...) formula winds up after name_cleaning — 'I_<IV>_<deg>' — so the
+  # CSV columns landed by the build_pname/build_ename gsub chain below
+  # match the polynomial CSV schema bit-for-bit instead of carrying the
+  # ugly long-form 'STATS_POLY_EVAL_PARSE_TEXT_EQ_<IV>_EQ_RAW_EQ_TRUE_<n>'.
   iv_vec <- as.numeric(ss[, independent_variable])
   poly_mat <- stats::poly(iv_vec, degree, raw = TRUE)
-  colnames(poly_mat) <- paste0(
-    "STATS_POLY_EVAL_PARSE_TEXT_EQ_", independent_variable,
-    "_EQ_RAW_EQ_TRUE_", seq_len(degree))
+  colnames(poly_mat) <- paste0("I_", independent_variable, "_", seq_len(degree))
 
   cov_used <- character(0)
   if (length(covariates) > 0L && any(nzchar(covariates))) {
