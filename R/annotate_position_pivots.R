@@ -13,6 +13,25 @@ annotate_position_pivots <- function ()
   localKeys <- localKeys[localKeys$AREA != "POSITION",]
   # localKeys <- localKeys[localKeys$MARKER != "SIGNAL",]
 
+  if (nrow(localKeys) == 0)
+    return()
+
+  # Short-circuit: if every dest pivot already exists on disk, there is
+  # nothing to annotate. Avoids the unconditional probe_features_get()
+  # load of the Illumina manifest (~10-30s) and the spurious
+  # "Annotating genomic area" log line in resume scenarios where no
+  # actual annotation work is needed.
+  all_dest_exist <- all(vapply(seq_len(nrow(localKeys)), function(i) {
+    file.exists(pivot_file_name_parquet(
+      localKeys[i, "MARKER"], localKeys[i, "FIGURE"],
+      localKeys[i, "AREA"],   localKeys[i, "SUBAREA"]))
+  }, logical(1)))
+  if (all_dest_exist) {
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      " Annotation skipped: all destination pivots already exist.")
+    return()
+  }
+
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotating genomic area.")
 
   progress_bar <- ""
@@ -23,12 +42,6 @@ annotate_position_pivots <- function ()
     "progress_bar","progression_index", "progression", "progressor_uuid",
     "owner_session_uuid", "trace","probe_features_get", "localKeys",
     "file_path_build","%>%","get_session_info","log_event")
-
-  # check probe features are avaialable
-  probe_features <- probe_features_get("PROBE_WHOLE")
-
-  if(nrow(localKeys)==0)
-    return()
 
   # doesn't work with parallel, tests throws error
   for(i in 1:nrow(localKeys))
