@@ -1,6 +1,6 @@
 # NOTE: naming convention — `adjustment_method` (singular) is used in internal
 # helpers and result-retrieval functions where a single method string is expected.
-# High-level public functions (e.g. gene_impact_analysis()) use `adjustment_methods`
+# High-level public functions (e.g. enrichment_analysis()) use `adjustment_methods`
 # (plural) because they accept a vector to iterate over multiple corrections.
 association_results_get <- function (inference_detail, marker, adjust_per_area = FALSE, adjust_globally = FALSE,
   pvalue_column="PVALUE_ADJ_ALL_BH",adjustment_method = "BH", area ="GENE",
