@@ -89,14 +89,22 @@ covariates_model <- function(inference_detail, study_summary)
       zero_var_cols <- sapply(study_summary[, covariates], function(x) sd(x, na.rm = TRUE) == 0)
       # Keep only non-constant columns
       filtered_covariates <- covariates[!zero_var_cols]
+
+      # AI-070: PCA on < 3 covariates is pointless — 1-col PCA = identity,
+      # 2-col PCA = orthogonal rotation that loses interpretability without
+      # reducing dimensionality. Skip PCA in those cases and use the raw
+      # (non-constant) covariates directly. This also subsumes the AI-069
+      # Kaiser-Guttman edge case (sdev^2 == 1 on single scaled dummy).
+      if (length(filtered_covariates) < 3L) {
+        log_event("JOURNAL: PCA skipped — only ", length(filtered_covariates),
+                  " non-constant covariate(s), using raw: ",
+                  paste(filtered_covariates, collapse = ", "))
+        covariates <- filtered_covariates
+      } else {
       # Then run PCA
       pca_result <- prcomp(study_summary[, filtered_covariates], center = TRUE, scale. = TRUE)
 
-      # replace covariates with PCA
-      # pca_result <- stats::prcomp(study_summary[,covariates], center = TRUE, scale. = TRUE)
       log_event("JOURNAL: PCA,scaling and centering, applied on covariates: ", paste(covariates, collapse = ", "))
-      # explained_cumulative_variance <- cumsum(pca_result$sdev^2 / sum(pca_result$sdev^2))
-      # compute the best cumulative variance threshold
       # preserve components with eigenvalue (sdev^2) above 1 — Kaiser-Guttman
       # criterion. If NO PC passes this filter (e.g. when only a single dummy
       # is left after subset filtering: scale=TRUE forces sdev^2 == 1 exactly,
@@ -119,6 +127,7 @@ covariates_model <- function(inference_detail, study_summary)
         prev_columns <- prev_columns[!grepl(paste0("^",cname), prev_columns)]
         study_summary[,cname] <- pca_result[,cname]
       }
+      }  # close AI-070 else (PCA branch)
     }
 
   covariates_to_remove <- c()
