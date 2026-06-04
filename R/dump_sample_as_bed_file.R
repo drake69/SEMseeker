@@ -25,15 +25,22 @@ dump_sample_as_bed_file <- function(data_to_dump, fileName) {
   # sort by CHR START and END
   data_to_dump <- data_to_dump[order(data_to_dump$CHR, data_to_dump$START, data_to_dump$END),]
 
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " trying to save: ", fileName)
+  if (!plyr::empty(data_to_dump)) {
 
-  # Always write the BED file, even when data_to_dump has 0 rows. Downstream
-  # invariants (e.g. test-6-semseeker.R:83) and consumers assume that the
-  # per-sample BED for every (marker, figure) is present on disk whenever
-  # the MUTATIONS BED for the same (sample, figure) is present, regardless
-  # of whether the derived marker happened to have any rows for that sample.
-  # readr::write_tsv on an empty data.frame writes a valid empty .gz.
-  readr::write_tsv(data_to_dump, fileName, col_names = FALSE, na = "NA", progress = FALSE)
+    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " trying to save: ", fileName)
+
+    # save file bed per sample
+    # utils::write.table(data_to_dump, file = gzfile(fileName), quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
+    readr::write_tsv(data_to_dump, fileName, col_names = FALSE, na = "NA", progress = FALSE)
+
+    # save file bed per sample temporary to reuse for aggregated bed file
+    # filePath <- paste(fileName,"",".temp")
+    # sample_names <- rep(sampleName, dim(data_to_dump)[1])
+    # data_to_dump <- data.frame(data_to_dump, sample_names)
+    # colnames(data_to_dump) <- multipleFileColNames
+    #
+    # utils::write.table(data_to_dump, file = filePath, quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
+  }
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " dump_sample_as_bed_file: ", fileName)
 }
 
