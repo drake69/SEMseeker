@@ -97,11 +97,20 @@ covariates_model <- function(inference_detail, study_summary)
       log_event("JOURNAL: PCA,scaling and centering, applied on covariates: ", paste(covariates, collapse = ", "))
       # explained_cumulative_variance <- cumsum(pca_result$sdev^2 / sum(pca_result$sdev^2))
       # compute the best cumulative variance threshold
-      # preserve components that explain cumulatively at least 50%
-      pca_result <- pca_result$x[, which(pca_result$sdev^2 > 1)]
-      # pca_result <- stats::predict(pca_result, study_summary[,covariates])
+      # preserve components with eigenvalue (sdev^2) above 1 — Kaiser-Guttman
+      # criterion. If NO PC passes this filter (e.g. when only a single dummy
+      # is left after subset filtering: scale=TRUE forces sdev^2 == 1 exactly,
+      # which fails the strict '> 1' inequality) we fall back to keeping the
+      # first PC so the design matrix has at least one degree of freedom.
+      keep <- which(pca_result$sdev^2 > 1)
+      if (length(keep) == 0L) {
+        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                  " No PC passed Kaiser-Guttman (sdev^2 > 1) filter — keeping PC1 as fallback.")
+        keep <- 1L
+      }
+      pca_result <- pca_result$x[, keep, drop = FALSE]
       pca_result <- as.data.frame(pca_result)
-      colnames(pca_result) <- paste0("PC", 1:ncol(pca_result))
+      colnames(pca_result) <- paste0("PC", seq_len(ncol(pca_result)))
       covariates <- colnames(pca_result)
       for(cc in seq_along(colnames(pca_result)))
       {
