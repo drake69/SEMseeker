@@ -27,25 +27,25 @@ test_that("test_init_env", {
 
   ####################################################################################
 
-  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, figures="HYPPO"), "ERROR:")
+  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, figures="HYPPO"), "Unrecognised argument")
   ####################################################################################
 
-  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, markers="HYPPO"), "ERROR:")
-
-  ####################################################################################
-
-  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, areas="HYPPO"), "ERROR:")
+  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, markers="HYPPO"), "Unrecognised argument")
 
   ####################################################################################
 
-  # expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy ="cluster"), "ERROR:")
+  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, areas="HYPPO"), "Unrecognised argument")
 
   ####################################################################################
 
-  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, subareas="HYPPO"), "ERROR:")
+  # expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy ="cluster"), "Unrecognised argument")
+
+  ####################################################################################
+
+  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, subareas="HYPPO"), "Unrecognised argument")
 
 
-  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, test_it="HYPPO"), "ERROR:")
+  testthat::expect_error( SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, test_it="HYPPO"), "Unrecognised argument")
 
   ####################################################################################
 

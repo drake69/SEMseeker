@@ -2,9 +2,14 @@ log_event <- function(...)
 {
   # Robustness: log_event must be callable even when no session has been
   # initialised (e.g. area_granges_build() invoked standalone, outside of a
-  # full semseeker() run). Silently no-op instead of crashing on missing ssEnv.
+  # full semseeker() run) AND when an earlier session left a stale
+  # session_folder pointing at a tempdir that has since been unlink()-ed
+  # (a common pattern in testthat runs). Silently no-op in both cases
+  # instead of crashing on file().
   ssEnv <- tryCatch(get_session_info(), error = function(e) NULL)
-  if (is.null(ssEnv) || length(ssEnv) == 0L || is.null(ssEnv$session_folder))
+  if (is.null(ssEnv) || length(ssEnv) == 0L ||
+      is.null(ssEnv$session_folder) ||
+      !dir.exists(ssEnv$session_folder))
     return(invisible(NULL))
 
   # append log_event to log file
