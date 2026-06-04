@@ -41,6 +41,19 @@ covariates_model <- function(inference_detail, study_summary)
       covariate_dummy <- as.character(covariates_dummy[i])
       encoded_covariate <- fastDummies::dummy_cols(study_summary, select_columns = covariate_dummy, remove_first_dummy = TRUE)
       encoded_covariate <- encoded_covariate[, !(colnames(encoded_covariate) %in% colnames(study_summary))]
+      # AI-068: when the dummy column is constant within the subset filtered
+      # by samples_sql_condition (e.g. Tumour_Locus is always 'Breast' once
+      # samples are restricted to Tissue=='Breast'), dummy_cols + remove_first
+      # leaves zero columns. Without this guard the colnames<- below fails with
+      # 'names attribute [N] must be the same length as the vector [0]'.
+      n_enc <- if (is.null(dim(encoded_covariate))) length(encoded_covariate) else ncol(encoded_covariate)
+      if (is.null(n_enc) || n_enc == 0L)
+      {
+        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                  " dummy expansion of '", covariate_dummy,
+                  "' produced 0 columns (covariate constant within sample subset?) — skipping.")
+        next
+      }
       if(is.null(dim(encoded_covariate)))
       {
         encoded_covariate <- data.frame(encoded_covariate)
