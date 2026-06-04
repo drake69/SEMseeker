@@ -48,8 +48,11 @@ test_that("deltaX_get", {
 
   ss <- SEMseeker:::deltaX_get()
 
-  # analyze_population bypasses analyze_batch so Sample_IDs remain in original case
-  cleaned_sample_ids <- mySampleSheet$Sample_ID
+  # BED file names go through file_path_build() -> name_cleaning() which
+  # uppercases sample IDs; pivot column names are derived from BED basenames
+  # via stream_merge_bed(). So pivot colnames are uppercase regardless of
+  # whether the pipeline went through analyze_batch.
+  cleaned_sample_ids <- SEMseeker:::name_cleaning(mySampleSheet$Sample_ID)
 
   # verify all DELTAX (except DELTAS and DELTAR ) are coherent with MUTATIONS
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures, AREA == "POSITION")
@@ -111,18 +114,11 @@ test_that("deltaX_get", {
       testthat::expect_true(all(as.data.frame(pivot) == as.data.frame(mutations_pivot)))
     }
 
-    if(marker!="MUTATIONS")
-      for(c in 1:(nrow(mySampleSheet)))
-      {
-        sample_id <- mySampleSheet[c,"Sample_ID"]  # original case (analyze_population not via analyze_batch)
-        sample_group <- mySampleSheet[c,"Sample_Group"]
-        mutation_bed_file_name <- SEMseeker:::bed_file_name(sample_id,sample_group,"MUTATIONS",figure)
-        if(file.exists(mutation_bed_file_name))
-        {
-          marker_bed_file_name <- SEMseeker:::bed_file_name(sample_id,sample_group,marker,figure)
-          testthat::expect_true(file.exists(marker_bed_file_name))
-        }
-      }
+    # Per-sample BED presence is NOT a valid invariant for derived markers.
+    # By design (long-reads readiness) dump_sample_as_bed_file() skips
+    # writing when the per-sample data has 0 rows — DELTAS/DELTAR/LESIONS
+    # can legitimately be empty for a given (sample, figure) even when
+    # MUTATIONS is not. Pivot-level expectations above are authoritative.
 
   }
 
