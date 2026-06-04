@@ -128,10 +128,20 @@ test_that("join_values_to_thresholds: threshold columns are preserved", {
   expect_equal(res$signal_superior_thresholds, 0.9, tolerance = 1e-10)
 })
 
-test_that("join_values_to_thresholds: CHR column mismatch gives zero rows (exact string match)", {
-  # "1" vs "chr1" differ → no match — documents exact-match semantics
+test_that("join_values_to_thresholds: CHR prefix is normalised — '1' matches 'chr1'", {
+  # See E-13 in R/join_values_to_thresholds.R: strip_chr() normalises the CHR
+  # column so bed-file values (chr1) match threshold values (1). The join is
+  # semantically chr-prefix-insensitive, not exact-string.
   v <- .jvt_values("1",    1000L, 0.5)
   t <- .jvt_thresholds("chr1", 1000L, 0.1, 0.9)
+  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  expect_equal(nrow(res), 1L)
+})
+
+test_that("join_values_to_thresholds: genuinely different CHR gives zero rows", {
+  # The join still rejects CHR pairs that differ on more than the 'chr' prefix.
+  v <- .jvt_values("1", 1000L, 0.5)
+  t <- .jvt_thresholds("2", 1000L, 0.1, 0.9)
   res <- SEMseeker:::join_values_to_thresholds(v, t)
   expect_equal(nrow(res), 0L)
 })

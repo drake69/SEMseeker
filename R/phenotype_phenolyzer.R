@@ -140,7 +140,12 @@ phenotype_phenolyzer <- function(study,
         null_device <- if (.Platform$OS.type == "windows") "NUL" else "/dev/null"
         message(pcommand)
         sink(null_device)
-        system(pcommand)
+        # pcommand uses shell features ('cd ... && perl ...'); system2() does not
+        # honour these directly, so route through the shell explicitly. Bioconductor
+        # discourages bare system() in package code.
+        shell_bin <- if (.Platform$OS.type == "windows") "cmd" else "bash"
+        shell_arg <- if (.Platform$OS.type == "windows") "/c" else "-c"
+        system2(shell_bin, c(shell_arg, pcommand))
         sink()
       }
     )

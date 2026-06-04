@@ -13,6 +13,11 @@ tmp
 
 # R CMD check output
 *.Rcheck/
+..Rcheck/
+.Rcheck/
+
+# RStudio project file
+*.Rproj
 
 # CI check output
 ci-check-output/

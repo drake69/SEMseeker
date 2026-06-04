@@ -63,6 +63,8 @@ signal_save <- function(signal_data, sample_sheet, batch_id)
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data saved with probe.")
 
   rm(signal_data)
+  gc()
+  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-probe-write+gc  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
   signal_data <- polars::pl$scan_parquet(pivot_file_name_probe)
   pp          <- polars::as_polars_df(probe_features_get("PROBE"))$lazy()
@@ -70,8 +72,12 @@ signal_save <- function(signal_data, sample_sheet, batch_id)
   signal_data <- pp$join(signal_data, on = "PROBE", how = "inner")
   signal_data <- signal_data$drop(c("PROBE", "PROBE_WHOLE", "AREA"))
   signal_data <- signal_data$sort(c("CHR", "START", "END"), descending = FALSE)
+  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " pre-collect-position mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
   signal_data$collect()$write_parquet(pivot_file_name_pos)
+  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-position-write  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data.")
+  rm(signal_data, pp)
   gc()
+  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data.")
+  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-rm-lazyframes   mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 }

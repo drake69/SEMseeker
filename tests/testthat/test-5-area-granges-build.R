@@ -16,6 +16,8 @@ test_that("area_granges_build errors on unknown area", {
 })
 
 test_that("area_granges_build errors on unknown GENE subarea", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -26,6 +28,8 @@ test_that("area_granges_build errors on unknown GENE subarea", {
 })
 
 test_that("area_granges_build errors on unknown ISLAND subarea", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("AnnotationHub")
   skip_if_not_installed("GenomicRanges")
   expect_error(
@@ -35,6 +39,8 @@ test_that("area_granges_build errors on unknown ISLAND subarea", {
 })
 
 test_that("area_granges_build appends _WHOLE when no underscore", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -51,6 +57,8 @@ test_that("area_granges_build appends _WHOLE when no underscore", {
 # ---------------------------------------------------------------------------
 
 test_that("area_granges_build DMR_WHOLE returns GRanges with label", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("IRanges")
   gr <- SEMseeker:::area_granges_build("DMR_WHOLE", genome_build = "hg19")
@@ -65,6 +73,8 @@ test_that("area_granges_build DMR_WHOLE returns GRanges with label", {
 # ---------------------------------------------------------------------------
 
 test_that("area_granges_build GENE_BODY returns valid GRanges", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -75,6 +85,8 @@ test_that("area_granges_build GENE_BODY returns valid GRanges", {
 })
 
 test_that("area_granges_build GENE_TSS200 ranges are ≤ 200bp wide", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -83,6 +95,8 @@ test_that("area_granges_build GENE_TSS200 ranges are ≤ 200bp wide", {
 })
 
 test_that("GENE_TSS1500 and GENE_TSS200 do not overlap within the same gene", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -105,6 +119,8 @@ test_that("GENE_TSS1500 and GENE_TSS200 do not overlap within the same gene", {
 })
 
 test_that("area_granges_build result is cached on second call", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("GenomicFeatures")
@@ -118,6 +134,8 @@ test_that("area_granges_build result is cached on second call", {
 # ---------------------------------------------------------------------------
 
 test_that("area_granges_build CHR_CYTOBAND returns GRanges with label", {
+  # Bioc anno pkgs trigger requireNamespace -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
+  skip_on_os("mac")
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
   gr <- SEMseeker:::area_granges_build("CHR_CYTOBAND", genome_build = "hg19")

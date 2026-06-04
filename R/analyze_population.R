@@ -115,36 +115,43 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
 
   rm(signal_data)
   # for(i in 1:nrow(sample_sheet)) {
-  foreach::foreach(i =1:nrow(sample_sheet), .export = variables_to_export) %dorng% {
+  # .packages loads SEMseeker in each worker so SEMseeker::: lookups resolve.
+  # Internal helpers are prefixed with SEMseeker::: because they live in the
+  # namespace (not in the caller's frame) and .export does not cover them.
+  foreach::foreach(
+    i = 1:nrow(sample_sheet),
+    .export = variables_to_export,
+    .packages = "SEMseeker"
+  ) %dorng% {
     # CRITICAL (E-14): multisession workers are fresh R processes where
     # .pkgglobalenv$ssEnv is empty. All internal helpers (bed_file_name,
     # analyze_single_sample, etc.) call get_session_info() which reads from
     # .pkgglobalenv — NOT from the exported `ssEnv` variable. Without this
     # call, multisession workers fail with "get_session_info called without
     # result folder". See engineering-decisions.md §1.3.
-    update_session_info(ssEnv)
+    SEMseeker:::update_session_info(ssEnv)
 
     local_sample_detail <- sample_sheet[i,]
-    bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
+    bed_filename <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
     signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
     colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
-    signal_values$CHR <- normalize_chr(signal_values$CHR, "internal")
+    signal_values$CHR <- SEMseeker:::normalize_chr(signal_values$CHR, "internal")
 
-    bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER")
+    bed_filename <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER")
     if(!file.exists(bed_filename))
-      analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPER", sample_detail = local_sample_detail)
+      SEMseeker:::analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPER", sample_detail = local_sample_detail)
 
-    bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO")
+    bed_filename <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO")
     if(!file.exists(bed_filename))
-      analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPO", sample_detail = local_sample_detail)
+      SEMseeker:::analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPO", sample_detail = local_sample_detail)
 
-    bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO")
+    bed_filename <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO")
     if(!file.exists(bed_filename))
-      delta_single_sample( values = signal_values,thresholds = signal_thresholds , sample_detail = local_sample_detail)
+      SEMseeker:::delta_single_sample( values = signal_values,thresholds = signal_thresholds , sample_detail = local_sample_detail)
 
-    bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAR","HYPO")
+    bed_filename <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAR","HYPO")
     if(!file.exists(bed_filename))
-      deltar_single_sample ( values = signal_values, thresholds = signal_thresholds,sample_detail = local_sample_detail)
+      SEMseeker:::deltar_single_sample ( values = signal_values, thresholds = signal_thresholds,sample_detail = local_sample_detail)
 
     if(ssEnv$showprogress)
       progress_bar(sprintf("Performed sample: %s",local_sample_detail$Sample_ID))

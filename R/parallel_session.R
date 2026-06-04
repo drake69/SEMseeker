@@ -15,14 +15,22 @@ parallel_session <- function()
   # update_session_info(ssEnv) as its first statement to populate the
   # worker's namespace. See engineering-decisions.md §1.3.
 
-  # macOS: ensure OBJC_DISABLE_INITIALIZE_FORK_SAFETY is set for any
-  # non-sequential parallel strategy (some packages still attempt fork internally)
+  # macOS: OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES is recommended for any
+  # non-sequential strategy (some packages still attempt fork internally).
+  # Bioconductor disallows Sys.setenv() in package code; users on macOS
+  # using a non-sequential strategy must set the env var themselves before
+  # calling init_env(), e.g. in ~/.Renviron or Sys.setenv() at the top of
+  # their script. We log a warning when the env var is missing so the
+  # cause of any subsequent fork crash is obvious.
   if (Sys.info()["sysname"] == "Darwin" && parallel_strategy != "sequential") {
     env_var <- Sys.getenv("OBJC_DISABLE_INITIALIZE_FORK_SAFETY")
     if (env_var != "YES") {
-      Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY = "YES")
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-                " Set OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES automatically.")
+      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " OBJC_DISABLE_INITIALIZE_FORK_SAFETY is not set to YES.",
+                " On macOS with a non-sequential parallel strategy this can",
+                " cause fork-related crashes. Set it in ~/.Renviron or call",
+                " Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY = 'YES')",
+                " before init_env().")
     }
   }
 

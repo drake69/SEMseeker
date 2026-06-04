@@ -384,7 +384,8 @@
 #'     \code{genome_build}.
 #' }
 #'
-#' @section Required packages (install via \code{BiocManager::install()}):
+#' @section Required packages:
+#' Install via \code{BiocManager::install()}.
 #' \describe{
 #'   \item{GENE areas}{\code{TxDb.Hsapiens.UCSC.hg19.knownGene} (or hg38/mm10),
 #'     \code{GenomicFeatures}, \code{GenomicRanges}, \code{IRanges}.
@@ -394,6 +395,7 @@
 #'   \item{CHR / DMR areas}{no extra packages needed.}
 #' }
 #'
+#' @importFrom GenomicRanges GRanges
 area_granges_build <- function(area_subarea, genome_build = NULL) {
 
   if (is.null(genome_build)) {

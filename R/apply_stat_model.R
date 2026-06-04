@@ -58,7 +58,15 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I'll perform:",g_end - g_start," tests." )
   result_temp <- data.frame()
-  result_temp <- foreach::foreach(g = g_start:g_end, .combine =  plyr::rbind.fill, .export = to_export) %dorng%
+  # .packages loads SEMseeker in each worker so SEMseeker::: lookups resolve.
+  # Internal helpers are prefixed with SEMseeker::: because they live in the
+  # namespace (not in the caller's frame) and .export does not cover them.
+  result_temp <- foreach::foreach(
+    g = g_start:g_end,
+    .combine = plyr::rbind.fill,
+    .export = to_export,
+    .packages = "SEMseeker"
+  ) %dorng%
   # for(g in g_start:g_end)
   tryCatch({
     # NOTE: this tryCatch is intentional. doFuture internally wraps the foreach
@@ -68,8 +76,8 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
     # By catching errors ourselves and returning NULL, we prevent the condition
     # object from reaching doFuture's result-combination logic.
     # plyr::rbind.fill silently ignores NULL results.
-    update_session_info(ssEnv)
-    ssEnv <- get_session_info()
+    SEMseeker:::update_session_info(ssEnv)
+    ssEnv <- SEMseeker:::get_session_info()
 
     burdenValue <- cols[g]
     if(ssEnv$showprogress)
@@ -79,8 +87,8 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
 
       #
-      sig.formula <- apply_stat_model_sig_formula(family_test, burdenValue, independent_variable, covariates)
-      model_result <- execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (g_end - g_start < 10), samples_sql_condition, key)
+      sig.formula <- SEMseeker:::apply_stat_model_sig_formula(family_test, burdenValue, independent_variable, covariates)
+      model_result <- SEMseeker:::execute_model(family_test, tempDataFrame, sig.formula, burdenValue, independent_variable, transformation_y, (g_end - g_start < 10), samples_sql_condition, key)
 
       #
       local_result <- data.frame("INDIPENDENT_VARIABLE" = independent_variable)
@@ -94,7 +102,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
       local_result$COVARIATES <- ifelse(length(covariates)>0,paste0(covariates,collapse=" "),NA)
       # local_result$bartlett.pvalue <- data_distribution_info(family_test, tempDataFrame, burdenValue, independent_variable)
 
-      if (is.family_dicotomic(family_test))
+      if (SEMseeker:::is.family_dicotomic(family_test))
       {
         #
         selector <- tempDataFrame[, independent_variable]==independent_variable1stLevel
@@ -104,20 +112,20 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
         if(length(stats::na.omit(independent_variableData2ndLevel))==0 | length(stats::na.omit(independent_variableData1stLevel))==0)
         {
-          log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because one of the two groups is empty." )
+          SEMseeker:::log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because one of the two groups is empty." )
           colnames(local_result) <- toupper(colnames(local_result))
           local_result$PVALUE <- NA
         }
       }
 
-      if (!is.family_dicotomic(family_test))
+      if (!SEMseeker:::is.family_dicotomic(family_test))
       {
         dependentVariableData <- as.numeric(stats::na.omit(tempDataFrame[!is.na(tempDataFrame[,independent_variable]),burdenValue]))
         independent_variableData <- as.numeric(stats::na.omit(tempDataFrame[  ,independent_variable]))
 
         if(sum(is.na(dependentVariableData)>0) | sum(is.na(independent_variableData)))
         {
-          log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "The submitted data are not factorial or numeric.")
+          SEMseeker:::log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "The submitted data are not factorial or numeric.")
           stop()
         }
       }
@@ -132,7 +140,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
       local_result
     }
   }, error = function(e) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    SEMseeker:::log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " Skipping area '", if(exists("burdenValue")) burdenValue else "?",
               "': ", conditionMessage(e))
     NULL

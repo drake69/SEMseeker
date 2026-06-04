@@ -60,21 +60,27 @@ analyze_batch <- function(signal_data, sample_sheet)
   }
 
   signal_save(signal_data, sample_sheet, batch_id)
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " post-signal_save  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
-  # reference population
+  # Reference population subset: probe IDs are kept as rownames (preserved by
+  # data.frame column subsetting in R). NO extra "PROBE" column wrapper — the
+  # downstream signal_range_values() reads probe IDs from rownames.
   referencePopulationSampleSheet <- sample_sheet[sample_sheet$Sample_Group == "Reference", ]
-  referencePopulationMatrix <- data.frame(PROBE = row.names(signal_data), signal_data[, referencePopulationSampleSheet$Sample_ID])
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " pre-subset       mem_MB=", round(sum(gc()[, "(Mb)"]), 1), " n_ref=", nrow(referencePopulationSampleSheet))
+  referencePopulationMatrix <- signal_data[, referencePopulationSampleSheet$Sample_ID, drop = FALSE]
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " post-subset      mem_MB=", round(sum(gc()[, "(Mb)"]), 1), " dim=", nrow(referencePopulationMatrix), "x", ncol(referencePopulationMatrix))
 
-  # signal_data <- data.frame(PROBE = row.names(signal_data), signal_data[ , which(!(colnames(signal_data)%in%referencePopulationSampleSheet$Sample_ID))]  )
-
-  if (plyr::empty(referencePopulationMatrix) ||
-      ncol(referencePopulationMatrix) < 2) {
+  if (plyr::empty(referencePopulationMatrix) || ncol(referencePopulationMatrix) < 1) {
     log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Empty signal_data ", format(Sys.time(), "%a %b %d %X %Y"))
     stop()
   }
 
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " pre-thresholds   mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
   populationControlRangeBetaValues <- as.data.frame(signal_range_values(referencePopulationMatrix,batch_id, probe_features))
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " post-thresholds  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  rm(referencePopulationMatrix)
   gc()
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " post-rm-refmatr  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
   # remove duplicated samples due to the reference population
   referenceSamples <- sample_sheet[sample_sheet$Sample_Group == "Reference",]
@@ -89,7 +95,11 @@ analyze_batch <- function(signal_data, sample_sheet)
   {
     sample_group <- ssEnv$keys_sample_groups[i,1]
     populationSampleSheet <- sample_sheet[sample_sheet$Sample_Group == sample_group, ]
-    populationMatrixColumns <- colnames(signal_data[, populationSampleSheet$Sample_ID])
+    # Use intersect to read column names WITHOUT allocating a subset of signal_data.
+    # The previous form `colnames(signal_data[, populationSampleSheet$Sample_ID])`
+    # allocated a full data.frame copy (~6 GB on ewas_data_hub Case/Control) only
+    # to read its names — discarded immediately. Pure memory waste under big inputs.
+    populationMatrixColumns <- intersect(colnames(signal_data), populationSampleSheet$Sample_ID)
 
     if (length(populationMatrixColumns)==0) {
       log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), " Population ",sample_group, " is empty, probably the samples of this group are present in another group ? ")
@@ -97,12 +107,15 @@ analyze_batch <- function(signal_data, sample_sheet)
     else
     {
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Working on population ",sample_group, " with ", nrow(signal_data), " probes.")
+      # Subset once into a named temp variable so it can be freed explicitly after the call.
+      population_signal <- signal_data[, populationMatrixColumns, drop = FALSE]
       analyze_population(
-        signal_data = signal_data[, populationMatrixColumns],
+        signal_data = population_signal,
         sample_sheet = populationSampleSheet,
         signal_thresholds = populationControlRangeBetaValues,
         probe_features = probe_features
       )
+      rm(population_signal)
       gc()
     }
   }

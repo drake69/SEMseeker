@@ -18,8 +18,11 @@ get_pivot_both <- function(marker)
   pivot_hyper <- polars::pl$scan_parquet(pivot_file_name_hyper)
   pivot_hypo <- polars::pl$scan_parquet(pivot_file_name_hypo)
 
-  # Union (concatenate) the two DataFrames
-  pivot_both <- polars::pl$concat(list(pivot_hyper, pivot_hypo))$collect()
+  # Union (concatenate) the two DataFrames.
+  # NOTA polars 1.11 (e già da 1.x): pl$concat() vuole i frame come varargs (...),
+  # non come list. Passare list(a, b) → "Invalid `...` elements. All elements must
+  # be of the same class". Usiamo do.call per espandere la lista in posizionali.
+  pivot_both <- do.call(polars::pl$concat, list(pivot_hyper, pivot_hypo))$collect()
   pivot_both <- pivot_both$group_by("AREA", .maintain_order=FALSE)$sum()
 
   pivot_both$write_parquet(pivot_file_name_both)

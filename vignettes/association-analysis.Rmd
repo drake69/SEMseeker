@@ -18,6 +18,19 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r synthetic_setup, include=FALSE}
+# Tiny synthetic sample sheet so chunks below can be evaluated without
+# requiring real cohort data on disk.
+sample_sheet <- data.frame(
+  Sample_ID    = paste0("S", sprintf("%03d", 1:6)),
+  Sample_Group = c("Reference","Reference","Reference","Case","Case","Case"),
+  age          = c(34, 41, 29, 52, 47, 61),
+  bmi          = c(22.1, 25.4, 19.8, 28.6, 26.3, 31.1),
+  sex          = c("F","M","F","M","F","M"),
+  stringsAsFactors = FALSE
+)
+```
+
 ## Overview
 
 `association_analysis()` is the downstream statistical engine of semseeker.
@@ -47,8 +60,9 @@ You need a completed semseeker run (see the
 The sample sheet used in the original `semseeker()` call must already contain
 the clinical variable(s) you want to test:
 
-```{r sample_sheet, eval=FALSE}
-sample_sheet <- read.csv2("sample_sheet.csv")
+```{r sample_sheet}
+# In practice: sample_sheet <- read.csv2("sample_sheet.csv").
+# Here we use the synthetic sample sheet defined in the hidden setup chunk.
 
 # Required: Sample_ID, Sample_Group
 # Plus any clinical covariates you plan to test:
@@ -102,9 +116,7 @@ Any semseeker output metric can be the dependent variable in `formula`:
 
 ### Correlation
 
-```{r correlation_examples, eval=FALSE}
-library(semseeker)
-
+```{r correlation_examples}
 # Spearman rank correlation (recommended for non-normal SEM metrics)
 inf <- data.frame(formula="DELTARP ~ age", family="spearman",
                   transformation_y="none", depth_analysis=3,
@@ -131,7 +143,8 @@ inf <- data.frame(formula="DELTARP ~ Sample_Group", family="jsd",
                   transformation_y="none", depth_analysis=2,
                   filter_p_value=TRUE)
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Run the analysis (uncomment when you have a real semseeker results folder):
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 Spearman [@spearman1904] is the default recommendation for SEM metrics because
@@ -143,7 +156,7 @@ values.
 
 ### Group comparison tests
 
-```{r group_tests, eval=FALSE}
+```{r group_tests}
 # Wilcoxon rank-sum / Mann-Whitney (two independent groups)
 inf <- data.frame(formula="MUTATIONS_HYPO ~ Sample_Group", family="wilcoxon",
                   transformation_y="none", depth_analysis=2,
@@ -190,7 +203,8 @@ inf <- data.frame(formula="DELTARP ~ Sample_Group", family="mean-permutation_100
                   transformation_y="none", depth_analysis=3,
                   filter_p_value=TRUE)
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 The Wilcoxon rank-sum test [@wilcoxon1945] is the recommended non-parametric
@@ -201,7 +215,7 @@ is common for mutation count data.
 
 ### Regression models (GLM)
 
-```{r glm, eval=FALSE}
+```{r glm}
 # Gaussian linear regression (continuous outcome)
 # Formula can include multiple predictors
 inf <- data.frame(formula="DELTARP ~ age + sex + bmi",
@@ -232,7 +246,8 @@ inf <- data.frame(formula="disease_stage ~ DELTARP",
                   depth_analysis=3,
                   filter_p_value=TRUE)
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 GLMs [@glm-nelder] are appropriate when the relationship between the SEM metric
@@ -244,7 +259,7 @@ scores (Binomial).
 
 ### Quantile regression
 
-```{r quantreg, eval=FALSE}
+```{r quantreg}
 # Standard quantile regression at quantile τ
 # Syntax: "quantreg_<tau>"
 inf <- data.frame(formula="DELTARP ~ age",
@@ -269,7 +284,8 @@ inf <- data.frame(formula="DELTARP ~ Sample_Group",
                   depth_analysis=2,
                   filter_p_value=TRUE)
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 Quantile regression [@quantreg-koenker; @lqmm] is particularly useful for SEM
@@ -281,7 +297,7 @@ variability is biologically relevant.
 
 ### Nonlinear regression (NLS)
 
-```{r nls, eval=FALSE}
+```{r nls}
 # Log₁₀ dose-response model
 # Syntax: "log10_<scale_factor>"
 inf <- data.frame(formula="DELTARP ~ dose",
@@ -304,14 +320,15 @@ inf <- data.frame(formula="DELTARP ~ concentration",
                   depth_analysis=3,
                   filter_p_value=TRUE)
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 <hr>
 
 ### Polynomial regression
 
-```{r polynomial, eval=FALSE}
+```{r polynomial}
 # Syntax: "polynomial_<degree>"
 inf <- data.frame(formula="DELTARP ~ age",
                   family="polynomial_2",       # quadratic
@@ -319,7 +336,8 @@ inf <- data.frame(formula="DELTARP ~ age",
                   depth_analysis=3,
                   filter_p_value=TRUE)
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 <hr>
@@ -329,7 +347,7 @@ association_analysis(inf, result_folder="~/semseeker_results/")
 Mediation models test whether a third variable (mediator) explains the
 relationship between the SEM metric and an outcome:
 
-```{r mediation, eval=FALSE}
+```{r mediation}
 # Mediation via quantile regression
 inf <- data.frame(formula="DELTARP ~ exposure + mediator",
                   family="mediation-quantreg_0.5",
@@ -351,7 +369,8 @@ inf <- data.frame(formula="DELTARP ~ exposure + mediator",
                   depth_analysis=3,
                   filter_p_value=TRUE)
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 <hr>
@@ -362,7 +381,7 @@ Include covariates directly in the formula and declare them in the `covariates`
 column so semseeker correctly separates the independent variable of interest
 from confounders:
 
-```{r covariates, eval=FALSE}
+```{r covariates}
 inf <- data.frame(
   formula          = "DELTARP ~ tcdd_exposure + age + sex + bmi",
   family           = "gaussian",
@@ -374,7 +393,8 @@ inf <- data.frame(
   covariates_pca   = FALSE                 # TRUE = replace with PCs
 )
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 When `collinearity_check = TRUE`, semseeker automatically detects and removes
@@ -387,7 +407,7 @@ covariates are replaced by their principal components before fitting.
 
 Run the analysis on a subset of samples using a SQL WHERE clause:
 
-```{r sql_filter, eval=FALSE}
+```{r sql_filter}
 # Only Case samples
 inf <- data.frame(
   formula               = "DELTARP ~ age",
@@ -408,7 +428,8 @@ inf <- data.frame(
   samples_sql_condition = "age > 40"
 )
 
-association_analysis(inf, result_folder="~/semseeker_results/")
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(inf, result_folder = "~/semseeker_results/")
 ```
 
 <hr>
@@ -417,7 +438,7 @@ association_analysis(inf, result_folder="~/semseeker_results/")
 
 Combine multiple rows in `inference_details` to run all analyses in a single call:
 
-```{r multi, eval=FALSE}
+```{r multi}
 inference_details <- rbind(
   data.frame(formula="DELTARP ~ age",             family="spearman",
              transformation_y="none",             depth_analysis=3,
@@ -434,12 +455,13 @@ inference_details <- rbind(
              stringsAsFactors=FALSE)
 )
 
-association_analysis(
-  inference_details = inference_details,
-  result_folder     = "~/semseeker_results/",
-  parallel_strategy = "multicore",
-  maxResources      = 90
-)
+# Uncomment when you have a real semseeker results folder:
+# association_analysis(
+#   inference_details = inference_details,
+#   result_folder     = "~/semseeker_results/",
+#   parallel_strategy = "multicore",
+#   maxResources      = 90
+# )
 ```
 
 <hr>
