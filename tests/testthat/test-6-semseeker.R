@@ -71,18 +71,12 @@ test_that("semeeker", {
       testthat::expect_true(all(as.data.frame(pivot) == as.data.frame(mutations_pivot)))
     }
 
-    if(marker!="MUTATIONS")
-      for(c in 1:(nrow(mySampleSheet)))
-      {
-        sample_id <- SEMseeker:::name_cleaning(mySampleSheet[c,"Sample_ID"])
-        sample_group <- mySampleSheet[c,"Sample_Group"]
-        mutation_bed_file_name <- SEMseeker:::bed_file_name(sample_id,sample_group,"MUTATIONS",figure)
-        if(file.exists(mutation_bed_file_name))
-        {
-          marker_bed_file_name <- SEMseeker:::bed_file_name(sample_id,sample_group,marker,figure)
-          testthat::expect_true(file.exists(marker_bed_file_name))
-        }
-      }
+    # Per-sample BED presence is NOT a valid invariant for derived markers.
+    # By design (long-reads readiness) dump_sample_as_bed_file() skips
+    # writing when the per-sample data has 0 rows — DELTAS/DELTAR/LESIONS
+    # can legitimately be empty for a given (sample, figure) even when
+    # MUTATIONS is not. The pivot-level expectations above (cols match,
+    # nrow match, sample IDs match) are the authoritative checks.
 
   }
 
