@@ -48,9 +48,11 @@ probe_features_get <- function(area_subarea) {
 
   # Detect technology if not yet defined
   if (is.null(ssEnv$tech) || ssEnv$tech == "") {
-    pivot_file_name <- pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE", "WHOLE")
-    signal_data_pl  <- polars::pl$read_parquet(pivot_file_name)
-    signal_data_r   <- as.data.frame(signal_data_pl)
+    # AI-027: read via unified dispatcher.
+    signal_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
+    if (is.null(signal_pivot_lazy))
+      stop("SIGNAL_MEAN PROBE pivot not available — cannot detect technology.")
+    signal_data_r   <- as.data.frame(signal_pivot_lazy$collect())
     if ("AREA" %in% colnames(signal_data_r)) {
       rownames(signal_data_r) <- signal_data_r$AREA
       signal_data_r$AREA <- NULL
@@ -74,13 +76,15 @@ probe_features_get <- function(area_subarea) {
   # -----------------------------------------------------------------------
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
 
-    pf_path <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
-    if (!file.exists(pf_path))
+    # AI-027: read via unified dispatcher. NULL means neither cached
+    # nor per-sample bed files exist for SIGNAL_MEAN — same failure
+    # mode as the previous file.exists() check.
+    sig_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
+    if (is.null(sig_pivot_lazy))
       stop("POSITION pivot not found. Ensure signal_save() completed before ",
            "calling probe_features_get() for area '", area_subarea, "'.")
 
-    pos <- as.data.frame(
-      polars::pl$read_parquet(pf_path))[, c("CHR", "START", "END")]
+    pos <- as.data.frame(sig_pivot_lazy$collect())[, c("CHR", "START", "END")]
     probe_ids <- paste0(pos$CHR, "_", pos$START)
 
     # --- Coordinate-only areas (no annotation needed) ---

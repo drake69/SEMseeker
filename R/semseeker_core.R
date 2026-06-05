@@ -53,6 +53,10 @@ semseeker_core <- function(sample_sheet,
   deltaX_get()
   study_summary_total()
   annotate_position_pivots()
+
+  # Single point of sidecar materialisation (AI-027).
+  ensure_sidecars(ssEnv$result_folderData)
+
   log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " Saving Sample Sheet with Results! ")
 
   close_env()

@@ -35,7 +35,7 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
         # id <- 2
         inference_detail <- inference_details[id,]
         if(key_enrichment_format[pt,"type"]=="Pathway")
-          path <- dir_check_and_create(ssEnv$result_folderPathway,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+          path <- dir_check_and_create(ssEnv$result_folderEnrichment,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
         else
           path <- dir_check_and_create(ssEnv$result_folderPhenotype,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
         family_test <- inference_detail$family_test

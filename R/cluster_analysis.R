@@ -44,10 +44,11 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
       if(file.exists(plot_filename))
         next
 
-      pivot_filename <- pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
-      if (!file.exists(pivot_filename))
+      # AI-027: read via unified dispatcher.
+      pivot_lazy <- read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+      if (is.null(pivot_lazy))
         next
-      pivot_data <- as.data.frame(polars::pl$read_parquet(pivot_filename))
+      pivot_data <- as.data.frame(pivot_lazy$collect())
       pivot_data <- pivot_data[, study_summary$Sample_ID]
       pivot_data[is.na(pivot_data)] <- 0
 

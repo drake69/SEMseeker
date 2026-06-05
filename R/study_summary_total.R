@@ -17,11 +17,12 @@ study_summary_total <- function()
     figure <- key$FIGURE
     area <- key$AREA
     subarea <- key$SUBAREA
-    pivot_file_nameparquet <- pivot_file_name_parquet(marker,figure,area,subarea)
-    if (!file.exists(pivot_file_nameparquet))
+    # AI-027: read via unified dispatcher. NULL means no pivot AND no
+    # streaming-merge source — skip the key with the same semantics as
+    # the previous file.exists() guard.
+    pivot <- read_pivot(marker, figure, area, subarea)
+    if (is.null(pivot))
       next
-
-    pivot <- polars::pl$scan_parquet(pivot_file_nameparquet)
     # remove CHR START END columns
     pivot <- pivot$drop(c("CHR", "START", "END"))
     # sum per columns

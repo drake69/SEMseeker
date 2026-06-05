@@ -110,14 +110,29 @@ association_analysis <- function(inference_details, result_folder, maxResources 
           paste(areas_selection, "_", sep = "")))
       log_event("JOURNAL:", "Result saved into file:", fileNameResults, ".")
 
-      d1 <- run_depth1_marker(prep, keys, family_test, fileNameResults,
-        filter_p_value, ssEnv, ...)
-      results <- d1$results
-      processed_items <- processed_items + d1$processed_items
+      # AI-040: skip sample-level (depth=1) and chr-level (depth=2) for
+      # limma/voom families. They expect a per-area distribution to run
+      # eBayes shrinkage on — depth=1 is a single-row fit (degenerate to
+      # OLS) and depth=2 (TOTAL aggregate) mixes scales with depth=3 in
+      # the same eBayes pool, contaminating the prior. Only depth=3
+      # (per-probe / per-area) makes sense for these families.
+      is_batch_family <- grepl("^(limma|voom)_", family_test)
+
+      if (!is_batch_family) {
+        d1 <- run_depth1_marker(prep, keys, family_test, fileNameResults,
+          filter_p_value, ssEnv, ...)
+        results <- d1$results
+        processed_items <- processed_items + d1$processed_items
+      } else {
+        results <- data.frame()
+        log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                  " family_test='", family_test,
+                  "': skipping DEPTH=1 (sample-level) — not meaningful for batch eBayes.")
+      }
 
       if (prep$depth_analysis > 1) {
         dn <- run_depth_n_marker(prep, marker, family_test, fileNameResults,
-          filter_p_value, ssEnv, areas_selection,
+          filter_p_value, ssEnv, selected_areas = areas_selection,
           results, start_time, processed_items, ...)
         results <- dn$results
         processed_items <- dn$processed_items

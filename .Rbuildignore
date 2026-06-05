@@ -13,4 +13,3 @@
 ^.*\.BiocCheck$
 ^dev$
 ^bench$
-^tests/aa_debug_.*\.R$

@@ -1,152 +1,200 @@
-#' Retrieve delta (epimutation) signal for all markers and areas
+# ---------------------------------------------------------------------------
+# deltaX_get() — polars-native, wide-dataframe derived markers
+#
+# AI-030 (2026-06-01). Replaces the legacy R-loop deltaX_get_legacy() — see
+# that file for the previous implementation kept for reference.
+#
+# Builds the derived pivot tables (DELTAQ, DELTARQ, DELTAP, DELTARP) from the
+# corresponding source pivots (DELTAS or DELTAR) entirely in polars.
+#
+# Invariants (confirmed with user 2026-06-01):
+#   - breaks GLOBAL on the union of HYPER+HYPO sample values (not per-figure)
+#   - zero == missing (excluded from stats, returned NA in the output)
+#   - right=TRUE intervals (a, b] — matches polars cut default and R cut
+#     default
+#   - skip per-sample bedgraph dumps for derived markers (legacy save_figure
+#     used to write 4013 single bedgraphs per derived marker × figure — the
+#     ~9 min wall-clock bottleneck on ewas_data_hub)
+#
+# Implementation notes:
+#   - For markers ending in 'P' (DELTAP, DELTARP): the bin edges are
+#     equal-width on [global_min, global_max]. Only the per-column min/max
+#     are pulled out — O(N_samples) RAM, streaming-friendly. No unpivot.
+#   - For markers ending in 'Q' (DELTAQ, DELTARQ): quantile bin edges need
+#     the full value distribution; we collect the two source DataFrames and
+#     compute the quantiles in R (R `quantile` is C-vectorised and exact;
+#     polars `quantile` on a single big column also works but the unpivot
+#     in polars R 1.11 can drop class info on lazy frames).
+#   - Cut is applied column-wise inside a single $with_columns(): polars
+#     Rust runtime parallelises the expressions via Rayon, so the cost
+#     stays wide even though we list the columns from R.
+# ---------------------------------------------------------------------------
+
+#' Compute derived markers (DELTAQ/DELTARQ/DELTAP/DELTARP) direct from
+#' source pivots via polars wide expressions.
 #'
-#' Loads per-sample delta values (DELTAS / DELTAR) for each marker–figure
-#' combination defined in the current session environment.  The sample sheet
-#' is fetched internally via \code{study_summary_get()}.
+#' @param markers Optional character vector to restrict which derived markers
+#'   to materialise. Default \code{NULL} = all eligible markers from
+#'   \code{ssEnv$keys_markers_figures}.
 #'
-#' @return A named list of data.frames, one per marker–figure combination,
-#'   each containing columns CHR, START, END and per-sample delta values.
+#' @return Invisible \code{NULL}. Side effect: writes
+#'   \code{<MARKER>_HYPER_POSITION_WHOLE_HG19.parquet} and
+#'   \code{<MARKER>_HYPO_POSITION_WHOLE_HG19.parquet} for each eligible
+#'   marker. Per-sample bedgraph files are NOT written.
 #'
-#' @importFrom doRNG %dorng%
-#'
-deltaX_get <- function()
-{
-  ssEnv <- get_session_info()
-  sample_sheet <- study_summary_get()
-  keys <- ssEnv$keys_markers_figures
-  # remove figure colunn
-  keys <- keys[,-which(colnames(keys)=="FIGURE")]
-  keys <- keys[,-which(colnames(keys)=="COMBINED")]
-  keys <- unique(keys)
-
-  area_position <-"POSITION"
-  subarea_position <- "WHOLE"
-
-  if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:nrow(keys))
-  else
-    progress_bar <- ""
-
-  variables_to_export <- c("ssEnv", "dir_check_and_create", "subarea",
-    "progress_bar","progression_index", "progression", "progressor_uuid",
-    "owner_session_uuid", "trace","probe_features_get", "localKeys",
-    "file_path_build","%>%","get_session_info","log_event")
-  sample_sheet_res <- data.frame()
-  keys <- subset(keys,!is.na(SOURCE))
-  keys <- subset(keys,!is.na(Q))
-  keys <- subset(keys,(Q!=1))
-  if(nrow(keys)==0)
-    return()
-
-  # sample_sheet_res <-  foreach::foreach(k =1:nrow(keys), .combine= cbind , .export = variables_to_export) %dorng%
-  for ( k in 1:nrow(keys))
-  {
-    sample_sheet_temp <- as.data.frame(sample_sheet[,c("Sample_ID","Sample_Group")])
-
-    key <- keys[k,]
-    source_marker <- key$SOURCE
-    marker <- key$MARKER
-
-    pivot_file_nameparquet_dest_hyper <- pivot_file_name_parquet(marker,"HYPER","POSITION","WHOLE")
-    pivot_file_nameparquet_dest_hypo <- pivot_file_name_parquet(marker,"HYPO","POSITION","WHOLE")
-    if(file.exists(pivot_file_nameparquet_dest_hyper) & file.exists(pivot_file_nameparquet_dest_hypo))
-      next
-
-    pivot_file_nameparquet <- pivot_file_name_parquet(source_marker,"HYPER",area_position,subarea_position)
-    if (!file.exists(pivot_file_nameparquet)) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-        " [deltaX_get] Source parquet not found, skipping marker=", marker,
-        " source=", source_marker, " file=", pivot_file_nameparquet)
-      next
-    }
-    pivot_hyper <- polars::pl$scan_parquet(pivot_file_nameparquet)
-    positions_hyper <- as.data.frame(pivot_hyper$select(c("CHR","START","END"))$collect())
-    pivot_hyper <- pivot_hyper$drop(c("CHR","START","END"))
-    vector_shaped_hyper <- as.vector(as.matrix(as.data.frame(pivot_hyper$collect())))
-    dim_pivot_hyper <- dim(as.data.frame(pivot_hyper$collect()))
-    colname_pivot_hyper <- colnames(pivot_hyper)
-    rm(pivot_hyper)
-    vector_shaped_hyper[vector_shaped_hyper==0] <- NA
-    length_hyper <- length(vector_shaped_hyper)
-
-    pivot_file_nameparquet <- pivot_file_name_parquet(source_marker,"HYPO",area_position,subarea_position)
-    if (!file.exists(pivot_file_nameparquet)) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-        " [deltaX_get] Source parquet not found, skipping marker=", marker,
-        " source=", source_marker, " figure=HYPO file=", pivot_file_nameparquet)
-      next
-    }
-    pivot_hypo <- polars::pl$scan_parquet(pivot_file_nameparquet)
-    positions_hypo <- as.data.frame(pivot_hypo$select(c("CHR","START","END"))$collect())
-    pivot_hypo <- pivot_hypo$drop(c("CHR","START","END"))
-    vector_shaped_hypo <- as.vector(as.matrix(as.data.frame(pivot_hypo$collect())))
-    dim_pivot_hypo <- dim(as.data.frame(pivot_hypo$collect()))
-    colname_pivot_hypo <- colnames(pivot_hypo)
-    rm(pivot_hypo)
-    length_hypo <- length(vector_shaped_hypo)
-    vector_shaped_hypo[vector_shaped_hypo==0] <- NA
-
-    vector_shaped <- c(vector_shaped_hyper,vector_shaped_hypo)
-    rm(vector_shaped_hyper,vector_shaped_hypo)
-    positions <- rbind(positions_hyper,positions_hypo)
-
-    ####
-    if(endsWith(marker,"P"))
-      breaks_q <- as.numeric(key$Q)
-    else if(endsWith(marker,"Q"))
-      breaks_q <- unique(quantile(x = vector_shaped,probs=0:as.numeric(key$Q)/as.numeric(key$Q), na.rm =TRUE))
-
-    vector_both <-  cut(vector_shaped, breaks=breaks_q, labels=FALSE)
-
-    # cut(df$Age, quantile(df$Age, 0:4/4))
-    # vector_both <- as.numeric(dplyr::ntile(x=vector_shaped , n= as.numeric(key$Q)))
-
-    rm(vector_shaped)
-    save_figure(colname_pivot_hyper, dim_pivot_hyper,vector_both[1:length_hyper],positions_hyper,sample_sheet_temp,area_position,subarea_position,marker,"HYPER")
-    save_figure(colname_pivot_hypo, dim_pivot_hypo,tail(vector_both, length_hypo), positions_hypo,sample_sheet_temp,area_position,subarea_position,marker,"HYPO")
-
-    if(ssEnv$showprogress)
-      progress_bar(sprintf("Got: %s", stringr::str_pad(marker, 10, pad = " ")))
-
-  }
-}
-
-
-save_figure <- function(colname_pivot,dim_pivot,vector_figure,positions,sample_sheet,area, subarea,marker,figure)
-{
+#' @keywords internal
+#' @noRd
+deltaX_get <- function(markers = NULL) {
 
   ssEnv <- get_session_info()
-  vector_figure <- matrix(vector_figure, nrow=dim_pivot[1], ncol=dim_pivot[2])
-  vector_figure <- as.data.frame(vector_figure)
-  colnames(vector_figure) <- colname_pivot
-  vector_figure <- cbind(positions,vector_figure)
-  pivot_file_nameparquet <- pivot_file_name_parquet(marker,figure,area,subarea)
-  vector_figure <- polars::as_polars_df(as.data.frame(vector_figure))
-  vector_figure <- vector_figure$sort(c("CHR", "START"), descending = FALSE)
-  vector_figure$write_parquet(pivot_file_nameparquet)
+  keys  <- ssEnv$keys_markers_figures
+  keys  <- keys[, !(colnames(keys) %in% c("FIGURE", "COMBINED")), drop = FALSE]
+  keys  <- unique(keys)
+  keys  <- subset(keys, !is.na(SOURCE) & !is.na(Q) & Q != 1)
+  if (!is.null(markers)) keys <- subset(keys, MARKER %in% markers)
+  if (nrow(keys) == 0L) return(invisible())
 
-  vector_figure <- as.data.frame(vector_figure)
+  area    <- "POSITION"
+  subarea <- "WHOLE"
 
-  if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 4:ncol(vector_figure))
-  else
-    progress_bar <- ""
-
-  for(c in 4:(ncol(vector_figure)))
-  {
-    sample_id <- colnames(vector_figure)[c]
-    bed_fname <- bed_file_name(sample_id,sample_sheet[sample_sheet$Sample_ID==sample_id,"Sample_Group"],marker,figure)
-    if(ssEnv$showprogress)
-      progress_bar(sprintf("Saving bed file %s of %s, %s.",sample_id,marker, figure))
-    if(file.exists(bed_fname))
-      next
-    vector_figure_sample <- vector_figure[,c]
-    sample_group <- sample_sheet[sample_sheet$Sample_ID==sample_id,"Sample_Group"]
-    result <- cbind(positions,vector_figure_sample)
-    # drop rows with NA
-    result <- result[complete.cases(result),]
-    result <- result[result[,4]>0,]
-    bed_filename <- bed_file_name(sample_id,sample_group,marker,figure)
-    dump_sample_as_bed_file(result,bed_filename)
+  # Replace 0 with null (matches `vec[vec == 0] <- NA` in legacy deltaX_get).
+  zero_to_null <- function(col_name) {
+    polars::pl$when(polars::pl$col(col_name) == 0)$
+      then(polars::pl$lit(NA_real_))$
+      otherwise(polars::pl$col(col_name))
   }
+
+  # Per-column min/max ignoring nulls — pulled into R as scalars, then
+  # global aggregated. Memory cost: O(N_samples) doubles per source figure.
+  # NB: polars R $select() wants expressions as varargs, so we splice the
+  # list via do.call().
+  col_minmax <- function(lf, cols) {
+    mins_expr <- lapply(cols, function(c) zero_to_null(c)$min()$alias(c))
+    maxs_expr <- lapply(cols, function(c) zero_to_null(c)$max()$alias(c))
+    mins_row <- as.data.frame(do.call(lf$select, mins_expr)$collect())
+    maxs_row <- as.data.frame(do.call(lf$select, maxs_expr)$collect())
+    list(
+      min = suppressWarnings(min(as.numeric(mins_row[1, ]), na.rm = TRUE)),
+      max = suppressWarnings(max(as.numeric(maxs_row[1, ]), na.rm = TRUE))
+    )
+  }
+
+  for (k in seq_len(nrow(keys))) {
+
+    key   <- keys[k, ]
+    src   <- as.character(key$SOURCE)
+    mar   <- as.character(key$MARKER)
+    Q_val <- as.integer(key$Q)
+
+    dest_h <- pivot_file_name_parquet(mar, "HYPER", area, subarea)
+    dest_o <- pivot_file_name_parquet(mar, "HYPO",  area, subarea)
+    src_h  <- pivot_file_name_parquet(src, "HYPER", area, subarea)
+    src_o  <- pivot_file_name_parquet(src, "HYPO",  area, subarea)
+
+    if (file.exists(dest_h) && file.exists(dest_o)) {
+      log_event("INFO: ", Sys.time(),
+                " [deltaX_get_polars] skip ", mar, " (both pivots already exist)")
+      next
+    }
+    if (!file.exists(src_h) || !file.exists(src_o)) {
+      log_event("WARNING: ", Sys.time(),
+                " [deltaX_get_polars] source pivot(s) missing for marker=", mar)
+      next
+    }
+
+    t_start <- Sys.time()
+    log_event("INFO: ", t_start,
+              " [deltaX_get_polars] computing ", mar,
+              " (Q=", Q_val, ", suffix=",
+              if (endsWith(mar, "P")) "P/equal-width" else "Q/quantile",
+              ") direct from ", src, " pivots")
+
+    # AI-027: read via unified dispatcher. The file.exists() guard above
+    # has already filtered out cases where neither source pivot exists.
+    lf_h <- read_pivot(src, "HYPER", area, subarea)
+    lf_o <- read_pivot(src, "HYPO",  area, subarea)
+    cols_h <- setdiff(names(lf_h$collect_schema()), c("CHR", "START", "END"))
+    cols_o <- setdiff(names(lf_o$collect_schema()), c("CHR", "START", "END"))
+
+    # ---------------------------------------------------------------------
+    # Compute global breaks on HYPER + HYPO (0 → null).
+    # ---------------------------------------------------------------------
+    if (endsWith(mar, "P")) {
+      # Equal-width: O(N_samples) RAM.
+      mm_h <- col_minmax(lf_h, cols_h)
+      mm_o <- col_minmax(lf_o, cols_o)
+      mn <- min(mm_h$min, mm_o$min, na.rm = TRUE)
+      mx <- max(mm_h$max, mm_o$max, na.rm = TRUE)
+      if (!is.finite(mn) || !is.finite(mx) || mn == mx) {
+        log_event("WARNING: ", Sys.time(),
+                  " [deltaX_get_polars] degenerate range for ", mar,
+                  ": min=", mn, " max=", mx, " — skip")
+        next
+      }
+      breaks_full <- seq(mn, mx, length.out = Q_val + 1L)
+
+    } else if (endsWith(mar, "Q")) {
+      # Quantile: need the full distribution. Collect both DataFrames and
+      # flatten — costly in RAM (~ N_samples × N_probes × 8 bytes per
+      # source figure) but exact.
+      probs <- seq(0, 1, length.out = Q_val + 1L)
+      df_h  <- as.data.frame(lf_h$select(cols_h)$collect())
+      df_o  <- as.data.frame(lf_o$select(cols_o)$collect())
+      vals  <- c(unlist(df_h, use.names = FALSE),
+                 unlist(df_o, use.names = FALSE))
+      rm(df_h, df_o); gc(verbose = FALSE)
+      vals[vals == 0] <- NA_real_
+      breaks_full <- unique(stats::quantile(vals, probs = probs, na.rm = TRUE))
+      rm(vals); gc(verbose = FALSE)
+
+    } else {
+      log_event("WARNING: ", Sys.time(),
+                " [deltaX_get_polars] marker ", mar,
+                " doesn't end in P or Q — skipping")
+      next
+    }
+
+    log_event("INFO: ", Sys.time(),
+              " [deltaX_get_polars] ", mar,
+              " breaks=[", paste(signif(breaks_full, 4), collapse = ", "), "]")
+
+    # Inner breakpoints (polars cut takes cut points, not endpoints).
+    inner_breaks <- breaks_full[-c(1L, length(breaks_full))]
+    if (length(inner_breaks) == 0L) {
+      log_event("WARNING: ", Sys.time(),
+                " [deltaX_get_polars] no inner breakpoints for ", mar,
+                " — skip")
+      next
+    }
+
+    # ---------------------------------------------------------------------
+    # Apply cut wide: 0→null, then polars cut → int label 1..N.
+    # ---------------------------------------------------------------------
+    make_cut_expr <- function(col_name) {
+      zero_to_null(col_name)$
+        cut(breaks = inner_breaks)$
+        to_physical()$
+        cast(polars::pl$Int32)$
+        add(1L)$
+        alias(col_name)
+    }
+
+    write_one <- function(lf_src, cols, dest_path) {
+      exprs <- lapply(cols, make_cut_expr)
+      out <- do.call(lf_src$with_columns, exprs)$
+        sort(c("CHR", "START"), descending = FALSE)
+      dir.create(dirname(dest_path), recursive = TRUE, showWarnings = FALSE)
+      out$sink_parquet(dest_path)
+    }
+
+    write_one(lf_h, cols_h, dest_h)
+    write_one(lf_o, cols_o, dest_o)
+
+    dt <- as.numeric(difftime(Sys.time(), t_start, units = "secs"))
+    log_event("INFO: ", Sys.time(),
+              " [deltaX_get_polars] wrote ", mar,
+              " HYPER+HYPO in ", round(dt, 1), " sec")
+  }
+
+  invisible()
 }

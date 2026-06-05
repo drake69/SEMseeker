@@ -1,160 +1,128 @@
-#' create pivot from samples' single bed for the PROBE (WHOLE)
+#' Create per-position pivot tables from per-sample bed/bedgraph files
 #'
-#' @param population population data frame to use for creating pivot
-#' @param keys markers and figure to create pivot of
+#' For each (marker, figure) in \code{keys} (restricted to the base markers
+#' \code{MUTATIONS}, \code{DELTAR}, \code{DELTAS}), this function ensures the
+#' POSITION/WHOLE pivot parquet on disk is up to date with respect to the
+#' samples in \code{population}.
 #'
-#' @return A data.frame of genomic position pivots with chromosomal coordinates
-#'   and per-sample signal values; results are also written to parquet files on
-#'   disk. Returns invisibly.
+#' Implementation note (2026-06-01, AI-027):
+#'   The previous R-side \code{for (s in 1:N)} loop with per-sample
+#'   \code{readr::read_tsv} + \code{$join(how = "full")} paid the R→Rust FFI
+#'   cost N times and ran single-threaded. It has been replaced by a single
+#'   call to \code{\link{stream_merge_bed}}, which scans all missing bed files
+#'   in parallel inside the polars Rust runtime and pivots long→wide in one
+#'   shot. When the pivot already exists with a subset of samples, the new
+#'   wide block is merged into it via a single full-outer join on
+#'   \code{(CHR, START, END)} with coalesce on the key columns.
 #'
-#' @importFrom doRNG %dorng%
-create_position_pivots <- function(population, keys)
-{
+#' @param population data.frame with \code{Sample_ID} and \code{Sample_Group}
+#'   columns identifying the samples to materialise.
+#' @param keys data.frame with \code{MARKER} and \code{FIGURE} columns
+#'   describing which (marker, figure) pivots to build.
+#'
+#' @return Invisible \code{NULL}. Side effect: parquet pivot files and their
+#'   JSON sidecars are created or updated under
+#'   \code{Data/Pivots/<MARKER>/<MARKER>_<FIGURE>_POSITION_WHOLE_HG19.parquet}.
+#'
+#' @keywords internal
+#' @noRd
+create_position_pivots <- function(population, keys) {
+
   ssEnv <- get_session_info()
 
-  # create pivot for basic markers and figure
-  ssEnv <- get_session_info()
-  selection <-c("MUTATIONS","DELTAR","DELTAS")
-  # sort keys by MARKER
-  keys <- keys[order(keys$MARKER),]
+  # Restrict to base markers — derived markers (DELTAP/DELTARP/DELTAQ/DELTARQ)
+  # are built by deltaX_get() post-SEM, not here. LESIONS is treated as a
+  # base marker too: its per-sample bed files are written by lesions_get()
+  # during analyze_population, and we need a POSITION pivot for annotate_*
+  # to derive the PROBE/GENE/... aggregations later.
+  selection <- c("MUTATIONS", "DELTAR", "DELTAS", "LESIONS")
+  keys <- keys[order(keys$MARKER), ]
   keys <- subset(keys, MARKER %in% selection)
-  population_result <- data.frame()
-  if(nrow(keys)==0)
-    return()
+  if (nrow(keys) == 0L) return(invisible())
 
-  variables_to_export <- c("pivot", "pivot_filename", "temp_pop", "samples", "progress_bar_pop", "progress_bar_key", "progress_bar_pop",
-    "sample", "sample_id", "sample_group", "pivot_filename", "marker", "figure", "area", "subarea", "s", "progress_bar_pop")
+  pop_clean <- population[!is.na(population$Sample_Group), ]
 
-  # foreach::foreach(k=1:nrow(keys), .export = variables_to_export) %dorng%
-  for (k in 1:nrow(keys))
-  {
-    key <- keys[k,]
+  for (k in seq_len(nrow(keys))) {
+
+    key <- keys[k, ]
     marker <- as.character(key$MARKER)
     figure <- as.character(key$FIGURE)
-    area <- as.character("POSITION")
-    subarea <- as.character("WHOLE")
-    if(is.na(marker) || is.na(figure) || is.na(area) || is.na(subarea))
-      next
-    pivot_filename <- pivot_file_name_parquet(marker, figure, area, subarea)
-    # look if pivot exists
-    # if(ssEnv$showprogress)
-    #   progress_bar_key(sprintf("Creating pivot of %s %s %s %s", marker, figure, area, subarea))
-    # read first row of parquet file
-    temp_pop <- population
-    if (file.exists(pivot_filename))
-    {
-      temp <- as.data.frame(polars::pl$scan_parquet(pivot_filename, n_rows=1)$collect())
-      samples <- colnames(temp)
-      temp_pop <- temp_pop[!(temp_pop$Sample_ID %in% samples),]
+    if (is.na(marker) || is.na(figure)) next
+
+    area    <- "POSITION"
+    subarea <- "WHOLE"
+    pivot_filename <- SEMseeker:::pivot_file_name_parquet(marker, figure,
+                                                         area, subarea)
+
+    # Figure out which samples are still missing from the existing pivot.
+    existing_samples <- character(0)
+    if (file.exists(pivot_filename)) {
+      existing_samples <- colnames(
+        polars::pl$scan_parquet(pivot_filename, n_rows = 1)$collect()
+      )
     }
-    if(ssEnv$showprogress)
-      progress_bar_pop <- progressr::progressor(along = 1:(nrow(temp_pop)))
-    else
-      progress_bar_pop <- ""
+    missing_pop <- pop_clean[!(pop_clean$Sample_ID %in% existing_samples), ]
+    if (nrow(missing_pop) == 0L) next
 
-    # remove rows with empty Sample_Group
-    temp_pop <- temp_pop[!is.na(temp_pop$Sample_Group),]
-    if(nrow(temp_pop) == 0)
-      next
-    for ( s in 1:nrow(temp_pop))
-    {
+    # Build the on-disk bed file paths for the missing samples and keep only
+    # those that actually exist (some samples have no signal for a given
+    # marker/figure → no bedgraph was emitted).
+    bed_paths <- vapply(seq_len(nrow(missing_pop)), function(i) {
+      SEMseeker:::bed_file_name(missing_pop$Sample_ID[i],
+                                missing_pop$Sample_Group[i],
+                                marker, figure)
+    }, character(1))
+    bed_paths <- bed_paths[file.exists(bed_paths)]
+    if (length(bed_paths) == 0L) next
 
-      gc()
-      if(ssEnv$showprogress)
-        progress_bar_pop(sprintf("Creating pivot of %s %s %s %s", marker, figure, area, subarea))
+    log_event("INFO: ", Sys.time(),
+              " create_position_pivots[", marker, "_", figure,
+              "] stream-merging ", length(bed_paths), " bed file(s)")
 
-      sample <- temp_pop[s,]
-      sample_id <- as.character(sample$Sample_ID)
-      sample_group <- as.character(sample$Sample_Group)
-      if(!exists("pivot"))
-        if (file.exists(pivot_filename))
-          pivot <- polars::pl$scan_parquet(pivot_filename)
+    # One-shot lazy pivot built by polars Rust runtime (no R-side loop).
+    new_lazy <- SEMseeker:::stream_merge_bed(bed_paths, marker, figure)
 
-      # pivot_colnames <- colnames(pivot)
-      # if(sample_id %in% pivot_colnames)
-      #   next
+    dir.create(dirname(pivot_filename), recursive = TRUE, showWarnings = FALSE)
+    tmp_filename <- paste0(pivot_filename, ".tmp")
 
-      # read bed file
-      bed_file <- bed_file_name(sample_id,sample_group,marker,figure)
-      if (!file.exists(bed_file))
-        next
-      else
-      {
-        # Read the file in lazy mode
-        # data <- polars::pl$scan_csv(bed_file, has_header = FALSE, separator = "\t", skip_rows = 0)
-        data <- readr::read_tsv(bed_file,
-          col_types = readr::cols(
-            .default = readr::col_double(),
-            X1 = readr::col_character(),
-            X2 = readr::col_integer(),
-            X3 = readr::col_integer()
-          ),
-          show_col_types=FALSE, progress=FALSE, skip=0, col_names=FALSE)
+    if (file.exists(pivot_filename)) {
 
-        data <- polars::as_polars_df(data)
-        data <- data$lazy()
-
-        # 4 columns → Rename normally (use select+alias for cross-version polars compatibility)
-        data <- data$select(
-          polars::pl$col("X1")$alias("CHR"),
-          polars::pl$col("X2")$alias("START"),
-          polars::pl$col("X3")$alias("END"),
-          polars::pl$col("X4")$alias(sample_id)
-        )
-
-        # Strip "chr" prefix → bare numbers for internal consistency
-        data <- data$with_columns(
-          polars::pl$col("CHR")$str$replace("^(?i)chr", "")$alias("CHR")
-        )
-
-        # Apply filters
-        data <- data$filter(
-          polars::pl$col("CHR")$is_not_null() &
-            polars::pl$col("START")$is_not_null() &
-            polars::pl$col("END")$is_not_null() &
-            polars::pl$col("START") > 0 &
-            polars::pl$col("END") > 0 &
-            polars::pl$col("START") <= polars::pl$col("END")
-        )
-      }
-
-      if(!exists("pivot"))
-      {
-        pivot <- data
-        rm(data)
-        next
-      }
-      pivot <- pivot$join(
-        data,
-        on = c("CHR", "START", "END"),
+      # Merge new sample columns into the existing pivot via one full-outer
+      # join on the genomic key. Coalesce CHR/START/END to avoid the
+      # _right duplicate columns polars emits on a full join.
+      old_lazy <- polars::pl$scan_parquet(pivot_filename)
+      merged <- old_lazy$join(
+        new_lazy,
+        on  = c("CHR", "START", "END"),
         how = "full"
-      )
-      # Example: Assuming pivot is already the result of your previous join
-      pivot <- pivot$with_columns(
-        polars::pl$when(polars::pl$col("CHR")$is_not_null())$then(polars::pl$col("CHR"))$otherwise(polars::pl$col("CHR_right"))$alias("CHR"),
-        polars::pl$when(polars::pl$col("START")$is_not_null())$then(polars::pl$col("START"))$otherwise(polars::pl$col("START_right"))$alias("START"),
-        polars::pl$when(polars::pl$col("END")$is_not_null())$then(polars::pl$col("END"))$otherwise(polars::pl$col("END_right"))$alias("END")
-      )
-      pivot <- pivot$drop(c("CHR_right", "START_right","END_right"))
-      # message(pivot$columns)
-      if ( s %% 100 == 0 )
-      {
-        pivot <- pivot$collect()
-        pivot <- pivot$sort(c("CHR", "START"), descending = FALSE)
-        pivot$write_parquet(pivot_filename)
-        pivot <- pivot$lazy()
-      }
+      )$with_columns(
+        polars::pl$when(polars::pl$col("CHR")$is_not_null())$
+          then(polars::pl$col("CHR"))$
+          otherwise(polars::pl$col("CHR_right"))$alias("CHR"),
+        polars::pl$when(polars::pl$col("START")$is_not_null())$
+          then(polars::pl$col("START"))$
+          otherwise(polars::pl$col("START_right"))$alias("START"),
+        polars::pl$when(polars::pl$col("END")$is_not_null())$
+          then(polars::pl$col("END"))$
+          otherwise(polars::pl$col("END_right"))$alias("END")
+      )$drop(c("CHR_right", "START_right", "END_right"))
+
+      merged$collect()$
+        sort(c("CHR", "START"), descending = FALSE)$
+        write_parquet(tmp_filename)
+
+    } else {
+
+      new_lazy$collect()$
+        sort(c("CHR", "START"), descending = FALSE)$
+        write_parquet(tmp_filename)
     }
 
-    if (!exists("pivot"))
-      next
-
-    pivot <- pivot$sort(c("CHR", "START"), descending = FALSE)
-    pivot <- pivot$collect()
-    pivot$write_parquet(pivot_filename)
-    pivot_sidecar_write(pivot_filename)   # C-06: write genome_build + tech sidecar
-    rm(pivot)
+    file.rename(tmp_filename, pivot_filename)
+    # Sidecar JSON is now materialised by ensure_sidecars() at the end of the
+    # pipeline (single point of responsibility, AI-027).
+    gc(verbose = FALSE)
   }
+
+  invisible()
 }
-
-

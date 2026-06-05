@@ -30,7 +30,14 @@ A missing \code{session_metadata.json} raises a warning (legacy runs
 without provenance data are tolerated but flagged).
 }
 \examples{
-\dontrun{
-check_session_compatibility(c("~/results/study_A", "~/results/study_B"))
-}
+# Two fake session folders with provenance metadata
+d1 <- file.path(tempdir(), "study_A"); dir.create(d1, showWarnings = FALSE)
+d2 <- file.path(tempdir(), "study_B"); dir.create(d2, showWarnings = FALSE)
+writeLines(jsonlite::toJSON(list(genome_build = "hg19", tech = "K450"),
+                            auto_unbox = TRUE),
+           file.path(d1, "session_metadata.json"))
+writeLines(jsonlite::toJSON(list(genome_build = "hg19", tech = "K450"),
+                            auto_unbox = TRUE),
+           file.path(d2, "session_metadata.json"))
+check_session_compatibility(c(d1, d2))
 }

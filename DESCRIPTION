@@ -23,19 +23,18 @@ BugReports: https://github.com/drake69/semseeker/issues
 biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylation,
         GeneExpression, Pathways, MultipleComparison, Normalization,
         StatisticalMethod, Software, Coverage, Sequencing
-Imports: dplyr, doFuture, doRNG, foreach, FSA,
+Imports: caret, dplyr, doFuture, doRNG, fastDummies, foreach, FSA,
         fst, future, future.apply, GenomicRanges, ggplot2, ggvenn,
         graphics, grDevices, gridExtra, gtools, jsonlite, lqmm,
         matrixStats, plyr, polars, progressr, reshape, reshape2,
         R.utils, rlang, stats, stringr, tools, utils, withr, zoo,
         VennDiagram, effsize, pwr, combinat, philentropy, parallelly,
         knitr, lmtest, glmnet, sqldf, readr, tidyr, readxl, xtable
-RoxygenNote: 7.3.3
 VignetteBuilder: knitr
-Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
+Suggests: ctdR, openai, pathfindR, wordcloud, GEOquery, OpenCL,
         stringi, testthat, WebGestaltR, rmarkdown, pkgdown, STRINGdb,
         AnnotationDbi, KMEANS.KNN, M3C, UpSetR, boot, car, circlize,
-        fastDummies, fitdistrplus, ggpubr, mediation, meta, nnet,
+        fitdistrplus, ggpubr, mediation, meta, nnet,
         org.Hs.eg.db, quantreg, qvalue, tidyverse,
         IlluminaHumanMethylationEPICanno.ilm10b4.hg19,
         IlluminaHumanMethylation450kanno.ilmn12.hg19,
@@ -43,7 +42,8 @@ Suggests: ctdR, openai, caret, pathfindR, wordcloud, GEOquery, OpenCL,
         IRanges, S4Vectors, GenomicFeatures, GenomeInfoDb,
         AnnotationHub,
         TxDb.Hsapiens.UCSC.hg19.knownGene,
-        TxDb.Hsapiens.UCSC.hg38.knownGene
+        TxDb.Hsapiens.UCSC.hg38.knownGene,
+        limma
 Depends: R (>= 4.6.0)
 SystemRequirements: libuv (>= 1) for the 'fs' package build on Linux
         when not using bundled libuv (set USE_BUNDLED_LIBUV=1 to skip),
@@ -57,3 +57,4 @@ LazyDataCompression: xz
 Config/testthat/parallel: false
 Config/testthat/edition: 3
 NeedsCompilation: no
+Config/roxygen2/version: 8.0.0

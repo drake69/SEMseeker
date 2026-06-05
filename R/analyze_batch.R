@@ -7,18 +7,33 @@ analyze_batch <- function(signal_data, sample_sheet)
   colnames(signal_data) <- name_cleaning(colnames(signal_data))
   # Keep Sample_ID in sync with name_cleaning so sample_group_check passes
   sample_sheet$Sample_ID <- name_cleaning(sample_sheet$Sample_ID)
-  pivot_file_name <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION","WHOLE")
-  if(!file.exists(pivot_file_name))
-  {
+  # AI-027: read via unified dispatcher; CASE 2 (streaming merge) lets
+  # the SEM step pick up raw bed/bedgraph files when the SIGNAL_MEAN
+  # pivot has not been materialised yet.
+  signal_pivot <- read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
+  if (is.null(signal_pivot)) {
     # Transparent conversion: WGBS/LONGREAD coordinate input → synthetic probe IDs
     signal_data <- normalize_signal_input(signal_data)
     signal_data <- substitute_infinite(signal_data)
     signal_data <- inpute_missing_values(signal_data)
   } else
   {
-    signal_data <- as.data.frame(polars::pl$read_parquet(pivot_file_name))
-    if("CHR" %in% colnames(signal_data))
-      signal_data <- position_pivot_to_probe(signal_data)
+    # Stay lazy through the position→probe transformation. Materialising the
+    # SIGNAL pivot eagerly here (`as.data.frame(signal_pivot$collect())`) on
+    # large arrays — e.g. 367k probes × 4k samples ≈ 12 GB — followed by R-side
+    # subset/sort ops triggers multiple full-matrix copies and pushes the R
+    # process into Jetsam OOM territory on 64 GB Macs. position_pivot_to_probe
+    # accepts a LazyFrame and does the join+filter+drop in polars, collecting
+    # only once.
+    if ("CHR" %in% names(signal_pivot)) {
+      signal_data <- position_pivot_to_probe(signal_pivot)
+    } else {
+      signal_data <- as.data.frame(signal_pivot$collect())
+      if ("PROBE" %in% colnames(signal_data)) {
+        rownames(signal_data) <- signal_data$PROBE
+        signal_data$PROBE <- NULL
+      }
+    }
   }
 
   signal_data <- as.data.frame(signal_data)
@@ -41,11 +56,12 @@ analyze_batch <- function(signal_data, sample_sheet)
     probe_features <- probe_features_get("PROBE")
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
               " loaded probe_features from Bioconductor annotation")
-    probe_features <- probe_features[(probe_features$PROBE %in% rownames(signal_data)), ]
-    probe_features <- sort_by_chr_and_start(probe_features)
-    signal_data    <- signal_data[rownames(signal_data) %in% probe_features$PROBE, ]
+    # Intersect annotation with rownames(signal_data), sort by chr/start, then
+    # apply intersection + reorder to signal_data in ONE indexing op (single
+    # full-matrix copy instead of two — saves ~12 GB peak on 367k×4k inputs).
     probe_features <- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
-    signal_data    <- signal_data[match(probe_features$PROBE, rownames(signal_data)), ]
+    probe_features <- sort_by_chr_and_start(probe_features)
+    signal_data    <- signal_data[match(probe_features$PROBE, rownames(signal_data)), , drop = FALSE]
   }
 
   if (!test_match_order(row.names(signal_data), probe_features$PROBE)) {

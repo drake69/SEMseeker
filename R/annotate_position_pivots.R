@@ -5,15 +5,32 @@
 annotate_position_pivots <- function ()
 {
   start_time <- Sys.time()
-  # ssEnv <- get_session_info()
-  ssEnv <- get_session_info("~/Documents/Dati_Lavoro/cancer_stage/results/ewas_data_hub/")
-  update_session_info(ssEnv)
+  ssEnv <- get_session_info()
   # area and subarea are defined using the filename
   localKeys <-ssEnv$keys_areas_subareas_markers_figures
 
   # remove POSITION area
   localKeys <- localKeys[localKeys$AREA != "POSITION",]
   # localKeys <- localKeys[localKeys$MARKER != "SIGNAL",]
+
+  if (nrow(localKeys) == 0)
+    return()
+
+  # Short-circuit: if every dest pivot already exists on disk, there is
+  # nothing to annotate. Avoids the unconditional probe_features_get()
+  # load of the Illumina manifest (~10-30s) and the spurious
+  # "Annotating genomic area" log line in resume scenarios where no
+  # actual annotation work is needed.
+  all_dest_exist <- all(vapply(seq_len(nrow(localKeys)), function(i) {
+    file.exists(pivot_file_name_parquet(
+      localKeys[i, "MARKER"], localKeys[i, "FIGURE"],
+      localKeys[i, "AREA"],   localKeys[i, "SUBAREA"]))
+  }, logical(1)))
+  if (all_dest_exist) {
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      " Annotation skipped: all destination pivots already exist.")
+    return()
+  }
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotating genomic area.")
 
@@ -25,12 +42,6 @@ annotate_position_pivots <- function ()
     "progress_bar","progression_index", "progression", "progressor_uuid",
     "owner_session_uuid", "trace","probe_features_get", "localKeys",
     "file_path_build","%>%","get_session_info","log_event")
-
-  # check probe features are avaialable
-  probe_features <- probe_features_get("PROBE_WHOLE")
-
-  if(nrow(localKeys)==0)
-    return()
 
   # doesn't work with parallel, tests throws error
   for(i in 1:nrow(localKeys))
@@ -49,8 +60,12 @@ annotate_position_pivots <- function ()
     {
       log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " File does not exists: ", dest_pivot_filename)
       probe_features <- probe_features_get(area_subarea)
-      probe_features$CHR <- paste0("chr", probe_features$CHR)
-      # probe_features <-subset(probe_features, !is.na(eval(parse(text=area_subarea))))
+      # NB (AI-027/AI-030): create_position_pivots + stream_merge_bed strip the
+      # "chr" prefix from CHR for internal consistency, so the source pivot's
+      # CHR is "1", "X" … without prefix. probe_features_get() may return CHR
+      # either with or without prefix depending on the manifest table; we
+      # normalise both sides to no-prefix before the inner join to avoid
+      # 0-row joins.
 
       # annotate file
       if(file.exists(source_pivot_filename))
@@ -63,16 +78,19 @@ annotate_position_pivots <- function ()
         probe_features <- probe_features$with_columns(
           polars::pl$col("START")$cast(polars::pl$Int32),
           polars::pl$col("END")$cast(polars::pl$Int32),
-          polars::pl$col("CHR")$cast(polars::pl$String)
+          polars::pl$col("CHR")$cast(polars::pl$String)$str$replace("^(?i)chr", "")
         )
 
-        pivot <- polars::pl$scan_parquet(source_pivot_filename)
+        # AI-027: read via unified dispatcher. CASE 1 (cached parquet) is
+        # the normal path here; CASE 2 (streaming merge from bed/bedgraph)
+        # makes this resilient to a missing materialised pivot when raw
+        # per-sample files still exist.
+        pivot <- read_pivot(marker, figure, "POSITION", "WHOLE")
         pivot <- pivot$with_columns(
           polars::pl$col("START")$cast(polars::pl$Int32),
           polars::pl$col("END")$cast(polars::pl$Int32),
-          polars::pl$col("CHR")$cast(polars::pl$String)
+          polars::pl$col("CHR")$cast(polars::pl$String)$str$replace("^(?i)chr", "")
         )
-        # pivot <- polars::pl$read_parquet(source_pivot_filename)
         pivot <- probe_features$join(
           pivot,
           on = c("CHR", "START", "END"),
@@ -85,6 +103,26 @@ annotate_position_pivots <- function ()
         pivot <- pivot$drop(cols_to_remove)
         # drop row where AREA is NA
         pivot <- pivot$drop_nulls("AREA")
+
+        # AI-050: Bioconductor anno-packages assign some probes to multiple
+        # genes (intergenic overlaps, antisense, etc), producing composite
+        # AREA strings like "NUDT6;SPATA5". Treating the composite as a
+        # single gene was a regression that (a) caused apply_stat_model to
+        # fail parsing (PVALUE=NA), (b) inflated false positives downstream
+        # because a single p-value got smeared across N enrichment hits.
+        # Fix: split on ";", explode to N rows, strip whitespace — each
+        # multi-mapped probe now contributes separately to every gene's
+        # burden, and the group_by below produces clean mono-gene rows.
+        pivot <- pivot$with_columns(
+          polars::pl$col("AREA")$str$split(";")
+        )$explode("AREA")
+        pivot <- pivot$with_columns(
+          polars::pl$col("AREA")$str$strip_chars()
+        )
+        # Drop rows where AREA became empty after split/strip (e.g. trailing
+        # semicolons from malformed annotations).
+        pivot <- pivot$filter(polars::pl$col("AREA")$str$len_chars() > 0)
+
         pivot <- pivot$sort(c("AREA"), descending = FALSE)$collect()
 
         if (localKeys[i, "DISCRETE"]) {

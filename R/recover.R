@@ -19,4 +19,7 @@ recover <- function(result_folder, maxResources = 90,
   deltaX_get()
   study_summary_total()
   annotate_position_pivots()
+
+  # Single point of sidecar materialisation (AI-027).
+  ensure_sidecars(ssEnv$result_folderData)
 }

@@ -41,6 +41,19 @@ covariates_model <- function(inference_detail, study_summary)
       covariate_dummy <- as.character(covariates_dummy[i])
       encoded_covariate <- fastDummies::dummy_cols(study_summary, select_columns = covariate_dummy, remove_first_dummy = TRUE)
       encoded_covariate <- encoded_covariate[, !(colnames(encoded_covariate) %in% colnames(study_summary))]
+      # AI-068: when the dummy column is constant within the subset filtered
+      # by samples_sql_condition (e.g. Tumour_Locus is always 'Breast' once
+      # samples are restricted to Tissue=='Breast'), dummy_cols + remove_first
+      # leaves zero columns. Without this guard the colnames<- below fails with
+      # 'names attribute [N] must be the same length as the vector [0]'.
+      n_enc <- if (is.null(dim(encoded_covariate))) length(encoded_covariate) else ncol(encoded_covariate)
+      if (is.null(n_enc) || n_enc == 0L)
+      {
+        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                  " dummy expansion of '", covariate_dummy,
+                  "' produced 0 columns (covariate constant within sample subset?) — skipping.")
+        next
+      }
       if(is.null(dim(encoded_covariate)))
       {
         encoded_covariate <- data.frame(encoded_covariate)
@@ -76,19 +89,36 @@ covariates_model <- function(inference_detail, study_summary)
       zero_var_cols <- sapply(study_summary[, covariates], function(x) sd(x, na.rm = TRUE) == 0)
       # Keep only non-constant columns
       filtered_covariates <- covariates[!zero_var_cols]
+
+      # AI-070: PCA on < 3 covariates is pointless — 1-col PCA = identity,
+      # 2-col PCA = orthogonal rotation that loses interpretability without
+      # reducing dimensionality. Skip PCA in those cases and use the raw
+      # (non-constant) covariates directly. This also subsumes the AI-069
+      # Kaiser-Guttman edge case (sdev^2 == 1 on single scaled dummy).
+      if (length(filtered_covariates) < 3L) {
+        log_event("JOURNAL: PCA skipped — only ", length(filtered_covariates),
+                  " non-constant covariate(s), using raw: ",
+                  paste(filtered_covariates, collapse = ", "))
+        covariates <- filtered_covariates
+      } else {
       # Then run PCA
       pca_result <- prcomp(study_summary[, filtered_covariates], center = TRUE, scale. = TRUE)
 
-      # replace covariates with PCA
-      # pca_result <- stats::prcomp(study_summary[,covariates], center = TRUE, scale. = TRUE)
       log_event("JOURNAL: PCA,scaling and centering, applied on covariates: ", paste(covariates, collapse = ", "))
-      # explained_cumulative_variance <- cumsum(pca_result$sdev^2 / sum(pca_result$sdev^2))
-      # compute the best cumulative variance threshold
-      # preserve components that explain cumulatively at least 50%
-      pca_result <- pca_result$x[, which(pca_result$sdev^2 > 1)]
-      # pca_result <- stats::predict(pca_result, study_summary[,covariates])
+      # preserve components with eigenvalue (sdev^2) above 1 — Kaiser-Guttman
+      # criterion. If NO PC passes this filter (e.g. when only a single dummy
+      # is left after subset filtering: scale=TRUE forces sdev^2 == 1 exactly,
+      # which fails the strict '> 1' inequality) we fall back to keeping the
+      # first PC so the design matrix has at least one degree of freedom.
+      keep <- which(pca_result$sdev^2 > 1)
+      if (length(keep) == 0L) {
+        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                  " No PC passed Kaiser-Guttman (sdev^2 > 1) filter — keeping PC1 as fallback.")
+        keep <- 1L
+      }
+      pca_result <- pca_result$x[, keep, drop = FALSE]
       pca_result <- as.data.frame(pca_result)
-      colnames(pca_result) <- paste0("PC", 1:ncol(pca_result))
+      colnames(pca_result) <- paste0("PC", seq_len(ncol(pca_result)))
       covariates <- colnames(pca_result)
       for(cc in seq_along(colnames(pca_result)))
       {
@@ -97,6 +127,7 @@ covariates_model <- function(inference_detail, study_summary)
         prev_columns <- prev_columns[!grepl(paste0("^",cname), prev_columns)]
         study_summary[,cname] <- pca_result[,cname]
       }
+      }  # close AI-070 else (PCA branch)
     }
 
   covariates_to_remove <- c()

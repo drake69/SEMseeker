@@ -59,7 +59,7 @@ pathway_cross_subsamples_overlaps <- function(inference_details,pathways_sql_sel
           {
             inference_detail <- inference_details[i,]
             phenotype_analysis_name <- phenotype_analysis_name(inference_detail, localKeys[a,],prefix ="", suffix= signal_suffixes[s] , association_pvalue_column, ssEnv$alpha, significance)
-            path <- dir_check_and_create(ssEnv$result_folderPathway,c(enrichment_package, name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(association_results_sql_condition)))
+            path <- dir_check_and_create(ssEnv$result_folderEnrichment,c(enrichment_package, name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(association_results_sql_condition)))
             pathway_report_path <- file_path_build(path,phenotype_analysis_name,"csv")
             if(file.exists(pathway_report_path))
             {
@@ -183,7 +183,7 @@ pathway_cross_subsamples_overlaps <- function(inference_details,pathways_sql_sel
 
           log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y"),"  venn diagram completed !")
 
-          dest_folder <- dir_check_and_create(ssEnv$result_folderPathway,c("PATHWAYS_CROSS_SAMPLE_ANALYSIS",association_results_sql_condition,
+          dest_folder <- dir_check_and_create(ssEnv$result_folderEnrichment,c("PATHWAYS_CROSS_SAMPLE_ANALYSIS",association_results_sql_condition,
             name_cleaning(enrichment_package),name_cleaning(pathways_sql_selection),name_cleaning(samples_sql_folder)))
           inference_detail$samples_sql_condition <- ""
           overlaps <- Reduce(intersect, SPLIT)

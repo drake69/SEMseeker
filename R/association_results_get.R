@@ -1,6 +1,6 @@
 # NOTE: naming convention — `adjustment_method` (singular) is used in internal
 # helpers and result-retrieval functions where a single method string is expected.
-# High-level public functions (e.g. gene_impact_analysis()) use `adjustment_methods`
+# High-level public functions (e.g. enrichment_analysis()) use `adjustment_methods`
 # (plural) because they accept a vector to iterate over multiple corrections.
 association_results_get <- function (inference_detail, marker, adjust_per_area = FALSE, adjust_globally = FALSE,
   pvalue_column="PVALUE_ADJ_ALL_BH",adjustment_method = "BH", area ="GENE",
@@ -29,11 +29,21 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
   colnames(results_inference) <- name_cleaning(colnames(results_inference))
   pvalue_column <- name_cleaning(pvalue_column)
 
-  # check columns exist
+  # AI-063: pvalue_columns in the user setup is a single vector applied to
+  # every (inference_detail × marker) combination, but inference CSVs are
+  # per-IV: a setup with IVs {TUMOUR_STAGE_N, BIOLOGICAL_RANK} writes
+  # 'I_TUMOUR_STAGE_N_..._PVALUE_ADJ_ALL_FDR' to one CSV and
+  # 'I_BIOLOGICAL_RANK_..._PVALUE_ADJ_ALL_FDR' to the other. Stopping the
+  # whole run when one column happens to belong to the wrong IV kills the
+  # entire enrichment pipeline on the first irrelevant lookup. Return an
+  # empty result instead so the for-pvalue_columns loop in
+  # enrichment_analysis() just skips this combination and keeps going.
   if((!pvalue_column %in% colnames(results_inference)))
   {
-    log_event("ERROR:", pvalue_column, " column does not exist in inference file: ", inferenceFile)
-    stop()
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " ", pvalue_column,
+              " column does not exist in inference file (skipping): ",
+              inferenceFile)
     return(data.frame())
   }
 
