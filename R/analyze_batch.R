@@ -18,9 +18,22 @@ analyze_batch <- function(signal_data, sample_sheet)
     signal_data <- inpute_missing_values(signal_data)
   } else
   {
-    signal_data <- as.data.frame(signal_pivot$collect())
-    if("CHR" %in% colnames(signal_data))
-      signal_data <- position_pivot_to_probe(signal_data)
+    # Stay lazy through the position→probe transformation. Materialising the
+    # SIGNAL pivot eagerly here (`as.data.frame(signal_pivot$collect())`) on
+    # large arrays — e.g. 367k probes × 4k samples ≈ 12 GB — followed by R-side
+    # subset/sort ops triggers multiple full-matrix copies and pushes the R
+    # process into Jetsam OOM territory on 64 GB Macs. position_pivot_to_probe
+    # accepts a LazyFrame and does the join+filter+drop in polars, collecting
+    # only once.
+    if ("CHR" %in% names(signal_pivot)) {
+      signal_data <- position_pivot_to_probe(signal_pivot)
+    } else {
+      signal_data <- as.data.frame(signal_pivot$collect())
+      if ("PROBE" %in% colnames(signal_data)) {
+        rownames(signal_data) <- signal_data$PROBE
+        signal_data$PROBE <- NULL
+      }
+    }
   }
 
   signal_data <- as.data.frame(signal_data)
@@ -43,11 +56,12 @@ analyze_batch <- function(signal_data, sample_sheet)
     probe_features <- probe_features_get("PROBE")
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
               " loaded probe_features from Bioconductor annotation")
-    probe_features <- probe_features[(probe_features$PROBE %in% rownames(signal_data)), ]
-    probe_features <- sort_by_chr_and_start(probe_features)
-    signal_data    <- signal_data[rownames(signal_data) %in% probe_features$PROBE, ]
+    # Intersect annotation with rownames(signal_data), sort by chr/start, then
+    # apply intersection + reorder to signal_data in ONE indexing op (single
+    # full-matrix copy instead of two — saves ~12 GB peak on 367k×4k inputs).
     probe_features <- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
-    signal_data    <- signal_data[match(probe_features$PROBE, rownames(signal_data)), ]
+    probe_features <- sort_by_chr_and_start(probe_features)
+    signal_data    <- signal_data[match(probe_features$PROBE, rownames(signal_data)), , drop = FALSE]
   }
 
   if (!test_match_order(row.names(signal_data), probe_features$PROBE)) {

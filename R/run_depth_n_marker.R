@@ -38,7 +38,14 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
   # Reading once + using the pre-loaded snapshot for the area_to_remove filter
   # keeps both behaviours correct without growing `results` across iterations.
   if (file.exists(fileNameResults) && file.info(fileNameResults)$size > 10) {
-    old_results_global <- unique(utils::read.csv2(fileNameResults, header = TRUE))
+    # AI-078: polars read del CSV di resume cache, 10-30x piu' veloce di
+    # utils::read.csv2 su file da 600-880 MB. Mantiene la write con
+    # write.csv2 per evitare incompatibilita' di formato (polars writes
+    # boolean come 'true'/'false' minuscoli, read.csv2 poi li carica come
+    # character e rompe i subset logici downstream).
+    old_results_global <- unique(as.data.frame(
+      polars::pl$read_csv(fileNameResults, separator = ";", decimal_comma = TRUE)
+    ))
     results <- plyr::rbind.fill(results, old_results_global)
   } else {
     old_results_global <- data.frame()
@@ -94,16 +101,32 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
         independent_variable = prep$independent_variable,
         area_to_remove       = area_to_remove
       )
-      if (!is.null(result_temp_local_batch) && nrow(result_temp_local_batch) > 0L) {
+      # AI-077: skip the save when the batch returned NULL/0 rows (resume-skip
+      # case: "nothing left after resume filter"). Without this guard we
+      # rewrite the entire 600-880 MB CSV identical to what's already on disk,
+      # 4x per round x N round = several minutes of pure I/O waste per family.
+      # The save still runs whenever new rows were appended.
+      new_rows_appended <- !is.null(result_temp_local_batch) &&
+                           nrow(result_temp_local_batch) > 0L
+      if (new_rows_appended) {
         results <- plyr::rbind.fill(results, result_temp_local_batch)
         results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
+        association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
       }
-      association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
 
       association_analysis_log(cbind(prep$inference_detail, keys[k, ]),
         start_time, Sys.time(), processed_items)
       if (nrow(results) != 0)
         results <- subset(results, MARKER == key$MARKER)
+
+      # Force release of polars wrappers + apply_stat_model_batch_lazy locals
+      # (y_mat ~12 GB on 367k×4k SIGNAL@PROBE + MArrayLM fit + voom weights
+      # + design). R's lazy GC otherwise carries them across iterations and
+      # the second batch on the same family OOMs at ~165 GB compressed
+      # (limma_2 SIGNAL@PROBE, 2026-06-05). The smoke test on 2026-06-03
+      # never tripped this because it ran a single batch.
+      rm(result_temp_local_batch, pivot_lazy)
+      gc(verbose = FALSE)
       next
     }
 

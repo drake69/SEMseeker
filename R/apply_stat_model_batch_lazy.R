@@ -88,9 +88,15 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
   # caller has already applied gsub("-","_") to the area_to_remove
   # values, so we apply the same normalisation to the lazy AREA column
   # before the membership check.
+  # NB: $is_in() must receive a polars Expression / Series, NOT a bare R
+  # character vector — otherwise polars 1.x parses each string as a column
+  # reference and fails with "Column(s) not found: '<first value>' not found".
+  # Wrap via pl$lit()$implode() so the values are treated as a literal set.
   if (length(area_to_remove) > 0L) {
     pivot_lazy <- pivot_lazy$filter(
-      !polars::pl$col("AREA")$str$replace_all("-", "_")$is_in(area_to_remove)
+      !polars::pl$col("AREA")$str$replace_all("-", "_")$is_in(
+        polars::pl$lit(area_to_remove)$implode()
+      )
     )
   }
 
@@ -248,5 +254,16 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
   }
 
   colnames(result_temp) <- name_cleaning(colnames(result_temp))
+
+  # Release the heavy locals BEFORE the function returns. On 367k×4k inputs
+  # y_mat is ~12 GB, fit (MArrayLM) carries several gene-sized matrices.
+  # Without explicit cleanup the next batch piles a fresh 12 GB y_mat on
+  # top of the previous one (R's GC is lazy), driving the process into
+  # Jetsam OOM by the second batch (limma_2 SIGNAL@PROBE, 2026-06-05).
+  rm(y_mat, fit, design)
+  if (exists("poly_mat", inherits = FALSE)) rm(poly_mat)
+  if (exists("cov_mat",  inherits = FALSE)) rm(cov_mat)
+  gc(verbose = FALSE)
+
   result_temp
 }
