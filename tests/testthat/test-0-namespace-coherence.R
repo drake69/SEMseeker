@@ -38,15 +38,21 @@
 }
 
 test_that("every NAMESPACE export(X) has X defined in R/ (no stale exports)", {
-  # devtools::load_all() runs from the package root; locate NAMESPACE/R/
-  # relative to that root, not testthat's working dir.
+  # Dev-time canary. Requires the R/ SOURCE files (.R) to be visible, which
+  # is true under devtools::load_all() but NOT under R CMD check / covr —
+  # the installed package's R/ contains compiled .rdb/.rdx, not sources. So
+  # gate on the presence of at least one .R source file, not just dir
+  # existence.
   pkg_root <- testthat::test_path("..", "..")
   ns_path  <- file.path(pkg_root, "NAMESPACE")
   r_dir    <- file.path(pkg_root, "R")
+  r_sources <- if (dir.exists(r_dir))
+                 list.files(r_dir, pattern = "\\.R$", full.names = TRUE)
+               else character(0L)
 
   testthat::skip_if_not(
-    file.exists(ns_path) && dir.exists(r_dir),
-    "NAMESPACE or R/ not found at expected location"
+    file.exists(ns_path) && length(r_sources) > 0L,
+    "R/ source files not visible (installed-package or non-source layout) — dev-time only"
   )
 
   exports <- .parse_namespace_exports(ns_path)
@@ -63,9 +69,16 @@ test_that("every NAMESPACE export(X) has X defined in R/ (no stale exports)", {
 })
 
 test_that("every export(X) in NAMESPACE resolves via getExportedValue() on the loaded package", {
+  # Works in BOTH dev (load_all) and installed contexts. In installed
+  # context NAMESPACE lives inside the installed package tree; fall back to
+  # system.file() when the source NAMESPACE path isn't visible.
   testthat::skip_if_not_installed("SEMseeker")
   ns_path <- testthat::test_path("..", "..", "NAMESPACE")
-  testthat::skip_if_not(file.exists(ns_path), "NAMESPACE not found")
+  if (!file.exists(ns_path)) {
+    ns_path <- system.file("NAMESPACE", package = "SEMseeker")
+  }
+  testthat::skip_if_not(nzchar(ns_path) && file.exists(ns_path),
+                        "NAMESPACE not found in source tree or installed package")
 
   exports <- .parse_namespace_exports(ns_path)
   unresolved <- character(0L)
