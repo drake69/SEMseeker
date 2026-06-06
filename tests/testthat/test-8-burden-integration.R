@@ -63,6 +63,15 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 
   syn <- .burden_setup_signal_with_outliers()
 
+  # inpute="median" handles the case where setup.R loaded REAL Illumina cgIDs
+  # via the Bioc annotation (`.can_load_anno=TRUE` on Linux/Windows runners):
+  # the synthetic signal is then a 200-probe subset of the full array manifest
+  # and the population matrix can carry NAs after threshold join, which
+  # population_check() rejects with "There are missing values in the
+  # population matrix". With inpute="median" semseeker() fills them and
+  # produces the pivots needed by study_summary_total. macOS runners hit the
+  # synthetic-cgID fallback branch and don't need the imputation, but the
+  # parameter is harmless there.
   SEMseeker::semseeker(
     input             = syn$signal,
     sample_sheet      = syn$samples,
@@ -73,6 +82,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
                           "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
                           "DELTAS", "DELTAR"),
     start_fresh       = TRUE,
+    inpute            = "median",
     showprogress      = showprogress,
     verbosity         = verbosity
   )
@@ -80,8 +90,13 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   result_csv <- file.path(tempFolder, "Data", "sample_sheet_result.csv")
   testthat::expect_true(
     file.exists(result_csv),
-    info = "sample_sheet_result.csv must be written by study_summary_total()"
+    info = sprintf(
+      "sample_sheet_result.csv was not written. semseeker() likely failed upstream (population_check rejection?) — tempFolder=%s",
+      tempFolder
+    )
   )
+  testthat::skip_if_not(file.exists(result_csv),
+                        "downstream assertions need the result CSV")
 
   df <- utils::read.csv2(result_csv, stringsAsFactors = FALSE)
 

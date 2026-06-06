@@ -145,6 +145,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
     areas             = c("GENE", "POSITION"),
     markers           = c("MUTATIONS"),
     start_fresh       = TRUE,
+    inpute            = "median",
     showprogress      = showprogress,
     verbosity         = verbosity
   )
@@ -229,6 +230,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
     areas             = areas,
     markers           = c("MUTATIONS"),
     start_fresh       = TRUE,
+    inpute            = "median",
     showprogress      = showprogress,
     verbosity         = verbosity
   )
@@ -454,6 +456,7 @@ test_that("association_analysis skips gracefully when independent_variable absen
     areas             = c("GENE", "POSITION"),
     markers           = c("MUTATIONS"),
     start_fresh       = TRUE,
+    inpute            = "median",
     showprogress      = showprogress,
     verbosity         = verbosity
   )
