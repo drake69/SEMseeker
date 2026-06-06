@@ -6,11 +6,16 @@ test_that("semeeker", {
 
   ####################################################################################
 
+  # "sequential" so the test works under devtools::load_all() too. The
+  # "multisession" strategy from setup.R only resolves SEMseeker::: against
+  # the INSTALLED package, which makes load_all-time test runs fail on
+  # post-merge signature changes (e.g. AI-075 bed_file_name(skip_dir_create)).
+  # Same rationale as test-7-association_analysis.R.
   SEMseeker::semseeker(
     input         = signal_data,
     sample_sheet  = mySampleSheet,
     result_folder = tempFolder,
-    parallel_strategy = parallel_strategy
+    parallel_strategy = "sequential"
   )
 
   ssEnv <- SEMseeker:::get_session_info()
@@ -28,13 +33,22 @@ test_that("semeeker", {
     subarea <- as.character(key$SUBAREA)
 
     mutations_pivot_file_name <- SEMseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
+    # NOTE: silent next preserved on purpose. The iteration builds
+    # MUTATIONS_<figure> for EVERY figure in keys (including SIGNAL_MEAN),
+    # so a hard expect_true(file.exists(...)) here fires false positives for
+    # combos that are not meant to exist (e.g. MUTATIONS_MEAN). Fixing the
+    # iteration to filter only (HYPER, HYPO) figures + comparable markers
+    # is tracked separately — see AI-090.
     if(file.exists(mutations_pivot_file_name))
       mutations_pivot <- as.data.frame(polars::pl$read_parquet(mutations_pivot_file_name))
     else
       next
 
     pivot_file_name <- SEMseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
-    # derived markers (LESIONS, DELTA*) may not exist when mutations are too sparse
+    # derived markers (LESIONS, DELTA*) may not exist when mutations are too
+    # sparse for that figure × area × subarea combo — see AI-090 to rework
+    # the iteration so we can hard-assert presence on the combos that ARE
+    # supposed to exist.
     if(!file.exists(pivot_file_name))
       next
     pivot <- as.data.frame(polars::pl$read_parquet(pivot_file_name))

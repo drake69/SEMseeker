@@ -17,7 +17,8 @@
 #' @return Invisibly \code{NULL}. PNG charts and a quantisation-metrics
 #'   table are written to disk as a side effect.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 marker_distribution_info <- function(result_folder, maxResources = 90, parallel_strategy  = "multisession", ...)
 {
 
