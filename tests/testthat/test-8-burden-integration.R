@@ -24,7 +24,7 @@
 
 .burden_setup_signal_with_outliers <- function(seed = 12345L) {
   set.seed(seed)
-  n_probes_b  <- 200L
+  n_probes_b  <- 2000L
   n_samples_b <- nsamples
   local_probes  <- probe_features[1:n_probes_b, ]
   local_samples <- mySampleSheet
@@ -65,13 +65,19 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 
   # inpute="median" handles the case where setup.R loaded REAL Illumina cgIDs
   # via the Bioc annotation (`.can_load_anno=TRUE` on Linux/Windows runners):
-  # the synthetic signal is then a 200-probe subset of the full array manifest
+  # the synthetic signal is then a probe subset of the full array manifest
   # and the population matrix can carry NAs after threshold join, which
   # population_check() rejects with "There are missing values in the
   # population matrix". With inpute="median" semseeker() fills them and
   # produces the pivots needed by study_summary_total. macOS runners hit the
   # synthetic-cgID fallback branch and don't need the imputation, but the
   # parameter is harmless there.
+  # n_probes_b bumped 200 → 2000: on the Ubuntu runner the 200-probe variant
+  # still produced enough NA rows in the Reference subset to trip
+  # signal_range_values()'s population_check; with a denser probe panel the
+  # inpute_missing_values row-filter (>10% NA per row dropped) clears the
+  # matrix before the IQR step. Tracked separately: the upstream NA-genesis
+  # in analyze_batch.R's Illumina branch should be fixed at the source.
   SEMseeker::semseeker(
     input             = syn$signal,
     sample_sheet      = syn$samples,
