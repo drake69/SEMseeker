@@ -166,7 +166,7 @@ if (use_synthetic_data)
 
 
 
-lesion_window_kbp <<- 5
+LESIONS_BP <<- 5000L  # AI-092 + AI-044 merged: bp-based window, literature-aligned default 5 kbp (see AI-048).
 bonferroni_threshold <<- 0.1
 batch_id <<- 1
 iqrTimes <<- 3

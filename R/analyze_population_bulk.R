@@ -219,11 +219,13 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   }
 
   # ---- Step 5: LESIONS_{HYPER,HYPO} per-sample column processing ---------
-  # LESIONS calculation: AI-044 (2026-06-08) refactor a physical bp-window
-  # via lesions_get(). Soppianta la vecchia logica row-count (sliding_window_size)
-  # commentata sotto per reference; la finestra fisica e' biologicamente piu'
-  # rigorosa per il concetto "aggregati mono-direzionali localizzati".
-  window_kbp     <- as.numeric(ssEnv$lesion_window_kbp)
+  # LESIONS calculation via lesions_get_bulk() (multi-sample, bp-window):
+  # finestra fisica in bp, soppianta la vecchia logica row-count
+  # (sliding_window_size). Il counterpart single-sample e' lesions_get()
+  # in R/lesions_get.R (usato dal path legacy analyze_population per-sample).
+  # Storia: AI-044 (kbp arg) → AI-092 (LESIONS_BP ssEnv) merged 2026-06-10
+  # con default 5000 bp (literature-aligned, vedi AI-048).
+  lesions_bp     <- as.integer(ssEnv$LESIONS_BP)
   bonf_threshold <- as.numeric(ssEnv$bonferroni_threshold)
   CHUNK_SAMPLES  <- 200L  # gruppi di sample per limitare RAM
 
@@ -253,10 +255,12 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
       mut_df <- as.data.frame(mut_chunk)
       mut_df$CHR <- as.character(mut_df$CHR)
 
-      # Delega LESIONS computation a lesions_new (physical bp window)
-      les_mat <- lesions_get(mut_df, cols_this,
-                             window_kbp = window_kbp,
-                             bonf_threshold = bonf_threshold)
+      # Delega LESIONS computation a lesions_get_bulk (multi-sample bp window).
+      # Il counterpart single-sample (R/lesions_get.R, AI-092) e' usato dal path
+      # legacy analyze_population per-sample loop.
+      les_mat <- lesions_get_bulk(mut_df, cols_this,
+                                  LESIONS_BP = lesions_bp,
+                                  bonf_threshold = bonf_threshold)
 
       les_df <- data.frame(
         CHR   = mut_df$CHR,
@@ -290,7 +294,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
               " [bulk] LESIONS_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "mins")), 2),
               " min (",  length(sample_chunks), " chunks of ",
-              CHUNK_SAMPLES, " samples, window_kbp=", window_kbp, ")")
+              CHUNK_SAMPLES, " samples, LESIONS_BP=", lesions_bp, ")")
   }
 
   # ============================================================

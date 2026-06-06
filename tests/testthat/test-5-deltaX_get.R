@@ -13,7 +13,7 @@ test_that("deltaX_get", {
   tt <- SEMseeker:::get_meth_tech(signal_data)
 
   ####################################################################################
-  lesion_window_kbp <- 5
+  LESIONS_BP <- 2000L  # AI-092
   bonferroni_threshold <- 0.05
 
   if (!exists("signal_thresholds"))

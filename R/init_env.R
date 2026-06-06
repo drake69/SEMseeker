@@ -29,7 +29,7 @@
   opencl                 = list(value = FALSE),
   bonferroni_threshold   = list(value = 0.05),
   iqrTimes               = list(value = 3),
-  lesion_window_kbp      = list(value = 5),   # AI-044: physical bp-window radius (5 kbp default)
+  LESIONS_BP             = list(value = 5000L),  # AI-092 + AI-044 merged: bp-based window radius. Default 5000 bp = 5 kbp (literature-aligned; AI-048 review pending — Bock 2012, Jaffe 2012 bumphunter, Aryee 2014 minfi DMR).
   tech                   = list(value = ""),
   genome_build           = list(value = "hg19", choices = c("hg19","hg38","mm10","legacy")),
   showprogress           = list(value = FALSE),

@@ -2,6 +2,25 @@
 
 ## semseeker 0.12.0 (dev)
 
+### Breaking changes
+
+- **LESIONS detection now uses genomic distance, not probe count (AI-092).**
+  The legacy `sliding_window_size` parameter (probe-count based, default 11)
+  has been REMOVED. It is replaced by `LESIONS_BP` (default 2000), the
+  maximum bp distance for two probes to be considered part of the same
+  enrichment window. Same registration pattern as `DELTAQ_Q` / `DELTAP_B`:
+  registered in `init_env()`, surfaces through the `Q` column of
+  `keys_markers_default_discrete`, exposed via `semseeker(LESIONS_BP = ...)`.
+  Rationale: probe-density varies dramatically across the genome and across
+  array platforms (450K ~485k probes, EPIC ~865k, LONGREAD bedmethyl
+  variable). A fixed 11-probe window covers ~70kb on average on 450K but
+  ~500bp inside a CpG island — biologically incomparable. `LESIONS_BP=2000`
+  matches the typical span of a CpG island or DMR and yields a single
+  semantics across platforms. Migration: any caller passing
+  `sliding_window_size=N` must replace it with `LESIONS_BP=M` (no equivalence
+  formula; the metric has changed). Multi-window sensitivity will be tackled
+  in AI-091 (vector-valued `LESIONS_BP`).
+
 ### New features
 
 - **AI-044: binomial_bulk family + goodness-of-fit metrics extension.**
