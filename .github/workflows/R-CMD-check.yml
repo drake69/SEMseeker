@@ -4,11 +4,23 @@ on:
     branches-ignore: [main, master]   # direct push to main/master is blocked
   pull_request:
     branches: [main, master, develop]
+  workflow_dispatch:
+    inputs:
+      os:
+        description: 'Run on a single OS (or "all")'
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
 
 name: R-CMD-check
 
 jobs:
   R-CMD-check:
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.os == 'all' || github.event.inputs.os == matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
