@@ -19,23 +19,39 @@ on:
 name: R-CMD-check
 
 jobs:
+  # Build the OS matrix dynamically so that workflow_dispatch with
+  # inputs.os ∈ {ubuntu-latest, macos-latest, windows-latest} runs only
+  # that lane, while push / pull_request / workflow_dispatch+all keep
+  # the full 3-OS matrix. We can't filter via `if: matrix.config.os ==`
+  # on the downstream job because the matrix context isn't available
+  # in job-level `if` (matrix is expanded after the conditional).
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - id: gen
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_OS: ${{ github.event.inputs.os }}
+        run: |
+          all='[{"os":"macos-latest","r":"release","args":"c(\"--no-manual\", \"--as-cran\")"},{"os":"windows-latest","r":"release","args":"c(\"--no-manual\", \"--as-cran\")"},{"os":"ubuntu-latest","r":"release","args":"c(\"--no-manual\", \"--as-cran\")"}]'
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && -n "$REQUESTED_OS" && "$REQUESTED_OS" != "all" ]]; then
+            filtered=$(echo "$all" | jq -c --arg os "$REQUESTED_OS" '[.[] | select(.os == $os)]')
+          else
+            filtered="$all"
+          fi
+          echo "matrix={\"config\":$filtered}" >> "$GITHUB_OUTPUT"
+
   R-CMD-check:
-    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.os == 'all' || github.event.inputs.os == matrix.config.os }}
+    needs: set-matrix
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
     strategy:
       fail-fast: false
-      matrix:
-        config:
-          # macOS: tests re-enabled to verify whether XQuartz install
-          # (above) resolves the tcltk/X11 segfault chain. If tests pass,
-          # AI-017 root cause is confirmed as tcltk-on-XQuartz; if they
-          # still segfault, the cause is elsewhere (polars, minfi C++,
-          # etc.) and we re-add --no-tests.
-          - {os: macos-latest,   r: 'release', args: 'c("--no-manual", "--as-cran")'}
-          - {os: windows-latest, r: 'release', args: 'c("--no-manual", "--as-cran")'}
-          - {os: ubuntu-latest,  r: 'release', args: 'c("--no-manual", "--as-cran")'}
+      matrix: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
