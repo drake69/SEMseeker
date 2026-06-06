@@ -29,7 +29,7 @@
   opencl                 = list(value = FALSE),
   bonferroni_threshold   = list(value = 0.05),
   iqrTimes               = list(value = 3),
-  sliding_window_size    = list(value = 11),
+  LESIONS_BP             = list(value = 2000L),
   tech                   = list(value = ""),
   genome_build           = list(value = "hg19", choices = c("hg19","hg38","mm10","legacy")),
   showprogress           = list(value = FALSE),

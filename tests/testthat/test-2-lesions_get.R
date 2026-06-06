@@ -22,7 +22,7 @@ test_that("lesions_get (binomial): tight cluster of mutations → lesions detect
   SEMseeker:::init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
-    sliding_window_size  = 11L,
+    LESIONS_BP           = 5000L,
     bonferroni_threshold = 0.5   # loose threshold so the cluster always fires
   )
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -49,7 +49,7 @@ test_that("lesions_get (binomial): dispersed mutations → no lesions", {
   SEMseeker:::init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
-    sliding_window_size  = 11L,
+    LESIONS_BP           = 5000L,
     bonferroni_threshold = 0.1
   )
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -73,7 +73,7 @@ test_that("lesions_get (binomial): zero mutations → no lesions and no error", 
   SEMseeker:::init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
-    sliding_window_size  = 11L,
+    LESIONS_BP           = 5000L,
     bonferroni_threshold = 0.1
   )
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -96,7 +96,7 @@ test_that("lesions_get (binomial): p-value matches pbinom formula exactly", {
   SEMseeker:::init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
-    sliding_window_size  = 11L,
+    LESIONS_BP           = 5000L,
     bonferroni_threshold = 10   # very loose: fires whenever p < 10 / (n * log10(bp))
   )
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)

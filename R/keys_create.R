@@ -10,7 +10,11 @@ keys_create <- function(ssEnv, arguments)
   keys_markers_default_discrete <-  data.frame("MARKER"=c("MUTATIONS","LESIONS","DELTAQ","DELTARQ","DELTAP","DELTARP"))
 
 
-  keys_markers_default_discrete$Q <- c(1,NA,ssEnv$DELTAQ_Q,ssEnv$DELTARQ_Q,ssEnv$DELTAP_B,ssEnv$DELTARP_B)
+  # AI-092: LESIONS uses LESIONS_BP (max bp distance for two probes to be in
+  # the same enrichment window, default 2000 = typical CpG-island / DMR span)
+  # instead of the legacy sliding_window_size (probe-count based, no longer
+  # supported). Same registration pattern as DELTAQ_Q / DELTAP_B.
+  keys_markers_default_discrete$Q <- c(1,ssEnv$LESIONS_BP,ssEnv$DELTAQ_Q,ssEnv$DELTARQ_Q,ssEnv$DELTAP_B,ssEnv$DELTARP_B)
   keys_markers_default_discrete$SOURCE <- c("DELTAS","MUTATIONS","DELTAS","DELTAR","DELTAS","DELTAR")
   keys_markers_default_discrete$SUFFIX <-  rep("",6)
   # keys_markers_default$SUFFIX <-  c("","","","", ssEnv$epiquantile ,"",ssEnv$epiquantile)
