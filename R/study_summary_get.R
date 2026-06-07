@@ -1,6 +1,10 @@
 study_summary_get <- function(sql_sample_selection="")
 {
   ssEnv <- get_session_info()
+  # file_path_build() uppercases via name_cleaning() — the on-disk file is
+  # SAMPLE_SHEET_RESULT.csv, written by study_summary_total(). Going through
+  # file_path_build() here guarantees the same path is resolved on every OS
+  # regardless of file-system case sensitivity.
   summary_file <- file_path_build( ssEnv$result_folderData, "sample_sheet_result","csv")
   if(!file.exists(summary_file))
     summary_file <- file_path_build( ssEnv$result_folderData, "1_SAMPLE_SHEET_ORIGINAL","csv")
