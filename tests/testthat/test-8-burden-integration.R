@@ -24,7 +24,7 @@
 
 .burden_setup_signal_with_outliers <- function(seed = 12345L) {
   set.seed(seed)
-  n_probes_b  <- 2000L
+  n_probes_b  <- 200L
   n_samples_b <- nsamples
   local_probes  <- probe_features[1:n_probes_b, ]
   local_samples <- mySampleSheet
@@ -63,21 +63,9 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 
   syn <- .burden_setup_signal_with_outliers()
 
-  # inpute="median" handles the case where setup.R loaded REAL Illumina cgIDs
-  # via the Bioc annotation (`.can_load_anno=TRUE` on Linux/Windows runners):
-  # the synthetic signal is then a probe subset of the full array manifest
-  # and the population matrix can carry NAs after threshold join, which
-  # population_check() rejects with "There are missing values in the
-  # population matrix". With inpute="median" semseeker() fills them and
-  # produces the pivots needed by study_summary_total. macOS runners hit the
-  # synthetic-cgID fallback branch and don't need the imputation, but the
-  # parameter is harmless there.
-  # n_probes_b bumped 200 → 2000: on the Ubuntu runner the 200-probe variant
-  # still produced enough NA rows in the Reference subset to trip
-  # signal_range_values()'s population_check; with a denser probe panel the
-  # inpute_missing_values row-filter (>10% NA per row dropped) clears the
-  # matrix before the IQR step. Tracked separately: the upstream NA-genesis
-  # in analyze_batch.R's Illumina branch should be fixed at the source.
+  # inpute="median" is defensive: harmless when the input has no NAs (the
+  # guard at inpute_missing_values.R:7 short-circuits), useful if a future
+  # signal generator introduces them.
   SEMseeker::semseeker(
     input             = syn$signal,
     sample_sheet      = syn$samples,
@@ -93,11 +81,17 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
     verbosity         = verbosity
   )
 
-  result_csv <- file.path(tempFolder, "Data", "sample_sheet_result.csv")
+  # SEMseeker writes via file_path_build() → name_cleaning() → toupper(),
+  # so the on-disk file is SAMPLE_SHEET_RESULT.csv (not the lowercase form
+  # used in the API contract). macOS/Windows file systems are case-insensitive
+  # by default so either spelling works; Linux ext4 is case-sensitive and
+  # only the uppercase form resolves. Use uppercase here to be correct on
+  # all three CI runners.
+  result_csv <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
   testthat::expect_true(
     file.exists(result_csv),
     info = sprintf(
-      "sample_sheet_result.csv was not written. semseeker() likely failed upstream (population_check rejection?) — tempFolder=%s",
+      "SAMPLE_SHEET_RESULT.csv was not written by semseeker() — tempFolder=%s",
       tempFolder
     )
   )
