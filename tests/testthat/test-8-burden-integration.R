@@ -188,5 +188,35 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
     )
   }
 
+  # Explicit pivot assertion: every required marker must have a per-figure
+  # parquet pivot under Data/Pivots/<MARKER>/, and each one must contain
+  # rows. The burden checks above cover this indirectly (an empty pivot
+  # → all-NA burden column), but a direct file/row check catches an empty
+  # pivot upstream of the merge and points at the failing marker by name.
+  pivots_dir <- file.path(tempFolder, "Data", "Pivots")
+  for (m in required_markers) {
+    marker_dir <- file.path(pivots_dir, m)
+    testthat::expect_true(
+      dir.exists(marker_dir),
+      info = sprintf("missing pivot directory for marker '%s' at %s", m, marker_dir)
+    )
+    if (!dir.exists(marker_dir)) next
+    pq_files <- list.files(marker_dir, pattern = "\\.parquet$", full.names = TRUE)
+    testthat::expect_gt(
+      length(pq_files), 0L,
+      label = sprintf("parquet pivot files under %s", marker_dir)
+    )
+    for (pf in pq_files) {
+      n_rows <- tryCatch(
+        as.integer(nrow(polars::pl$read_parquet(pf))),
+        error = function(e) NA_integer_
+      )
+      testthat::expect_gt(
+        n_rows, 0L,
+        label = sprintf("rows in pivot %s", basename(pf))
+      )
+    }
+  }
+
   unlink(tempFolder, recursive = TRUE)
 })
