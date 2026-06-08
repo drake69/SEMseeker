@@ -9,7 +9,7 @@ validate_family_test <- function(family_test){
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " family_test: " , as.character(family_test))
 
 
-  if(family_test=="multinomial" | family_test=="binomial" | family_test=="wilcoxon" | family_test=="jsd" | family_test=="t.test" | family_test=="poisson" |
+  if(family_test=="multinomial" | family_test=="binomial" | family_test=="binomial_bulk" | family_test=="wilcoxon" | family_test=="jsd" | family_test=="t.test" | family_test=="poisson" |
       family_test=="chisq.test" | family_test=="fisher.test" | family_test=="kruskal.test" | family_test=="pearson" | family_test=="kendall" | family_test=="spearman" |
       family_test=="wilcoxon" | family_test=="gaussian")
     return(TRUE)

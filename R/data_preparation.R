@@ -118,8 +118,34 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
   if(setequal(burden_values,df_values_orig) & transformation_y !="none")
     transformation_y <- paste0("NA_", transformation_y, sep="")
 
+  # AI-044 (2026-06-08): universal degenerate-burden filter.
+  # Burden columns where the response Y is constant (variance == 0) across
+  # samples carry no signal — they produce NaN/garbage stats in every model:
+  #   - binomial GLM: MLE diverges (intercept-only fit, NaN coeffs/p-values)
+  #   - limma/voom lmFit: 0-effect, NaN t-statistic (misleading "no signal")
+  #   - polynomial / gaussian glm: rank-deficient, NaN coefficients
+  # Critical for LESIONS @ PROBE where ~92% of probes are all-zero across
+  # samples (manifest-aligned pivot, retained for positional join with
+  # annotations). Filtering here covers ALL downstream callers in one place:
+  # apply_stat_model.R (per-probe foreach) and apply_stat_model_batch.R
+  # (limma/voom batch) — their existing variance checks become safety nets.
+  if (ncol(burden_values) > 0L) {
+    is_degenerate <- vapply(burden_values, function(x) {
+      u <- unique(stats::na.omit(as.numeric(x)))
+      length(u) < 2L
+    }, logical(1))
+    if (any(is_degenerate)) {
+      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " data_preparation [", family_test, " / ", key$MARKER, " ",
+                key$FIGURE, " ", key$AREA, " ", key$SUBAREA,
+                "]: dropping ", sum(is_degenerate), "/", length(is_degenerate),
+                " degenerate burden columns (var==0).")
+      burden_values <- burden_values[, !is_degenerate, drop = FALSE]
+    }
+  }
 
-  if(family_test!="binomial" & family_test!="wilcoxon" & family_test!="jsd" & family_test!="t.test" & family_test!="poisson" &
+
+  if(family_test!="binomial" & family_test!="binomial_bulk" & family_test!="wilcoxon" & family_test!="jsd" & family_test!="t.test" & family_test!="poisson" &
       family_test!="chisq.test" & family_test!="fisher.test" & family_test!="kruskal.test")
   {
     variable_to_transform <- independent_variable
@@ -171,6 +197,11 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
   }
 
 
+  # AI-044 (2026-06-08): rebuild df_colnames after the degenerate-burden
+  # filter above. df_head columns are unchanged (sample-level: IV +
+  # covariates); burden_values may now have fewer columns. This replaces
+  # the prior strict length check, which fired any time we dropped probes.
+  df_colnames <- c(colnames(df_head), colnames(burden_values))
   tempDataFrame <- data.frame(df_head, burden_values)
   if(ncol(tempDataFrame)!=length(df_colnames))
     stop("ERROR: I'm stopping here data are not the same size, file a bug!")
@@ -184,7 +215,7 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
 
   #  we want to preserve the NA in the independent variables to be removed by the models
   tempDataFrame[apply(tempDataFrame,2,is.nan)] <- 0
-  if(family_test=="binomial")
+  if(family_test=="binomial" | family_test=="binomial_bulk")
     tempDataFrame[, independent_variable] <- as.factor(tempDataFrame[, independent_variable])
 
   # # remove rows with all NA

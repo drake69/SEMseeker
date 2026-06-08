@@ -9,7 +9,7 @@ is.family_dicotomic <- function(family_test) {
     return(FALSE)
 
   if(family_test=="wilcoxon" | family_test=="t.test" | grepl("wilcoxon.paired",family_test) | grepl("t.test.paired",family_test) |  family_test =="jsd"
-    | family_test=="kruskal.test" | family_test=="chisq.test" | family_test=="fisher.test" | family_test=="binomial" | family_test=="multinomial")
+    | family_test=="kruskal.test" | family_test=="chisq.test" | family_test=="fisher.test" | family_test=="binomial" | family_test=="binomial_bulk" | family_test=="multinomial")
     return(TRUE)
 
   log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " family_test not recognized ")

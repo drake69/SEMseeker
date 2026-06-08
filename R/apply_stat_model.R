@@ -55,6 +55,28 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
     ))
   }
 
+  # AI-044 (2026-06-08): bulk path for logistic regression. Same
+  # dispatch=guard pattern as limma/voom — guard against missing
+  # Rfast lives inside glm_model_bulk(). Returns one row per probe
+  # with the legacy schema (per-coef PVALUE/ESTIMATE + top-level
+  # PVALUE/PVALUE_ADJ) so downstream CSV machinery doesn't change.
+  if (family_test == "binomial_bulk") {
+    return(glm_model_bulk(
+      tempDataFrame        = tempDataFrame,
+      g_start              = g_start,
+      family_test          = family_test,
+      covariates           = covariates,
+      key                  = key,
+      transformation_y     = transformation_y,
+      dototal              = dototal,
+      session_folder       = session_folder,
+      independent_variable = independent_variable,
+      depth_analysis       = depth_analysis,
+      samples_sql_condition = samples_sql_condition,
+      ...
+    ))
+  }
+
   # Session info is only needed for the per-area (foreach) path —
   # the batch path above is intentionally session-independent so it
   # can be exercised in unit tests without a materialised session.
