@@ -26,6 +26,14 @@
 
 ### Breaking changes
 
+- **`semseeker()` no longer auto-converts M-values to beta.**
+  The `auto_convert_mvalues` parameter has been removed and the
+  `.looks_like_mvalues()` helper deleted. Input values are now passed
+  through unchanged; if you need conversion, call `mvalue_to_beta()`
+  explicitly before `semseeker()`. The beta-vs-M-value flag is still
+  detected and stored in `ssEnv$beta` by `get_meth_tech()`, so downstream
+  code that consults that flag continues to work.
+
 - **`start_fresh` defaults to `FALSE`.**
   `init_env()` no longer deletes the result folder before starting. Existing
   results are preserved unless the caller explicitly passes `start_fresh = TRUE`.

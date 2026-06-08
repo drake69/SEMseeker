@@ -16,13 +16,14 @@
 #'   (the factor levels of the independent variable, or \code{NULL} for continuous
 #'   outcomes).
 #'
-data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, dototal, covariates, depth_analysis, key)
+data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, dototal, covariates, depth_analysis, key, transformation_x = "none")
 {
 
   # browser()
   ssEnv <- get_session_info()
 
   transformation_y <- as.character(transformation_y)
+  transformation_x <- as.character(transformation_x)
   independentVariableIsFactor <- FALSE
   independent_variableLevels <- NULL
   if (is.family_dicotomic(family_test))
@@ -91,12 +92,13 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
     {
       burden_values = switch(
         as.character(transformation_y),
-        "scale" = scale(burden_values),
-        "log" = log(burden_values),
-        "log2" = log2(burden_values),
-        "log10"= log10(burden_values),
-        "exp" = exp(burden_values),
-        "none" = burden_values,
+        "scale"  = scale(burden_values),
+        "log"    = log(burden_values),
+        "log2"   = log2(burden_values),
+        "log10"  = log10(burden_values),
+        "exp"    = exp(burden_values),
+        "factor" = as.data.frame(lapply(burden_values, as.factor)),   # AI-044 binomial Y as factor (0/1)
+        "none"   = burden_values,
         burden_values
       )
     }
@@ -134,14 +136,19 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
     suppressWarnings(
       try(
         {
+          # AI-044 (2026-06-08): questo switch ora usa `transformation_x`
+          # (era `transformation_y` per legacy reuse) -> separazione semantica
+          # Y vs X. Aggiunto case "factor" per encode l'IV come categorical
+          # (utile per glm binomial: OR per livello vs reference).
           independent_variableValues = switch(
-            as.character(transformation_y),
-            "scale" = scale(independent_variableValues),
-            "log" = log(independent_variableValues),
-            "log2" = log2(independent_variableValues),
-            "log10"= log10(independent_variableValues),
-            "exp" = exp(independent_variableValues),
-            "none" = independent_variableValues,
+            as.character(transformation_x),
+            "scale"  = scale(independent_variableValues),
+            "log"    = log(independent_variableValues),
+            "log2"   = log2(independent_variableValues),
+            "log10"  = log10(independent_variableValues),
+            "exp"    = exp(independent_variableValues),
+            "factor" = as.data.frame(lapply(independent_variableValues, as.factor)),
+            "none"   = independent_variableValues,
             independent_variableValues
           )
         }

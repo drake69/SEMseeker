@@ -29,12 +29,13 @@
   opencl                 = list(value = FALSE),
   bonferroni_threshold   = list(value = 0.05),
   iqrTimes               = list(value = 3),
-  sliding_window_size    = list(value = 11),
+  lesion_window_kbp      = list(value = 5),   # AI-044: physical bp-window radius (5 kbp default)
   tech                   = list(value = ""),
   genome_build           = list(value = "hg19", choices = c("hg19","hg38","mm10","legacy")),
   showprogress           = list(value = FALSE),
   openai_api_key         = list(value = ""),
-  multiple_test_adj      = list(value = "q", choices = c("BY","fdr","BH","bonferroni","q"))
+  multiple_test_adj      = list(value = "q", choices = c("BY","fdr","BH","bonferroni","q")),
+  bulk_population        = list(value = FALSE)   # AI-042: vectorized population (no per-sample loop)
 )
 
 .SS_FOLDERS <- c(

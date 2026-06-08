@@ -11,7 +11,7 @@ run_depth_n_marker(
   fileNameResults,
   filter_p_value,
   ssEnv,
-  areas_selection,
+  selected_areas,
   results,
   start_time,
   processed_items,
@@ -31,7 +31,7 @@ run_depth_n_marker(
 
 \item{ssEnv}{list. Session environment.}
 
-\item{areas_selection}{character vector or empty.}
+\item{selected_areas}{character vector or empty.}
 
 \item{results}{data.frame. Accumulator carried over from depth=1.}
 

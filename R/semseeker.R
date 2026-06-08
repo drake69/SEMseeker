@@ -3,9 +3,10 @@
 #' Public entry point. Accepts a wide range of inputs — bedmethyl files
 #' (modkit / nanopolish), coordinate-based data frames (WGBS / long-read),
 #' Illumina probe-indexed matrices, or already-loaded data frames — normalises
-#' them to the internal format, optionally converts M-values to beta values,
-#' validates the tech / genome_build combination, and delegates to the core
-#' pipeline \code{\link{semseeker_core}}.
+#' them to the internal format, validates the tech / genome_build combination,
+#' and delegates to the core pipeline \code{\link{semseeker_core}}. Input
+#' values are passed through unchanged: if you need to convert M-values to
+#' beta, call \code{\link{mvalue_to_beta}} explicitly before \code{semseeker()}.
 #'
 #' Supported \code{input} forms:
 #' \itemize{
@@ -31,10 +32,6 @@
 #'   it is auto-detected downstream by \code{get_meth_tech()}.
 #' @param genome_build Reference genome build. One of \code{"hg19"} (default),
 #'   \code{"hg38"}, \code{"mm10"}, \code{"legacy"}.
-#' @param auto_convert_mvalues If \code{TRUE} (default) and the input values
-#'   exceed the \code{[0, 1]} range, they are assumed to be M-values and
-#'   converted to beta via \eqn{\beta = 2^M / (1 + 2^M)}. Set to \code{FALSE}
-#'   to disable the check (the downstream pipeline will then run on raw values).
 #' @param strict_build_check If \code{TRUE} (default), impossible tech /
 #'   genome_build combinations (e.g. \code{tech="LONGREAD"} with
 #'   \code{genome_build="hg19"}) raise an error. If \code{FALSE}, a warning is
@@ -79,7 +76,6 @@ semseeker <- function(input,
                       input_type = c("auto", "bedmethyl", "coord_df", "matrix"),
                       tech = NULL,
                       genome_build = "hg19",
-                      auto_convert_mvalues = TRUE,
                       strict_build_check = TRUE,
                       ...) {
 
@@ -99,7 +95,9 @@ semseeker <- function(input,
   .validate_tech_build(tech, genome_build, strict_build_check)
 
   # ---- Step 3: normalise input to SEMseeker signal_data ----------------
-  signal_data <- .dispatch_one(input, input_type, auto_convert_mvalues)
+  # Values are passed through unchanged. The beta-vs-M-value flag is
+  # detected and stored downstream by get_meth_tech() (ssEnv$beta).
+  signal_data <- .dispatch_one(input, input_type)
 
   # ---- Step 4: delegate to core pipeline -------------------------------
   semseeker_core(
@@ -112,7 +110,7 @@ semseeker <- function(input,
 # --- Internal helpers --------------------------------------------------------
 
 #' @keywords internal
-.dispatch_one <- function(input, input_type, auto_convert_mvalues) {
+.dispatch_one <- function(input, input_type) {
 
   # Auto-detect when requested
   if (identical(input_type, "auto")) {
@@ -131,12 +129,6 @@ semseeker <- function(input,
   # bedmethyl path: returns coord df → also run through normalize_signal_input
   if (identical(input_type, "bedmethyl")) {
     signal_data <- normalize_signal_input(signal_data)
-  }
-
-  # ---- M-value detection & conversion --------------------------------
-  if (isTRUE(auto_convert_mvalues) && .looks_like_mvalues(signal_data)) {
-    message("semseeker(): detected M-values (|x| > 1); converting to beta via 2^M / (1 + 2^M).")
-    signal_data <- mvalue_to_beta(signal_data, coord_cols = c("CHR","START","END"))
   }
 
   signal_data
@@ -160,26 +152,6 @@ semseeker <- function(input,
     return("matrix")
   stop(".detect_input_type(): cannot infer input_type for object of class '",
        class(input)[1L], "'. Pass input_type explicitly.")
-}
-
-#' @keywords internal
-.looks_like_mvalues <- function(signal_data) {
-  coord_cols <- c("CHR", "START", "END")
-  numeric_cols <- if (is.data.frame(signal_data)) {
-    setdiff(colnames(signal_data), coord_cols)
-  } else {
-    colnames(signal_data)
-  }
-  if (!length(numeric_cols)) return(FALSE)
-
-  sample_rows <- seq_len(min(10000L, nrow(signal_data)))
-  chunk <- if (is.data.frame(signal_data)) {
-    as.matrix(signal_data[sample_rows, numeric_cols, drop = FALSE])
-  } else {
-    signal_data[sample_rows, , drop = FALSE]
-  }
-  mx <- suppressWarnings(max(abs(chunk), na.rm = TRUE))
-  is.finite(mx) && mx > 1
 }
 
 #' @keywords internal

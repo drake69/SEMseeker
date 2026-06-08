@@ -11,7 +11,6 @@ semseeker(
   input_type = c("auto", "bedmethyl", "coord_df", "matrix"),
   tech = NULL,
   genome_build = "hg19",
-  auto_convert_mvalues = TRUE,
   strict_build_check = TRUE,
   ...
 )
@@ -35,11 +34,6 @@ it is auto-detected downstream by \code{get_meth_tech()}.}
 \item{genome_build}{Reference genome build. One of \code{"hg19"} (default),
 \code{"hg38"}, \code{"mm10"}, \code{"legacy"}.}
 
-\item{auto_convert_mvalues}{If \code{TRUE} (default) and the input values
-exceed the \code{[0, 1]} range, they are assumed to be M-values and
-converted to beta via \eqn{\beta = 2^M / (1 + 2^M)}. Set to \code{FALSE}
-to disable the check (the downstream pipeline will then run on raw values).}
-
 \item{strict_build_check}{If \code{TRUE} (default), impossible tech /
 genome_build combinations (e.g. \code{tech="LONGREAD"} with
 \code{genome_build="hg19"}) raise an error. If \code{FALSE}, a warning is
@@ -56,9 +50,10 @@ Invisibly \code{NULL}; writes output files to \code{result_folder}.
 Public entry point. Accepts a wide range of inputs — bedmethyl files
 (modkit / nanopolish), coordinate-based data frames (WGBS / long-read),
 Illumina probe-indexed matrices, or already-loaded data frames — normalises
-them to the internal format, optionally converts M-values to beta values,
-validates the tech / genome_build combination, and delegates to the core
-pipeline \code{\link{semseeker_core}}.
+them to the internal format, validates the tech / genome_build combination,
+and delegates to the core pipeline \code{\link{semseeker_core}}. Input
+values are passed through unchanged: if you need to convert M-values to
+beta, call \code{\link{mvalue_to_beta}} explicitly before \code{semseeker()}.
 }
 \details{
 Supported \code{input} forms:

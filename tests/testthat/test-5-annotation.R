@@ -9,7 +9,7 @@ test_that("annotations", {
 
   tt <- SEMseeker:::get_meth_tech(signal_data)
 
-  sliding_window_size <- 11
+  lesion_window_kbp <- 5
   bonferroni_threshold <- 0.05
 
   if (!exists("signal_thresholds"))

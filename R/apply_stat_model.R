@@ -61,7 +61,8 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
   ssEnv <- get_session_info()
 
   g_end <- ncol(tempDataFrame)
-  prepared_data <- data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, FALSE, covariates, depth_analysis, key)
+  transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
+  prepared_data <- data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, FALSE, covariates, depth_analysis, key, transformation_x = transformation_x_local)
   # if(ncol(prepared_data$tempDataFrame) != ncol(tempDataFrame))
   #   return(NULL)
 

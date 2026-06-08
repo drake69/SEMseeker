@@ -31,27 +31,6 @@ test_that(".detect_input_type rejects unsupported extensions and classes", {
   expect_error(SEMseeker:::.detect_input_type(list(1, 2)),  "cannot infer input_type")
 })
 
-# ---- .looks_like_mvalues ------------------------------------------------
-
-test_that(".looks_like_mvalues is FALSE for beta values in [0,1]", {
-  m <- matrix(runif(20), nrow = 5, dimnames = list(
-    paste0("cg", sprintf("%08d", seq_len(5))), paste0("s", 1:4)))
-  expect_false(SEMseeker:::.looks_like_mvalues(m))
-})
-
-test_that(".looks_like_mvalues is TRUE when abs values exceed 1 (M-values)", {
-  m <- matrix(rnorm(20, mean = 0, sd = 3), nrow = 5, dimnames = list(
-    paste0("cg", sprintf("%08d", seq_len(5))), paste0("s", 1:4)))
-  expect_true(SEMseeker:::.looks_like_mvalues(m))
-})
-
-test_that(".looks_like_mvalues ignores CHR/START/END columns", {
-  df <- data.frame(
-    CHR = "chr1", START = 100L, END = 101L,
-    s1 = c(0.1, 0.2, 0.3), s2 = c(0.4, 0.5, 0.6))
-  expect_false(SEMseeker:::.looks_like_mvalues(df))
-})
-
 # ---- mvalue_to_beta -----------------------------------------------------
 
 test_that("mvalue_to_beta converts a matrix via 2^M / (1 + 2^M)", {

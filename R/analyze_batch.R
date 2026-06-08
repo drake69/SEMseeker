@@ -103,6 +103,23 @@ analyze_batch <- function(signal_data, sample_sheet)
   otherSamples <- sample_sheet[sample_sheet$Sample_Group != "Reference",]
   referenceSamples <- referenceSamples[!(referenceSamples$Sample_ID %in% otherSamples$Sample_ID), ]
   sample_sheet <- rbind(otherSamples, referenceSamples)
+
+  # AI-042 (2026-06-08): se bulk_population=TRUE, salta il per-sample loop e
+  # passa direttamente alla nuova analyze_population_bulk() che computa
+  # DELTAS/MUTATIONS/DELTAR/LESIONS in bulk via Polars lazy operations sul
+  # SIGNAL pivot gia' scritto da signal_save. Zero bedgraph per-sample.
+  if (isTRUE(ssEnv$bulk_population)) {
+    analyze_population_bulk(
+      signal_data       = signal_data,
+      sample_sheet      = sample_sheet,
+      signal_thresholds = populationControlRangeBetaValues,
+      probe_features    = probe_features
+    )
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " Batch completed (bulk mode):", batch_id)
+    return(invisible(NULL))
+  }
+
   i <- 0
   variables_to_export <- c( "ssEnv", "sample_sheet", "signal_data", "analyze_population",
     "populationControlRangeBetaValues", "probe_features")

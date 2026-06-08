@@ -70,9 +70,11 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   if (is.na(partition_percentage)) partition_percentage <- 1
 
   # Same pre-processing the per-area path runs
+  transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
   prepared <- data_preparation(family_test, transformation_y, tempDataFrame,
                                 independent_variable, g_start, ncol(tempDataFrame),
-                                FALSE, covariates, depth_analysis, key)
+                                FALSE, covariates, depth_analysis, key,
+                                transformation_x = transformation_x_local)
   tempDataFrame <- prepared$tempDataFrame
 
   cols <- colnames(tempDataFrame)

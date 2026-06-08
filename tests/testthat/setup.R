@@ -166,7 +166,7 @@ if (use_synthetic_data)
 
 
 
-sliding_window_size <<- 11
+lesion_window_kbp <<- 5
 bonferroni_threshold <<- 0.1
 batch_id <<- 1
 iqrTimes <<- 3
