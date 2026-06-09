@@ -1,3 +1,98 @@
+# AI-096 Phase 2 (2026-06-09): KNN imputation memory gate.
+#
+# Estimates the peak RAM needed for KNN on the input matrix and compares
+# it to the available system RAM (scaled by SEMSEEKER_KNN_MEM_FRACTION,
+# default 0.6 to leave room for Polars cache + R working set + OS + apps).
+# Fail-fast with an actionable error before the kmeans_knn() call so the
+# user knows to switch to median/mean or run KNN upstream of semseeker().
+#
+# Memory model:
+#   matrix    = n_probes × n_samples × 8 bytes        (double)
+#   distance  = n_samples × n_samples × 8 bytes       (sample-sample)
+#   working   = 2 × matrix                            (KNN intermediate buffers)
+#   needed    = matrix + distance + working
+#
+# All in bytes; converted to GB at log time.
+.knn_memory_gate <- function(mat) {
+  if (!is.matrix(mat) && !is.data.frame(mat)) {
+    return(invisible(NULL))   # only gate matrices/frames
+  }
+  n_probes  <- nrow(mat)
+  n_samples <- ncol(mat)
+  byte_per_double <- 8
+  matrix_GB   <- n_probes  * n_samples  * byte_per_double / (1024^3)
+  distance_GB <- n_samples * n_samples  * byte_per_double / (1024^3)
+  working_GB  <- 2 * matrix_GB
+  needed_GB   <- matrix_GB + distance_GB + working_GB
+
+  # SEMSEEKER_KNN_MEM_FRACTION (env var) overrides the default 0.6.
+  mem_frac <- suppressWarnings(as.numeric(Sys.getenv("SEMSEEKER_KNN_MEM_FRACTION", "0.6")))
+  if (is.na(mem_frac) || mem_frac <= 0 || mem_frac > 1) mem_frac <- 0.6
+
+  # Available RAM: prefer memuse if installed, else parse /proc/meminfo
+  # on linux, fall back to `sysctl hw.memsize` on macOS. If everything
+  # fails, skip the gate (don't block the user on a portability issue).
+  total_GB <- .total_ram_GB()
+  if (is.na(total_GB) || total_GB <= 0) {
+    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " inpute_missing_values: could not detect total RAM — skipping KNN memory gate.")
+    return(invisible(NULL))
+  }
+  available_GB <- total_GB * mem_frac
+
+  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " inpute_missing_values: KNN memory estimate matrix=",
+            round(matrix_GB, 2), " GB + distance=", round(distance_GB, 3),
+            " GB + buffers=", round(working_GB, 2), " GB = ",
+            round(needed_GB, 2), " GB; available=", round(available_GB, 2),
+            " GB (", round(mem_frac * 100), "% of ", round(total_GB), " GB).")
+
+  if (needed_GB > available_GB) {
+    msg <- sprintf(
+      "KNN imputation needs ~%.1f GB (matrix=%.1f, distance=%.2f, buffers=%.1f), available ~%.1f GB (%.0f%% of total %.0f GB). Options:\n  - use inpute='median' (matrixStats row-median, C-level, no full materialization)\n  - use inpute='mean' (same shape, mean instead of median)\n  - run KNN upstream and pass the imputed matrix to semseeker()\n  - raise SEMSEEKER_KNN_MEM_FRACTION (current %.2f) if you have headroom",
+      needed_GB, matrix_GB, distance_GB, working_GB,
+      available_GB, mem_frac * 100, total_GB, mem_frac
+    )
+    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " inpute_missing_values: KNN gate triggered. ", msg)
+    stop(msg, call. = FALSE)
+  }
+  invisible(NULL)
+}
+
+# Best-effort total RAM detection. Returns GB or NA.
+.total_ram_GB <- function() {
+  # 1) memuse (cross-platform, optional dependency)
+  if (requireNamespace("memuse", quietly = TRUE)) {
+    bytes <- tryCatch(as.numeric(memuse::Sys.meminfo()$totalram),
+                       error = function(e) NA_real_)
+    if (!is.na(bytes) && bytes > 0) return(bytes / (1024^3))
+  }
+  # 2) macOS: sysctl hw.memsize → bytes
+  os <- Sys.info()[["sysname"]]
+  if (os == "Darwin") {
+    out <- tryCatch(suppressWarnings(system2("sysctl", c("-n", "hw.memsize"),
+                                              stdout = TRUE, stderr = FALSE)),
+                     error = function(e) NULL)
+    if (!is.null(out) && length(out) == 1L) {
+      bytes <- suppressWarnings(as.numeric(out))
+      if (!is.na(bytes) && bytes > 0) return(bytes / (1024^3))
+    }
+  }
+  # 3) Linux: /proc/meminfo MemTotal (kB)
+  if (os == "Linux" && file.exists("/proc/meminfo")) {
+    lines <- tryCatch(readLines("/proc/meminfo", n = 1L), error = function(e) NULL)
+    if (!is.null(lines)) {
+      m <- regmatches(lines, regexec("MemTotal:\\s+(\\d+)\\s+kB", lines))[[1]]
+      if (length(m) >= 2L) {
+        kB <- suppressWarnings(as.numeric(m[2]))
+        if (!is.na(kB) && kB > 0) return(kB * 1024 / (1024^3))
+      }
+    }
+  }
+  NA_real_
+}
+
 inpute_missing_values <- function(signal_data){
 
   ssEnv <- get_session_info()
@@ -57,6 +152,15 @@ inpute_missing_values <- function(signal_data){
       log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") ," Invalid inpute value. Please provide the number of centers and the number of clusters separated by a semicolon.")
       stop()
     }
+
+    # AI-096 Phase 2 (2026-06-09): memory gate for KNN imputation.
+    # KNN requires the full matrix + a sample×sample distance matrix
+    # + working buffers. On ewas-scale (367k × 4013 ≈ 12 GB) the
+    # 64 GB Mac can absorb it; on long-reads (10⁶ × variable) it
+    # blows up to 30+ GB and macOS jetsam kills R silently. Fail-fast
+    # before the call so the user gets an actionable error.
+    .knn_memory_gate(mat)
+
     centers <- strsplit(ssEnv$inpute, ";")[[1]][2]
     k <- strsplit(ssEnv$inpute, ";")[[1]][3]
     imputed_matrix <- KMEANS.KNN::kmeans_knn(mat, centers = centers, k = k)

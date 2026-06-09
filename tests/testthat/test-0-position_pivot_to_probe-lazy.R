@@ -1,11 +1,13 @@
-# Regression: position_pivot_to_probe must accept a polars LazyFrame and do
-# the join/filter/drop fully in polars (single $collect()), without ever
-# materialising the full SIGNAL pivot as an R data.frame. The previous
-# implementation R-subset/sorted the collected matrix and produced 4–5 full
-# copies of the input, blowing past 80 GB peak on ~367k × 4k inputs and
-# triggering macOS Jetsam OOM-kill (Mac/64GB, 2026-06-05).
+# AI-096 Phase 1 (2026-06-09): position_pivot_to_probe returns LazyFrame.
+#
+# Contract change: returns polars_lazy_frame (was R data.frame in the
+# legacy implementation). Caller is responsible for any materialization,
+# and most callers should NOT materialize — analyze_batch resume path
+# now consumes the LazyFrame end-to-end. Prior R-side subset/sort
+# materialised 4–5 copies of the input, blowing 80+ GB peak on
+# ~367k × 4k inputs and triggering macOS jetsam OOM-kill silently.
 
-test_that("position_pivot_to_probe accepts a polars LazyFrame input", {
+test_that("position_pivot_to_probe accepts a polars LazyFrame and returns a LazyFrame", {
 
   skip_on_cran()
 
@@ -48,18 +50,26 @@ test_that("position_pivot_to_probe accepts a polars LazyFrame input", {
 
   out <- SEMseeker:::position_pivot_to_probe(pivot_lazy)
 
-  testthat::expect_s3_class(out, "data.frame")
-  # Output rows are probe-keyed via rownames; no leftover annotation columns.
-  testthat::expect_setequal(rownames(out), anno$PROBE)
-  testthat::expect_false("PROBE" %in% colnames(out))
-  testthat::expect_false("CHR"   %in% colnames(out))
-  testthat::expect_false("START" %in% colnames(out))
-  testthat::expect_false("END"   %in% colnames(out))
-  testthat::expect_false("K850"  %in% colnames(out))
-  testthat::expect_setequal(colnames(out), c("S001", "S002"))
-  # Values preserved (compare in rowname order to be order-independent).
-  testthat::expect_equal(out[anno$PROBE, "S001"], pivot_df$S001)
-  testthat::expect_equal(out[anno$PROBE, "S002"], pivot_df$S002)
+  # NEW CONTRACT (AI-096): lazy passthrough — return type is LazyFrame.
+  testthat::expect_s3_class(out, "polars_lazy_frame")
+  testthat::expect_false(inherits(out, "data.frame"))
+
+  # Schema: PROBE column + sample columns; CHR/START/END/tech dropped.
+  schema_cols <- names(out$collect_schema())
+  testthat::expect_true("PROBE" %in% schema_cols)
+  testthat::expect_false("CHR"   %in% schema_cols)
+  testthat::expect_false("START" %in% schema_cols)
+  testthat::expect_false("END"   %in% schema_cols)
+  testthat::expect_false("K850"  %in% schema_cols)
+  testthat::expect_true("S001" %in% schema_cols)
+  testthat::expect_true("S002" %in% schema_cols)
+
+  # Values preserved on collect (compare by PROBE-key order-independently).
+  collected <- as.data.frame(out$collect())
+  rownames(collected) <- collected$PROBE
+  testthat::expect_setequal(collected$PROBE, anno$PROBE)
+  testthat::expect_equal(collected[anno$PROBE, "S001"], pivot_df$S001)
+  testthat::expect_equal(collected[anno$PROBE, "S002"], pivot_df$S002)
 })
 
 test_that("position_pivot_to_probe still accepts an R data.frame input", {
@@ -95,9 +105,10 @@ test_that("position_pivot_to_probe still accepts an R data.frame input", {
   )
 
   out <- SEMseeker:::position_pivot_to_probe(pivot_df)
-  testthat::expect_s3_class(out, "data.frame")
-  testthat::expect_setequal(rownames(out), anno$PROBE)
-  testthat::expect_setequal(colnames(out), "S001")
+  testthat::expect_s3_class(out, "polars_lazy_frame")
+  collected <- as.data.frame(out$collect())
+  testthat::expect_setequal(collected$PROBE, anno$PROBE)
+  testthat::expect_setequal(setdiff(colnames(collected), "PROBE"), "S001")
 })
 
 test_that("position_pivot_to_probe drops probes flagged FALSE for the tech", {
@@ -134,6 +145,7 @@ test_that("position_pivot_to_probe drops probes flagged FALSE for the tech", {
   )
 
   out <- SEMseeker:::position_pivot_to_probe(polars::as_polars_df(pivot_df)$lazy())
-  testthat::expect_setequal(rownames(out), anno$PROBE[anno$K850])
-  testthat::expect_equal(nrow(out), 2L)
+  collected <- as.data.frame(out$collect())
+  testthat::expect_setequal(collected$PROBE, anno$PROBE[anno$K850])
+  testthat::expect_equal(nrow(collected), 2L)
 })
