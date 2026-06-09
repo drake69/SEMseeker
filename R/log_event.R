@@ -94,32 +94,36 @@ log_event <- function(...)
     cat(log_event_to_save, "\n", file = journal_file, append = TRUE)
   }
 
-  # if verbosity is 1, only print ERROR messages
-  if (verbosity == 1 && grepl("^ERROR", log_event_to_save) || grepl("^BANNER", log_event_to_save) && !testthat::is_testing())
-  {
-    message(log_event_to_print)
-    log_event_to_print <- ""
-  }
+  # AI-061+ (2026-06-09): rewritten with explicit parens and a verbosity
+  # ladder. The previous form had operator-precedence inconsistencies
+  # between the four branches (the verbosity == 1 line let BANNER through
+  # by accident via && / || precedence, while the verbosity == 2/3 lines
+  # gated BANNER inside the verbosity check) and printed every BANNER
+  # twice on verbosity == 2/3.
+  #
+  # New rule:
+  #   BANNER  → always printed (section separators the user wants to see)
+  #   ERROR   → always printed (critical, regardless of verbosity)
+  #   WARNING → verbosity >= 2
+  #   INFO    → verbosity >= 3
+  #   DEBUG   → verbosity >= 4
+  # testthat::is_testing() suppresses all console output unconditionally.
 
-  # if verbosity is 2, print ERROR and WARNING messages
-  if (verbosity == 2 && (grepl("^ERROR", log_event_to_save) || grepl("^WARNING", log_event_to_save)|| grepl("^BANNER", log_event_to_save)) && !testthat::is_testing())
-  {
-    message(log_event_to_print)
-    log_event_to_print <- ""
-  }
-
-  # if verbosity is 3, print ERROR, WARNING and INFO messages
-  if (verbosity == 3 && (grepl("^ERROR", log_event_to_save) || grepl("^WARNING", log_event_to_save) || grepl("^INFO", log_event_to_save) || grepl("^BANNER", log_event_to_save)) && !testthat::is_testing())
-  {
-    message(log_event_to_print)
-    log_event_to_print <- ""
-  }
-
-  # if verbosity is 4, print ERROR, WARNING, INFO and DEBUG messages
-  if (verbosity == 4 && !testthat::is_testing())
-  {
-    message(log_event_to_print)
-    log_event_to_print <- ""
+  if (!testthat::is_testing()) {
+    if (grepl("^BANNER",  log_event_to_save) ||
+        grepl("^ERROR",   log_event_to_save)) {
+      message(log_event_to_print)
+      log_event_to_print <- ""
+    } else if (verbosity >= 2 && grepl("^WARNING", log_event_to_save)) {
+      message(log_event_to_print)
+      log_event_to_print <- ""
+    } else if (verbosity >= 3 && grepl("^INFO",    log_event_to_save)) {
+      message(log_event_to_print)
+      log_event_to_print <- ""
+    } else if (verbosity >= 4 && grepl("^DEBUG",   log_event_to_save)) {
+      message(log_event_to_print)
+      log_event_to_print <- ""
+    }
   }
 
 }
