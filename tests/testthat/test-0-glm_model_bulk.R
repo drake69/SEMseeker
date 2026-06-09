@@ -79,7 +79,7 @@ test_that("glm_model_bulk produces one row per probe with legacy schema", {
   df <- .sim_binary_factor(n_samples = 200L, n_probes = 40L)
   g_start <- attr(df, "g_start")
 
-  res <- glm_model_bulk(
+  res <- SEMseeker:::glm_model_bulk(
     tempDataFrame        = df,
     g_start              = g_start,
     family_test          = "binomial_bulk",
@@ -108,7 +108,7 @@ test_that("Rfast estimates roughly match stats::glm on the same data", {
   df <- .sim_binary_factor(n_samples = 300L, n_probes = 5L, seed = 11L)
   g_start <- attr(df, "g_start")
 
-  res <- glm_model_bulk(
+  res <- SEMseeker:::glm_model_bulk(
     tempDataFrame        = df,
     g_start              = g_start,
     family_test          = "binomial_bulk",
@@ -149,7 +149,7 @@ test_that("wrong family_test returns NULL", {
   skip_if_no_rfast()
   tf <- .init_test_session(); on.exit(unlink(tf, recursive = TRUE), add = TRUE)
   df <- .sim_binary_factor(n_samples = 50L, n_probes = 5L)
-  res <- glm_model_bulk(
+  res <- SEMseeker:::glm_model_bulk(
     tempDataFrame        = df,
     g_start              = attr(df, "g_start"),
     family_test          = "binomial",   # wrong: only binomial_bulk allowed

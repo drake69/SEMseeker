@@ -216,9 +216,8 @@ association_cross_studies_overlaps <- function(inference_detail, studies,alpha =
           categories <- names(SPLIT)
           if(length(categories)<2)
             next
-          # remove _
-
-          categories <- gsub("_", " ", categories)
+          # AI-044 (2026-06-09): use shared `pretty_label()` helper.
+          categories <- pretty_label(categories)
           folder <- dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",areas_sql_condition))
           filename <-
             paste(
