@@ -8,7 +8,6 @@
 #'   Sostituire le chiamate `gene_impact_analysis(...)` con
 #'   `enrichment_analysis(...)` (stessa firma, stessa semantica).
 #'
-#' @inheritParams enrichment_analysis
 #' @param ... Argomenti forwardati a `enrichment_analysis()`.
 #' @return Invisibly NULL. Vedi `enrichment_analysis()`.
 #' @seealso [enrichment_analysis()]
