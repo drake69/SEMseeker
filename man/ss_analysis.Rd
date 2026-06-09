@@ -2,53 +2,30 @@
 % Please edit documentation in R/ss_analysis.R
 \name{ss_analysis}
 \alias{ss_analysis}
-\title{Sensitivity and specificity analysis of SEMseeker mutations and lesions}
+\title{Sensitivity / specificity analysis (deprecated alias)}
 \usage{
-ss_analysis(
-  samples_sql_selection = "",
-  combinations,
-  result_folder,
-  independent_variable = "Sample_Group",
-  maxResources = 90,
-  parallel_strategy = "multicore",
-  ...
-)
+ss_analysis(...)
 }
 \arguments{
-\item{samples_sql_selection}{character. SQL-style filter expression to
-restrict which samples are included (default \code{""}, all samples).}
-
-\item{combinations}{list of character vectors. Each element is a vector of
-sample group labels to compare (e.g. \code{list(c("CASE_A", "CASE_B"))}).}
-
-\item{result_folder}{character. Path to the SEMseeker result folder.}
-
-\item{independent_variable}{character. Sample sheet column defining the
-grouping variable (default \code{"Sample_Group"}).}
-
-\item{maxResources}{numeric. Maximum percentage of CPU cores to use
-(default 90).}
-
-\item{parallel_strategy}{character. Parallelisation backend; possible
-values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
-\code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).}
-
-\item{...}{Additional arguments passed to \code{init_env()}.}
+\item{...}{Tutti gli argomenti vengono inoltrati a
+[diagnostic_performance()] inalterati. Vedi la sua documentazione
+per la lista completa.}
 }
 \value{
-Invisibly \code{NULL}. Sensitivity / specificity tables are written
-  to the \code{Euristic/} sub-folder of \code{result_folder}.
+Invisibly \code{NULL}. Vedi [diagnostic_performance()].
 }
 \description{
-Sensitivity and specificity analysis of SEMseeker mutations and lesions
+Alias deprecato di [diagnostic_performance()]. Il nome
+  `ss_analysis` era ambiguo (poteva indicare SEMseeker, sensitivity /
+  specificity, oppure single-sample). Il nuovo nome
+  `diagnostic_performance()` comunica chiaramente cosa fa: calcolo di
+  sensitivity, specificity e diagnostic score per le SEM mutations /
+  lesions.
+
+  Sostituire le chiamate `ss_analysis(...)` con
+  `diagnostic_performance(...)` (stessa firma, stessa semantica). Alla
+  chiamata viene emesso un warning di deprecation.
 }
-\examples{
-result_dir <- tempdir()
-\dontrun{
-ss_analysis(
-  combinations         = list(c("CASE_A", "CASE_B")),
-  result_folder        = "~/semseeker_results/",
-  independent_variable = "Sample_Group"
-)
-}
+\seealso{
+[diagnostic_performance()]
 }
