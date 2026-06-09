@@ -51,9 +51,26 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     old_results_global <- data.frame()
   }
 
+  ssEnv_local <- get_session_info()
+  tech_is_longread <- !is.null(ssEnv_local$tech) &&
+                       ssEnv_local$tech %in% c("WGBS", "LONGREAD")
+
   for (k in seq_len(nkeys)) {
     key <- keys[k, ]
-    if (key$AREA == "POSITION") next
+    # AI-098 (2026-06-09): symmetric tech-aware skip. Each technology has
+    # exactly one canonical AREA representation; the other is no-op:
+    #   - Illumina (K27/K450/K850): PROBE is canonical — literature reports
+    #     probe IDs (cg00000029). POSITION would produce a duplicate
+    #     coord-keyed CSV with the same numerical results → skip.
+    #   - WGBS / LONGREAD: POSITION is canonical — long-reads have no
+    #     "probe" concept; coordinates are the natural row identifier.
+    #     PROBE pivot doesn't exist for these techs → skip.
+    # This replaces the unconditional `if (AREA == "POSITION") next` which
+    # was Illumina-centric and blocked all position-level inference for
+    # long-reads, even when POSITION was the only meaningful unit.
+    if (key$AREA == "POSITION" && !tech_is_longread) next
+    if (key$AREA == "PROBE"    &&  tech_is_longread) next
+
     pivot_filename <- pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
 
     # AI-027: read via unified dispatcher. Returns NULL when neither the
