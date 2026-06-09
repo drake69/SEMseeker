@@ -84,17 +84,18 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
     pivot_lazy <- pivot_lazy$drop(drop_cols)
   }
 
-  # AI-043 resume: filter out areas already in the on-disk CSV. The
-  # caller has already applied gsub("-","_") to the area_to_remove
-  # values, so we apply the same normalisation to the lazy AREA column
-  # before the membership check.
+  # AI-043 resume: filter out areas already in the on-disk CSV.
+  # AI-061+ (2026-06-09): no more gsub("-","_") normalisation on either
+  # side — names stay pass-through from the upstream annotation. The
+  # downstream CSV and the pivot AREA column carry identical raw names,
+  # so $is_in() matches exactly.
   # NB: $is_in() must receive a polars Expression / Series, NOT a bare R
   # character vector — otherwise polars 1.x parses each string as a column
   # reference and fails with "Column(s) not found: '<first value>' not found".
   # Wrap via pl$lit()$implode() so the values are treated as a literal set.
   if (length(area_to_remove) > 0L) {
     pivot_lazy <- pivot_lazy$filter(
-      !polars::pl$col("AREA")$str$replace_all("-", "_")$is_in(
+      !polars::pl$col("AREA")$is_in(
         polars::pl$lit(area_to_remove)$implode()
       )
     )

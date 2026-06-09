@@ -182,8 +182,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
                                             old_results_global$FIGURE == key$FIGURE &
                                             old_results_global$SUBAREA == key$SUBAREA &
                                             old_results_global$AREA == key$AREA, "AREA_OF_TEST"]
-      tempDataFrame_AREA_norm <- gsub("-", "_", tempDataFrame$AREA)
-      tempDataFrame <- tempDataFrame[!(tempDataFrame_AREA_norm %in% area_to_remove), ]
+      tempDataFrame <- tempDataFrame[!(tempDataFrame$AREA %in% area_to_remove), ]
     }
 
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -274,8 +273,18 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
           ...)
         results <- plyr::rbind.fill(results, result_temp_local_batch)
         results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
+        # AI-061+ (2026-06-09): mirror the AI-077 save-guard from the
+        # batch-family branch above. Only rewrite the (potentially
+        # hundreds-of-MB) CSV when this chunk actually appended new
+        # rows — full resume case (nothing new) should be a no-op.
+        new_rows_appended_chunk <- !is.null(result_temp_local_batch) &&
+                                   nrow(result_temp_local_batch) > 0L
+        if (new_rows_appended_chunk) {
+          association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
+          n_new_rows_total <- (if (exists("n_new_rows_total")) n_new_rows_total else 0L) +
+                              nrow(result_temp_local_batch)
+        }
       }
-      association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
     }
 
     association_analysis_log(cbind(prep$inference_detail, keys[k, ]),

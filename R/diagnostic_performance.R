@@ -135,15 +135,20 @@ diagnostic_performance <-
             #   stop("ERROR: I'm stopping here, the grouping variable should be only two!")
             tempDataFrame <- as.data.frame(tempDataFrame)
             tempDataFrame[is.na(tempDataFrame)] <- 0
-            cols <- (gsub(" ", "_", colnames(tempDataFrame)))
-            cols <- (gsub("-", "_", cols))
-            cols <- (gsub(":", "_", cols))
-            cols <- (gsub("/", "_", cols))
-            cols <- (gsub("'", "_", cols))
-            tempDataFrame <- as.data.frame(tempDataFrame)
-            if (length(colnames(tempDataFrame)) !=  length(cols))
-              stop("ERROR: I'm stopping here data to analyze are not correct, file a bug!")
-            colnames(tempDataFrame) <- cols
+            # AI-106 (2026-06-09): same sanitize+memo+counter-rename pattern
+            # as apply_stat_model.R. Colnames hold AREA_OF_TEST gene/CpG
+            # island names that may carry ' ', '-', ':', '/', "'" — all
+            # invalid as R identifiers. Sanitise here only for internal
+            # formula safety; the result's AREA_OF_TEST is reverse-mapped
+            # back to the raw name before writing the CSV (preserves the
+            # upstream-annotated identifier for enrichment + resume match).
+            real_cols <- colnames(tempDataFrame)
+            safe_cols <- gsub("[^A-Za-z0-9_.]", "_", real_cols)
+            if (anyDuplicated(safe_cols)) {
+              safe_cols <- make.unique(safe_cols, sep = "_")
+            }
+            safe_to_real <- setNames(real_cols, safe_cols)
+            colnames(tempDataFrame) <- safe_cols
 
             tempDataFrame[,independent_variable] <- as.character(tempDataFrame[,independent_variable])
 
@@ -170,7 +175,10 @@ diagnostic_performance <-
               else
                 progress_bar <- ""
 
-              var_to_export <- c("tempDataFrameComb","ssEnv","progress_bar","actual_labels","keys","k","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace")
+              # AI-106 (2026-06-09): safe_to_real reaches each worker so the
+              # AREA_OF_TEST written in the result_temp data.frame is the
+              # raw upstream name (no '-'→'_' rewrite).
+              var_to_export <- c("tempDataFrameComb","ssEnv","progress_bar","actual_labels","keys","k","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","safe_to_real")
               # for (c in 2:ncol(tempDataFrameComb))
               results_temp <- foreach::foreach(c  =  2:ncol(tempDataFrameComb), .combine  =  rbind, .export  =  var_to_export) %dorng%
               {
@@ -244,9 +252,18 @@ diagnostic_performance <-
                 #   "SCORE"=0,"BURDEN"=burden,"JSD"=jsd)
 
                 # replace Na or Nan with 0
+                # AI-106 (2026-06-09): reverse-map AREA_OF_TEST back to the
+                # raw upstream name so the CSV preserves it for enrichment
+                # / resume match. Defensive fallback if the mapping is
+                # missing (should not happen).
+                area_of_test_raw <- if (area_of_test %in% names(safe_to_real)) {
+                  safe_to_real[[area_of_test]]
+                } else {
+                  area_of_test
+                }
                 results_temp <- data.frame("MARKER"= as.character(keys[k, "MARKER"]),"FIGURE"= as.character(keys[k, "FIGURE"]),
                   "AREA"= as.character(keys[k, "AREA"]), "SUBAREA"= as.character(keys[k, "SUBAREA"]),
-                  "AREA_OF_TEST" = area_of_test, "Case"= case_label, "Control"= control_label,
+                  "AREA_OF_TEST" = area_of_test_raw, "Case"= case_label, "Control"= control_label,
                   "SENSITIVITY"=sensitivity, "SPECIFICITY"=specificity,
                   "P_to_be_Case_cond_to_be_Epimutated"= P_to_be_Case_cond_to_be_Epimutated,
                   "P_to_be_Control_cond_to_be_Not_Epimutated"= P_to_be_Control_cond_to_be_Not_Epimutated,

@@ -164,7 +164,11 @@ manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe
   # threshold_data <- fst::read_fst(file_path_build( ssEnv$result_folderData,"1_signal_thresholds","fst"))
   threshold_data <- as.data.frame(polars::pl$read_parquet(file_path_build( ssEnv$result_folderData,"1_signal_thresholds","parquet")))
 
-  colnames(signal_data) <- gsub("-","_", colnames(signal_data))
+  # AI-106 (2026-06-09): no more colname sanitisation. Sample_ID are
+  # passed through from the upstream pivot writers (signal_save,
+  # analyze_population_bulk). The `colnames(signal_data) %in%
+  # colnames(marker_data)` match below relies on both pivots writing
+  # Sample_ID in the SAME raw format.
   if(max_sample!=0)
     signal_data <- signal_data[,min_sample:max_sample]
   samples <- as.vector(colnames(signal_data[,!grepl("AREA", colnames(signal_data))]))

@@ -162,8 +162,9 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
       aggregated_results_table <- merge(aggregated_results_table, aggregated_results_table_statistic_parameter, by = c("AREA", "SUBAREA", "MARKER", "FIGURE", "AREA_OF_TEST"))
     }
 
-    aggregated_results_table$AREA <- gsub("-", "_", aggregated_results_table$AREA)
-    aggregated_results_table$AREA <- gsub("_", "-", aggregated_results_table$AREA)
+    # AI-106 (2026-06-09): removed legacy gsub round-trip (same fix as
+    # inter_study_association_overlaps.R). Post-AI-106 all CSVs preserve
+    # raw names from upstream annotation; no transformation needed.
     markers <- unique(aggregated_results_table[, c("MARKER")])
     # for (i in seq_along(markers))
     # {

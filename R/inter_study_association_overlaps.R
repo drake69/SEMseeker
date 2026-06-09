@@ -169,8 +169,13 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
       aggregated_study_results_table <- merge(aggregated_study_results_table, aggregated_study_results_table_statistic_parameter, by = c("AREA", "SUBAREA", "MARKER", "FIGURE", "AREA_OF_TEST"))
     }
 
-    aggregated_study_results_table$AREA <- gsub("-", "_", aggregated_study_results_table$AREA)
-    aggregated_study_results_table$AREA <- gsub("_", "-", aggregated_study_results_table$AREA)
+    # AI-106 (2026-06-09): removed the legacy round-trip
+    #   gsub("-","_") then gsub("_","-")
+    # which forced ALL underscores into dashes — a posticcio for CSV
+    # written with the old sanitisation that incidentally corrupted
+    # WGBS coordinate names ("chr1_12345_12346" → "chr1-12345-12346").
+    # Post-AI-106 all CSVs preserve raw names from the upstream
+    # annotation; no transformation is needed here.
 
 
     markers <- unique(aggregated_study_results_table[, c("MARKER")])

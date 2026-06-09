@@ -221,8 +221,14 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
   # # remove rows with all NA
   # tempDataFrame <- tempDataFrame[,colSums(is.na(tempDataFrame)) != nrow(tempDataFrame)]
 
-  # replace - with _ in colnames
-  colnames(tempDataFrame) <- gsub("-", "_", colnames(tempDataFrame))
+  # AI-106 (2026-06-09): no more colname sanitisation here. Names stay
+  # pass-through from the upstream annotation (HLA-A, chr10:...-..., etc).
+  # The per-gene foreach in apply_stat_model() applies its own LOCAL
+  # safe<->real memoised mapping ONLY for the duration of the formula
+  # machinery (R formula identifiers cannot contain '-' or ':'), then
+  # reverses the mapping before assigning AREA_OF_TEST in the result.
+  # CSV ends up with raw names → enrichment downstream resolves HGNC
+  # correctly, resume match is exact.
 
   result <- list(tempDataFrame, independent_variableLevels)
   names(result) <- c("tempDataFrame", "independent_variableLevels")
