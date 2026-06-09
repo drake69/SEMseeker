@@ -27,3 +27,6 @@ tests/testthat/_problems/
 
 # Secrets (blueprint §17)
 secrets/
+
+# Test side-effect garbage (created when init_env() runs with NA path)
+tests/testthat/NA/
