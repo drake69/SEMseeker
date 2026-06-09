@@ -168,7 +168,8 @@ jobs:
           # needed for R CMD check and that have repeatedly broken CI.
           #   Rfast    test-0-glm_model_bulk.R (AI-044 binomial_bulk)
           #   mockery  test-association_model_limma.R (mocked bindings)
-          install.packages(c("Rfast", "mockery"))
+          #   ggpubr   test-2-box-plot.R (box plot rendering)
+          install.packages(c("Rfast", "mockery", "ggpubr"))
         shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v2
