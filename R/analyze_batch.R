@@ -1,113 +1,281 @@
+# AI-096 (2026-06-09): lazy passthrough for the resume path. The legacy
+# behaviour materialised the SIGNAL pivot into a ~12 GB R data.frame even
+# in resume mode (where signal_save would just early-return), then doubled
+# that with an R-side match+sort to align signal_data with probe_features.
+# Peak ~24 GB R-side + Polars residuo on 367k × 4013 → macOS silent jetsam
+# kill on 64 GB Macs (v18, v21 confirmed). This refactor:
+#
+#   - In RESUME mode (POSITION pivot in cache): keep signal_data as a
+#     Polars LazyFrame end-to-end. Extract schema (colnames, nrow) lazily.
+#     Reference population thresholds use a lazy column subset materialised
+#     ONLY for the ~10% reference samples → 1-2 GB peak instead of 12.
+#     signal_save call is skipped entirely (would have early-returned).
+#     analyze_population_bulk reads the pivot lazily from disk and ignores
+#     the signal_data arg.
+#
+#   - In FRESH mode (pivot must be built): keep R-side materialisation
+#     for inpute_missing_values (median needs row-wise access) and for the
+#     signal_save fresh-path write. BUT skip the R-side probe_features
+#     match+sort — signal_save's per-chr chunked sort is the canonical
+#     sort gate (see `single-sort-gate-at-pivot-save` memory) so the input
+#     row order doesn't matter.
+#
+# Sort gate policy: there is exactly ONE canonical sort in the pipeline,
+# inside `signal_save()`, chunked per-chr by START → sink_parquet. Every
+# downstream consumer reads from disk and trusts that order. No re-sort.
+
 analyze_batch <- function(signal_data, sample_sheet)
 {
 
   ssEnv <- get_session_info()
   batch_id <- ssEnv$running_batch_id
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " working on batch:", batch_id, " of ", nrow(signal_data), " rows and ", ncol(signal_data), " samples.")
-  colnames(signal_data) <- name_cleaning(colnames(signal_data))
-  # Keep Sample_ID in sync with name_cleaning so sample_group_check passes
   sample_sheet$Sample_ID <- name_cleaning(sample_sheet$Sample_ID)
-  # AI-027: read via unified dispatcher; CASE 2 (streaming merge) lets
+
+  # AI-027: read via unified dispatcher. CASE 2 (streaming merge) lets
   # the SEM step pick up raw bed/bedgraph files when the SIGNAL_MEAN
   # pivot has not been materialised yet.
   signal_pivot <- read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
-  if (is.null(signal_pivot)) {
-    # Transparent conversion: WGBS/LONGREAD coordinate input → synthetic probe IDs
-    signal_data <- normalize_signal_input(signal_data)
-    signal_data <- substitute_infinite(signal_data)
-    signal_data <- inpute_missing_values(signal_data)
-  } else
-  {
-    # Stay lazy through the position→probe transformation. Materialising the
-    # SIGNAL pivot eagerly here (`as.data.frame(signal_pivot$collect())`) on
-    # large arrays — e.g. 367k probes × 4k samples ≈ 12 GB — followed by R-side
-    # subset/sort ops triggers multiple full-matrix copies and pushes the R
-    # process into Jetsam OOM territory on 64 GB Macs. position_pivot_to_probe
-    # accepts a LazyFrame and does the join+filter+drop in polars, collecting
-    # only once.
+  resume_mode  <- !is.null(signal_pivot)
+
+  if (resume_mode) {
+    # ----------------------------------------------------------------
+    # RESUME PATH — lazy passthrough
+    # ----------------------------------------------------------------
+    # position_pivot_to_probe returns a LazyFrame post AI-096; the PROBE
+    # column is the probe identifier, sample columns follow.
     if ("CHR" %in% names(signal_pivot)) {
-      signal_data <- position_pivot_to_probe(signal_pivot)
+      signal_lazy <- position_pivot_to_probe(signal_pivot)
     } else {
-      signal_data <- as.data.frame(signal_pivot$collect())
-      if ("PROBE" %in% colnames(signal_data)) {
-        rownames(signal_data) <- signal_data$PROBE
-        signal_data$PROBE <- NULL
-      }
+      signal_lazy <- signal_pivot
     }
+    # If position_pivot_to_probe (legacy or another caller) returned a
+    # DataFrame instead of LazyFrame, coerce.
+    if (inherits(signal_lazy, "polars_data_frame")) {
+      signal_lazy <- signal_lazy$lazy()
+    }
+
+    schema_cols <- names(signal_lazy$collect_schema())
+    sample_cols <- setdiff(schema_cols, c("PROBE", "CHR", "START", "END"))
+    n_probes    <- as.integer(signal_lazy$select(polars::pl$len())$collect()$to_data_frame()$len[1])
+
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " working on batch:", batch_id, " of ", n_probes,
+              " rows and ", length(sample_cols), " samples (resume mode, lazy).")
+
+    # Tech detection: in resume mode we MUST trust ssEnv$tech (set at
+    # init_env time or pre-declared). Auto-detection requires reading
+    # probe IDs + a sample of values which would materialise rows we
+    # don't otherwise need. If ssEnv$tech is missing, we can fall back
+    # to a tiny lazy collect of first 10k rows + 1 column.
+    if (is.null(ssEnv$tech) || !nzchar(ssEnv$tech)) {
+      probe_ids <- as.character(signal_lazy$select("PROBE")$
+                                 head(10000L)$collect()$to_data_frame()$PROBE)
+      tech_signal <- data.frame(
+        PROBE = probe_ids,
+        stringsAsFactors = FALSE
+      )
+      rownames(tech_signal) <- probe_ids
+      ssEnv <- get_meth_tech(tech_signal)
+      ssEnv <- get_session_info()
+    } else {
+      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " technology pre-declared as '", ssEnv$tech,
+                "'; using ssEnv$tech in resume mode.")
+    }
+
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " I will work on:", n_probes, " PROBES.")
+
+    # Build probe_features by reading ONLY the PROBE column (tiny).
+    probe_ids_vec <- as.character(signal_lazy$select("PROBE")$
+                                    collect()$to_data_frame()$PROBE)
+    if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
+      probe_features <- coord_probe_features(probe_ids_vec)
+    } else {
+      probe_features <- probe_features_get("PROBE")
+      probe_features <- probe_features[probe_features$PROBE %in% probe_ids_vec, ]
+    }
+    # NO sort_by_chr_and_start — sort gate is signal_save (already written).
+    # NO signal_data row reorder — pivot rows are already canonical.
+
+    # sample_group_check expects something with colnames(signal_data) →
+    # pass a zero-row placeholder with the right sample-column names.
+    signal_data_check <- as.data.frame(matrix(numeric(0),
+                                              nrow = 0, ncol = length(sample_cols)))
+    colnames(signal_data_check) <- sample_cols
+    sample_group_checkResult <- sample_group_check(sample_sheet, signal_data_check)
+    if (!is.null(sample_group_checkResult)) stop(sample_group_checkResult)
+    rm(signal_data_check)
+
+    # signal_save would early-return (POSITION pivot exists). Skip the
+    # call entirely — saves a function frame and the misleading log line.
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " Signal data already saved (resume mode); skipping signal_save.")
+
+    # Reference population thresholds: lazy select reference sample
+    # columns only, then collect into a small R matrix (~10% of full
+    # width). For ewas (4013 sample) reference ~ 400 sample → 1.5 GB
+    # instead of 12 GB peak.
+    referencePopulationSampleSheet <- sample_sheet[sample_sheet$Sample_Group == "Reference", ]
+    ref_sample_ids <- intersect(sample_cols, referencePopulationSampleSheet$Sample_ID)
+    if (length(ref_sample_ids) < 1L) {
+      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " No Reference sample columns found in SIGNAL pivot.")
+      stop()
+    }
+    log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " pre-ref-collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+              " n_ref=", length(ref_sample_ids))
+    referencePopulationMatrix <- as.data.frame(
+      signal_lazy$select(c("PROBE", ref_sample_ids))$collect()
+    )
+    rownames(referencePopulationMatrix) <- referencePopulationMatrix$PROBE
+    referencePopulationMatrix$PROBE     <- NULL
+    log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " post-ref-collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+              " dim=", nrow(referencePopulationMatrix), "x", ncol(referencePopulationMatrix))
+
+    populationControlRangeBetaValues <- as.data.frame(
+      signal_range_values(referencePopulationMatrix, batch_id, probe_features)
+    )
+    rm(referencePopulationMatrix); gc()
+    log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " post-thresholds mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+
+    # Sample-sheet cleanup (drop duplicates between Reference and other).
+    referenceSamples <- sample_sheet[sample_sheet$Sample_Group == "Reference", ]
+    otherSamples     <- sample_sheet[sample_sheet$Sample_Group != "Reference", ]
+    referenceSamples <- referenceSamples[!(referenceSamples$Sample_ID %in% otherSamples$Sample_ID), ]
+    sample_sheet     <- rbind(otherSamples, referenceSamples)
+
+    # bulk_population path: analyze_population_bulk reads the pivot
+    # lazily from disk and ignores the signal_data argument. Pass NULL
+    # explicitly to avoid the caller assuming an R data.frame.
+    if (isTRUE(ssEnv$bulk_population)) {
+      analyze_population_bulk(
+        signal_data       = NULL,
+        sample_sheet      = sample_sheet,
+        signal_thresholds = populationControlRangeBetaValues,
+        probe_features    = probe_features
+      )
+      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " Batch completed (bulk mode, lazy resume):", batch_id)
+      return(invisible(NULL))
+    }
+
+    # Non-bulk path: per-population subset is computed via lazy select +
+    # collect on demand. Each population sees its own materialisation,
+    # bounded by population size.
+    for (i in seq_along(ssEnv$keys_sample_groups[, 1])) {
+      sample_group <- ssEnv$keys_sample_groups[i, 1]
+      populationSampleSheet <- sample_sheet[sample_sheet$Sample_Group == sample_group, ]
+      populationMatrixColumns <- intersect(sample_cols, populationSampleSheet$Sample_ID)
+
+      if (length(populationMatrixColumns) == 0L) {
+        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                  " Population ", sample_group,
+                  " is empty in resume mode; samples may be in another group.")
+        next
+      }
+      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " Working on population ", sample_group, " with ",
+                n_probes, " probes (lazy resume).")
+      population_signal <- as.data.frame(
+        signal_lazy$select(c("PROBE", populationMatrixColumns))$collect()
+      )
+      rownames(population_signal) <- population_signal$PROBE
+      population_signal$PROBE     <- NULL
+      analyze_population(
+        signal_data       = population_signal,
+        sample_sheet      = populationSampleSheet,
+        signal_thresholds = populationControlRangeBetaValues,
+        probe_features    = probe_features
+      )
+      rm(population_signal); gc()
+    }
+
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " Batch completed (lazy resume):", batch_id)
+    return(invisible(NULL))
   }
 
+  # ------------------------------------------------------------------
+  # FRESH PATH — R-side materialisation required for inpute + signal_save
+  # ------------------------------------------------------------------
+  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " working on batch:", batch_id, " of ", nrow(signal_data),
+            " rows and ", ncol(signal_data), " samples (fresh mode).")
+  colnames(signal_data) <- name_cleaning(colnames(signal_data))
+
+  # Transparent conversion: WGBS/LONGREAD coordinate input → synthetic probe IDs
+  signal_data <- normalize_signal_input(signal_data)
+  signal_data <- substitute_infinite(signal_data)
+  signal_data <- inpute_missing_values(signal_data)
   signal_data <- as.data.frame(signal_data)
   ssEnv <- get_meth_tech(signal_data)
   ssEnv <- get_session_info()
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work on:", nrow(signal_data), " PROBES.")
+  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " I will work on:", nrow(signal_data), " PROBES.")
 
-  # Build probe features — path depends on technology:
-  #   WGBS / LONGREAD: coordinates are encoded in the synthetic probe IDs;
-  #                    no Bioconductor annotation package is needed.
-  #   Illumina (K850/K450/K27): use Bioconductor annotation as before.
+  # Build probe_features filtered to actual probes (intersection only,
+  # NO R-side row reorder of signal_data — sort gate is signal_save).
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " building probe_features from synthetic probe IDs (", ssEnv$tech, ")")
+              " building probe_features from synthetic probe IDs (",
+              ssEnv$tech, ")")
     probe_features <- coord_probe_features(rownames(signal_data))
-    probe_features <- sort_by_chr_and_start(probe_features)
-    signal_data    <- signal_data[match(probe_features$PROBE, rownames(signal_data)), ]
   } else {
     probe_features <- probe_features_get("PROBE")
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
               " loaded probe_features from Bioconductor annotation")
-    # Intersect annotation with rownames(signal_data), sort by chr/start, then
-    # apply intersection + reorder to signal_data in ONE indexing op (single
-    # full-matrix copy instead of two — saves ~12 GB peak on 367k×4k inputs).
     probe_features <- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
-    probe_features <- sort_by_chr_and_start(probe_features)
-    signal_data    <- signal_data[match(probe_features$PROBE, rownames(signal_data)), , drop = FALSE]
-  }
-
-  if (!test_match_order(row.names(signal_data), probe_features$PROBE)) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Wrong order matching Probes and Methylation data!")
-    stop()
   }
 
   sample_group_checkResult <- sample_group_check(sample_sheet, signal_data)
-  if(!is.null(sample_group_checkResult))
-  {
+  if (!is.null(sample_group_checkResult)) {
     stop(sample_group_checkResult)
   }
 
   signal_save(signal_data, sample_sheet, batch_id)
-  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " post-signal_save  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " post-signal_save  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
-  # Reference population subset: probe IDs are kept as rownames (preserved by
-  # data.frame column subsetting in R). NO extra "PROBE" column wrapper — the
-  # downstream signal_range_values() reads probe IDs from rownames.
+  # Reference population subset and thresholds. probe IDs are kept as
+  # rownames (preserved by data.frame column subsetting). NO extra
+  # PROBE column wrapper — signal_range_values reads probe IDs from
+  # rownames.
   referencePopulationSampleSheet <- sample_sheet[sample_sheet$Sample_Group == "Reference", ]
-  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " pre-subset       mem_MB=", round(sum(gc()[, "(Mb)"]), 1), " n_ref=", nrow(referencePopulationSampleSheet))
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " pre-subset       mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+            " n_ref=", nrow(referencePopulationSampleSheet))
   referencePopulationMatrix <- signal_data[, referencePopulationSampleSheet$Sample_ID, drop = FALSE]
-  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " post-subset      mem_MB=", round(sum(gc()[, "(Mb)"]), 1), " dim=", nrow(referencePopulationMatrix), "x", ncol(referencePopulationMatrix))
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " post-subset      mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+            " dim=", nrow(referencePopulationMatrix), "x", ncol(referencePopulationMatrix))
 
   if (plyr::empty(referencePopulationMatrix) || ncol(referencePopulationMatrix) < 1) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Empty signal_data ", format(Sys.time(), "%a %b %d %X %Y"))
+    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " Empty signal_data ",
+              format(Sys.time(), "%a %b %d %X %Y"))
     stop()
   }
 
-  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " pre-thresholds   mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
-  populationControlRangeBetaValues <- as.data.frame(signal_range_values(referencePopulationMatrix,batch_id, probe_features))
-  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " post-thresholds  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
-  rm(referencePopulationMatrix)
-  gc()
-  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"), " post-rm-refmatr  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " pre-thresholds   mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  populationControlRangeBetaValues <- as.data.frame(
+    signal_range_values(referencePopulationMatrix, batch_id, probe_features))
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " post-thresholds  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  rm(referencePopulationMatrix); gc()
 
-  # remove duplicated samples due to the reference population
-  referenceSamples <- sample_sheet[sample_sheet$Sample_Group == "Reference",]
-  otherSamples <- sample_sheet[sample_sheet$Sample_Group != "Reference",]
+  # Sample-sheet cleanup (drop duplicates between Reference and other).
+  referenceSamples <- sample_sheet[sample_sheet$Sample_Group == "Reference", ]
+  otherSamples     <- sample_sheet[sample_sheet$Sample_Group != "Reference", ]
   referenceSamples <- referenceSamples[!(referenceSamples$Sample_ID %in% otherSamples$Sample_ID), ]
-  sample_sheet <- rbind(otherSamples, referenceSamples)
+  sample_sheet     <- rbind(otherSamples, referenceSamples)
 
-  # AI-042 (2026-06-08): se bulk_population=TRUE, salta il per-sample loop e
-  # passa direttamente alla nuova analyze_population_bulk() che computa
-  # DELTAS/MUTATIONS/DELTAR/LESIONS in bulk via Polars lazy operations sul
-  # SIGNAL pivot gia' scritto da signal_save. Zero bedgraph per-sample.
+  # AI-042: bulk_population path skips the per-sample loop entirely.
   if (isTRUE(ssEnv$bulk_population)) {
     analyze_population_bulk(
       signal_data       = signal_data,
@@ -121,39 +289,31 @@ analyze_batch <- function(signal_data, sample_sheet)
   }
 
   i <- 0
-  variables_to_export <- c( "ssEnv", "sample_sheet", "signal_data", "analyze_population",
-    "populationControlRangeBetaValues", "probe_features")
-  # resultSampleSheet <- foreach::foreach(i = seq_along(ssEnv$keys_sample_groups[,1]), .combine = rbind, .export = variables_to_export ) %dorng%
-  for (i in seq_along(ssEnv$keys_sample_groups[,1]))
-  {
-    sample_group <- ssEnv$keys_sample_groups[i,1]
+  for (i in seq_along(ssEnv$keys_sample_groups[, 1])) {
+    sample_group <- ssEnv$keys_sample_groups[i, 1]
     populationSampleSheet <- sample_sheet[sample_sheet$Sample_Group == sample_group, ]
-    # Use intersect to read column names WITHOUT allocating a subset of signal_data.
-    # The previous form `colnames(signal_data[, populationSampleSheet$Sample_ID])`
-    # allocated a full data.frame copy (~6 GB on ewas_data_hub Case/Control) only
-    # to read its names — discarded immediately. Pure memory waste under big inputs.
     populationMatrixColumns <- intersect(colnames(signal_data), populationSampleSheet$Sample_ID)
 
-    if (length(populationMatrixColumns)==0) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), " Population ",sample_group, " is empty, probably the samples of this group are present in another group ? ")
-    }
-    else
-    {
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Working on population ",sample_group, " with ", nrow(signal_data), " probes.")
-      # Subset once into a named temp variable so it can be freed explicitly after the call.
+    if (length(populationMatrixColumns) == 0) {
+      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " Population ", sample_group, " is empty.")
+    } else {
+      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " Working on population ", sample_group, " with ",
+                nrow(signal_data), " probes.")
       population_signal <- signal_data[, populationMatrixColumns, drop = FALSE]
       analyze_population(
-        signal_data = population_signal,
-        sample_sheet = populationSampleSheet,
+        signal_data       = population_signal,
+        sample_sheet      = populationSampleSheet,
         signal_thresholds = populationControlRangeBetaValues,
-        probe_features = probe_features
+        probe_features    = probe_features
       )
-      rm(population_signal)
-      gc()
+      rm(population_signal); gc()
     }
   }
-  if (exists("signal_data", envir = environment(), inherits = FALSE))
+  if (exists("signal_data", envir = environment(), inherits = FALSE)) {
     rm("signal_data", envir = environment())
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Batch completed:", batch_id)
-
+  }
+  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " Batch completed:", batch_id)
 }
