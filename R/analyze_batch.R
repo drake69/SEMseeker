@@ -41,22 +41,42 @@ analyze_batch <- function(signal_data, sample_sheet)
     # ----------------------------------------------------------------
     # RESUME PATH — lazy passthrough
     # ----------------------------------------------------------------
+    # AI-061+ (2026-06-09): extract schema + row count from the RAW
+    # POSITION pivot (signal_pivot) BEFORE the position_pivot_to_probe
+    # join. Reason: signal_pivot is a direct scan_parquet LazyFrame, so
+    # collect_schema() and select(pl$len())$collect() resolve from the
+    # parquet footer (O(1) metadata read). After position_pivot_to_probe
+    # builds the join LazyFrame, those same calls FORCE the join to
+    # execute — Polars cannot infer the post-join schema/count without
+    # running the join, which on ewas-scale (367k × 4014 cols) allocates
+    # ~12 GB of Rust heap and triggers jetsam silently (v18, v21, v25-v30).
+    # Sample columns are the SAME pre/post join (only CHR/START/END are
+    # dropped and PROBE is added), so taking them from the raw pivot is
+    # equivalent and cheap.
+    schema_cols_position <- names(signal_pivot$collect_schema())
+    # polars 1.x R bindings: $to_data_frame() does NOT exist; coerce via
+    # as.data.frame() instead. (Pattern was inherited from older polars 0.x
+    # samples and silently broke when this code path was finally exercised.)
+    n_probes    <- as.integer(
+      as.data.frame(signal_pivot$select(polars::pl$len())$collect())$len[1]
+    )
+    sample_cols <- setdiff(schema_cols_position,
+                           c("CHR", "START", "END", "PROBE"))
+
     # position_pivot_to_probe returns a LazyFrame post AI-096; the PROBE
     # column is the probe identifier, sample columns follow.
-    if ("CHR" %in% names(signal_pivot)) {
+    if ("CHR" %in% schema_cols_position) {
       signal_lazy <- position_pivot_to_probe(signal_pivot)
     } else {
       signal_lazy <- signal_pivot
     }
+    rm(signal_pivot)
+
     # If position_pivot_to_probe (legacy or another caller) returned a
     # DataFrame instead of LazyFrame, coerce.
     if (inherits(signal_lazy, "polars_data_frame")) {
       signal_lazy <- signal_lazy$lazy()
     }
-
-    schema_cols <- names(signal_lazy$collect_schema())
-    sample_cols <- setdiff(schema_cols, c("PROBE", "CHR", "START", "END"))
-    n_probes    <- as.integer(signal_lazy$select(polars::pl$len())$collect()$to_data_frame()$len[1])
 
     log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " working on batch:", batch_id, " of ", n_probes,
@@ -68,8 +88,9 @@ analyze_batch <- function(signal_data, sample_sheet)
     # don't otherwise need. If ssEnv$tech is missing, we can fall back
     # to a tiny lazy collect of first 10k rows + 1 column.
     if (is.null(ssEnv$tech) || !nzchar(ssEnv$tech)) {
-      probe_ids <- as.character(signal_lazy$select("PROBE")$
-                                 head(10000L)$collect()$to_data_frame()$PROBE)
+      probe_ids <- as.character(
+        as.data.frame(signal_lazy$select("PROBE")$head(10000L)$collect())$PROBE
+      )
       tech_signal <- data.frame(
         PROBE = probe_ids,
         stringsAsFactors = FALSE
@@ -87,14 +108,26 @@ analyze_batch <- function(signal_data, sample_sheet)
               " I will work on:", n_probes, " PROBES.")
 
     # Build probe_features by reading ONLY the PROBE column (tiny).
-    probe_ids_vec <- as.character(signal_lazy$select("PROBE")$
-                                    collect()$to_data_frame()$PROBE)
+    log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " pre-probe_ids_collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+    probe_ids_vec <- as.character(
+      as.data.frame(signal_lazy$select("PROBE")$collect())$PROBE
+    )
+    log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " post-probe_ids_collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+              " n_probe_ids=", length(probe_ids_vec))
     if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
       probe_features <- coord_probe_features(probe_ids_vec)
     } else {
       probe_features <- probe_features_get("PROBE")
+      log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " post-probe_features_get mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+                " n_rows=", nrow(probe_features))
       probe_features <- probe_features[probe_features$PROBE %in% probe_ids_vec, ]
     }
+    log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " post-probe_features_filter mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+              " n_rows=", nrow(probe_features))
     # NO sort_by_chr_and_start — sort gate is signal_save (already written).
     # NO signal_data row reorder — pivot rows are already canonical.
 
@@ -147,17 +180,31 @@ analyze_batch <- function(signal_data, sample_sheet)
     otherSamples     <- sample_sheet[sample_sheet$Sample_Group != "Reference", ]
     referenceSamples <- referenceSamples[!(referenceSamples$Sample_ID %in% otherSamples$Sample_ID), ]
     sample_sheet     <- rbind(otherSamples, referenceSamples)
+    log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " post-sample_sheet_rbind mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+              " n_sample_sheet_rows=", nrow(sample_sheet))
 
     # bulk_population path: analyze_population_bulk reads the pivot
     # lazily from disk and ignores the signal_data argument. Pass NULL
     # explicitly to avoid the caller assuming an R data.frame.
     if (isTRUE(ssEnv$bulk_population)) {
+      log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " pre-apb_call mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
       analyze_population_bulk(
         signal_data       = NULL,
         sample_sheet      = sample_sheet,
         signal_thresholds = populationControlRangeBetaValues,
         probe_features    = probe_features
       )
+      # AI-061+ (2026-06-09): release the thresholds R data.frame after
+      # the bulk pass — analyze_population_bulk copied the data into
+      # polars (Rust heap) and rm()'d its own local binding, but R
+      # would otherwise keep this parent-frame reference alive for the
+      # rest of analyze_batch's body (which we are about to return from
+      # anyway, but make the intent explicit so future edits don't
+      # accidentally rely on this binding).
+      rm(populationControlRangeBetaValues)
+      invisible(gc(verbose = FALSE))
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " Batch completed (bulk mode, lazy resume):", batch_id)
       return(invisible(NULL))

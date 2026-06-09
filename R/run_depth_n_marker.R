@@ -43,8 +43,21 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # write.csv2 per evitare incompatibilita' di formato (polars writes
     # boolean come 'true'/'false' minuscoli, read.csv2 poi li carica come
     # character e rompe i subset logici downstream).
+    # AI-061+ (2026-06-09): three polars 1.x quirks rolled into one read_csv:
+    #   1. null_values="NA"          — utils::write.csv2 emits "NA" literal
+    #      for missing, polars treats only "" as null on numeric columns,
+    #      so without this it fails on "NA" in an f64-locked column.
+    #   2. infer_schema_length large — early rows can be all zeros for
+    #      INTERCEPT_PVALUE / similar, polars infers i64, then later finds a
+    #      scientific-notation float (e.g. "2,52861832797769e-304") and
+    #      fails to coerce to integer. Scanning more rows up-front lets it
+    #      infer Float64 correctly.
+    #   3. decimal_comma=TRUE        — write.csv2 uses "," as decimal sep.
+    # Both quirks were exposed on ewas v32 / v33 mid-association.
     old_results_global <- unique(as.data.frame(
-      polars::pl$read_csv(fileNameResults, separator = ";", decimal_comma = TRUE)
+      polars::pl$read_csv(fileNameResults, separator = ";",
+                          decimal_comma = TRUE, null_values = "NA",
+                          infer_schema_length = 100000L)
     ))
     results <- plyr::rbind.fill(results, old_results_global)
   } else {

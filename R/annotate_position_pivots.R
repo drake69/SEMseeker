@@ -113,8 +113,21 @@ annotate_position_pivots <- function ()
         # Fix: split on ";", explode to N rows, strip whitespace — each
         # multi-mapped probe now contributes separately to every gene's
         # burden, and the group_by below produces clean mono-gene rows.
+        #
+        # AI-061+ (2026-06-09): extended to also handle "," and "/" as
+        # multi-gene separators. Bioconductor manifests use ";" by default
+        # but external/custom annotations occasionally use commas, and
+        # paralog-cluster compact notations like "HBA1/HBA2" (alpha
+        # hemoglobin twin loci) and "HLA-A/B/C" (MHC class I, 3 distinct
+        # genes on 6p21.33) are biologically multi-gene — splitting them
+        # yields one row per HGNC symbol, which is the correct unit for
+        # downstream gene-burden aggregation. Normalize all separators to
+        # ";" first, then split once.
         pivot <- pivot$with_columns(
-          polars::pl$col("AREA")$str$split(";")
+          polars::pl$col("AREA")$str$
+            replace_all(",", ";")$str$
+            replace_all("/", ";")$str$
+            split(";")
         )$explode("AREA")
         pivot <- pivot$with_columns(
           polars::pl$col("AREA")$str$strip_chars()
