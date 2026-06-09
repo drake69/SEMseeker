@@ -580,6 +580,85 @@ association_cross_subsamples_overlaps(
 
 <hr>
 
+## Complementary: Bayesian posterior probability
+
+While `association_analysis()` reports frequentist p-values / q-values for each
+region, `bayes_analysis()` provides the *probabilistic complement*: per-region
+posterior probabilities computed via empirical Bayes.
+
+For each `(MARKER, AREA, SUBAREA, AREA_OF_TEST)` it estimates:
+
+- `P(case  | epimutated)` — how likely a sample is a case given the SEM hit
+- `P(control | not-epimutated)` — how likely a sample is a control given absence of the SEM hit
+
+A region is reported as a candidate biomarker when both posteriors exceed the
+configured thresholds (`bayes_case_threshold` and `bayes_control_threshold`).
+Output is written as CSV files under `<result_folder>/Euristic/`, sorted by
+posterior probability.
+
+```{r bayes_analysis, eval=FALSE}
+bayes_analysis(
+  result_folder           = "~/semseeker_results/",
+  independent_variable    = "Sample_Group",
+  bayes_case_threshold    = 0.9,   # min P(case | epimutated)
+  bayes_control_threshold = 0.1,   # max P(control | epimutated)
+  parallel_strategy       = "multicore",
+  maxResources            = 90
+)
+```
+
+This is most useful when the frequentist q-value ranking is similar across many
+regions and you want a probability-based criterion to triage candidates. The two
+analyses are independent — running both gives you a frequentist and a Bayesian
+view of the same data.
+
+<hr>
+
+## Diagnostic performance: sensitivity and specificity
+
+For binary outcomes (case vs control), `diagnostic_performance()` computes per-region
+sensitivity, specificity, Jensen-Shannon distance, and a combined diagnostic score —
+treating each SEM mutation as a candidate diagnostic marker.
+
+```{r diagnostic_performance, eval=FALSE}
+diagnostic_performance(
+  combinations         = list(c("CASE_A", "CASE_B")),
+  result_folder        = "~/semseeker_results/",
+  independent_variable = "Sample_Group",
+  parallel_strategy    = "multicore"
+)
+```
+
+Output (per marker) is sorted descending by `SCORE`; the top rows are the
+regions with the most promising diagnostic profile in the studied cohort. CSV
+files are written to `<result_folder>/Euristic/`.
+
+> The function was previously named `ss_analysis()`. The old name still works
+> as a deprecated alias but emits a warning — please migrate.
+
+<hr>
+
+## Cross-study replication
+
+`intra_study_association_replication()` reruns the association on a target study restricted
+to the regions that were already significant in a reference study, then merges
+the two result sets. It's the standard "replication / validation" workflow when
+you have a discovery cohort and a validation cohort.
+
+```{r cross_study, eval=FALSE}
+intra_study_association_replication(
+  inference_details_origin = inference_discovery,
+  inference_details        = inference_validation,
+  result_folder            = "~/semseeker_replication/",
+  parallel_strategy        = "multicore"
+)
+```
+
+> The function was previously named `association_to_association()`. The old
+> name still works as a deprecated alias but emits a warning.
+
+<hr>
+
 ## Downstream: pathway and enrichment analysis
 
 Significant genomic regions from `association_analysis()` can be fed directly
