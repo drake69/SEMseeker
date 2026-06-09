@@ -4,6 +4,45 @@
 
 ### New features
 
+- **AI-044: binomial_bulk family + goodness-of-fit metrics extension.**
+  New `family_test = "binomial_bulk"` dispatches to `glm_model_bulk()` for
+  bulk per-probe logistic regression via `Rfast::glm_logistic` (parallelised
+  with `foreach %dorng%`), ~10-20× faster than the per-probe `stats::glm`
+  path. Drop-in replacement for `family_test = "binomial"` at PROBE-level
+  inference details (LESIONS, MUTATIONS). Same legacy schema: per-coef
+  PVALUE/ESTIMATE columns plus top-level PVALUE/PVALUE_ADJ.
+
+  Standard errors are derived from the Fisher information at the MLE
+  (`Var(β̂) = (X' diag(p(1-p)) X)^{-1}`), matching `stats::glm` Wald output.
+
+  `data_preparation()` gains a universal degenerate-burden filter: columns
+  with `var(Y) == 0` are dropped before reaching the model. Critical for
+  LESIONS @ PROBE where ~92% of probes are all-zero across samples
+  (manifest-aligned pivot, retained for positional join with annotations).
+  The filter applies to every family — binomial GLM no longer diverges on
+  constant Y, limma/voom no longer produces NaN t-stats, polynomial no
+  longer fits rank-deficient designs.
+
+  Ten new metrics registered in `metrics_properties.rda`:
+
+  | Metric | Engine | Direction | Notes |
+  |---|---|---|---|
+  | `T_STAT_MODERATED` | limma_2, voom_2 | Higher better | eBayes-moderated t-stat per coef |
+  | `B_STATISTIC` | limma_2, voom_2 | Higher better | log-odds of differential expression (lods) |
+  | `F_STAT_MODERATED` | limma_2, voom_2 | Higher better | joint F across non-intercept coefs (parabolic test) |
+  | `POSTERIOR_RESIDUAL_VAR` | limma_2, voom_2 | Lower better | s2.post diagnostic |
+  | `MCFADDEN_R2` | binomial_bulk | Higher better | 1 − devi/null_devi pseudo-R² |
+  | `NAGELKERKE_R2` | binomial_bulk | Higher better | scaled Cox-Snell pseudo-R² |
+  | `C_STATISTIC_AUC` | binomial_bulk | Higher better | discrimination (= AUC) |
+  | `DEVIANCE_RATIO` | binomial_bulk | Lower better | devi / null_devi |
+  | `AIC_VALUE` | all GLM | Lower better | uppercase canonical of legacy `aic_value` |
+  | `BIC_VALUE` | all GLM | Lower better | new |
+
+  The metrics replace R²/R²_adj for limma/voom (lmFit doesn't return R²
+  natively, and the eBayes-moderated diagnostics are more informative)
+  and provide the analogous goodness-of-fit signal for binomial logistic
+  regression (R² doesn't apply to {0,1} outcomes).
+
 - **Session provenance metadata** (C-06).
   Every `semseeker()` run now writes `session_metadata.json` to the result
   folder at the start of analysis:

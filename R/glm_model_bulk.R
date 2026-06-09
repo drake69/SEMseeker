@@ -156,25 +156,26 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   X_full <- cbind(`(Intercept)` = 1, design_no_int)
   X_design <- design_no_int  # captured by foreach closure
   ncoef_local <- ncoef        # captured by foreach closure
+  # Per-probe output width: ncoef estimates + ncoef p-values + 4 metrics
+  # (MCFADDEN_R2, NAGELKERKE_R2, C_STATISTIC_AUC, DEVIANCE_RATIO).
+  n_metrics <- 4L
   j <- NULL                   # quiet R CMD check note
   fits <- foreach::foreach(
     j = seq_len(n_probes),
     .combine  = rbind,
     .packages = c("Rfast", "stats"),
-    .export   = c("X_design", "X_full", "y_mat", "ncoef_local")
+    .export   = c("X_design", "X_full", "y_mat", "ncoef_local", "n_metrics")
   ) %dorng% {
+    na_vec <- c(rep(NA_real_, ncoef_local), rep(NA_real_, ncoef_local),
+                rep(NA_real_, n_metrics))
     y <- y_mat[, j]
     # Skip degenerate Y (safety net — data_preparation should have caught it).
-    if (length(unique(y)) < 2L) {
-      return(c(rep(NA_real_, ncoef_local), rep(NA_real_, ncoef_local)))
-    }
+    if (length(unique(y)) < 2L) return(na_vec)
     f <- tryCatch(
       Rfast::glm_logistic(x = X_design, y = y),
       error = function(e) NULL
     )
-    if (is.null(f) || is.null(f$be)) {
-      return(c(rep(NA_real_, ncoef_local), rep(NA_real_, ncoef_local)))
-    }
+    if (is.null(f) || is.null(f$be)) return(na_vec)
     est <- as.numeric(f$be)
     # Fisher info → SE
     eta <- as.numeric(X_full %*% est)
@@ -182,17 +183,43 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     w   <- p * (1 - p)
     # Guard against numeric blow-up (separation): w == 0 for any row breaks I
     if (any(!is.finite(w)) || any(w <= 0)) {
-      return(c(est, rep(NA_real_, ncoef_local)))
+      return(c(est, rep(NA_real_, ncoef_local), rep(NA_real_, n_metrics)))
     }
     XtWX <- crossprod(X_full * sqrt(w))
     vcov_mat <- tryCatch(solve(XtWX), error = function(e) NULL)
     if (is.null(vcov_mat)) {
-      return(c(est, rep(NA_real_, ncoef_local)))
+      return(c(est, rep(NA_real_, ncoef_local), rep(NA_real_, n_metrics)))
     }
     se   <- sqrt(diag(vcov_mat))
     z    <- est / se
     pval <- 2 * stats::pnorm(-abs(z))
-    c(est, pval)
+
+    # AI-044 (2026-06-09): goodness-of-fit metrics per probe. Registered
+    # in metrics_properties.rda. Rationale: R²/R²_adj don't apply to
+    # logistic — we report McFadden + Nagelkerke pseudo-R² (variance
+    # explained analogs), C-statistic (= AUC, discrimination), and the
+    # deviance ratio (devi/null_devi, lower = better fit).
+    n <- length(y)
+    p1 <- mean(y)
+    null_devi <- if (p1 > 0 && p1 < 1) {
+      -2 * (sum(y) * log(p1) + (n - sum(y)) * log(1 - p1))
+    } else NA_real_
+    metrics_vec <- c(NA_real_, NA_real_, NA_real_, NA_real_)
+    if (is.finite(null_devi) && null_devi > 0 && !is.null(f$devi)) {
+      devi <- f$devi
+      mcfadden <- 1 - (devi / null_devi)
+      cox_snell <- 1 - exp((devi - null_devi) / n)
+      max_cs   <- 1 - exp(-null_devi / n)
+      nagelkerke <- if (max_cs > 0) cox_snell / max_cs else NA_real_
+      # C-stat = AUC via Mann-Whitney U
+      n1 <- sum(y == 1L); n0 <- n - n1
+      auc <- if (n1 > 0L && n0 > 0L) {
+        rk <- rank(p)
+        (sum(rk[y == 1L]) - n1 * (n1 + 1) / 2) / (n1 * n0)
+      } else NA_real_
+      metrics_vec <- c(mcfadden, nagelkerke, auc, devi / null_devi)
+    }
+    c(est, pval, metrics_vec)
   }
 
   if (is.null(fits) || nrow(fits) == 0L) {
@@ -201,10 +228,17 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     return(NULL)
   }
 
-  est_mat  <- fits[, 1:ncoef,            drop = FALSE]
-  pval_mat <- fits[, (ncoef + 1):(2 * ncoef), drop = FALSE]
-  colnames(est_mat)  <- coef_names_full
-  colnames(pval_mat) <- coef_names_full
+  est_mat   <- fits[, 1:ncoef,                       drop = FALSE]
+  pval_mat  <- fits[, (ncoef + 1):(2 * ncoef),       drop = FALSE]
+  # AI-044 (2026-06-09): goodness-of-fit metrics block (4 columns) sits
+  # after the est/pval blocks. Order MUST match the c(est, pval, metrics_vec)
+  # return in fit_one above — MCFADDEN_R2, NAGELKERKE_R2, C_STATISTIC_AUC,
+  # DEVIANCE_RATIO. See metrics_properties.rda for direction.
+  metrics_mat <- fits[, (2 * ncoef + 1):(2 * ncoef + 4), drop = FALSE]
+  colnames(est_mat)     <- coef_names_full
+  colnames(pval_mat)    <- coef_names_full
+  colnames(metrics_mat) <- c("MCFADDEN_R2", "NAGELKERKE_R2",
+                              "C_STATISTIC_AUC", "DEVIANCE_RATIO")
 
   # 6. Build result data.frame in the legacy schema. Coefficient column
   # names are sanitised the same way the per-probe path does it (toupper
@@ -233,6 +267,13 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     result[[pname]] <- pval_mat[, i]
     result[[ename]] <- est_mat[, i]
   }
+
+  # AI-044 (2026-06-09): goodness-of-fit metrics block — names canonical
+  # (uppercase, registered in metrics_properties.rda).
+  result$MCFADDEN_R2     <- metrics_mat[, "MCFADDEN_R2"]
+  result$NAGELKERKE_R2   <- metrics_mat[, "NAGELKERKE_R2"]
+  result$C_STATISTIC_AUC <- metrics_mat[, "C_STATISTIC_AUC"]
+  result$DEVIANCE_RATIO  <- metrics_mat[, "DEVIANCE_RATIO"]
 
   # Top-level PVALUE = first non-intercept coefficient p-value, mirroring
   # the existing pattern (apply_stat_model_batch.R uses first poly term).

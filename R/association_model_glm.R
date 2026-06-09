@@ -22,7 +22,14 @@ glm_model <- function(family_test, tempDataFrame, sig.formula, transformation_y,
 
   result_glm  <- stats::glm( sig.formula, family = as.character(family_test), data = as.data.frame(tempDataFrame))
 
-  res <- data.frame("aic_value" = result_glm$aic)
+  # AI-044 (2026-06-09): emit AIC_VALUE + BIC_VALUE in metrics_properties.rda
+  # canonical uppercase form. Legacy lowercase aic_value retained for
+  # backward-compat with downstream consumers that read it by exact name.
+  res <- data.frame(
+    "aic_value" = result_glm$aic,
+    "AIC_VALUE" = as.numeric(stats::AIC(result_glm)),
+    "BIC_VALUE" = as.numeric(stats::BIC(result_glm))
+  )
 
   dep_var <- sig.formula_vars(sig.formula)
   dependent_variable <- dep_var$dependent_variable

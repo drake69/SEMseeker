@@ -207,6 +207,42 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
     result_temp[[enames[i]]] <- fit$coefficients[, i]
   }
 
+  # AI-044 (2026-06-09): emit eBayes-derived goodness-of-fit metrics
+  # registered in metrics_properties.rda. These replace R²/R²_adj for the
+  # limma/voom batch path (R² isn't natively returned by lmFit and is
+  # not the canonical limma diagnostic anyway).
+  #   T_STAT_MODERATED: moderated t-stat for the first non-intercept coef
+  #     (per-area; positive = positive effect direction). Higher |t| = stronger
+  #     evidence per row.
+  #   B_STATISTIC: log-odds posterior of differential expression (limma's lods),
+  #     same coef. Pseudo-R² analog: Higher = stronger evidence.
+  #   F_STAT_MODERATED: moderated F for the joint contrast of ALL non-intercept
+  #     coefs (e.g. poly_1 + poly_2 → "parabolic effect present?"). Per row.
+  #   POSTERIOR_RESIDUAL_VAR: s2.post — posterior residual variance per area.
+  #     Lower = better fit; useful as a diagnostic alongside the t-stat.
+  if (ncol(fit$coefficients) >= 2L) {
+    result_temp$T_STAT_MODERATED <- as.numeric(fit$t[, 2L])
+    if (!is.null(fit$lods)) {
+      result_temp$B_STATISTIC <- as.numeric(fit$lods[, 2L])
+    }
+  }
+  # Joint F-statistic across ALL non-intercept coefs (i.e. excluding intercept).
+  # Computed lazily — only when degree >= 2 since for degree 1 it equals t².
+  if (ncol(fit$coefficients) >= 3L) {
+    coef_idx_no_intercept <- seq_len(ncol(fit$coefficients))[-1L]
+    f_obj <- tryCatch(
+      limma::topTableF(fit, number = Inf, sort.by = "none"),
+      error = function(e) NULL
+    )
+    if (!is.null(f_obj) && "F" %in% colnames(f_obj)) {
+      f_obj <- f_obj[rownames(fit$coefficients), , drop = FALSE]
+      result_temp$F_STAT_MODERATED <- as.numeric(f_obj[, "F"])
+    }
+  }
+  if (!is.null(fit$s2.post)) {
+    result_temp$POSTERIOR_RESIDUAL_VAR <- as.numeric(fit$s2.post)
+  }
+
   # Top-level PVALUE = first non-intercept (= first poly term) pvalue,
   # so the BH adjustment + significativity selector in the apply_stat_model
   # caller path can hook into it the same way it does for polynomial.
