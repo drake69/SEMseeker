@@ -115,9 +115,27 @@
   }
   available_GB <- total_GB * mem_frac
 
-  decision <- if ((mono_peak_GB  + fit_object_GB) <= available_GB) {
+  # AI-061+ (2026-06-10): empirical safety factor on the gate threshold.
+  # ewas v49 run, limma_2 [DELTARQ / HYPER / PROBE / WHOLE]:
+  #   predicted: mono_peak_GB = 25.1 GB, available_GB = 38.4 GB
+  #   gate decision = monolithic (25.1 + few < 38.4)
+  #   ACTUAL: process killed by macOS Jetsam (SIGKILL) — peak crossed 38 GB.
+  # The 1.5× lmfit_GB factor (line 71) under-estimates real peak because:
+  #   - polars→R hand-off materialises 1-2 extra wide-frame copies during
+  #     as.data.frame(collect()) before lmFit even starts
+  #   - limma internals (residuals + sigma2 + Amean + qr.Q ...) routinely
+  #     run another ~0.5× on top of the response matrix
+  #   - eBayes post-fit objects (lods, t, p, B, var.post) add up to fit_object_GB
+  #     ALREADY accounted, but are produced WHILE residuals are still alive,
+  #     so the true peak ≈ mono_peak + fit_object hits simultaneously
+  # Empirical headroom factor = 1.5× tightens the threshold for monolithic
+  # and chunked decisions alike — derived from one Jetsam kill, refine on
+  # next over/under-shoot. Document run/factor pairs here when revisited.
+  SAFETY_FACTOR <- 1.5
+
+  decision <- if (SAFETY_FACTOR * (mono_peak_GB  + fit_object_GB) <= available_GB) {
     "monolithic"
-  } else if ((chunk_peak_GB + fit_object_GB) <= available_GB) {
+  } else if (SAFETY_FACTOR * (chunk_peak_GB + fit_object_GB) <= available_GB) {
     "chunked"
   } else {
     "abort"
