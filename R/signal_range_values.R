@@ -74,7 +74,13 @@ signal_range_values <- function(populationMatrix, batch_id, probe_features) {
     on = c("PROBE"),
     how = "inner"
   )
-  result <- result$drop(c("PROBE_WHOLE"))
+  # Drop PROBE_WHOLE before writing thresholds: it's the canonical
+  # (AREA, SUBAREA) name for the probe-level baseline (kept on
+  # probe_features so downstream association code can do dynamic
+  # `probe_features[[area_subarea]]` lookup) but it's a 1:1 alias of
+  # PROBE, so persisting it to the thresholds parquet is pure waste.
+  if ("PROBE_WHOLE" %in% names(result))
+    result <- result$drop(c("PROBE_WHOLE"))
   result <- result$sort(c("CHR", "START","END"), descending = FALSE)
   result <- result$collect()
   result$write_parquet(thresholds_file_name)

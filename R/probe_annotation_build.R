@@ -32,7 +32,7 @@
 probe_annotation_build <- function(tech, force = FALSE) {
 
   ssEnv <- get_session_info()
-
+ 
   # Return cached version unless forced
   if (!force &&
       !is.null(ssEnv$probe_annotation) &&

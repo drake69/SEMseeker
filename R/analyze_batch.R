@@ -27,6 +27,7 @@
 analyze_batch <- function(signal_data, sample_sheet)
 {
 
+ 
   ssEnv <- get_session_info()
   batch_id <- ssEnv$running_batch_id
   sample_sheet$Sample_ID <- name_cleaning(sample_sheet$Sample_ID)
@@ -265,26 +266,35 @@ analyze_batch <- function(signal_data, sample_sheet)
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " I will work on:", nrow(signal_data), " PROBES.")
 
-  # Build probe_features filtered to actual probes (intersection only,
-  # NO R-side row reorder of signal_data — sort gate is signal_save).
-  if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " building probe_features from synthetic probe IDs (",
-              ssEnv$tech, ")")
-    probe_features <- coord_probe_features(rownames(signal_data))
-  } else {
-    probe_features <- probe_features_get("PROBE")
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " loaded probe_features from Bioconductor annotation")
-    probe_features <- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
-  }
+  # AI-106+ (2026-06-09): single source of truth for input → annotation
+  # alignment. prepare_batch_signal() centralises:
+  #   - tech-specific probe_features build (manifest for Illumina,
+  #     coord_probe_features for WGBS / LONGREAD)
+  #   - dmr_annotation duplicate-PROBE collapse
+  #   - intersection with input rownames
+  #   - uniform sex-chromosome removal across all techs
+  #   - signal_data ⇔ probe_features alignment with strict invariant
+  #     nrow(signal_data) == nrow(probe_features) and matching row order
+  # Replaces the ~50 lines of scattered annotation/filter/align logic
+  # that previously lived here and was the source of the v35-v43 silent
+  # drift between signal_data and probe_features.
+  signal_data <- prepare_batch_signal(
+    signal_data           = signal_data,
+    tech                  = ssEnv$tech,
+    sex_chromosome_remove = isTRUE(ssEnv$sex_chromosome_remove)
+  )
+  probe_features <- attr(signal_data, "probe_features")
+  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " prepared batch signal: ", nrow(signal_data),
+            " probes after sex-chr + manifest alignment (tech=",
+            attr(signal_data, "tech"), ").")
 
   sample_group_checkResult <- sample_group_check(sample_sheet, signal_data)
   if (!is.null(sample_group_checkResult)) {
     stop(sample_group_checkResult)
   }
 
-  signal_save(signal_data, sample_sheet, batch_id)
+  signal_save(signal_data, sample_sheet, batch_id, probe_features = probe_features)
   log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
             " post-signal_save  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 

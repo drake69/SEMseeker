@@ -23,6 +23,7 @@
 #'   join, since downstream consumers only need the probe-keyed shape.
 position_pivot_to_probe <- function(signal_data)
 {
+ 
   ssEnv          <- get_session_info()
   tech_col       <- ssEnv$tech
   probe_features <- probe_annotation_build(ssEnv$tech)[, c("PROBE", "CHR", "START", "END", tech_col)]

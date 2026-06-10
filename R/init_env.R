@@ -35,7 +35,7 @@
   showprogress           = list(value = FALSE),
   openai_api_key         = list(value = ""),
   multiple_test_adj      = list(value = "q", choices = c("BY","fdr","BH","bonferroni","q")),
-  bulk_population        = list(value = FALSE)   # AI-042: vectorized population (no per-sample loop)
+  bulk_population        = list(value = TRUE)    # AI-042: vectorized population is the default (no per-sample bed dump). Set FALSE only to recover the legacy per-sample loop.
 )
 
 .SS_FOLDERS <- c(
@@ -254,6 +254,7 @@
 #'
 #' @return the working ssEnvonment
 init_env <- function(result_folder, maxResources = 90, ...) {
+ 
   gc()
   .init_env_check_kwargs(list(...))
   withr::local_options(list(digits = 22))

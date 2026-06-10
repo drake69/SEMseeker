@@ -9,6 +9,9 @@ test_that("signal_range_values", {
   # probe_features_get requires tech to be set; build equivalent manually
   probe_features_local <- probe_features[probe_features$PROBE %in% rownames(signal_data), c("CHR","START","END","PROBE")]
   probe_features_local <- probe_features_local[!is.na(probe_features_local$CHR),]
+  # PROBE_WHOLE = canonical (AREA, SUBAREA) alias of PROBE — kept on probe_features
+  # so signal_range_values can drop it pre-write (and downstream association can
+  # do `probe_features[[area_subarea]]` lookup uniformly).
   probe_features_local$PROBE_WHOLE <- probe_features_local$PROBE
   signal_data_with_na <- signal_data
   signal_data_with_na[1, 1] <- NA  # inject one NA to trigger the error

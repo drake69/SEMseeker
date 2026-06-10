@@ -24,6 +24,7 @@
 #'
 get_meth_tech <- function(signal_data) {
 
+ 
   ssEnv    <- get_session_info()
   n_probes <- nrow(signal_data)
 
@@ -37,11 +38,8 @@ get_meth_tech <- function(signal_data) {
               "'; skipping auto-detection.")
     # Still detect beta vs M-values
     exclude_cols <- c("AREA","PROBE","CHR","START","END","K27","K450","K850","k27","k450","k850")
-    signal_cols  <- signal_data[
-      seq_len(min(10000L, nrow(signal_data))),
-      !colnames(signal_data) %in% exclude_cols, drop = FALSE]
-    max_data   <- max(abs(c(max(signal_cols, na.rm = TRUE),
-                             min(signal_cols, na.rm = TRUE))))
+    signal_cols  <- signal_data[seq_len(min(10000L, nrow(signal_data))),!colnames(signal_data) %in% exclude_cols, drop = FALSE]
+    max_data   <- max(abs(c(max(signal_cols, na.rm = TRUE),min(signal_cols, na.rm = TRUE))))
     ssEnv$beta <- max_data <= 1
     ssEnv$probes_count <- n_probes
     update_session_info(ssEnv)
