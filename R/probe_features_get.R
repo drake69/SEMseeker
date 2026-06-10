@@ -176,9 +176,15 @@ probe_features_get <- function(area_subarea) {
     cols_needed <- c(ssEnv$tech, "PROBE", "CHR", "START", "END", area_subarea)
     cols_needed <- intersect(cols_needed, colnames(probe_features))
     probe_features <- dplyr::distinct(probe_features[, cols_needed, drop = FALSE])
-    
-    # sync probe features (chr cleaned ??) with signal data
-    signal_data <- signal_data[rownames(signal_data) %in% signal_data$PROBE, ]
+    # Dead code removed (2026-06-10): a stray
+    #   signal_data <- signal_data[rownames(signal_data) %in% signal_data$PROBE, ]
+    # was sitting here referencing a variable that does not exist in
+    # probe_features_get()'s scope. It never ran when ssEnv$tech was set
+    # by the legacy lazy-detection path (the function returned early via
+    # the PROBE / CHR branch), but with the AREA-based call sites added
+    # by annotate_position_pivots() — area_subarea = "GENE_BODY",
+    # "ISLAND_N_SHORE", etc. — the else-branch is now reached and the
+    # broken reference halts the run.
   }
 
   # Canonical (AREA, SUBAREA) columns required by downstream
