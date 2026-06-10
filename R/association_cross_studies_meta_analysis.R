@@ -8,6 +8,10 @@
 #' @return Invisibly `NULL`. Vedi [inter_study_association_meta_analysis()].
 #' @seealso [inter_study_association_meta_analysis()]
 #' @export
+#' @examples
+#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' invisible(NULL)
 association_cross_studies_meta_analysis <- function(...) {
   .Deprecated("inter_study_association_meta_analysis", package = "SEMseeker",
               msg = paste0("'association_cross_studies_meta_analysis' is deprecated. ",

@@ -26,6 +26,10 @@
 #'   heterogeneity statistics (\eqn{\tau^2}, Q-test p-value).
 #'
 #' @export
+#' @examples
+#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' invisible(NULL)
 inter_study_association_meta_analysis <- function(inference_details,statistic_parameter="BETA", pvalue_column="PVALUE_ADJ_ALL_BH",studies,
   studies_base_folder, result_folder)
 {

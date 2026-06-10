@@ -19,6 +19,11 @@ Alias deprecato di [intra_study_association_replication()]. Naming uniformato a
   `intra_study_association_replication(...)` (stessa firma). Alla chiamata viene emesso un warning
   di deprecation.
 }
+\examples{
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
+}
 \seealso{
 [intra_study_association_replication()]
 }

@@ -71,3 +71,8 @@ analytic output:
 (passed through `name_cleaning()` which uppercases + replaces
 comparison operators with `_GT_` / `_LT_` / `_EQ_` etc.)
 }
+\examples{
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
+}

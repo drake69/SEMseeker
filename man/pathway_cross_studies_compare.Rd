@@ -19,6 +19,11 @@ Alias deprecato di [inter_study_pathway_compare()]. Naming uniformato a
   `inter_study_pathway_compare(...)` (stessa firma). Alla chiamata viene emesso un warning
   di deprecation.
 }
+\examples{
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
+}
 \seealso{
 [inter_study_pathway_compare()]
 }

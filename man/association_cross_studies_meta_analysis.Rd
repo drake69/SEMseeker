@@ -19,6 +19,11 @@ Alias deprecato di [inter_study_association_meta_analysis()]. Naming uniformato 
   `inter_study_association_meta_analysis(...)` (stessa firma). Alla chiamata viene emesso un warning
   di deprecation.
 }
+\examples{
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
+}
 \seealso{
 [inter_study_association_meta_analysis()]
 }

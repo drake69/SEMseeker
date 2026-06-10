@@ -8,6 +8,10 @@
 #' @return Invisibly `NULL`. Vedi [intra_study_association_replication()].
 #' @seealso [intra_study_association_replication()]
 #' @export
+#' @examples
+#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' invisible(NULL)
 intra_study_association <- function(...) {
   .Deprecated("intra_study_association_replication", package = "SEMseeker",
               msg = paste0("'intra_study_association' is deprecated. ",

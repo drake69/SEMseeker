@@ -16,6 +16,10 @@
 #' @return Invisibly \code{NULL}. Vedi [diagnostic_performance()].
 #' @seealso [diagnostic_performance()]
 #' @export
+#' @examples
+#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' invisible(NULL)
 ss_analysis <- function(...) {
   .Deprecated("diagnostic_performance", package = "SEMseeker",
               msg = paste0("'ss_analysis' is deprecated. ",

@@ -8,6 +8,10 @@
 #' @return Invisibly `NULL`. Vedi [intra_study_association_subsamples_overlaps()].
 #' @seealso [intra_study_association_subsamples_overlaps()]
 #' @export
+#' @examples
+#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' invisible(NULL)
 association_cross_subsamples_overlaps <- function(...) {
   .Deprecated("intra_study_association_subsamples_overlaps", package = "SEMseeker",
               msg = paste0("'association_cross_subsamples_overlaps' is deprecated. ",

@@ -8,6 +8,10 @@
 #' @return Invisibly `NULL`. Vedi [inter_study_pathway_compare()].
 #' @seealso [inter_study_pathway_compare()]
 #' @export
+#' @examples
+#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' invisible(NULL)
 pathway_cross_studies_compare <- function(...) {
   .Deprecated("inter_study_pathway_compare", package = "SEMseeker",
               msg = paste0("'pathway_cross_studies_compare' is deprecated. ",

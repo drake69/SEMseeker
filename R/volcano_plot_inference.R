@@ -43,6 +43,10 @@
 #'   the file already exists).
 #'
 #' @export
+#' @examples
+#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' invisible(NULL)
 volcano_plot_inference <- function(inference_detail,
                                     result_folder,
                                     markers       = NULL,

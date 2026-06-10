@@ -26,6 +26,11 @@ Alias deprecato di [diagnostic_performance()]. Il nome
   `diagnostic_performance(...)` (stessa firma, stessa semantica). Alla
   chiamata viene emesso un warning di deprecation.
 }
+\examples{
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
+}
 \seealso{
 [diagnostic_performance()]
 }

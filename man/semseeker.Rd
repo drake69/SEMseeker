@@ -72,6 +72,9 @@ Supported \code{input} forms:
 }
 }
 \examples{
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
 \dontrun{
 # Bedmethyl (Nanopore / modkit):
 semseeker(
