@@ -111,6 +111,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   # NOTE: the CALLER's binding (analyze_batch.R: populationControlRange-
   # BetaValues) is still alive in the parent frame — full release
   # requires the caller to also rm() after this function returns.
+  n_thr_positions <- nrow(signal_thresholds)   # cache before rm() (used in log_event below)
   rm(signal_thresholds)
   invisible(gc(verbose = FALSE))
 
@@ -139,7 +140,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [analyze_population_bulk] joined SIGNAL with thresholds: ",
             length(sample_cols), " sample columns, ",
-            nrow(signal_thresholds), " positions")
+            n_thr_positions, " positions")
 
   # ---- Step 2: DELTAS_HYPER, DELTAS_HYPO bulk -----------------------------
   # DELTAS_HYPER[s, p] = max(SIGNAL[s,p] - high[p], 0)
