@@ -127,7 +127,7 @@ signal_save <- function(signal_data, sample_sheet, batch_id,
     # viene interpretato come nomi di colonna invece che valori → "not found".
     sd_chr <- pp_lazy$filter(polars::pl$col("CHR") == ch)$
                       join(sd_lazy, on = "PROBE", how = "inner")$
-                      drop(c("PROBE", "PROBE_WHOLE", "AREA"))$  # PROBE_WHOLE = canonical AREA_SUBAREA alias of PROBE on probe_features; drop pre-write
+                      drop(c("PROBE", "AREA"))$  # pf already slim to CHR/START/END/PROBE — no PROBE_WHOLE to strip here
                       sort(c("START", "END"), descending = FALSE)
     sd_chr$sink_parquet(chunk_file)
     # Defensive cleanup: rilascia R-side reference, forza gc() per evitare
