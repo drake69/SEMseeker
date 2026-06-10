@@ -73,11 +73,22 @@ jobs:
             "caret", "wordcloud", "KMEANS.KNN", "tidyverse",
             "Rfast", "mockery"
           )
+          # Rfast install is verbose on purpose: macOS arm64 binary often
+          # lags behind fresh R releases on PPM (e.g. R 4.6.0 in 2026-04),
+          # forcing source build. install.packages() does NOT raise an R
+          # error on install failure, so quiet=TRUE used to hide it and the
+          # test-0-suggests-installed meta-test only saw the symptom.
+          # Diagnostic kept verbose until install is stably reproducible.
           for (pkg in suggests_cran) {
+            is_diagnostic <- pkg %in% c("Rfast")
             tryCatch(
-              install.packages(pkg, repos = repos, quiet = TRUE),
+              install.packages(pkg, repos = repos, quiet = !is_diagnostic),
               error = function(e) message("Could not install ", pkg, ": ", e$message)
             )
+            if (is_diagnostic) {
+              ok <- requireNamespace(pkg, quietly = TRUE)
+              message(sprintf("[diag] %s available after install: %s", pkg, ok))
+            }
           }
         shell: Rscript {0}
 
