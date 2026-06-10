@@ -115,23 +115,31 @@
   }
   available_GB <- total_GB * mem_frac
 
-  # AI-061+ (2026-06-10): empirical safety factor on the gate threshold.
-  # ewas v49 run, limma_2 [DELTARQ / HYPER / PROBE / WHOLE]:
-  #   predicted: mono_peak_GB = 25.1 GB, available_GB = 38.4 GB
-  #   gate decision = monolithic (25.1 + few < 38.4)
-  #   ACTUAL: process killed by macOS Jetsam (SIGKILL) — peak crossed 38 GB.
+  # AI-061+ empirical safety factor on the gate threshold.
   # The 1.5× lmfit_GB factor (line 71) under-estimates real peak because:
   #   - polars→R hand-off materialises 1-2 extra wide-frame copies during
   #     as.data.frame(collect()) before lmFit even starts
   #   - limma internals (residuals + sigma2 + Amean + qr.Q ...) routinely
   #     run another ~0.5× on top of the response matrix
   #   - eBayes post-fit objects (lods, t, p, B, var.post) add up to fit_object_GB
-  #     ALREADY accounted, but are produced WHILE residuals are still alive,
-  #     so the true peak ≈ mono_peak + fit_object hits simultaneously
-  # Empirical headroom factor = 1.5× tightens the threshold for monolithic
-  # and chunked decisions alike — derived from one Jetsam kill, refine on
-  # next over/under-shoot. Document run/factor pairs here when revisited.
-  SAFETY_FACTOR <- 1.5
+  #     ALREADY accounted, but are produced WHILE residuals are still alive
+  #   - the R process carries a non-trivial baseline (polars cache + R
+  #     working set accumulated by previous dispatches): mem available for
+  #     the *next* lmFit peak is < available_GB by ~current RSS
+  #
+  # Observed run/factor pairs (refine on each over/under-shoot):
+  #   - SAFETY_FACTOR=1.0 (no factor, original commit):
+  #       v49 ewas, limma_2 DELTARQ HYPER PROBE WHOLE, mono=25.1 / avail=38.4
+  #       → gate=monolithic → SIGKILL by macOS Jetsam.
+  #   - SAFETY_FACTOR=1.5 (commit 98fc2a0):
+  #       v50 ewas, limma_2 DELTARP HYPER PROBE WHOLE, mono=25.1 / avail=38.4
+  #       → gate=monolithic (1.5 × 25.23 = 37.85 ≤ 38.4 — passes by 0.5 GB)
+  #       → SIGKILL. The baseline RSS (~28 GB before fit started) ate the
+  #       margin: real peak ≈ 53 GB > 64 GB - swap pressure.
+  #   - SAFETY_FACTOR=2.0 (this revision):
+  #       2.0 × 25.23 = 50.5 GB > 38.4 → chunked (was monolithic). Should
+  #       hold until the next miss; document the next OOM here.
+  SAFETY_FACTOR <- 2.0
 
   decision <- if (SAFETY_FACTOR * (mono_peak_GB  + fit_object_GB) <= available_GB) {
     "monolithic"
