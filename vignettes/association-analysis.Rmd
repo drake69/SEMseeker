@@ -645,7 +645,7 @@ to the regions that were already significant in a reference study, then merges
 the two result sets. It's the standard "replication / validation" workflow when
 you have a discovery cohort and a validation cohort.
 
-```{r cross_study, eval=FALSE}
+```{r cross_study_replication, eval=FALSE}
 intra_study_association_replication(
   inference_details_origin = inference_discovery,
   inference_details        = inference_validation,
