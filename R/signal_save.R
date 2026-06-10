@@ -84,6 +84,13 @@ signal_save <- function(signal_data, sample_sheet, batch_id,
   # query lazy indipendente filtrata sul subset di PROBE corrispondente.
   pf <- if (!is.null(probe_features)) probe_features
         else probe_features_get("PROBE")  # legacy fallback (test path)
+  # Slim pf to the 4 join-relevant cols. probe_features carries the full
+  # annotation set (GENE_*, ISLAND_*, DMR_*, CHR_CYTOBAND, CHR_WHOLE,
+  # PROBE_WHOLE) for downstream association lookup, but those columns
+  # would survive the chunked join below and bleed into the POSITION
+  # pivot, corrupting its schema (sample columns must come right after
+  # CHR/START/END). Subset here is cheap (~370k × 4 in RAM).
+  pf <- pf[, c("CHR", "START", "END", "PROBE"), drop = FALSE]
   chrs_all <- as.character(pf$CHR)
   chr_order_key <- function(ch) {
     cl <- sub("^chr", "", ch)
