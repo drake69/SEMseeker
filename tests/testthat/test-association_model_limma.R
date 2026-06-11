@@ -86,16 +86,26 @@ test_that("limma_<degree> is accepted, limma_<degree>_<partition> is accepted, m
 
 test_that("execute_model rejects family_test='limma_2' with an install hint when limma is missing", {
   # We can't reliably uninstall limma in CI to assert this end-to-end.
-  # Instead, exercise the requireNamespace path by mocking. mockery is
-  # in Suggests; if absent, skip the test.
-  testthat::skip_if_not_installed("mockery")
-
-  # We don't need limma actually installed to test the guard branch —
-  # we mock requireNamespace to pretend it isn't.
-  mockery::stub(
-    where = SEMseeker:::execute_model,
-    what  = "requireNamespace",
-    how   = function(pkg, ...) if (pkg == "limma") FALSE else TRUE
+  # Instead, exercise the requireNamespace path by rebinding it inside
+  # the SEMseeker namespace for the duration of this test.
+  #
+  # We previously used mockery::stub(where = SEMseeker:::execute_model, ...)
+  # but mockery operates on a *copy* of the function value and does not
+  # rewrite the actual namespace binding execute_model resolves at call
+  # time — so the stub silently never fired and the test passed at home
+  # but failed under CI's --as-cran path. testthat::local_mocked_bindings
+  # (3rd edition) edits the live namespace and is undone on exit.
+  # requireNamespace isn't imported into SEMseeker's namespace (it's a
+  # base function), so .package = "SEMseeker" can't find a binding.
+  # Instead override the binding inside base for the duration of the
+  # call. SEMseeker:::execute_model resolves requireNamespace from base
+  # at call time, so this rewrites what it actually sees.
+  testthat::local_mocked_bindings(
+    requireNamespace = function(package, ...) {
+      if (package == "limma") FALSE
+      else get("requireNamespace", envir = baseenv(), inherits = FALSE)(package, ...)
+    },
+    .package = "base"
   )
 
   df <- .sim_one_area()

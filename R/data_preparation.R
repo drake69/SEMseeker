@@ -55,7 +55,12 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
   if (independentVariableIsFactor)
     tempDataFrame[, independent_variable] <- independentVariableData
 
-  df_head <- tempDataFrame[,1:(g_start-1)]
+  # drop = FALSE: when g_start == 2 (only one head column = IV) the default
+  # 1D slice returns a vector, colnames(vec) = NULL, and the length check at
+  # the bottom (`ncol(tempDataFrame) != length(df_colnames)`) fires the
+  # "data are not the same size" stop. Forcing data.frame keeps the rebuild
+  # symmetric regardless of how many sample-level columns there are.
+  df_head <- tempDataFrame[, 1:(g_start - 1), drop = FALSE]
 
   burden_values <- sapply(tempDataFrame[,g_start:g_end], as.numeric)
   burden_values <- as.data.frame(burden_values)

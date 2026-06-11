@@ -72,7 +72,8 @@ context("apply_stat_model_batch (AI-040 Fase 2+3)")
   orig <- SEMseeker:::data_preparation
   passthrough <- function(family_test, transformation_y, tempDataFrame,
                           independent_variable, g_start, g_end, FALSE_,
-                          covariates, depth_analysis, key) {
+                          covariates, depth_analysis, key,
+                          transformation_x = "none") {
     list(tempDataFrame = tempDataFrame,
          independent_variableLevels = c(NA, NA))
   }

@@ -22,7 +22,8 @@
 #'
 #'
 apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = NULL, key, transformation_y, dototal,
-  session_folder, independent_variable, depth_analysis=3,samples_sql_condition, ...)
+  session_folder, independent_variable, depth_analysis=3,samples_sql_condition,
+  inference_detail = NULL, ...)
 {
   arguments <- list(...)
 
@@ -51,6 +52,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
       independent_variable = independent_variable,
       depth_analysis       = depth_analysis,
       samples_sql_condition = samples_sql_condition,
+      inference_detail     = inference_detail,
       ...
     ))
   }

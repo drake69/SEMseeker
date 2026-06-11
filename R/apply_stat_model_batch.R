@@ -48,7 +48,8 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
                                     session_folder,
                                     independent_variable,
                                     depth_analysis = 3,
-                                    samples_sql_condition, ...) {
+                                    samples_sql_condition,
+                                    inference_detail = NULL, ...) {
 
   # Parser: <engine>_<degree>[_<partition>]
   parts  <- unlist(strsplit(as.character(family_test), "_"))

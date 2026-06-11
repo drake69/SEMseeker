@@ -26,7 +26,7 @@ skip_if_no_rfast <- function() {
     parallel_strategy = "sequential",
     inpute            = "median",
     bulk_population   = FALSE,
-    lesion_window_kbp = 5,
+    LESIONS_BP        = 5000L,
     bonferroni_threshold = 0.05
   )
   tf

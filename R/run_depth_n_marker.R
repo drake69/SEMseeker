@@ -270,6 +270,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
           prep$independent_variable,
           prep$depth_analysis,
           prep$inference_detail$samples_sql_condition,
+          inference_detail = prep$inference_detail,
           ...)
         results <- plyr::rbind.fill(results, result_temp_local_batch)
         results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
