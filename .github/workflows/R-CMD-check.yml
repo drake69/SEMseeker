@@ -78,7 +78,7 @@ jobs:
       - name: Install system libraries (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install cairo fontconfig pkg-config
+          brew install cairo fontconfig pkg-config libomp
           brew install --cask xquartz
 
       - name: Install system libraries (Linux)
