@@ -29,11 +29,13 @@
 #'   contain `"/"`, returns `s` unchanged in a length-1 vector.
 #'
 #' @examples
-#' .smart_split_area_name("HLA-A/B/C")        # c("HLA-A","HLA-B","HLA-C")
-#' .smart_split_area_name("HBA1/HBA2")        # c("HBA1","HBA2")
-#' .smart_split_area_name("KRT8/18")          # c("KRT8","KRT18")
-#' .smart_split_area_name("TP53")             # "TP53"
-#' .smart_split_area_name("GENE-A-B/C/D")     # c("GENE-A-B","GENE-A-C","GENE-A-D")
+#' # Internal helper — not exported. Reach it via ::: so R CMD check --as-cran
+#' # can run the examples block under CheckExEnv (which only sees exports).
+#' SEMseeker:::.smart_split_area_name("HLA-A/B/C")    # c("HLA-A","HLA-B","HLA-C")
+#' SEMseeker:::.smart_split_area_name("HBA1/HBA2")    # c("HBA1","HBA2")
+#' SEMseeker:::.smart_split_area_name("KRT8/18")      # c("KRT8","KRT18")
+#' SEMseeker:::.smart_split_area_name("TP53")         # "TP53"
+#' SEMseeker:::.smart_split_area_name("GENE-A-B/C/D") # c("GENE-A-B","GENE-A-C","GENE-A-D")
 #'
 #' @keywords internal
 .smart_split_area_name <- function(s) {
