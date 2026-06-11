@@ -86,8 +86,20 @@ jobs:
               error = function(e) message("Could not install ", pkg, ": ", e$message)
             )
             if (is_diagnostic) {
-              ok <- requireNamespace(pkg, quietly = TRUE)
-              message(sprintf("[diag] %s available after install: %s", pkg, ok))
+              # requireNamespace(quiet=TRUE) hides the .onLoad error. Force a
+              # library() call inside tryCatch to capture the actual reason
+              # (typically missing dyn lib: libgsl, libomp, RcppArmadillo dep).
+              load_result <- tryCatch(
+                {
+                  suppressPackageStartupMessages(
+                    library(pkg, character.only = TRUE)
+                  )
+                  "OK"
+                },
+                error   = function(e) paste0("ERROR: ", conditionMessage(e)),
+                warning = function(w) paste0("WARNING: ", conditionMessage(w))
+              )
+              message(sprintf("[diag] %s load attempt: %s", pkg, load_result))
             }
           }
         shell: Rscript {0}
