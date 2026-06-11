@@ -79,6 +79,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install cairo fontconfig pkg-config libomp
+          # libomp is keg-only → symlink so dyld finds it when loading Rfast.so
+          sudo ln -sf "$(brew --prefix libomp)/lib/libomp.dylib" "$(brew --prefix)/lib/libomp.dylib"
           brew install --cask xquartz
 
       - name: Install system libraries (Linux)
