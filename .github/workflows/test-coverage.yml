@@ -24,9 +24,12 @@ jobs:
 
       # gdtools (transitive dep via ctdR → clusterProfiler) requires cairo + fontconfig
       # libomp is required at runtime by binary R packages built with OpenMP (e.g. Rfast)
+      # XQuartz provides libX11 used by R 4.6's tcltk on macOS arm64 (aligns this
+      # workflow with R-CMD-check.yml — see SEMseeker README §macOS).
       - name: Install system libraries (macOS)
         run: |
           brew install cairo fontconfig pkg-config libomp
+          brew install --cask xquartz
           # libomp is keg-only → symlink so dyld finds it when loading Rfast.so
           sudo ln -sf "$(brew --prefix libomp)/lib/libomp.dylib" "$(brew --prefix)/lib/libomp.dylib"
 
@@ -109,6 +112,12 @@ jobs:
         shell: Rscript {0}
 
       - name: Generate coverage report
+        env:
+          # Rfast.so links against LLVM OpenMP (libomp). On macOS arm64 the
+          # symbol `___kmpc_barrier` is only resolvable if dyld can find
+          # libomp at runtime — libomp is keg-only under /opt/homebrew/opt/libomp/lib,
+          # which dyld does not search by default.
+          DYLD_FALLBACK_LIBRARY_PATH: /opt/homebrew/opt/libomp/lib
         run: |
           Sys.setenv(NOT_CRAN = "true", RENV_CONFIG_SANDBOX_ENABLED = "false")
           cov <- covr::package_coverage(

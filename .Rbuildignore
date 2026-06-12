@@ -13,3 +13,4 @@
 ^.*\.BiocCheck$
 ^dev$
 ^bench$
+^data-raw$

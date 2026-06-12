@@ -30,45 +30,21 @@ if (use_synthetic_data)
   # perc_epimutation <- 0.05
 
   Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY='YES')
-  # Build probe_features from the K850 Bioconductor annotation when installed
-  # (CI always has it). This ensures tech-detection tests work correctly
-  # because the probe IDs match the real array manifest.
-  # Falls back to synthetic IDs in environments without the annotation package.
+  # Load the bundled imprinting-aware fixture (20k real EPIC probe IDs around
+  # 58 curated human imprinting DMRs). Built once via
+  # data-raw/build_test_master_features.R, ships in data/test_master_features.rda.
+  # See ?SEMseeker::test_master_features.
   #
-  # macOS exception: requireNamespace() on the Illumina annotation pulls in
-  # minfi -> GEOquery -> (transitively) tcltk, and R 4.6 on arm64 links tcltk
-  # to /opt/X11/lib/libX11.6.dylib which segfaults with bus error at test_check
-  # startup ('address 0x161000013, cause invalid alignment'). Force the
-  # synthetic-IDs branch on Darwin so we never load the annotation pkg.
-  .k850_pkg <- "IlluminaHumanMethylationEPICanno.ilm10b4.hg19"
-  .trace_step("before .can_load_anno check (Illumina anno requireNamespace)")
-  .can_load_anno <- Sys.info()[["sysname"]] != "Darwin" &&
-                    requireNamespace(.k850_pkg, quietly = TRUE)
-  .trace_step(sprintf("after .can_load_anno check, value=%s", .can_load_anno))
-  if (.can_load_anno) {
-    .locs_env <- new.env(parent = emptyenv())
-    utils::data(list = "Locations", package = .k850_pkg, envir = .locs_env)
-    .locs_df  <- as.data.frame(.locs_env$Locations, stringsAsFactors = FALSE)
-    .sampled  <- sample(nrow(.locs_df), min(nprobes, nrow(.locs_df)))
-    probe_features <- data.frame(
-      PROBE = rownames(.locs_df)[.sampled],
-      CHR   = sub("^chr", "", .locs_df$chr[.sampled]),
-      START = as.integer(.locs_df$pos[.sampled]),
-      stringsAsFactors = FALSE
-    )
-    nprobes <<- nrow(probe_features)
-  } else {
-    # Synthetic fallback: fake cg IDs distributed across chr1-22, X, Y
-    .chrs <- as.character(c(1:22, "X", "Y"))
-    probe_features <- data.frame(
-      PROBE = paste0("cg", formatC(seq_len(nprobes), width = 8L, flag = "0")),
-      CHR   = .chrs[((seq_len(nprobes) - 1L) %% length(.chrs)) + 1L],
-      START = seq(1000000L, by = 1000L, length.out = nprobes),
-      stringsAsFactors = FALSE
-    )
-  }
-  probe_features$END      <- probe_features$START
-  probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep = "_")
+  # Using bundled real probe IDs guarantees:
+  #  - tech-detection tests pass on every platform (probe-ID overlap → K850),
+  #  - no requireNamespace() on IlluminaHumanMethylationEPICanno at test-setup
+  #    time, so no minfi → GEOquery → tcltk → libX11 chain → no macOS arm64
+  #    segfault path.
+  .trace_step("loading bundled test_master_features fixture")
+  utils::data("test_master_features", package = "SEMseeker", envir = environment())
+  probe_features <- as.data.frame(test_master_features, stringsAsFactors = FALSE)
+  nprobes <<- nrow(probe_features)
+  .trace_step(sprintf("loaded test_master_features: %d probes", nprobes))
 
   # test <- stats::rnorm(nsamples,mean = intersample_mean, sd = intersample_sd)
   # mean(test)

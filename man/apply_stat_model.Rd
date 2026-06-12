@@ -16,6 +16,7 @@ apply_stat_model(
   independent_variable,
   depth_analysis = 3,
   samples_sql_condition,
+  inference_detail = NULL,
   ...
 )
 }
