@@ -196,14 +196,14 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
         if(pathfindr)
           pathway_pathfindR(
             study =  study,
-            path_db = path_dbs,
+            path_dbs = path_dbs,
             iterations = 20,
             statistic_parameter=statistic_parameter,
             adjust_per_area = adjust_per_area,
             adjust_globally = adjust_globally,
             adjustment_method = adjustment_method,
             pvalue_column = pvalue_column,
-            inference_details = inference_detail,
+            inference_detail = inference_detail,
             significance = significance
           )
 
