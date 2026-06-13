@@ -21,44 +21,37 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
   if (!exists("make_bedmethyl_per_sample", mode = "function"))
     source(testthat::test_path("helper-bedmethyl.R"))
 
-  ## ── 1. Restrict to a tractable subset (BWS imprinting + flanking) ────────
-  utils::data("test_master_features", package = "SEMseeker", envir = environment())
-  pf <- as.data.frame(test_master_features)
-  ## ~200 probes around KCNQ1OT1 + H19/IGF2 (chromosome 11) for speed
-  pf_subset <- pf[!is.na(pf$DMR_LABEL) &
-                    grepl("KCNQ1OT1|H19_IGF2", pf$DMR_LABEL), , drop = FALSE]
-  ## Top up with flanking on chr 11 so we have ≥150 probes
-  if (nrow(pf_subset) < 150L) {
-    chr11_pool <- pf[pf$CHR == "11" & !pf$PROBE %in% pf_subset$PROBE, ]
-    need <- min(150L - nrow(pf_subset), nrow(chr11_pool))
-    if (need > 0L) {
-      set.seed(20210713)
-      pf_subset <- rbind(pf_subset, chr11_pool[sample(nrow(chr11_pool), need), ])
-    }
-  }
-  expect_gt(nrow(pf_subset), 100L)
+  ## ── 1. Real GSE133774 fixture filtered to KCNQ1OT1 + H19/IGF2 probes ─────
+  ## Same fixture used by setup.R and the getting-started vignette (AI-123).
+  utils::data("test_signal_gse133774",      package = "SEMseeker", envir = environment())
+  utils::data("test_samplesheet_gse133774", package = "SEMseeker", envir = environment())
+  utils::data("test_master_features",       package = "SEMseeker", envir = environment())
 
-  ## ── 2. Synthetic 15-sample beta matrix (5 Reference / 5 Control / 5 Case)
-  ## SEMseeker `population_check` requires > 3 samples per group.
-  set.seed(20210713L)
-  np <- nrow(pf_subset)
-  ns <- 15L
-  ref_betas <- matrix(stats::rbeta(np * 5L, 8, 2), nrow = np)
-  ctl_betas <- matrix(stats::rbeta(np * 5L, 8, 2), nrow = np)
-  cas_betas <- matrix(stats::rbeta(np * 5L, 8, 2), nrow = np)
-  ## Inject 10 strong hypo-epimutations in Case samples only (~beta 0.1)
-  epi_idx <- sample(np, 10L)
-  cas_betas[epi_idx, ] <- pmin(cas_betas[epi_idx, ] * 0.1, 0.15)
-  betas <- cbind(ref_betas, ctl_betas, cas_betas)
-  rownames(betas) <- pf_subset$PROBE
-  colnames(betas) <- paste0("S", sprintf("%02d", seq_len(ns)))
+  pf <- as.data.frame(test_master_features)
+  ## Restrict to BWS-relevant imprinting DMRs on chr11 for speed
+  pf_subset <- pf[!is.na(pf$DMR_LABEL) &
+                    grepl("KCNQ1OT1|H19_IGF2", pf$DMR_LABEL) &
+                    pf$PROBE %in% rownames(test_signal_gse133774), , drop = FALSE]
+  if (nrow(pf_subset) < 50L) {
+    chr11_pool <- pf[pf$CHR == "11" &
+                     !pf$PROBE %in% pf_subset$PROBE &
+                     pf$PROBE %in% rownames(test_signal_gse133774), ]
+    need <- min(100L - nrow(pf_subset), nrow(chr11_pool))
+    if (need > 0L)
+      pf_subset <- rbind(pf_subset, chr11_pool[seq_len(need), ])
+  }
+  expect_gt(nrow(pf_subset), 30L)
+
+  ## ── 2. Real beta matrix (no synthetic injection — real BWS biology) ───────
+  betas        <- test_signal_gse133774[pf_subset$PROBE, , drop = FALSE]
+  sample_sheet <- test_samplesheet_gse133774
+  sample_sheet <- sample_sheet[, c("Sample_ID", "Sample_Group")]
+  sample_sheet$Sample_Name <- sample_sheet$Sample_ID
 
   sample_sheet <- data.frame(
-    Sample_ID    = colnames(betas),
-    Sample_Name  = colnames(betas),
-    Sample_Group = c(rep("Reference", 5L),
-                     rep("Control",   5L),
-                     rep("Case",      5L)),
+    Sample_ID    = sample_sheet$Sample_ID,
+    Sample_Name  = sample_sheet$Sample_ID,
+    Sample_Group = sample_sheet$Sample_Group,
     stringsAsFactors = FALSE
   )
 

@@ -18,41 +18,28 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r synthetic_setup, include=FALSE}
-# ── Runnable demo dataset ─────────────────────────────────────────────────
+```{r real_data_setup, include=FALSE}
+# ── Demo dataset: real GSE133774 (EPIC 850k, BWS + MLID) ─────────────────
 #
-# We use a subset of `test_master_features` (real EPIC probe IDs around the
-# BWS-relevant imprinting DMRs KCNQ1OT1 and H19/IGF2) so the vignette runs in
-# a few seconds during CRAN/Bioc vignette build *and* exercises the same
-# biology that the package targets.
+# test_signal_gse133774 and test_samplesheet_gse133774 are bundled fixtures
+# built from the GEO series matrix via data-raw/build_test_signal_fixture.R.
+# They contain real EPIC beta values for 18k probes around 81 imprinting DMRs
+# (10 samples: 6 controls + 4 BWS/MLID family members, including L1 = BWS).
 #
-# To run the FULL pipeline on a real GEO dataset (BWS GSE95486, ~30-60 min),
-# see the "Subset rationale & full-pipeline runnable" section below.
-data("test_master_features", package = "SEMseeker")
+# Filtering to the KCNQ1OT1 + H19_IGF2 DMR probes keeps the vignette fast
+# while preserving the biologically relevant signal (real BWS epimutations).
+data("test_signal_gse133774",      package = "SEMseeker")
+data("test_samplesheet_gse133774", package = "SEMseeker")
+data("test_master_features",       package = "SEMseeker")
+
 .demo_probes <- subset(test_master_features,
-                       DMR_LABEL %in% c("KCNQ1OT1:TSS-DMR", "H19_IGF2:IG-DMR"))
-.n_probes  <- nrow(.demo_probes)
-.n_samples <- 6L
+                       DMR_LABEL %in% c("KCNQ1OT1:TSS-DMR", "H19_IGF2:IG-DMR") &
+                       PROBE %in% rownames(test_signal_gse133774))
+beta_matrix  <- test_signal_gse133774[.demo_probes$PROBE, , drop = FALSE]
+sample_sheet <- test_samplesheet_gse133774[, c("Sample_ID", "Sample_Group")]
+sample_sheet$Sample_Name <- sample_sheet$Sample_ID
+sample_sheet <- sample_sheet[, c("Sample_ID", "Sample_Name", "Sample_Group")]
 
-set.seed(20210713L)
-beta_matrix <- matrix(
-  rbeta(.n_probes * .n_samples, 8, 2),
-  nrow = .n_probes, ncol = .n_samples,
-  dimnames = list(
-    .demo_probes$PROBE,
-    c("REF1","REF2","REF3","CASE1","CASE2","CASE3")
-  )
-)
-# Inject a handful of strong hypo-epimutations in CASE samples on BWS probes
-.epi_idx <- sample(.n_probes, 5L)
-beta_matrix[.epi_idx, 4:6] <- pmin(beta_matrix[.epi_idx, 4:6] * 0.1, 0.15)
-
-sample_sheet <- data.frame(
-  Sample_ID    = colnames(beta_matrix),
-  Sample_Name  = colnames(beta_matrix),
-  Sample_Group = c("Reference","Reference","Reference","Case","Case","Case"),
-  stringsAsFactors = FALSE
-)
 tmp_result_folder <- file.path(tempdir(), "semseeker_vignette_results")
 ```
 
