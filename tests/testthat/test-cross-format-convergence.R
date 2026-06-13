@@ -146,8 +146,8 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
   expect_true(lr_ok)
 
   ## SEMseeker writes per-sample BED-like files as
-  ## {out}/Data/{Sample_Group}/MUTATIONS_{HYPER|HYPO}/{Sample_ID}_MUTATIONS_*.bedgraph
-  bed_pattern <- "_MUTATIONS_(HYPO|HYPER)\\.bedgraph$"
+  ## {out}/Data/{Sample_Group}/MUTATIONS_{HYPER|HYPO}/{Sample_ID}_MUTATIONS_*.bed.gz
+  bed_pattern <- "_MUTATIONS_(HYPO|HYPER)\\.bed\\.gz$"
   array_beds <- list.files(file.path(out_array, "Data"),
                             pattern = bed_pattern,
                             recursive = TRUE, full.names = TRUE)
