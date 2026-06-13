@@ -13,8 +13,6 @@
 #
 # These tests do NOT require an initialised SEMseeker session.
 
-context("apply_stat_model_batch (AI-040 Fase 2+3)")
-
 # Tiny simulators -------------------------------------------------------
 
 .sim_batch_continuous <- function(n_samples = 80L, n_areas = 50L,

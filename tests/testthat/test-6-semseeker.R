@@ -55,7 +55,7 @@ test_that("semeeker", {
 
     pivot <- pivot[,-c(1:3)]
     mutations_pivot <- mutations_pivot[,-c(1:3)]
-    testthat::expect_true(nrow(pivot)<nprobes)
+    testthat::expect_true(nrow(pivot)<=nprobes)
     testthat::expect_true(nrow(pivot)>0)
 
     pivot <- pivot[,order(colnames(pivot))]

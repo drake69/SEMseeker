@@ -13,8 +13,6 @@
 # needed for any of these tests — we exercise the model function and
 # the dispatcher branch in isolation.
 
-context("association_model_limma (AI-040 Fase 1)")
-
 # Tiny helpers ---------------------------------------------------------
 
 # Build a one-area data frame with a polynomial signal of given degree.

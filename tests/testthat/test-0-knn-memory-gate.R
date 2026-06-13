@@ -10,8 +10,6 @@
 #   3. SEMSEEKER_KNN_MEM_FRACTION (env var) overrides the default 0.6.
 #   4. .total_ram_GB() returns a positive number on this platform.
 
-context("AI-096 Phase 2 — KNN memory gate")
-
 test_that(".total_ram_GB returns a positive number on macOS/Linux", {
   ram <- SEMseeker:::.total_ram_GB()
   expect_true(is.numeric(ram))

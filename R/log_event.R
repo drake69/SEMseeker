@@ -49,12 +49,14 @@ log_event <- function(...)
       sum(gc(verbose = FALSE, full = FALSE)[, "(Mb)"]),
       error = function(e) NA_real_
     )
-    cpu_pct <- tryCatch(
-      as.numeric(trimws(system(
-        sprintf("ps -p %d -o %%cpu=", Sys.getpid()),
-        intern = TRUE)[1])),
-      error = function(e) NA_real_
-    )
+    cpu_pct <- if (.Platform$OS.type == "unix") {
+      tryCatch(
+        as.numeric(trimws(system(
+          sprintf("ps -p %d -o %%cpu=", Sys.getpid()),
+          intern = TRUE)[1])),
+        error = function(e) NA_real_
+      )
+    } else NA_real_
     log_event_to_save <- paste0(log_event_to_save,
       " [mem=", round(mem_mb, 1), "MB cpu=", round(cpu_pct, 1), "%]")
   }

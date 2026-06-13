@@ -12,8 +12,6 @@
 #      Rfast — but glm_model_bulk's per-probe safety net still returns NA
 #      for any degenerate Y that somehow slips through.
 
-context("glm_model_bulk (AI-044 binomial bulk via Rfast)")
-
 skip_if_no_rfast <- function() {
   testthat::skip_if_not_installed("Rfast")
 }
