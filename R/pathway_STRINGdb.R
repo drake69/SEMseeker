@@ -3,7 +3,7 @@
 pathway_STRINGdb <- function(study,
   statistic_parameter="",
   adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
-  inference_details, significance = TRUE, stringDBVersion = "12.0")
+  inference_detail, significance = TRUE, stringDBVersion = "12.0")
 {
 
   #
@@ -23,7 +23,7 @@ pathway_STRINGdb <- function(study,
     return()
   }
 
-  total_progress <- nrow(keys)*nrow(inference_details)
+  total_progress <- nrow(keys)*nrow(inference_detail)
   progress <- 0
 
   if(ssEnv$showprogress)
@@ -34,9 +34,9 @@ pathway_STRINGdb <- function(study,
   string_db <- STRINGdb::STRINGdb$new(version=stringDBVersion, species=9606, # 9606 is the taxonomy ID for Homo sapiens
     score_threshold=200, input_directory="")
 
-  for(id in 1:nrow(inference_details))
+  for(id in 1:nrow(inference_detail))
   {
-    inference_detail <- inference_details[id,]
+    inference_detail <- inference_detail[id,]
     # foreach::foreach(i = 1:nrow(keys)) %dorng%
     for(i in 1:nrow(keys))
     {

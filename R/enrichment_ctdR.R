@@ -3,7 +3,7 @@
 pathway_ctdR <- function(study,
   statistic_parameter="",
   adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
-  inference_details, significance = TRUE)
+  inference_detail, significance = TRUE)
 {
 
   #
@@ -23,7 +23,7 @@ pathway_ctdR <- function(study,
     return()
   }
 
-  total_progress <- nrow(keys)*nrow(inference_details)
+  total_progress <- nrow(keys)*nrow(inference_detail)
   progress <- 0
 
   if(ssEnv$showprogress)
@@ -32,9 +32,9 @@ pathway_ctdR <- function(study,
     progress_bar <- ""
 
 
-  for(id in 1:nrow(inference_details))
+  for(id in 1:nrow(inference_detail))
   {
-    inference_detail <- inference_details[id,]
+    inference_detail <- inference_detail[id,]
     # foreach::foreach(i = 1:nrow(keys)) %dorng%
     for(i in 1:nrow(keys))
     {

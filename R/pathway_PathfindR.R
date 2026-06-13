@@ -1,7 +1,7 @@
 pathway_pathfindR <- function(study,
   path_dbs,  iterations = 20, statistic_parameter="",
   adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
-  inference_details, significance = TRUE)
+  inference_detail, significance = TRUE)
 {
 
 
@@ -23,7 +23,7 @@ pathway_pathfindR <- function(study,
     return()
   }
 
-  total_progress <- nrow(keys)*length(path_dbs)*nrow(inference_details)
+  total_progress <- nrow(keys)*length(path_dbs)*nrow(inference_detail)
   progress <- 0
 
   if(ssEnv$showprogress)
@@ -31,9 +31,9 @@ pathway_pathfindR <- function(study,
   else
     progress_bar <- ""
 
-  for(id in 1:nrow(inference_details))
+  for(id in 1:nrow(inference_detail))
   {
-    inference_detail <- inference_details[id,]
+    inference_detail <- inference_detail[id,]
     for(i in 1:nrow(keys))
     {
       seq <- 0
