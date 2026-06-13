@@ -232,7 +232,7 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   if (ncol(fit$coefficients) >= 3L) {
     coef_idx_no_intercept <- seq_len(ncol(fit$coefficients))[-1L]
     f_obj <- tryCatch(
-      limma::topTableF(fit, number = Inf, sort.by = "none"),
+      limma::topTable(fit, number = Inf, sort.by = "none"),
       error = function(e) NULL
     )
     if (!is.null(f_obj) && "F" %in% colnames(f_obj)) {
