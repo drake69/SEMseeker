@@ -79,7 +79,8 @@ get_meth_tech <- function(signal_data) {
   # ---- Step 2: row-count heuristics (last resort) ----
   if (tech == "") {
     if (n_probes > 866562 ||
-        all(grepl("_", probe_ids[seq_len(min(1000L, length(probe_ids)))]))) {
+        (length(probe_ids) > 0L &&
+         all(grepl("_", probe_ids[seq_len(min(1000L, length(probe_ids)))])))) {
       tech <- "WGBS"
       msg  <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
                     "dataset identified as WGBS (row count / probe ID pattern).")
