@@ -153,7 +153,7 @@ test_that("pathway_STRINGdb returns NULL gracefully when STRINGdb not installed"
     testthat::expect_no_error(
       SEMseeker:::pathway_STRINGdb(
         study            = "test",
-        inference_details = inference_details
+        inference_detail = inference_details
       )
     )
   } else {
@@ -184,7 +184,7 @@ test_that("pathway_pathfindR returns NULL gracefully when pathfindR not installe
       SEMseeker:::pathway_pathfindR(
         study             = "test",
         path_dbs          = c("KEGG"),
-        inference_details = inference_details,
+        inference_detail = inference_details,
         significance      = TRUE
       )
     )
@@ -268,7 +268,7 @@ test_that("pathway_ctdR runs without error on synthetic association results", {
   testthat::expect_no_error(
     SEMseeker:::pathway_ctdR(
       study            = "test",
-      inference_details = inference_details,
+      inference_detail = inference_details,
       significance     = FALSE     # include all results, not just significant
     )
   )
