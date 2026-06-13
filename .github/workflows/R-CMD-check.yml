@@ -2,8 +2,6 @@
 on:
   push:
     branches-ignore: [main, master]   # direct push to main/master is blocked
-  pull_request:
-    branches: [main, master, develop]
   workflow_dispatch:
     inputs:
       os:
