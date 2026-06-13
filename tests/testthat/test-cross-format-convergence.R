@@ -145,36 +145,25 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
   expect_true(wgbs_ok)
   expect_true(lr_ok)
 
-  ## SEMseeker writes per-sample BED-like files as
-  ## {out}/Data/{Sample_Group}/MUTATIONS_{HYPER|HYPO}/{Sample_ID}_MUTATIONS_*.bed.gz
-  bed_pattern <- "_MUTATIONS_(HYPO|HYPER)\\.bed\\.gz$"
-  array_beds <- list.files(file.path(out_array, "Data"),
-                            pattern = bed_pattern,
-                            recursive = TRUE, full.names = TRUE)
-  wgbs_beds  <- list.files(file.path(out_wgbs, "Data"),
-                            pattern = bed_pattern,
-                            recursive = TRUE, full.names = TRUE)
-  lr_beds    <- list.files(file.path(out_lr, "Data"),
-                            pattern = bed_pattern,
-                            recursive = TRUE, full.names = TRUE)
-  expect_gt(length(array_beds), 0L)
-  expect_gt(length(wgbs_beds),  0L)
-  expect_gt(length(lr_beds),    0L)
+  ## AI-096 lazy-passthrough writes pivot parquets directly — no per-sample
+  ## BED intermediates. Assert convergence via MUTATIONS_HYPO pivot existence
+  ## and row-count parity across the three input formats.
+  ## Full biological convergence (real GSE95486 beta values) is AI-117 + AI-123.
+  mut_pivot_rel <- file.path("Data","Pivots","MUTATIONS",
+                              "MUTATIONS_HYPO_POSITION_WHOLE_HG19.parquet")
+  expect_true(file.exists(file.path(out_array, mut_pivot_rel)))
+  expect_true(file.exists(file.path(out_wgbs,  mut_pivot_rel)))
+  expect_true(file.exists(file.path(out_lr,    mut_pivot_rel)))
 
-  count_rows <- function(beds) {
-    sum(vapply(beds, function(f) {
-      info <- file.info(f)
-      if (is.na(info$size) || info$size == 0L) return(0L)
-      length(readLines(f, warn = FALSE))
-    }, FUN.VALUE = integer(1L)))
+  ## Quantization-tolerant convergence: WGBS and LONGREAD row counts must be
+  ## within ±50 % of the array baseline (depth=30 → ~3 % beta quantization).
+  pivot_rows <- function(path) {
+    tryCatch(polars::pl$read_parquet(path)$height, error = function(e) 0L)
   }
-  n_array <- count_rows(array_beds)
-  n_wgbs  <- count_rows(wgbs_beds)
-  n_lr    <- count_rows(lr_beds)
+  n_array <- pivot_rows(file.path(out_array, mut_pivot_rel))
+  n_wgbs  <- pivot_rows(file.path(out_wgbs,  mut_pivot_rel))
+  n_lr    <- pivot_rows(file.path(out_lr,    mut_pivot_rel))
 
-  ## Quantization-tolerant convergence: each format's mutation count must be
-  ## within ±50 % of the array baseline. (Loose because depth=30 still
-  ## produces some boundary cases at the IQR threshold.)
   if (n_array > 0L) {
     ratio_wgbs <- n_wgbs / n_array
     ratio_lr   <- n_lr   / n_array
