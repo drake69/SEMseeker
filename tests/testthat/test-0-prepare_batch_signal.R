@@ -126,8 +126,9 @@ test_that("prepare_batch_signal errors out when the intersection is empty", {
 
 test_that("prepare_batch_signal errors out with no resolvable tech", {
   skip_on_cran()
+  tempFolder <- tempfile("ppp_prep_batch_")
   on.exit(unlink(tempFolder, recursive = TRUE), add = TRUE)
-  SEMseeker::init_env(result_folder = tempFolder)
+  SEMseeker:::init_env(result_folder = tempFolder)
 
   # WGBS detection requires probes, but we pass an empty data.frame.
   # get_meth_tech() should fall through and return tech = "" -> error.
