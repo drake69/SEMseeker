@@ -2,7 +2,7 @@ test_that("semeeker", {
 
   tempFolder <- tempFolders[1]
   unlink(tempFolder,recursive = TRUE)
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
 
   ####################################################################################
 

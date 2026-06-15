@@ -1,7 +1,7 @@
 test_that("deltar_single_sample",{
 
   tempFolder <- tempFolders[1]
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::init_env(result_folder= tempFolder, bonferroni_threshold = 0.05, showprogress=showprogress, start_fresh = TRUE, inpute="median")
 
   ####################################################################################
@@ -19,8 +19,9 @@ test_that("deltar_single_sample",{
     s <- 2
     message(s)
     sample_id <- colnames(signal_data)[s]
-    # Look up the actual sample group (don't hardcode to "Reference" — sample 2 may not be Reference)
-    sample_detail <- mySampleSheet[mySampleSheet$Sample_ID == sample_id, c("Sample_ID","Sample_Group")]
+    # With the Reference reuse pattern, the same Sample_ID may appear in multiple
+    # groups (e.g. CTRL02 as both "Reference" and "Control"). Take the first match.
+    sample_detail <- mySampleSheet[mySampleSheet$Sample_ID == sample_id, c("Sample_ID","Sample_Group")][1, , drop = FALSE]
 
     # Build a bed-like data.frame matching the production code path (values read from bed file)
     values_df <- data.frame(

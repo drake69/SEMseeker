@@ -1,7 +1,7 @@
 test_that("log-event", {
 
   tempFolder <- tempFolders[1]
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::init_env(result_folder =  tempFolder, parallel_strategy = parallel_strategy, maxResources = 90,
     figures = "HYPER", markers = "DELTAS", areas = "GENE")
 

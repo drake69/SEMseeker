@@ -1,7 +1,7 @@
 test_that("signal_range_values", {
 
   tempFolder <- tempFolders[1]
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
 
 
   # test range calculation with missed values: signal_range_values must error when data has NAs

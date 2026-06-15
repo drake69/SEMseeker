@@ -2,7 +2,7 @@ test_that("annotations", {
 
   tempFolder <- tempFolders[1]
   # message(tempFolder)
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
     bonferroni_threshold = bonferroni_threshold,
     inpute="median", start_fresh=TRUE)

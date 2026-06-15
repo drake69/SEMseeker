@@ -1,7 +1,7 @@
 test_that("signal-save",{
 
   tempFolder <- tempFolders[1]
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
 
   # In the normal pipeline analyze_batch() calls get_meth_tech() before signal_save()

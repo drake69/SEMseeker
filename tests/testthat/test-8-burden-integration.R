@@ -52,7 +52,8 @@
 
   rownames(local_sig) <- local_probes$PROBE
   local_sig <- as.data.frame(local_sig)
-  colnames(local_sig) <- local_samples$Sample_ID
+  # signal_data has 10 unique columns; mySampleSheet has 16 rows (Reference reuse pattern)
+  colnames(local_sig) <- colnames(signal_data)
   list(signal = local_sig, samples = local_samples, probes = local_probes)
 }
 
