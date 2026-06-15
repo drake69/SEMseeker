@@ -115,14 +115,14 @@ test_that("array, WGBS bedmethyl and LONGREAD bedmethyl produce convergent SEM c
   )
   lr_ok <- tryCatch({
     SEMseeker::semseeker(
-      input             = unname(bedmethyl_files_lr),
-      sample_sheet      = sample_sheet,
-      result_folder     = out_lr,
-      input_type        = "bedmethyl",
-      tech              = "LONGREAD",
-      genome_build      = "hg38",  ## LONGREAD validation requires hg38
-      strict_build_check = FALSE,  ## but our coordinates are hg19 — allow with warning
-      parallel_strategy = "sequential"
+      input              = unname(bedmethyl_files_lr),
+      sample_sheet       = sample_sheet,
+      result_folder      = out_lr,
+      input_type         = "bedmethyl",
+      tech               = "LONGREAD",
+      genome_build       = "hg19",  ## test data is array-derived hg19; match other two paths
+      strict_build_check = FALSE,   ## suppresses LONGREAD+hg19 warning (intentional here)
+      parallel_strategy  = "sequential"
     )
     TRUE
   }, error = function(e) {
