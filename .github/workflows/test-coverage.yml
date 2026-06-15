@@ -14,6 +14,13 @@ jobs:
       RENV_CONFIG_SANDBOX_ENABLED: false
       RENV_ACTIVATE_PROJECT: 0
       NOT_CRAN: "true"
+      # Rfast.so (and other OpenMP binaries) link against LLVM libomp.
+      # libomp is keg-only under /opt/homebrew/opt/libomp/lib, which dyld
+      # does not search by default.  Setting this at job level makes the
+      # symbol ___kmpc_barrier resolvable both in the Install R dependencies
+      # step (diagnostic library(Rfast) call) and in the Generate coverage
+      # report step (covr::package_coverage re-loads all packages).
+      DYLD_FALLBACK_LIBRARY_PATH: /opt/homebrew/opt/libomp/lib
 
     steps:
       - uses: actions/checkout@v4
@@ -110,12 +117,6 @@ jobs:
         shell: Rscript {0}
 
       - name: Generate coverage report
-        env:
-          # Rfast.so links against LLVM OpenMP (libomp). On macOS arm64 the
-          # symbol `___kmpc_barrier` is only resolvable if dyld can find
-          # libomp at runtime — libomp is keg-only under /opt/homebrew/opt/libomp/lib,
-          # which dyld does not search by default.
-          DYLD_FALLBACK_LIBRARY_PATH: /opt/homebrew/opt/libomp/lib
         run: |
           Sys.setenv(NOT_CRAN = "true", RENV_CONFIG_SANDBOX_ENABLED = "false")
           cov <- covr::package_coverage(
