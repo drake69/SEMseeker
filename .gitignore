@@ -7,6 +7,7 @@ packrat/src/
 cache
 tmp
 .code_reader/
+.coding_agent/
 
 # macOS
 .DS_Store
