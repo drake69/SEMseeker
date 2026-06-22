@@ -17,6 +17,9 @@ tmp
 ..Rcheck/
 .Rcheck/
 
+# BiocCheck output
+*.BiocCheck/
+
 # RStudio project file
 *.Rproj
 
