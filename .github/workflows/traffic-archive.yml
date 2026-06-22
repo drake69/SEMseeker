@@ -1,0 +1,78 @@
+name: Archive traffic data
+
+# Runs every Monday at 06:00 UTC. GitHub traffic API only retains 14 days,
+# so weekly archival is enough to preserve full history without gaps.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fetch traffic from GitHub API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p traffic
+          gh api repos/${{ github.repository }}/traffic/clones > /tmp/clones_new.json
+          gh api repos/${{ github.repository }}/traffic/views  > /tmp/views_new.json
+
+      - name: Merge into archive (deduplicate by timestamp)
+        run: |
+          # Initialise archive files on first run
+          [ -f traffic/clones.json ] || echo '[]' > traffic/clones.json
+          [ -f traffic/views.json  ] || echo '[]' > traffic/views.json
+
+          # Append only timestamps not already present, then sort chronologically
+          jq -s '
+            .[0] as $existing |
+            .[1].clones as $new |
+            ($existing | map(.timestamp)) as $known |
+            ($existing + ($new | map(select(
+              .timestamp as $t | ($known | index($t)) == null
+            )))) | sort_by(.timestamp)
+          ' traffic/clones.json /tmp/clones_new.json > /tmp/clones_merged.json
+
+          jq -s '
+            .[0] as $existing |
+            .[1].views as $new |
+            ($existing | map(.timestamp)) as $known |
+            ($existing + ($new | map(select(
+              .timestamp as $t | ($known | index($t)) == null
+            )))) | sort_by(.timestamp)
+          ' traffic/views.json /tmp/views_new.json > /tmp/views_merged.json
+
+          mv /tmp/clones_merged.json traffic/clones.json
+          mv /tmp/views_merged.json  traffic/views.json
+
+      - name: Show summary
+        run: |
+          echo "### Clones archive"
+          jq 'length' traffic/clones.json
+          echo "total entries; last 3:"
+          jq '.[-3:]' traffic/clones.json
+          echo "### Views archive"
+          jq 'length' traffic/views.json
+          echo "total entries; last 3:"
+          jq '.[-3:]' traffic/views.json
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add traffic/clones.json traffic/views.json
+          if git diff --cached --quiet; then
+            echo "No new data — nothing to commit."
+          else
+            git commit -m "chore(traffic): archive weekly snapshot $(date +'%Y-%m-%d')"
+            git push
+          fi
