@@ -90,6 +90,19 @@
       }
     }
   }
+  # 4) Windows: PowerShell CIM query → bytes
+  if (os == "Windows") {
+    out <- tryCatch(
+      suppressWarnings(system2(
+        "powershell",
+        c("-Command", "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory"),
+        stdout = TRUE, stderr = FALSE)),
+      error = function(e) NULL)
+    if (!is.null(out) && length(out) >= 1L) {
+      bytes <- suppressWarnings(as.numeric(trimws(out[[1L]])))
+      if (!is.na(bytes) && bytes > 0) return(bytes / (1024^3))
+    }
+  }
   NA_real_
 }
 

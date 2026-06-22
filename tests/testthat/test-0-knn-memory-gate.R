@@ -10,7 +10,7 @@
 #   3. SEMSEEKER_KNN_MEM_FRACTION (env var) overrides the default 0.6.
 #   4. .total_ram_GB() returns a positive number on this platform.
 
-test_that(".total_ram_GB returns a positive number on macOS/Linux", {
+test_that(".total_ram_GB returns a positive number on all platforms", {
   ram <- SEMseeker:::.total_ram_GB()
   expect_true(is.numeric(ram))
   expect_false(is.na(ram))
