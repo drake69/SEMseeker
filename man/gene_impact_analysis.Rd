@@ -22,6 +22,11 @@ Alias deprecato di [enrichment_analysis()]. La funzione era
   Sostituire le chiamate `gene_impact_analysis(...)` con
   `enrichment_analysis(...)` (stessa firma, stessa semantica).
 }
+\examples{
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
+}
 \seealso{
 [enrichment_analysis()]
 }

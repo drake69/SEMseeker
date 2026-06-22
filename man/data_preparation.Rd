@@ -14,7 +14,8 @@ data_preparation(
   dototal,
   covariates,
   depth_analysis,
-  key
+  key,
+  transformation_x = "none"
 )
 }
 \arguments{

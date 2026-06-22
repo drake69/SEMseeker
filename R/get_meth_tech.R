@@ -24,6 +24,7 @@
 #'
 get_meth_tech <- function(signal_data) {
 
+ 
   ssEnv    <- get_session_info()
   n_probes <- nrow(signal_data)
 
@@ -37,11 +38,8 @@ get_meth_tech <- function(signal_data) {
               "'; skipping auto-detection.")
     # Still detect beta vs M-values
     exclude_cols <- c("AREA","PROBE","CHR","START","END","K27","K450","K850","k27","k450","k850")
-    signal_cols  <- signal_data[
-      seq_len(min(10000L, nrow(signal_data))),
-      !colnames(signal_data) %in% exclude_cols, drop = FALSE]
-    max_data   <- max(abs(c(max(signal_cols, na.rm = TRUE),
-                             min(signal_cols, na.rm = TRUE))))
+    signal_cols  <- signal_data[seq_len(min(10000L, nrow(signal_data))),!colnames(signal_data) %in% exclude_cols, drop = FALSE]
+    max_data   <- max(abs(c(max(signal_cols, na.rm = TRUE),min(signal_cols, na.rm = TRUE))))
     ssEnv$beta <- max_data <= 1
     ssEnv$probes_count <- n_probes
     update_session_info(ssEnv)
@@ -81,7 +79,8 @@ get_meth_tech <- function(signal_data) {
   # ---- Step 2: row-count heuristics (last resort) ----
   if (tech == "") {
     if (n_probes > 866562 ||
-        all(grepl("_", probe_ids[seq_len(min(1000L, length(probe_ids)))]))) {
+        (length(probe_ids) > 0L &&
+         all(grepl("_", probe_ids[seq_len(min(1000L, length(probe_ids)))])))) {
       tech <- "WGBS"
       msg  <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
                     "dataset identified as WGBS (row count / probe ID pattern).")

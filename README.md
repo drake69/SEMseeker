@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5095417.svg)](https://doi.org/10.5281/zenodo.5095417)
 [![](https://img.shields.io/badge/devel%20version-0.11.0-blue.svg)](https://github.com/drake69/semseeker)
 [![](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![](https://codecov.io/gh/drake69/semseeker/branch/main/graph/badge.svg)](https://codecov.io/gh/drake69/semseeker)

@@ -113,8 +113,54 @@ annotate_position_pivots <- function ()
         # Fix: split on ";", explode to N rows, strip whitespace — each
         # multi-mapped probe now contributes separately to every gene's
         # burden, and the group_by below produces clean mono-gene rows.
+        #
+        # AI-061+ (2026-06-09): extended to also handle "," and "/" as
+        # multi-gene separators. Bioconductor manifests use ";" by default
+        # but external/custom annotations occasionally use commas, and
+        # paralog-cluster compact notations like "HBA1/HBA2" (alpha
+        # hemoglobin twin loci) and "HLA-A/B/C" (MHC class I, 3 distinct
+        # genes on 6p21.33) are biologically multi-gene — splitting them
+        # yields one row per HGNC symbol, which is the correct unit for
+        # downstream gene-burden aggregation.
+        #
+        # AI-107 (2026-06-09): "/" needs SMART splitting with prefix
+        # recovery so "HLA-A/B/C" becomes ("HLA-A","HLA-B","HLA-C") rather
+        # than ("HLA-A","B","C"). A naive replace_all("/", ";") loses the
+        # shared prefix. The expansion is done R-side on the DISTINCT
+        # slash-bearing names only (typically a few hundred genes per
+        # annotation), then joined back into the lazy pivot before the
+        # standard ";" split + explode. ","-bearing names keep their
+        # plain semicolon normalisation since each comma-token is already
+        # a complete HGNC symbol.
+        slashed_areas <- as.data.frame(
+          pivot$select("AREA")$
+            filter(polars::pl$col("AREA")$str$contains("/", literal = TRUE))$
+            unique()$
+            collect()
+        )$AREA
+        if (length(slashed_areas) > 0L) {
+          expansions <- vapply(
+            slashed_areas,
+            function(s) paste(.smart_split_area_name(s), collapse = ";"),
+            character(1)
+          )
+          mapping_lf <- polars::as_polars_df(data.frame(
+            AREA      = slashed_areas,
+            AREA_NEW  = expansions,
+            stringsAsFactors = FALSE
+          ))$lazy()
+          pivot <- pivot$join(
+            mapping_lf, on = "AREA", how = "left"
+          )$with_columns(
+            polars::pl$when(polars::pl$col("AREA_NEW")$is_not_null())$
+              then(polars::pl$col("AREA_NEW"))$
+              otherwise(polars::pl$col("AREA"))$alias("AREA")
+          )$drop("AREA_NEW")
+        }
         pivot <- pivot$with_columns(
-          polars::pl$col("AREA")$str$split(";")
+          polars::pl$col("AREA")$str$
+            replace_all(",", ";")$str$
+            split(";")
         )$explode("AREA")
         pivot <- pivot$with_columns(
           polars::pl$col("AREA")$str$strip_chars()

@@ -131,7 +131,8 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
 
   rownames(local_sig) <- local_probes$PROBE
   local_sig <- as.data.frame(local_sig)
-  colnames(local_sig) <- local_samples$Sample_ID
+  # signal_data has 10 unique columns; mySampleSheet has 16 rows (Reference reuse pattern)
+  colnames(local_sig) <- colnames(signal_data)
 
   # ── Step 1: produce semseeker output including POSITION pivots ────────────
   # POSITION area is required so study_summary_total() writes per-sample
@@ -220,7 +221,8 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
   local_sig[1:50, 1:5] <- stats::rbeta(50L * 5L, 1L, 100L)
   rownames(local_sig) <- local_probes$PROBE
   local_sig <- as.data.frame(local_sig)
-  colnames(local_sig) <- mySampleSheet$Sample_ID
+  # signal_data has 10 unique columns; mySampleSheet has 16 rows (Reference reuse pattern)
+  colnames(local_sig) <- colnames(signal_data)
 
   SEMseeker::semseeker(
     input             = local_sig,
@@ -446,7 +448,7 @@ test_that("association_analysis skips gracefully when independent_variable absen
   local_sig2[1:50, 1:5] <- stats::rbeta(50L * 5L, 1L, 100L)
   rownames(local_sig2) <- local_probes2$PROBE
   local_sig2 <- as.data.frame(local_sig2)
-  colnames(local_sig2) <- mySampleSheet$Sample_ID
+  colnames(local_sig2) <- colnames(signal_data)
 
   SEMseeker::semseeker(
     input             = local_sig2,

@@ -174,7 +174,7 @@ test_that("mutations_get (A-10): zero overlap → empty data.frame, no crash", {
 test_that("mutations_get", {
 
   tempFolder <- tempFolders[1]
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::init_env(result_folder = tempFolder, inpute = "median")
 
   if (!exists("signal_thresholds")) {

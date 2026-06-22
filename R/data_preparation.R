@@ -19,7 +19,7 @@
 data_preparation <- function(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, dototal, covariates, depth_analysis, key, transformation_x = "none")
 {
 
-  # browser()
+  #
   ssEnv <- get_session_info()
 
   transformation_y <- as.character(transformation_y)
@@ -55,7 +55,12 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
   if (independentVariableIsFactor)
     tempDataFrame[, independent_variable] <- independentVariableData
 
-  df_head <- tempDataFrame[,1:(g_start-1)]
+  # drop = FALSE: when g_start == 2 (only one head column = IV) the default
+  # 1D slice returns a vector, colnames(vec) = NULL, and the length check at
+  # the bottom (`ncol(tempDataFrame) != length(df_colnames)`) fires the
+  # "data are not the same size" stop. Forcing data.frame keeps the rebuild
+  # symmetric regardless of how many sample-level columns there are.
+  df_head <- tempDataFrame[, 1:(g_start - 1), drop = FALSE]
 
   burden_values <- sapply(tempDataFrame[,g_start:g_end], as.numeric)
   burden_values <- as.data.frame(burden_values)
@@ -221,8 +226,14 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
   # # remove rows with all NA
   # tempDataFrame <- tempDataFrame[,colSums(is.na(tempDataFrame)) != nrow(tempDataFrame)]
 
-  # replace - with _ in colnames
-  colnames(tempDataFrame) <- gsub("-", "_", colnames(tempDataFrame))
+  # AI-106 (2026-06-09): no more colname sanitisation here. Names stay
+  # pass-through from the upstream annotation (HLA-A, chr10:...-..., etc).
+  # The per-gene foreach in apply_stat_model() applies its own LOCAL
+  # safe<->real memoised mapping ONLY for the duration of the formula
+  # machinery (R formula identifiers cannot contain '-' or ':'), then
+  # reverses the mapping before assigning AREA_OF_TEST in the result.
+  # CSV ends up with raw names → enrichment downstream resolves HGNC
+  # correctly, resume match is exact.
 
   result <- list(tempDataFrame, independent_variableLevels)
   names(result) <- c("tempDataFrame", "independent_variableLevels")

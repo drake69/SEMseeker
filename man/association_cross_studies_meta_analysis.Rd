@@ -2,48 +2,28 @@
 % Please edit documentation in R/association_cross_studies_meta_analysis.R
 \name{association_cross_studies_meta_analysis}
 \alias{association_cross_studies_meta_analysis}
-\title{Cross-study meta-analysis of association results}
+\title{Association Cross Studies Meta Analysis (deprecated alias)}
 \usage{
-association_cross_studies_meta_analysis(
-  inference_details,
-  statistic_parameter = "BETA",
-  pvalue_column = "PVALUE_ADJ_ALL_BH",
-  studies,
-  studies_base_folder,
-  result_folder
-)
+association_cross_studies_meta_analysis(...)
 }
 \arguments{
-\item{inference_details}{\code{data.frame} describing the inference
-configuration (same format as used by \code{association_analysis}).}
-
-\item{statistic_parameter}{Character scalar: column name of the effect
-size estimate in the inference results (default \code{"BETA"}).}
-
-\item{pvalue_column}{Character scalar: column name of the adjusted p-value
-(default \code{"PVALUE_ADJ_ALL_BH"}).}
-
-\item{studies}{Character vector: study identifiers to include.}
-
-\item{studies_base_folder}{Character scalar: base directory containing
-per-study result folders.}
-
-\item{result_folder}{Character scalar: output directory for the
-meta-analysis results.}
+\item{...}{Argomenti inoltrati a `inter_study_association_meta_analysis()`.}
 }
 \value{
-Invisibly returns a \code{data.frame} with one row per stratum
-  containing pooled effect estimates, confidence intervals, p-values, and
-  heterogeneity statistics (\eqn{\tau^2}, Q-test p-value).
+Invisibly `NULL`. Vedi [inter_study_association_meta_analysis()].
 }
 \description{
-Combines inference results from multiple studies using a random-effects
-meta-analysis model (\code{\link[meta]{metagen}}).  For each unique
-combination of FIGURE, SUBAREA and AREA_OF_TEST, the function pools
-effect sizes (BETA) and standard errors across studies and reports
-fixed-effect and random-effect estimates with heterogeneity statistics.
+Alias deprecato di [inter_study_association_meta_analysis()]. Naming uniformato a
+  `<scope>_<object>_<operation>` (es. `intra_study_*`,
+  `inter_study_*`). Sostituire le chiamate `association_cross_studies_meta_analysis(...)` con
+  `inter_study_association_meta_analysis(...)` (stessa firma). Alla chiamata viene emesso un warning
+  di deprecation.
 }
-\details{
-Requires at least two studies per stratum; strata with fewer studies are
-silently skipped.
+\examples{
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
+}
+\seealso{
+[inter_study_association_meta_analysis()]
 }

@@ -140,6 +140,25 @@ association_analysis <- function(inference_details, result_folder, maxResources 
 
       last_results  <- results
       last_filename <- fileNameResults
+
+      # AI-061+ (2026-06-09): volcano plot for this marker right after the
+      # CSV is finalised. One call per marker; volcano_plot_inference
+      # splits internally by (AREA, SUBAREA) and writes one PNG per
+      # combination under <result_folder>/Chart/VOLCANO/. Best-effort:
+      # plot failure must not abort the analysis loop — log WARNING and
+      # continue with the next marker.
+      tryCatch(
+        volcano_plot_inference(
+          inference_detail = prep$inference_detail,
+          result_folder    = ssEnv$result_folder,
+          markers          = marker
+        ),
+        error = function(e) {
+          log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+                    " volcano_plot_inference failed for marker '", marker,
+                    "': ", conditionMessage(e))
+        }
+      )
     }
 
     finalize_job_results(last_results, prep$inference_detail, family_test,

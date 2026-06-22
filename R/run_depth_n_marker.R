@@ -43,17 +43,47 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # write.csv2 per evitare incompatibilita' di formato (polars writes
     # boolean come 'true'/'false' minuscoli, read.csv2 poi li carica come
     # character e rompe i subset logici downstream).
+    # AI-061+ (2026-06-09): three polars 1.x quirks rolled into one read_csv:
+    #   1. null_values="NA"          — utils::write.csv2 emits "NA" literal
+    #      for missing, polars treats only "" as null on numeric columns,
+    #      so without this it fails on "NA" in an f64-locked column.
+    #   2. infer_schema_length large — early rows can be all zeros for
+    #      INTERCEPT_PVALUE / similar, polars infers i64, then later finds a
+    #      scientific-notation float (e.g. "2,52861832797769e-304") and
+    #      fails to coerce to integer. Scanning more rows up-front lets it
+    #      infer Float64 correctly.
+    #   3. decimal_comma=TRUE        — write.csv2 uses "," as decimal sep.
+    # Both quirks were exposed on ewas v32 / v33 mid-association.
     old_results_global <- unique(as.data.frame(
-      polars::pl$read_csv(fileNameResults, separator = ";", decimal_comma = TRUE)
+      polars::pl$read_csv(fileNameResults, separator = ";",
+                          decimal_comma = TRUE, null_values = "NA",
+                          infer_schema_length = 100000L)
     ))
     results <- plyr::rbind.fill(results, old_results_global)
   } else {
     old_results_global <- data.frame()
   }
 
+  ssEnv_local <- get_session_info()
+  tech_is_longread <- !is.null(ssEnv_local$tech) &&
+                       ssEnv_local$tech %in% c("WGBS", "LONGREAD")
+
   for (k in seq_len(nkeys)) {
     key <- keys[k, ]
-    if (key$AREA == "POSITION") next
+    # AI-098 (2026-06-09): symmetric tech-aware skip. Each technology has
+    # exactly one canonical AREA representation; the other is no-op:
+    #   - Illumina (K27/K450/K850): PROBE is canonical — literature reports
+    #     probe IDs (cg00000029). POSITION would produce a duplicate
+    #     coord-keyed CSV with the same numerical results → skip.
+    #   - WGBS / LONGREAD: POSITION is canonical — long-reads have no
+    #     "probe" concept; coordinates are the natural row identifier.
+    #     PROBE pivot doesn't exist for these techs → skip.
+    # This replaces the unconditional `if (AREA == "POSITION") next` which
+    # was Illumina-centric and blocked all position-level inference for
+    # long-reads, even when POSITION was the only meaningful unit.
+    if (key$AREA == "POSITION" && !tech_is_longread) next
+    if (key$AREA == "PROBE"    &&  tech_is_longread) next
+
     pivot_filename <- pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
 
     # AI-027: read via unified dispatcher. Returns NULL when neither the
@@ -152,8 +182,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
                                             old_results_global$FIGURE == key$FIGURE &
                                             old_results_global$SUBAREA == key$SUBAREA &
                                             old_results_global$AREA == key$AREA, "AREA_OF_TEST"]
-      tempDataFrame_AREA_norm <- gsub("-", "_", tempDataFrame$AREA)
-      tempDataFrame <- tempDataFrame[!(tempDataFrame_AREA_norm %in% area_to_remove), ]
+      tempDataFrame <- tempDataFrame[!(tempDataFrame$AREA %in% area_to_remove), ]
     }
 
     log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -241,11 +270,22 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
           prep$independent_variable,
           prep$depth_analysis,
           prep$inference_detail$samples_sql_condition,
+          inference_detail = prep$inference_detail,
           ...)
         results <- plyr::rbind.fill(results, result_temp_local_batch)
         results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
+        # AI-061+ (2026-06-09): mirror the AI-077 save-guard from the
+        # batch-family branch above. Only rewrite the (potentially
+        # hundreds-of-MB) CSV when this chunk actually appended new
+        # rows — full resume case (nothing new) should be a no-op.
+        new_rows_appended_chunk <- !is.null(result_temp_local_batch) &&
+                                   nrow(result_temp_local_batch) > 0L
+        if (new_rows_appended_chunk) {
+          association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
+          n_new_rows_total <- (if (exists("n_new_rows_total")) n_new_rows_total else 0L) +
+                              nrow(result_temp_local_batch)
+        }
       }
-      association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
     }
 
     association_analysis_log(cbind(prep$inference_detail, keys[k, ]),

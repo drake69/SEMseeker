@@ -1,6 +1,14 @@
-signal_save <- function(signal_data, sample_sheet, batch_id)
+signal_save <- function(signal_data, sample_sheet, batch_id,
+                        probe_features = NULL)
 {
   ssEnv <- get_session_info()
+  # Resolve probe_features in priority order: explicit arg > attribute
+  # attached by prepare_batch_signal() > legacy probe_features_get() refetch.
+  # In the normal pipeline analyze_batch() routes signal_data through
+  # prepare_batch_signal() so attr(., "probe_features") is set and the
+  # third branch is never taken.
+  if (is.null(probe_features))
+    probe_features <- attr(signal_data, "probe_features")
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saving signal data.")
   pivot_file_name_pos <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
   if (file.exists(pivot_file_name_pos)) {
@@ -74,7 +82,15 @@ signal_save <- function(signal_data, sample_sheet, batch_id)
   # pushdown attraverso join è incompleta, quindi gestiamo le chr dal lato R
   # (probe_features è già una data.frame piccola in RAM) e iteriamo ognuna come
   # query lazy indipendente filtrata sul subset di PROBE corrispondente.
-  pf <- probe_features_get("PROBE")    # data.frame: PROBE, CHR, START, END
+  pf <- if (!is.null(probe_features)) probe_features
+        else probe_features_get("PROBE")  # legacy fallback (test path)
+  # Slim pf to the 4 join-relevant cols. probe_features carries the full
+  # annotation set (GENE_*, ISLAND_*, DMR_*, CHR_CYTOBAND, CHR_WHOLE,
+  # PROBE_WHOLE) for downstream association lookup, but those columns
+  # would survive the chunked join below and bleed into the POSITION
+  # pivot, corrupting its schema (sample columns must come right after
+  # CHR/START/END). Subset here is cheap (~370k × 4 in RAM).
+  pf <- pf[, c("CHR", "START", "END", "PROBE"), drop = FALSE]
   chrs_all <- as.character(pf$CHR)
   chr_order_key <- function(ch) {
     cl <- sub("^chr", "", ch)
@@ -111,7 +127,7 @@ signal_save <- function(signal_data, sample_sheet, batch_id)
     # viene interpretato come nomi di colonna invece che valori → "not found".
     sd_chr <- pp_lazy$filter(polars::pl$col("CHR") == ch)$
                       join(sd_lazy, on = "PROBE", how = "inner")$
-                      drop(c("PROBE", "PROBE_WHOLE", "AREA"))$
+                      drop(c("PROBE", "AREA"))$  # pf already slim to CHR/START/END/PROBE — no PROBE_WHOLE to strip here
                       sort(c("START", "END"), descending = FALSE)
     sd_chr$sink_parquet(chunk_file)
     # Defensive cleanup: rilascia R-side reference, forza gc() per evitare
@@ -135,7 +151,6 @@ signal_save <- function(signal_data, sample_sheet, batch_id)
     sink_parquet(pivot_file_name_pos)
   log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-sink-position mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
-  rm(signal_data, pp)
   gc()
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data.")
   log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-rm-lazyframes   mem_MB=", round(sum(gc()[, "(Mb)"]), 1))

@@ -25,20 +25,38 @@ log_event <- function(...)
   log_event_to_save <- gsub("  "," ", log_event_to_save)
   log_event_to_save <- gsub("  "," ", log_event_to_save)
 
-  # Auto-augment DEBUG messages with memory + CPU usage. Calling `gc()` and
-  # `ps` is cheap enough for debug-level granularity but is intentionally NOT
-  # done for INFO/WARNING/ERROR to keep hot paths fast and logs compact.
-  if (grepl("^DEBUG", log_event_to_save)) {
+  # Read session verbosity once: drives BOTH the augmentation policy
+  # (below) and the final print filter (further down).
+  if (is.null(ssEnv$verbosity))
+    verbosity <- 4
+  else
+    verbosity <- as.numeric(ssEnv$verbosity)
+
+  # Auto-augment messages with memory + CPU usage. AI-061+ (2026-06-09):
+  # expanded augmentation policy on user request:
+  #   - DEBUG: always augmented (legacy behaviour)
+  #   - WARNING / ERROR: always augmented (mem/cpu snapshot at the
+  #     moment a problem is logged is the most actionable diagnostic)
+  #   - INFO: augmented only when the session is in DEBUG verbosity
+  #     (verbosity == 4) — keeps INFO logs compact at normal levels
+  #     but turns them into a full trace under DEBUG.
+  augment_now <- grepl("^DEBUG",   log_event_to_save) ||
+                 grepl("^WARNING", log_event_to_save) ||
+                 grepl("^ERROR",   log_event_to_save) ||
+                 (grepl("^INFO",   log_event_to_save) && verbosity == 4)
+  if (augment_now) {
     mem_mb <- tryCatch(
       sum(gc(verbose = FALSE, full = FALSE)[, "(Mb)"]),
       error = function(e) NA_real_
     )
-    cpu_pct <- tryCatch(
-      as.numeric(trimws(system(
-        sprintf("ps -p %d -o %%cpu=", Sys.getpid()),
-        intern = TRUE)[1])),
-      error = function(e) NA_real_
-    )
+    cpu_pct <- if (.Platform$OS.type == "unix") {
+      tryCatch(
+        as.numeric(trimws(system(
+          sprintf("ps -p %d -o %%cpu=", Sys.getpid()),
+          intern = TRUE)[1])),
+        error = function(e) NA_real_
+      )
+    } else NA_real_
     log_event_to_save <- paste0(log_event_to_save,
       " [mem=", round(mem_mb, 1), "MB cpu=", round(cpu_pct, 1), "%]")
   }
@@ -61,10 +79,8 @@ log_event <- function(...)
     log_event_to_print <- paste0( log_event_to_print_dash, "\n",  log_event_to_print  , "\n",log_event_to_print_dash)
   }
 
-  if(is.null(ssEnv$verbosity))
-    verbosity <- 4
-  else
-    verbosity <- as.numeric(ssEnv$verbosity)
+  # `verbosity` already initialised at the top of the function for the
+  # augmentation policy — reuse the same value here.
 
   cat(log_event_to_save, "\n", file = log_file, append = TRUE)
 
@@ -80,32 +96,36 @@ log_event <- function(...)
     cat(log_event_to_save, "\n", file = journal_file, append = TRUE)
   }
 
-  # if verbosity is 1, only print ERROR messages
-  if (verbosity == 1 && grepl("^ERROR", log_event_to_save) || grepl("^BANNER", log_event_to_save) && !testthat::is_testing())
-  {
-    message(log_event_to_print)
-    log_event_to_print <- ""
-  }
+  # AI-061+ (2026-06-09): rewritten with explicit parens and a verbosity
+  # ladder. The previous form had operator-precedence inconsistencies
+  # between the four branches (the verbosity == 1 line let BANNER through
+  # by accident via && / || precedence, while the verbosity == 2/3 lines
+  # gated BANNER inside the verbosity check) and printed every BANNER
+  # twice on verbosity == 2/3.
+  #
+  # New rule:
+  #   BANNER  → always printed (section separators the user wants to see)
+  #   ERROR   → always printed (critical, regardless of verbosity)
+  #   WARNING → verbosity >= 2
+  #   INFO    → verbosity >= 3
+  #   DEBUG   → verbosity >= 4
+  # testthat::is_testing() suppresses all console output unconditionally.
 
-  # if verbosity is 2, print ERROR and WARNING messages
-  if (verbosity == 2 && (grepl("^ERROR", log_event_to_save) || grepl("^WARNING", log_event_to_save)|| grepl("^BANNER", log_event_to_save)) && !testthat::is_testing())
-  {
-    message(log_event_to_print)
-    log_event_to_print <- ""
-  }
-
-  # if verbosity is 3, print ERROR, WARNING and INFO messages
-  if (verbosity == 3 && (grepl("^ERROR", log_event_to_save) || grepl("^WARNING", log_event_to_save) || grepl("^INFO", log_event_to_save) || grepl("^BANNER", log_event_to_save)) && !testthat::is_testing())
-  {
-    message(log_event_to_print)
-    log_event_to_print <- ""
-  }
-
-  # if verbosity is 4, print ERROR, WARNING, INFO and DEBUG messages
-  if (verbosity == 4 && !testthat::is_testing())
-  {
-    message(log_event_to_print)
-    log_event_to_print <- ""
+  if (!testthat::is_testing()) {
+    if (grepl("^BANNER",  log_event_to_save) ||
+        grepl("^ERROR",   log_event_to_save)) {
+      message(log_event_to_print)
+      log_event_to_print <- ""
+    } else if (verbosity >= 2 && grepl("^WARNING", log_event_to_save)) {
+      message(log_event_to_print)
+      log_event_to_print <- ""
+    } else if (verbosity >= 3 && grepl("^INFO",    log_event_to_save)) {
+      message(log_event_to_print)
+      log_event_to_print <- ""
+    } else if (verbosity >= 4 && grepl("^DEBUG",   log_event_to_save)) {
+      message(log_event_to_print)
+      log_event_to_print <- ""
+    }
   }
 
 }

@@ -2,8 +2,6 @@
 on:
   push:
     branches-ignore: [main, master]
-  pull_request:
-    branches: [main, master, develop]
   workflow_dispatch:   # allow manual trigger: gh workflow run test-coverage.yml
 
 name: test-coverage
@@ -16,6 +14,13 @@ jobs:
       RENV_CONFIG_SANDBOX_ENABLED: false
       RENV_ACTIVATE_PROJECT: 0
       NOT_CRAN: "true"
+      # Rfast.so (and other OpenMP binaries) link against LLVM libomp.
+      # libomp is keg-only under /opt/homebrew/opt/libomp/lib, which dyld
+      # does not search by default.  Setting this at job level makes the
+      # symbol ___kmpc_barrier resolvable both in the Install R dependencies
+      # step (diagnostic library(Rfast) call) and in the Generate coverage
+      # report step (covr::package_coverage re-loads all packages).
+      DYLD_FALLBACK_LIBRARY_PATH: /opt/homebrew/opt/libomp/lib
 
     steps:
       - uses: actions/checkout@v4
@@ -23,8 +28,15 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
 
       # gdtools (transitive dep via ctdR → clusterProfiler) requires cairo + fontconfig
+      # libomp is required at runtime by binary R packages built with OpenMP (e.g. Rfast)
+      # XQuartz provides libX11 used by R 4.6's tcltk on macOS arm64 (aligns this
+      # workflow with R-CMD-check.yml — see SEMseeker README §macOS).
       - name: Install system libraries (macOS)
-        run: brew install cairo fontconfig pkg-config
+        run: |
+          brew install cairo fontconfig pkg-config libomp
+          brew install --cask xquartz
+          # libomp is keg-only → symlink so dyld finds it when loading Rfast.so
+          sudo ln -sf "$(brew --prefix libomp)/lib/libomp.dylib" "$(brew --prefix)/lib/libomp.dylib"
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -45,29 +57,62 @@ jobs:
             dependencies = NA,   # Imports/Depends/LinkingTo only; pathfindR→ggkegg chain excluded
             repos = repos
           )
-          # Install Bioconductor annotation packages (in Suggests — optional but needed for coverage)
+          # Install Bioconductor packages used by the test suite. The set
+          # mirrors R-CMD-check.yml and is kept in sync by the
+          # `test-0-suggests-installed.R` meta-test which fails CI if any
+          # named pkg is missing.
           BiocManager::install(
             c(
               "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
               "IlluminaHumanMethylation450kanno.ilmn12.hg19",
-              "IlluminaHumanMethylation27kanno.ilmn12.hg19"
+              "IlluminaHumanMethylation27kanno.ilmn12.hg19",
+              "limma",
+              "AnnotationHub",
+              "TxDb.Hsapiens.UCSC.hg19.knownGene"
             ),
             ask = FALSE, update = FALSE
           )
           # Install Suggests that are safe to install from CRAN (no Bioconductor chain)
           # Excluded: pathfindR, ctdR, GEOquery, STRINGdb, AnnotationDbi, org.Hs.eg.db,
           #           OpenCL, openai, WebGestaltR (require Bioc or non-CRAN sources)
+          #
+          #   Rfast    test-0-glm_model_bulk.R (AI-044 binomial_bulk)
+          #   mockery  test-association_model_limma.R (mocked bindings)
           suggests_cran <- c(
             "boot", "car", "circlize", "fastDummies", "fitdistrplus",
             "ggpubr", "M3C", "mediation", "meta", "nnet",
             "quantreg", "qvalue", "UpSetR", "matrixStats",
-            "caret", "wordcloud", "KMEANS.KNN", "tidyverse"
+            "caret", "wordcloud", "KMEANS.KNN", "tidyverse",
+            "Rfast", "mockery"
           )
+          # Rfast install is verbose on purpose: macOS arm64 binary often
+          # lags behind fresh R releases on PPM (e.g. R 4.6.0 in 2026-04),
+          # forcing source build. install.packages() does NOT raise an R
+          # error on install failure, so quiet=TRUE used to hide it and the
+          # test-0-suggests-installed meta-test only saw the symptom.
+          # Diagnostic kept verbose until install is stably reproducible.
           for (pkg in suggests_cran) {
+            is_diagnostic <- pkg %in% c("Rfast")
             tryCatch(
-              install.packages(pkg, repos = repos, quiet = TRUE),
+              install.packages(pkg, repos = repos, quiet = !is_diagnostic),
               error = function(e) message("Could not install ", pkg, ": ", e$message)
             )
+            if (is_diagnostic) {
+              # requireNamespace(quiet=TRUE) hides the .onLoad error. Force a
+              # library() call inside tryCatch to capture the actual reason
+              # (typically missing dyn lib: libgsl, libomp, RcppArmadillo dep).
+              load_result <- tryCatch(
+                {
+                  suppressPackageStartupMessages(
+                    library(pkg, character.only = TRUE)
+                  )
+                  "OK"
+                },
+                error   = function(e) paste0("ERROR: ", conditionMessage(e)),
+                warning = function(w) paste0("WARNING: ", conditionMessage(w))
+              )
+              message(sprintf("[diag] %s load attempt: %s", pkg, load_result))
+            }
           }
         shell: Rscript {0}
 

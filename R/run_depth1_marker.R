@@ -77,6 +77,7 @@ run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
         prep$independent_variable,
         prep$depth_analysis,
         prep$inference_detail$samples_sql_condition,
+        inference_detail = prep$inference_detail,
         ...)
       results <- plyr::rbind.fill(results, result_temp)
     }

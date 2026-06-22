@@ -22,7 +22,8 @@
 #'
 #'
 apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = NULL, key, transformation_y, dototal,
-  session_folder, independent_variable, depth_analysis=3,samples_sql_condition, ...)
+  session_folder, independent_variable, depth_analysis=3,samples_sql_condition,
+  inference_detail = NULL, ...)
 {
   arguments <- list(...)
 
@@ -51,6 +52,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
       independent_variable = independent_variable,
       depth_analysis       = depth_analysis,
       samples_sql_condition = samples_sql_condition,
+      inference_detail     = inference_detail,
       ...
     ))
   }
@@ -92,6 +94,25 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
   independent_variable1stLevel <- prepared_data$independent_variableLevels[1]
   independent_variable2ndLevel <- prepared_data$independent_variableLevels[2]
 
+  # AI-106 (2026-06-09): name memoisation. R formula identifiers cannot
+  # contain '-', ':', '/', etc., but the upstream annotation may carry
+  # raw names like "HLA-A" or "chr10:100028204-100028508". We sanitise
+  # the colnames to a R-safe form BEFORE the foreach loop, keep a
+  # safe→real mapping in scope, and reverse it when assigning
+  # AREA_OF_TEST so the result CSV preserves the original names.
+  # Enrichment downstream (WebGestalt / STRINGdb / pathfindR) then
+  # resolves HGNC symbols correctly; resume match is exact.
+  real_cols <- colnames(tempDataFrame)
+  safe_cols <- gsub("[^A-Za-z0-9_.]", "_", real_cols)
+  # Disambiguate if sanitisation collapses distinct real names onto the
+  # same safe form (rare in practice for HGNC, but possible for noisy
+  # annotations): append a numeric suffix to the duplicates.
+  if (anyDuplicated(safe_cols)) {
+    safe_cols <- make.unique(safe_cols, sep = "_")
+  }
+  safe_to_real <- setNames(real_cols, safe_cols)
+  colnames(tempDataFrame) <- safe_cols
+
   cols <- colnames(tempDataFrame)
   g_end <- length(cols)
   g <- 0
@@ -107,7 +128,9 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
     "data_preparation","apply_stat_model_sig.formula","quantreg_permutation_model",
     "apply_stat_model_sig_formula", "data_distribution_info", "glm_model", "test_model", "test_model_paired", "Breusch_Pagan_pvalue",
     "progress_bar","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_values","ssEnv","g_start",
-    "execute_model", "is.family_dicotomic", "log_event","mediate","mediation","get_session_info", "samples_sql_condition")
+    "execute_model", "is.family_dicotomic", "log_event","mediate","mediation","get_session_info", "samples_sql_condition",
+    # AI-106 (2026-06-09): safe_to_real mapping must reach each foreach worker
+    "safe_to_real")
 
   result_columns <- c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST", "CI.LOWER", "CI.UPPER", "PVALUE", "STATISTIC_PARAMETER", "AIC_VALUE", "RESIDUALS", "SHAPIRO_PVALUE", "R_MODEL", "STD.ERROR", "N_PERMUTATIONS", "N_PERMUTATIONS_TEST")
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " Starting foreach with: ", g_end - g_start, " items")
@@ -154,7 +177,15 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
       local_result$FIGURE <-  as.character(key$FIGURE)
       local_result$AREA <-  as.character(key$AREA)
       local_result$SUBAREA <-  as.character(key$SUBAREA)
-      local_result$AREA_OF_TEST <- burdenValue
+      # AI-106 (2026-06-09): reverse-map back to the upstream raw name
+      # (HLA-A, chr10:100028204-100028508, ...) so the CSV preserves it
+      # for enrichment / resume match. Fallback to burdenValue itself if
+      # the mapping is missing (defensive — should not happen).
+      local_result$AREA_OF_TEST <- if (burdenValue %in% names(safe_to_real)) {
+        safe_to_real[[burdenValue]]
+      } else {
+        burdenValue
+      }
       local_result$FAMILY_TEST <- family_test
       local_result$transformation_y <- transformation_y
       local_result$COVARIATES <- ifelse(length(covariates)>0,paste0(covariates,collapse=" "),NA)

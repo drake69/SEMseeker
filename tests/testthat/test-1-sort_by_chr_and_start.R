@@ -2,7 +2,7 @@ test_that("sort_by_chr_and_start", {
 
 
   tempFolder <- tempFolders[1]
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
   probe_features$ABSOLUTE <- paste(probe_features$CHR, probe_features$START, sep="_")
 
   #order not matching

@@ -46,23 +46,26 @@ probe_features_get <- function(area_subarea) {
 
   ssEnv <- get_session_info()
 
-  # Detect technology if not yet defined
+  # Contract: prepare_batch_signal() (fresh path) or get_meth_tech() (resume
+  # path) should set ssEnv$tech before any probe_features_get() call site.
+  # Fallback: read the SIGNAL PROBE pivot and re-derive — kept for tests and
+  # legacy callers that bypass prepare_batch_signal(). Loud WARNING so the
+  # drift is observable.
   if (is.null(ssEnv$tech) || ssEnv$tech == "") {
-    # AI-027: read via unified dispatcher.
+    log_event("WARNING: probe_features_get() called before ssEnv$tech is set. ",
+              "Falling back to lazy detection from SIGNAL PROBE pivot. ",
+              "prepare_batch_signal() should run first in the normal pipeline.")
     signal_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
     if (is.null(signal_pivot_lazy))
       stop("SIGNAL_MEAN PROBE pivot not available — cannot detect technology.")
-    signal_data_r   <- as.data.frame(signal_pivot_lazy$collect())
+    signal_data_r <- as.data.frame(signal_pivot_lazy$collect())
     if ("AREA" %in% colnames(signal_data_r)) {
       rownames(signal_data_r) <- signal_data_r$AREA
       signal_data_r$AREA <- NULL
     }
     ssEnv <- get_meth_tech(signal_data_r)
-    log_event("WARNING: probe_features_get() called before technology was defined.")
-    if (is.null(ssEnv$tech) || ssEnv$tech == "") {
-      log_event("ERROR: could not determine array technology.")
-      stop("Could not determine array technology.")
-    }
+    if (is.null(ssEnv$tech) || ssEnv$tech == "")
+      stop("probe_features_get: could not determine array technology.")
   }
 
   if (!grepl("_", area_subarea))
@@ -93,10 +96,12 @@ probe_features_get <- function(area_subarea) {
       probe_features <- data.frame(
         PROBE = probe_ids, CHR = pos$CHR, START = pos$START, END = pos$END,
         stringsAsFactors = FALSE)
-      if (grepl("CHR", area_subarea))
-        probe_features$CHR_WHOLE <- paste0("chr", probe_features$CHR)
-      if (grepl("PROBE", area_subarea))
-        probe_features$PROBE_WHOLE <- probe_features$PROBE
+      # Canonical (AREA, SUBAREA) columns: PROBE_WHOLE and CHR_WHOLE are
+      # required by association/enrichment code that does dynamic
+      # `probe_features[[area_subarea]]` lookup (same shape as GENE_BODY,
+      # ISLAND_N_SHORE, CHR_CYTOBAND, DMR_*).
+      if (grepl("CHR", area_subarea)) probe_features$CHR_WHOLE   <- paste0("chr", probe_features$CHR)
+      if (grepl("PROBE", area_subarea)) probe_features$PROBE_WHOLE <- probe_features$PROBE
       if (isTRUE(ssEnv$sex_chromosome_remove))
         probe_features <- probe_features[
           !(probe_features$CHR %in% c("X", "Y")), ]
@@ -171,9 +176,21 @@ probe_features_get <- function(area_subarea) {
     cols_needed <- c(ssEnv$tech, "PROBE", "CHR", "START", "END", area_subarea)
     cols_needed <- intersect(cols_needed, colnames(probe_features))
     probe_features <- dplyr::distinct(probe_features[, cols_needed, drop = FALSE])
+    # Dead code removed (2026-06-10): a stray
+    #   signal_data <- signal_data[rownames(signal_data) %in% signal_data$PROBE, ]
+    # was sitting here referencing a variable that does not exist in
+    # probe_features_get()'s scope. It never ran when ssEnv$tech was set
+    # by the legacy lazy-detection path (the function returned early via
+    # the PROBE / CHR branch), but with the AREA-based call sites added
+    # by annotate_position_pivots() — area_subarea = "GENE_BODY",
+    # "ISLAND_N_SHORE", etc. — the else-branch is now reached and the
+    # broken reference halts the run.
   }
 
-  # Add convenience whole-chromosome / probe columns used downstream
+  # Canonical (AREA, SUBAREA) columns required by downstream
+  # association/enrichment code that iterates over area_subarea names
+  # and does dynamic `probe_features[[area_subarea]]` lookup (same shape
+  # as GENE_BODY, ISLAND_N_SHORE, CHR_CYTOBAND, DMR_*).
   if (grepl("CHR", area_subarea) && !grepl("CHR_CYTOBAND", area_subarea))
     probe_features$CHR_WHOLE <- paste0("chr", probe_features$CHR)
 

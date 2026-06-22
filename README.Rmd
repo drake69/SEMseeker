@@ -26,7 +26,8 @@ cat(
   badge_codecov("drake69/semseeker"),
   badge_last_commit("drake69/semseeker"),
   badge_github_actions("drake69/semseeker"),
-  badge_repostatus("Active")
+  badge_repostatus("Active"),
+  "[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5095417.svg)](https://doi.org/10.5281/zenodo.5095417)"
 )
 ```
 <!-- badges: end -->

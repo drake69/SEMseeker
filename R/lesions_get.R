@@ -1,132 +1,128 @@
-#' lesions_get — physical genomic-distance LESIONS computation (AI-044, 2026-06-08)
-#'
-#' Variante di lesions_get che usa una **physical window in bp** invece della
-#' row-count window (sliding_window_size = N probe consecutive). Per ogni
-#' position centrale p su chromosome c, considera le sonde nel range
-#' [p - lesion_window_kbp*1000, p + lesion_window_kbp*1000] del proprio chr.
-#'
-#' Conseguenza biologica:
-#' - Regioni dense (CpG island, ~50bp/sonda): la window contiene molte sonde
-#'   (es. 100-200 in 5 kbp) -> binomial test sensibile a cluster locali
-#' - Regioni sparse intergeniche: la window contiene poche sonde (es. 2-5 in
-#'   5 kbp) -> binomial test richiede ENRICHMENT proporzionalmente piu' alto
-#'   per essere significativo
-#' - **Il concetto "aggregati mono-direzionali localizzati" diventa rigoroso**:
-#'   il radius e' fisico, non logico.
-#'
-#' Differenza vs lesions_get (legacy):
-#' - Legacy: ENRICHMENT = rolling_sum(MUTATIONS, lags=11) sulla matrice ordinata
-#'   per (CHR, START). Window in righe.
-#' - New: per ogni riga i, ENRICHMENT_i = sum(MUTATIONS in [START_i - W, START_i + W])
-#'   per le sonde dello stesso CHR. Window in bp. Size del binomial test
-#'   diventa VARIABILE per riga (n_probes_in_window).
-#'
-#' @param mut_df data.frame con colonne CHR, START, END + colonne sample
-#'   contenenti i flag MUTATIONS (0/1). Devono essere ordinati per (CHR, START).
-#' @param sample_cols vector di character: nomi delle colonne sample in mut_df.
-#' @param window_kbp numeric: radius della finestra in kbp (default 5).
-#' @param bonf_threshold numeric: soglia Bonferroni base (default 0.05).
-#'
-#' @return matrice integer di 0/1, n_rows x length(sample_cols), con LESIONS
-#'   per ogni (probe, sample).
-#'
-#' @keywords internal
-#' @noRd
-lesions_get <- function(mut_df, sample_cols,
-                        window_kbp = 5,
-                        bonf_threshold = 0.05) {
+# AI-092: LESIONS clustering by GENOMIC distance (bp) rather than matrix
+# distance (probe count). The legacy sliding_window_size parameter is gone;
+# the only knob is now LESIONS_BP, registered in init_env() and exposed via
+# semseeker(LESIONS_BP = ...).
+#
+# Semantics of LESIONS_BP: maximum bp distance for two probes to be in the
+# same enrichment window. For probe i, ENRICHMENT[i] = sum(MUTATIONS[j]) over
+# j with |START[j] - START[i]| <= LESIONS_BP. This makes the LESIONS callset
+# comparable across array densities (450K / EPIC / EPICv2) and consistent
+# with biology defined in bp (CpG islands ~500-2000bp, DMRs, enhancers).
 
-  if (!all(c("CHR", "START") %in% colnames(mut_df))) {
-    stop("[lesions_get] mut_df must contain CHR + START columns")
-  }
-  if (length(sample_cols) == 0L) return(matrix(0L, nrow = nrow(mut_df), ncol = 0L))
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+lesions_get <- function(grouping_column, mutation_annotated_sorted)
+{
 
-  window_bp <- as.numeric(window_kbp) * 1000
+  ssEnv <- get_session_info()
 
-  # ----- Step 1: precompute window boundaries (left_idx, right_idx) per row -----
-  # Per ogni riga i, trovare il range [j_left, j_right] tale che:
-  #   mut_df$CHR[j] == mut_df$CHR[i]
-  #   mut_df$START[i] - window_bp <= mut_df$START[j] <= mut_df$START[i] + window_bp
-  # Implementazione: two-pointer per chr-block.
-  chr <- as.character(mut_df$CHR)
-  pos <- as.integer(mut_df$START)
-  n   <- nrow(mut_df)
+  if( is.null(mutation_annotated_sorted))
+    return (mutation_annotated_sorted)
 
-  left_idx  <- integer(n)
-  right_idx <- integer(n)
+  if(nrow(mutation_annotated_sorted) == 0)
+    return (mutation_annotated_sorted)
 
-  # Process by chromosome block (run-length)
-  rle_chr <- rle(chr)
-  ends   <- cumsum(rle_chr$lengths)
-  starts <- c(1L, head(ends, -1L) + 1L)
+  mutationAnnotatedSortedLocal <- mutation_annotated_sorted
 
-  for (blk in seq_along(rle_chr$values)) {
-    bs <- starts[blk]; be <- ends[blk]
-    block_pos <- pos[bs:be]
-    # Two-pointer sweep within sorted block
-    j_left <- 1L; j_right <- 1L
-    n_block <- length(block_pos)
-    for (i in seq_len(n_block)) {
-      lo <- block_pos[i] - window_bp
-      hi <- block_pos[i] + window_bp
-      while (j_left <= n_block && block_pos[j_left] < lo) j_left <- j_left + 1L
-      while (j_right <= n_block && block_pos[j_right] <= hi) j_right <- j_right + 1L
-      left_idx[bs + i - 1L]  <- bs + j_left - 1L
-      right_idx[bs + i - 1L] <- bs + j_right - 2L  # j_right pointed PAST last in-range
-    }
+  summed <- stats::aggregate(mutationAnnotatedSortedLocal$MUTATIONS, by = list(mutationAnnotatedSortedLocal[,grouping_column]), FUN = sum)
+  colnames(summed) <- c(grouping_column,"MUTATIONS_COUNT")
+  counted <- stats::aggregate(mutationAnnotatedSortedLocal$MUTATIONS, by = list(mutationAnnotatedSortedLocal[,grouping_column]), FUN = length)
+  colnames(counted) <- c(grouping_column,"PROBES_COUNT")
+  mutationAnnotatedSortedLocal <- merge(mutationAnnotatedSortedLocal,summed, by = grouping_column)
+  mutationAnnotatedSortedLocal <- merge(mutationAnnotatedSortedLocal,counted, by = grouping_column)
+  rm(counted)
+  rm(summed)
+
+  lesions_bp <- as.integer(ssEnv$LESIONS_BP)
+  if (is.na(lesions_bp) || lesions_bp < 0L)
+    stop("LESIONS_BP must be a non-negative integer (bp distance), got: ",
+         ssEnv$LESIONS_BP)
+
+  # Per-row enrichment / window-size / window-span within a single grouping
+  # unit. start, mutations: numeric vectors of equal length (one row per
+  # probe). Returns a list with 3 vectors of the same length:
+  #   enrichment[i]  = sum(mutations[j]) for j with |start[j]-start[i]|<=lesions_bp
+  #   window_size[i] = count of probes within the bp window centered on i
+  #   span[i]        = max(start[j]) - min(start[j]) over those j
+  # O(N log N) via order + findInterval + cumsum on the SORTED vector.
+  .bp_window_stats <- function(start, mutations, lesions_bp) {
+    n <- length(start)
+    if (n == 0L)
+      return(list(enrichment = numeric(0), window_size = integer(0),
+                  span = numeric(0)))
+    o <- order(start)
+    s <- start[o]
+    m <- mutations[o]
+    # findInterval(x, vec) returns max j s.t. vec[j] <= x (left-continuous).
+    # left  = first j with s[j] >= s[i] - lesions_bp
+    # right = last  j with s[j] <= s[i] + lesions_bp
+    left  <- findInterval(s - lesions_bp - 0.5, s) + 1L
+    right <- findInterval(s + lesions_bp,        s)
+    cs    <- c(0, cumsum(m))
+    enr_s <- cs[right + 1L] - cs[left]
+    ws_s  <- right - left + 1L
+    span_s <- s[right] - s[left]
+    enr  <- numeric(n); ws <- integer(n); sp <- numeric(n)
+    enr[o] <- enr_s; ws[o] <- ws_s; sp[o] <- span_s
+    list(enrichment = enr, window_size = ws, span = sp)
   }
 
-  # window_size_per_row = numero sonde nella finestra (varia per riga)
-  window_size <- right_idx - left_idx + 1L
-
-  # Bonferroni-weighted threshold: la finestra fisica ha larghezza definita
-  # dal parametro semseeker(lesion_window_kbp), quindi il peso log10(2*W) e'
-  # **configurabile via parametro ma costante per la run**. Funzione monotona
-  # di window_kbp: aumentando il radius -> Bonferroni piu' permissivo (cluster
-  # piu' larghi sono ammissibili). Riducendo -> piu' stringente (cluster solo
-  # compatti).
-  log_bp_window <- log10(2 * window_bp)
-  n_probes <- n
-  bonf_per_row <- bonf_threshold / (n_probes * log_bp_window)
-
-  # ----- Step 2: ENRICHMENT + binomial test per sample (column-wise) -----
-  les_mat <- matrix(0L, nrow = n, ncol = length(sample_cols))
-  colnames(les_mat) <- sample_cols
-
-  # Per ogni sample column: rolling sum via cumsum vectorized
-  for (s_idx in seq_along(sample_cols)) {
-    s <- sample_cols[s_idx]
-    mut_s <- as.integer(mut_df[[s]])
-
-    # ENRICHMENT_i = sum(mut_s[left_idx[i] : right_idx[i]])
-    # Vettorizzato via cumsum: enrichment_i = cum[right_idx[i]] - cum[left_idx[i] - 1]
-    cum <- cumsum(mut_s)
-    cum_zero <- c(0L, cum)  # cum_zero[k+1] == cum[k]
-    enrichment <- cum_zero[right_idx + 1L] - cum_zero[left_idx]
-
-    # p0 per-CHR: rate di outlier in ciascun cromosoma
-    p0_per_chr_block <- numeric(n)
-    for (blk in seq_along(rle_chr$values)) {
-      bs <- starts[blk]; be <- ends[blk]
-      m_block <- sum(mut_s[bs:be])
-      n_block <- be - bs + 1L
-      p0_block <- if (m_block <= 0 || m_block >= n_block) NA_real_ else m_block / n_block
-      p0_per_chr_block[bs:be] <- p0_block
-    }
-
-    # Binomial test: P(X >= ENRICHMENT | size = window_size_per_row, prob = p0_per_chr)
-    valid <- !is.na(p0_per_chr_block) & p0_per_chr_block > 0 & p0_per_chr_block < 1 &
-             window_size > 0L
-    pvals <- rep(1, n)
-    if (any(valid)) {
-      pvals[valid] <- stats::pbinom(enrichment[valid] - 1L,
-                                    size = window_size[valid],
-                                    prob = p0_per_chr_block[valid],
-                                    lower.tail = FALSE)
-      pvals[is.na(pvals) | is.nan(pvals)] <- 1
-    }
-    les_mat[, s_idx] <- as.integer(pvals < bonf_per_row)
+  # Vectorise per grouping unit. We process each gene/chr group independently;
+  # within a group the window calculation is O(N log N).
+  idx_by_grp <- split(seq_len(nrow(mutationAnnotatedSortedLocal)),
+                      mutationAnnotatedSortedLocal[[grouping_column]])
+  enrichment     <- numeric(nrow(mutationAnnotatedSortedLocal))
+  window_size    <- integer(nrow(mutationAnnotatedSortedLocal))
+  basepair_count <- numeric(nrow(mutationAnnotatedSortedLocal))
+  for (idx in idx_by_grp) {
+    if (length(idx) == 0L) next
+    st  <- mutationAnnotatedSortedLocal$START[idx]
+    mu  <- mutationAnnotatedSortedLocal$MUTATIONS[idx]
+    stats_grp <- .bp_window_stats(st, mu, lesions_bp)
+    enrichment[idx]     <- stats_grp$enrichment
+    window_size[idx]    <- stats_grp$window_size
+    basepair_count[idx] <- stats_grp$span
   }
+  mutationAnnotatedSortedLocal$ENRICHMENT     <- enrichment
+  mutationAnnotatedSortedLocal$WINDOW_SIZE    <- window_size
+  mutationAnnotatedSortedLocal$BASEPAIR_COUNT <- basepair_count
 
-  les_mat
+  mutationAnnotatedSortedLocal$ENRICHMENT[is.na(mutationAnnotatedSortedLocal$ENRICHMENT)] <- 0
+
+  # H0: ENRICHMENT ~ Binomial(WINDOW_SIZE, p0)
+  # WINDOW_SIZE is the row-specific count of probes in the bp window (replaces
+  # the legacy constant size = sliding_window_size). p0 is the empirical
+  # background mutation rate of the grouping unit.
+  # p-value = P(X >= ENRICHMENT) = pbinom(ENRICHMENT - 1, size, p0, lower.tail = FALSE)
+  p0 <- mutationAnnotatedSortedLocal$MUTATIONS_COUNT / mutationAnnotatedSortedLocal$PROBES_COUNT
+
+  lesionpValue <- stats::pbinom(
+    mutationAnnotatedSortedLocal$ENRICHMENT - 1L,
+    size       = as.integer(mutationAnnotatedSortedLocal$WINDOW_SIZE),
+    prob       = p0,
+    lower.tail = FALSE
+  )
+
+  lesionpValue[is.nan(lesionpValue)] <- 1
+  lesionpValue[is.na(lesionpValue)]  <- 1
+
+  tt <- data.frame(mutationAnnotatedSortedLocal, lesionpValue)
+
+  # Bonferroni weighted by log10(BASEPAIR_COUNT + 9). The "+9" floor keeps
+  # log10 >= 1 even when the window-span collapses to 0 (singleton-window
+  # rows, e.g. LESIONS_BP=0 or isolated probes with no neighbours within the
+  # bp threshold), preserving the spirit of the legacy weighting where the
+  # divisor never reached zero on a non-trivial window.
+  bp_for_weight <- pmax(tt$BASEPAIR_COUNT, 1)
+  lesionWeighted <- (tt$lesionpValue) < (as.numeric(ssEnv$bonferroni_threshold) / (length(tt$PROBES_COUNT) * log10(bp_for_weight + 9)))
+  rm(tt)
+
+  lesionWeighted <- data.frame(as.data.frame(mutationAnnotatedSortedLocal), "LESIONS" = lesionWeighted)
+
+  lesionWeighted <- sort_by_chr_and_start(lesionWeighted)
+  lesionWeighted <- subset(lesionWeighted, lesionWeighted$LESIONS == TRUE)[, c("CHR", "START", "END")]
+
+  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Got lesions for sample !")
+  return(lesionWeighted)
+
 }

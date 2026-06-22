@@ -38,11 +38,17 @@
 #'   emitted and the pipeline proceeds.
 #' @param ... Additional arguments forwarded to \code{\link{semseeker_core}}
 #'   and \code{init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
-#'   \code{sliding_window_size}, \code{marker}, \code{areas}).
+#'   \code{LESIONS_BP}, \code{marker}, \code{areas}). \code{LESIONS_BP}
+#'   (default 2000) is the maximum bp distance between two probes for them to
+#'   be in the same LESIONS enrichment window — replaces the legacy
+#'   \code{sliding_window_size} probe-count parameter (removed in AI-092).
 #'
 #' @return Invisibly \code{NULL}; writes output files to \code{result_folder}.
 #'
 #' @examples
+#' # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+#' # runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+#' invisible(NULL)
 #' \dontrun{
 #' # Bedmethyl (Nanopore / modkit):
 #' semseeker(

@@ -18,26 +18,28 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r synthetic_setup, include=FALSE}
-# Tiny synthetic dataset so downstream chunks can run during vignette build
-# without requiring real IDATs / Bioconductor annotation packages.
-set.seed(123)
-.n_probes  <- 100L
-.n_samples <- 6L
-beta_matrix <- matrix(
-  rbeta(.n_probes * .n_samples, 4, 6),
-  nrow = .n_probes, ncol = .n_samples,
-  dimnames = list(
-    paste0("cg", formatC(seq_len(.n_probes), width = 8L, flag = "0")),
-    c("REF1","REF2","REF3","CASE1","CASE2","CASE3")
-  )
-)
-sample_sheet <- data.frame(
-  Sample_ID    = colnames(beta_matrix),
-  Sample_Name  = colnames(beta_matrix),
-  Sample_Group = c("Reference","Reference","Reference","Case","Case","Case"),
-  stringsAsFactors = FALSE
-)
+```{r real_data_setup, include=FALSE}
+# ── Demo dataset: real GSE133774 (EPIC 850k, BWS + MLID) ─────────────────
+#
+# test_signal_gse133774 and test_samplesheet_gse133774 are bundled fixtures
+# built from the GEO series matrix via data-raw/build_test_signal_fixture.R.
+# They contain real EPIC beta values for 18k probes around 81 imprinting DMRs
+# (10 samples: 6 controls + 4 BWS/MLID family members, including L1 = BWS).
+#
+# Filtering to the KCNQ1OT1 + H19_IGF2 DMR probes keeps the vignette fast
+# while preserving the biologically relevant signal (real BWS epimutations).
+data("test_signal_gse133774",      package = "SEMseeker")
+data("test_samplesheet_gse133774", package = "SEMseeker")
+data("test_master_features",       package = "SEMseeker")
+
+.demo_probes <- subset(test_master_features,
+                       DMR_LABEL %in% c("KCNQ1OT1:TSS-DMR", "H19_IGF2:IG-DMR") &
+                       PROBE %in% rownames(test_signal_gse133774))
+beta_matrix  <- test_signal_gse133774[.demo_probes$PROBE, , drop = FALSE]
+sample_sheet <- test_samplesheet_gse133774[, c("Sample_ID", "Sample_Group")]
+sample_sheet$Sample_Name <- sample_sheet$Sample_ID
+sample_sheet <- sample_sheet[, c("Sample_ID", "Sample_Name", "Sample_Group")]
+
 tmp_result_folder <- file.path(tempdir(), "semseeker_vignette_results")
 ```
 
@@ -344,6 +346,98 @@ association_analysis(
 This is particularly useful when you want to detect **differential methylation**
 at the region level (classic EWAS-style analysis) alongside the epimutation
 burden analysis, using a single unified framework.
+
+<hr>
+
+## Subset rationale & full-pipeline runnable
+
+The runnable demo above uses a **subset** of probes (only those around the
+BWS-related imprinting DMRs `KCNQ1OT1:TSS-DMR` and `H19_IGF2:IG-DMR`) so the
+vignette builds in seconds during CRAN/Bioconductor checks. This is **not**
+representative of a real-world workflow: a production analysis would normalise
+IDAT files for an entire cohort, correct for biological confounders (age,
+cell composition for whole-blood samples), and then run semseeker on the
+full beta matrix.
+
+The block below — kept as commented `eval = FALSE` reference — shows the
+**complete end-to-end pipeline** as you would run it on a real GEO dataset
+such as Beckwith-Wiedemann GSE95486. Uncomment and adapt to your study.
+
+```{r full_pipeline_recipe, eval=FALSE}
+# ─── Full pipeline from raw GEO data (~30-60 min on a laptop) ──────────────
+
+## Step 0 — Download IDAT files from GEO (e.g. BWS GSE95486)
+library(GEOquery)
+gse <- getGEO("GSE95486", GSEMatrix = FALSE, destdir = "./raw")
+GEOquery::getGEOSuppFiles("GSE95486", baseDir = "./raw", makeDirectory = TRUE)
+# (then extract the IDATs into ./raw/GSE95486/IDATs/)
+
+## Step 1 — Load & SWAN-normalise IDAT files via ChAMP
+library(ChAMP)
+myLoad <- champ.load(
+  directory      = "./raw/GSE95486/IDATs",
+  arraytype      = "EPIC",
+  filterDetP     = TRUE,
+  filterSNPs     = TRUE,
+  filterMultiHit = TRUE,
+  filterXY       = TRUE
+)
+myNorm <- champ.norm(
+  beta       = myLoad$beta,
+  rgSet      = myLoad$rgSet,
+  mset       = myLoad$mset,
+  method     = "SWAN",
+  arraytype  = "EPIC",
+  cores      = parallel::detectCores() - 1L
+)
+
+## Step 2 — Age correction
+##   Confounding by chronological age is the strongest known driver of SEM
+##   burden (Gentilini et al., 2015 — SEMs accumulate exponentially with
+##   age). Always regress age out before disease-vs-control comparison.
+library(limma)
+age_residuals <- removeBatchEffect(
+  myNorm,
+  covariates = sample_sheet$Age   # numeric, years
+)
+
+## Step 3 — Cell composition deconvolution (whole-blood samples ONLY)
+##   In peripheral whole blood, methylation is strongly confounded by the
+##   relative proportions of B cells, CD4/CD8 T, monocytes, NK and granulocytes.
+##   For tissues other than whole blood, skip this step.
+library(FlowSorted.Blood.EPIC)
+cells <- estimateCellCounts2(
+  myLoad$rgSet,
+  compositeCellType = "Blood",
+  referencePlatform = "IlluminaHumanMethylationEPIC"
+)
+# Regress out the cell-fraction covariates from the (age-residualised) matrix
+adjusted <- removeBatchEffect(
+  age_residuals,
+  covariates = cells$counts
+)
+
+## Step 4 — Run SEMseeker on the fully preprocessed matrix
+SEMseeker::semseeker(
+  input         = adjusted,
+  sample_sheet  = sample_sheet,
+  result_folder = "./bws_full_results/"
+)
+# ──────────────────────────────────────────────────────────────────────────
+```
+
+**Pre-processing checklist** before running `semseeker()`:
+
+- [ ] Cohort normalisation (SWAN / BMIQ / Functional Normalisation)
+- [ ] Detection-p filter, multi-hit/SNP/cross-reactive probe removal
+- [ ] **Age** residualisation (mandatory if cohort age range > a few years)
+- [ ] **Cell composition** deconvolution (whole-blood only — `FlowSorted.Blood.EPIC`)
+- [ ] Batch / processing-date correction (if known)
+- [ ] Sample QC pass (detection rate, bead count, predicted-sex check)
+
+semseeker assumes upstream preprocessing has already been performed. Skipping
+these steps inflates the false-positive SEM rate — particularly in older
+cohorts and whole-blood studies.
 
 <hr>
 

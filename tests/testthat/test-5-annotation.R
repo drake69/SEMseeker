@@ -2,14 +2,14 @@ test_that("annotations", {
 
   tempFolder <- tempFolders[1]
   # message(tempFolder)
-  tempFolders <- tempFolders[-1]
+  tempFolders <<- tempFolders[-1]
   ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
     bonferroni_threshold = bonferroni_threshold,
     inpute="median", start_fresh=TRUE)
 
   tt <- SEMseeker:::get_meth_tech(signal_data)
 
-  lesion_window_kbp <- 5
+  LESIONS_BP <- 2000L  # AI-092
   bonferroni_threshold <- 0.05
 
   if (!exists("signal_thresholds"))

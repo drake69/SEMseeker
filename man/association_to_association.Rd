@@ -2,54 +2,28 @@
 % Please edit documentation in R/association_to_association.R
 \name{association_to_association}
 \alias{association_to_association}
-\title{Cross-study association comparison}
+\title{Association To Association (deprecated alias)}
 \usage{
-association_to_association(
-  inference_details_origin,
-  inference_details,
-  result_folder,
-  maxResources = 90,
-  parallel_strategy = "multicore",
-  start_fresh = FALSE,
-  ...
-)
+association_to_association(...)
 }
 \arguments{
-\item{inference_details_origin}{data.frame. Inference parameters for the
-reference (origin) study whose significant regions define the search space.}
-
-\item{inference_details}{data.frame. Inference parameters for the target
-study on which the focused association analysis is performed.}
-
-\item{result_folder}{character. Path to the SEMseeker result folder.}
-
-\item{maxResources}{numeric. Maximum percentage of CPU cores to use (default 90).}
-
-\item{parallel_strategy}{character. Parallelisation backend passed to
-\code{future}; e.g. \code{"multicore"}, \code{"multisession"},
-\code{"sequential"} (default \code{"multicore"}).}
-
-\item{start_fresh}{logical. If \code{TRUE}, delete previous results before
-running (default \code{FALSE}).}
-
-\item{...}{Additional named arguments passed to \code{init_env()}.}
+\item{...}{Argomenti inoltrati a `intra_study_association_replication()`.}
 }
 \value{
-Invisibly \code{NULL}. Results are written to the inference
-  sub-folder of \code{result_folder}.
+Invisibly `NULL`. Vedi [intra_study_association_replication()].
 }
 \description{
-Re-run association analysis focusing on genomic regions that are
-  statistically significant in a reference study, then merge results across
-  two datasets for comparative inference.
+Alias deprecato di [intra_study_association_replication()]. Naming uniformato a
+  `<scope>_<object>_<operation>` (es. `intra_study_*`,
+  `inter_study_*`). Sostituire le chiamate `association_to_association(...)` con
+  `intra_study_association_replication(...)` (stessa firma). Alla chiamata viene emesso un warning
+  di deprecation.
 }
 \examples{
-result_dir <- tempdir()
-\dontrun{
-association_to_association(
-  inference_details_origin = inference_study1,
-  inference_details        = inference_study2,
-  result_folder            = "~/semseeker_comparison/"
-)
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
 }
+\seealso{
+[intra_study_association_replication()]
 }

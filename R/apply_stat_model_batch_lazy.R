@@ -84,28 +84,55 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
     pivot_lazy <- pivot_lazy$drop(drop_cols)
   }
 
-  # AI-043 resume: filter out areas already in the on-disk CSV. The
-  # caller has already applied gsub("-","_") to the area_to_remove
-  # values, so we apply the same normalisation to the lazy AREA column
-  # before the membership check.
+  # AI-043 resume: filter out areas already in the on-disk CSV.
+  # AI-061+ (2026-06-09): no more gsub("-","_") normalisation on either
+  # side — names stay pass-through from the upstream annotation. The
+  # downstream CSV and the pivot AREA column carry identical raw names,
+  # so $is_in() matches exactly.
   # NB: $is_in() must receive a polars Expression / Series, NOT a bare R
   # character vector — otherwise polars 1.x parses each string as a column
   # reference and fails with "Column(s) not found: '<first value>' not found".
   # Wrap via pl$lit()$implode() so the values are treated as a literal set.
   if (length(area_to_remove) > 0L) {
     pivot_lazy <- pivot_lazy$filter(
-      !polars::pl$col("AREA")$str$replace_all("-", "_")$is_in(
+      !polars::pl$col("AREA")$is_in(
         polars::pl$lit(area_to_remove)$implode()
       )
     )
   }
 
-  # Materialise once. The polars DF stays in Rust heap until we drop it
-  # explicitly below; that prevents both heaps holding the data
-  # simultaneously.
-  pivot_df <- pivot_lazy$collect()
-  n_genes  <- pivot_df$height
-  if (n_genes == 0L) {
+  # AI-044 / AI-061 (2026-06-09): apply transformation_y + universal
+  # degenerate-burden filter LAZILY before materialisation. Before this
+  # change the lazy path silently skipped data_preparation() entirely,
+  # so any `transformation_y` ≠ "none" on a limma_/voom_ inference_detail
+  # produced a CSV with UN-transformed values (silent bug), and rows with
+  # var(Y) == 0 made it through to lmFit producing NaN t-stats. See
+  # `data_preparation_lazy()` for the polars-native equivalent of the
+  # R-side `data_preparation()` Y-side transformations + AI-044 filter.
+  # Unification of the two paths is tracked as AI-097 in the backlog.
+  schema_pre <- names(pivot_lazy$collect_schema())
+  sample_cols_pre <- setdiff(schema_pre, c("AREA", "PROBE", "CHR", "START", "END",
+                                            "K27", "K450", "K850"))
+  pivot_lazy <- data_preparation_lazy(
+    pivot_lazy        = pivot_lazy,
+    sample_cols       = sample_cols_pre,
+    transformation_y  = transformation_y,
+    apply_degenerate_filter = TRUE,
+    key               = key,
+    family_test       = family_test
+  )
+
+  # AI-061+ (2026-06-09): SEPARATE LAZY PREP FROM FIT.
+  # We need n_genes + sample_cols BEFORE materialising y_mat so the
+  # memory gate can decide monolithic vs chunked. Both pieces are
+  # discoverable lazily — schema gives us sample columns, $select($len)
+  # gives us a row count without ever pulling values into R.
+  schema_post <- names(pivot_lazy$collect_schema())
+  sample_cols_all <- setdiff(schema_post, c("AREA", "PROBE", "CHR", "START", "END",
+                                              "K27", "K450", "K850"))
+  n_genes <- as.integer(as.data.frame(
+    pivot_lazy$select(polars::pl$len()$alias("n"))$collect())$n[1])
+  if (is.na(n_genes) || n_genes == 0L) {
     log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch_lazy: nothing left after resume",
               " filter for ", key$MARKER, "/", key$FIGURE, "/",
@@ -113,34 +140,12 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
     return(NULL)
   }
 
-  # Pull the AREA column out as an R character vector (small), then
-  # work on the value-only DataFrame.
-  # NOTE: polars R 1.x exposes series -> R via as.character() / as.vector()
-  # directly; there is no $to_r() method — earlier draft using it crashed
-  # at runtime with rlang::abort.
-  gene_names <- as.character(pivot_df$select("AREA")$to_series())
-  pivot_vals <- pivot_df$drop("AREA")
-  sample_cols <- names(pivot_vals)
-  rm(pivot_df)
-
-  # Convert column-by-column to the final numeric matrix. as.vector() on a
-  # numeric polars Series returns an R double vector; we never go through
-  # an intermediate data.frame for the value side. The only sample-by-gene
-  # allocation alive at once is y_mat itself.
-  y_mat <- matrix(NA_real_, nrow = n_genes, ncol = length(sample_cols),
-                   dimnames = list(gene_names, sample_cols))
-  for (i in seq_along(sample_cols)) {
-    y_mat[, i] <- as.vector(pivot_vals$select(sample_cols[i])$to_series())
-  }
-  rm(pivot_vals)
-  gc(verbose = FALSE)
-  y_mat[is.na(y_mat)] <- 0
-
-  # Align sample_sheet rows to y_mat columns. Drop samples that don't
-  # appear in sample_sheet OR have NA in IV/covariates.
-  ss <- sample_sheet
-  ss <- ss[match(colnames(y_mat), as.character(ss$Sample_ID)), , drop = FALSE]
-
+  # Align sample_sheet to the lazy pivot's sample columns. Drop samples
+  # without a matching row OR with NA in IV/covariates. This is the
+  # same logic that used to operate on the materialised y_mat — pulled
+  # forward so we can compute the design BEFORE the memory gate.
+  ss <- sample_sheet[match(sample_cols_all,
+                            as.character(sample_sheet$Sample_ID)), , drop = FALSE]
   use_iv <- c(independent_variable, covariates)
   use_iv <- use_iv[nzchar(use_iv) & use_iv %in% colnames(ss)]
   keep <- !is.na(ss$Sample_ID) &
@@ -152,14 +157,13 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
     return(NULL)
   }
   ss <- ss[keep, , drop = FALSE]
-  y_mat <- y_mat[, keep, drop = FALSE]
+  sample_cols_kept <- sample_cols_all[keep]
 
-  # Design matrix: poly(IV, degree, raw=TRUE) + covariates.
-  # Name the polynomial columns the same way association_model_polynomial's
-  # I(...) formula winds up after name_cleaning — 'I_<IV>_<deg>' — so the
-  # CSV columns landed by the build_pname/build_ename gsub chain below
-  # match the polynomial CSV schema bit-for-bit instead of carrying the
-  # ugly long-form 'STATS_POLY_EVAL_PARSE_TEXT_EQ_<IV>_EQ_RAW_EQ_TRUE_<n>'.
+  # Design matrix: poly(IV, degree, raw=TRUE) + covariates. Name the
+  # polynomial columns the same way association_model_polynomial's
+  # I(...) formula winds up after name_cleaning — 'I_<IV>_<deg>' — so
+  # the CSV columns landed by build_pname/build_ename match the
+  # polynomial CSV schema bit-for-bit.
   iv_vec <- as.numeric(ss[, independent_variable])
   poly_mat <- stats::poly(iv_vec, degree, raw = TRUE)
   colnames(poly_mat) <- paste0("I_", independent_variable, "_", seq_len(degree))
@@ -175,33 +179,60 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
     design <- cbind(`(Intercept)` = 1, poly_mat)
   }
 
-  # Fit. y_mat is the only sample-by-gene matrix we hold; everything
-  # else (design, fit$coefficients, fit$p.value) is at most degree+1+|cov|
-  # columns wide.
-  if (engine == "voom") {
-    voom_obj <- tryCatch(limma::voom(y_mat, design),
-                          error = function(e) {
-                            log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
-                                      " voom failed: ", conditionMessage(e))
-                            NULL
-                          })
-    if (is.null(voom_obj)) return(NULL)
-    fit <- limma::lmFit(voom_obj, design)
-    r_model_label <- "limma::voom+lmFit+eBayes"
-    rm(voom_obj); gc(verbose = FALSE)
-  } else {
-    fit <- tryCatch(limma::lmFit(y_mat, design),
-                     error = function(e) {
-                       log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
-                                 " lmFit failed: ", conditionMessage(e))
-                       NULL
-                     })
-    if (is.null(fit)) return(NULL)
-    r_model_label <- "limma::lmFit+eBayes"
-  }
-  area_cols <- rownames(y_mat)
-  rm(y_mat); gc(verbose = FALSE)
+  # ---- MEMORY GATE & DISPATCH ----
+  # Decides if a monolithic lmFit fits in budget. Chunked path activates
+  # when the monolithic y_mat would push past
+  # `total_RAM × SEMSEEKER_BULK_MODEL_MEM_FRACTION` (default 0.6).
+  ssEnv_local      <- tryCatch(get_session_info(), error = function(e) NULL)
+  tech_is_longread <- !is.null(ssEnv_local$tech) &&
+                       ssEnv_local$tech %in% c("WGBS", "LONGREAD")
+  memgate <- .bulk_model_memory_gate(
+    n_probes  = n_genes,
+    n_samples = length(sample_cols_kept),
+    n_coef    = ncol(design)
+  )
+  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " apply_stat_model_batch_lazy ", family_test,
+            " [", key$MARKER, "/", key$FIGURE, "/", key$AREA, "/",
+            key$SUBAREA, "] gate decision=", memgate$decision,
+            " (mono=", round(memgate$mono_peak_GB, 1),
+            " GB | chunk=", round(memgate$chunk_peak_GB, 1),
+            " GB | avail=", round(memgate$available_GB, 1), " GB)")
 
+  fit <- switch(memgate$decision,
+    "monolithic" = lmfit_monolithic_lazy(
+      pivot_lazy        = pivot_lazy,
+      sample_cols_kept  = sample_cols_kept,
+      design            = design,
+      engine            = engine,
+      key               = key,
+      family_test       = family_test
+    ),
+    "chunked"    = lmfit_chunked_by_chr(
+      pivot_lazy        = pivot_lazy,
+      sample_cols_kept  = sample_cols_kept,
+      design            = design,
+      engine            = engine,
+      key               = key,
+      family_test       = family_test,
+      probe_features    = if (!tech_is_longread)
+                            tryCatch(probe_features_get("PROBE"),
+                                      error = function(e) NULL) else NULL,
+      tech_is_longread  = tech_is_longread
+    ),
+    "abort"      = {
+      stop(sprintf(
+        "apply_stat_model_batch_lazy: even the biggest chunk's lmFit exceeds budget on [%s/%s/%s/%s]. needed=%.1f GB (chunk peak), avail=%.1f GB. Raise SEMSEEKER_BULK_MODEL_MEM_FRACTION or move to a bigger machine.",
+        key$MARKER, key$FIGURE, key$AREA, key$SUBAREA,
+        memgate$chunk_peak_GB, memgate$available_GB
+      ))
+    }
+  )
+  if (is.null(fit)) return(NULL)
+
+  r_model_label <- if (engine == "voom") "limma::voom+lmFit+eBayes"
+                   else                  "limma::lmFit+eBayes"
+  area_cols <- rownames(fit$coefficients)
   fit <- limma::eBayes(fit)
 
   # Build the result data.frame in the same schema apply_stat_model_batch
@@ -255,12 +286,13 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
 
   colnames(result_temp) <- name_cleaning(colnames(result_temp))
 
-  # Release the heavy locals BEFORE the function returns. On 367k×4k inputs
-  # y_mat is ~12 GB, fit (MArrayLM) carries several gene-sized matrices.
-  # Without explicit cleanup the next batch piles a fresh 12 GB y_mat on
-  # top of the previous one (R's GC is lazy), driving the process into
-  # Jetsam OOM by the second batch (limma_2 SIGNAL@PROBE, 2026-06-05).
-  rm(y_mat, fit, design)
+  # Release the heavy locals BEFORE the function returns. The MArrayLM
+  # carries several gene-sized matrices; without explicit cleanup the
+  # next batch piles a fresh fit on top of the previous one (R's GC
+  # is lazy), driving the process into Jetsam OOM by the second
+  # batch (limma_2 SIGNAL@PROBE, 2026-06-05). y_mat is now released
+  # inside `lmfit_monolithic_lazy()` / `lmfit_chunked_by_chr()`.
+  rm(fit, design)
   if (exists("poly_mat", inherits = FALSE)) rm(poly_mat)
   if (exists("cov_mat",  inherits = FALSE)) rm(cov_mat)
   gc(verbose = FALSE)

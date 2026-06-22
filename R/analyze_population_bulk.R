@@ -37,6 +37,8 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
 
   ssEnv <- get_session_info()
   start_time <- Sys.time()
+  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+            " [apb] FRAME ENTERED mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [analyze_population_bulk] start (AI-042 vectorized)")
 
@@ -47,6 +49,30 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
     dir.create(file.path(pivots_dir, m), recursive = TRUE, showWarnings = FALSE)
   }
 
+  # AI-061+ (2026-06-09): EARLY-RETURN if every destination pivot already
+  # exists. The per-figure skip checks further down inside this function
+  # do guard the actual compute, but the SETUP between [start] and the
+  # first per-figure block — read_pivot SIGNAL + collect_schema(4014
+  # cols) + with_columns(cast Categorical→String) + lazy join — still
+  # runs every call. On ewas-scale (367k × 4013) that setup alone
+  # peaked ~30 GB R+Polars even in pure-resume mode (v25/v26/v27/v28
+  # all crashed there with all downstream pivots already on disk).
+  # When the whole function has nothing to produce, skipping it
+  # entirely is the only path that scales.
+  all_destinations <- character(0)
+  for (marker in c("DELTAS", "DELTAR", "MUTATIONS", "LESIONS")) {
+    for (figure in c("HYPER", "HYPO")) {
+      all_destinations <- c(all_destinations,
+        pivot_file_name_parquet(marker, figure, "POSITION", "WHOLE"))
+    }
+  }
+  if (length(all_destinations) > 0L && all(file.exists(all_destinations))) {
+    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " [analyze_population_bulk] ALL ", length(all_destinations),
+              " destination pivots already exist — skipping bulk pass entirely.")
+    return(invisible(NULL))
+  }
+
   signal_pivot_path <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
   if (!file.exists(signal_pivot_path)) {
     stop("[analyze_population_bulk] SIGNAL POSITION pivot mancante: ",
@@ -54,13 +80,16 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
          " — signal_save() deve essere chiamato prima.")
   }
 
-  # signal_thresholds e' un data.frame in memoria. Polars 1.11 R ha issue con
-  # with_columns(cast) sulle lazy frame da data.frame quando CHR e' factor
-  # (resta Categorical anche dopo cast). Workaround: scrivere via arrow a
-  # parquet temporaneo (arrow rispetta character -> String), poi scan_parquet.
-  thr_parquet_path <- tempfile(pattern = "thresholds_bulk_", fileext = ".parquet")
-  on.exit(unlink(thr_parquet_path, force = TRUE), add = TRUE)
-  arrow::write_parquet(
+  # AI-061+ (2026-06-09): use the in-memory `signal_thresholds`
+  # data.frame DIRECTLY (it's the function argument — caller has it
+  # available, no need for disk I/O). The polars 1.11 quirk that
+  # required the arrow tempfile workaround was: as_polars_df on a
+  # data.frame with `CHR` as factor produced a Categorical column,
+  # and `$with_columns($cast(String))` did not actually convert.
+  # The simpler fix is to force CHR to character ON THE R-SIDE
+  # before as_polars_df — polars maps R character → polars String
+  # directly. Same for START / END as integer.
+  thr_lazy <- polars::as_polars_df(
     data.frame(
       CHR   = as.character(signal_thresholds$CHR),
       START = as.integer(signal_thresholds$START),
@@ -68,11 +97,39 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
       .HIGH = signal_thresholds$signal_superior_thresholds,
       .LOW  = signal_thresholds$signal_inferior_thresholds,
       stringsAsFactors = FALSE,
-      check.names = FALSE
-    ),
-    thr_parquet_path
+      check.names      = FALSE
+    )
+  )$lazy()
+
+  # AI-061+ (2026-06-09): release the R-side signal_thresholds binding
+  # after the data is copied into polars. signal_thresholds is the
+  # function ARG (~50 MB on ewas 367k probes × 5 thresholds cols), and
+  # without explicit cleanup R keeps it alive for the rest of the
+  # function while polars also holds its own copy in Rust heap — both
+  # heaps holding the same data is exactly what we tried to avoid
+  # everywhere else (see AI-096 lazy passthrough).
+  # NOTE: the CALLER's binding (analyze_batch.R: populationControlRange-
+  # BetaValues) is still alive in the parent frame — full release
+  # requires the caller to also rm() after this function returns.
+  n_thr_positions <- nrow(signal_thresholds)   # cache before rm() (used in log_event below)
+  rm(signal_thresholds)
+  invisible(gc(verbose = FALSE))
+
+  # AI-061+ (2026-06-09): estrarre lo schema dei sample columns DAL PIVOT RAW
+  # prima di applicare $with_columns(cast) + $join. Polars 1.x ha un picco
+  # di memoria significativo su $collect_schema() invocato dopo una catena
+  # complessa lazy (cast + join inner): l'optimizer materializza tutto il
+  # working buffer per risolvere lo schema della join, causando il picco
+  # ~10-15 GB visto su ewas (367k × 4013) prima ancora che la query inizi.
+  # Lo schema dei sample columns è invariante al cast + join: il cast non
+  # cambia le colonne, il join inner aggiunge solo `.HIGH`/`.LOW` ma non
+  # tocca le sample. Quindi possiamo derivarlo dal pivot raw senza pagare
+  # quel picco.
+  raw_signal_schema <- names(
+    read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")$collect_schema()
   )
-  thr_lazy <- polars::pl$scan_parquet(thr_parquet_path)
+  coord_cols  <- c("CHR", "START", "END", ".HIGH", ".LOW")
+  sample_cols <- setdiff(raw_signal_schema, coord_cols)
 
   # Carica SIGNAL pivot lazy + cast CHR to String (signal_save lascia Categorical
   # mentre thr_lazy ha String -> mismatch nel join) + join thresholds
@@ -80,15 +137,10 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
     with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$
     join(thr_lazy, on = c("CHR", "START", "END"), how = "inner")
 
-  # Identifica le colonne sample (escludendo CHR/START/END/.HIGH/.LOW)
-  schema_cols <- names(signal_lazy$collect_schema())
-  coord_cols  <- c("CHR", "START", "END", ".HIGH", ".LOW")
-  sample_cols <- setdiff(schema_cols, coord_cols)
-
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [analyze_population_bulk] joined SIGNAL with thresholds: ",
             length(sample_cols), " sample columns, ",
-            nrow(signal_thresholds), " positions")
+            n_thr_positions, " positions")
 
   # ---- Step 2: DELTAS_HYPER, DELTAS_HYPO bulk -----------------------------
   # DELTAS_HYPER[s, p] = max(SIGNAL[s,p] - high[p], 0)
@@ -167,11 +219,13 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   }
 
   # ---- Step 5: LESIONS_{HYPER,HYPO} per-sample column processing ---------
-  # LESIONS calculation: AI-044 (2026-06-08) refactor a physical bp-window
-  # via lesions_get(). Soppianta la vecchia logica row-count (sliding_window_size)
-  # commentata sotto per reference; la finestra fisica e' biologicamente piu'
-  # rigorosa per il concetto "aggregati mono-direzionali localizzati".
-  window_kbp     <- as.numeric(ssEnv$lesion_window_kbp)
+  # LESIONS calculation via lesions_get_bulk() (multi-sample, bp-window):
+  # finestra fisica in bp, soppianta la vecchia logica row-count
+  # (sliding_window_size). Il counterpart single-sample e' lesions_get()
+  # in R/lesions_get.R (usato dal path legacy analyze_population per-sample).
+  # Storia: AI-044 (kbp arg) → AI-092 (LESIONS_BP ssEnv) merged 2026-06-10
+  # con default 5000 bp (literature-aligned, vedi AI-048).
+  lesions_bp     <- as.integer(ssEnv$LESIONS_BP)
   bonf_threshold <- as.numeric(ssEnv$bonferroni_threshold)
   CHUNK_SAMPLES  <- 200L  # gruppi di sample per limitare RAM
 
@@ -201,10 +255,12 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
       mut_df <- as.data.frame(mut_chunk)
       mut_df$CHR <- as.character(mut_df$CHR)
 
-      # Delega LESIONS computation a lesions_new (physical bp window)
-      les_mat <- lesions_get(mut_df, cols_this,
-                             window_kbp = window_kbp,
-                             bonf_threshold = bonf_threshold)
+      # Delega LESIONS computation a lesions_get_bulk (multi-sample bp window).
+      # Il counterpart single-sample (R/lesions_get.R, AI-092) e' usato dal path
+      # legacy analyze_population per-sample loop.
+      les_mat <- lesions_get_bulk(mut_df, cols_this,
+                                  LESIONS_BP = lesions_bp,
+                                  bonf_threshold = bonf_threshold)
 
       les_df <- data.frame(
         CHR   = mut_df$CHR,
@@ -238,7 +294,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
               " [bulk] LESIONS_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "mins")), 2),
               " min (",  length(sample_chunks), " chunks of ",
-              CHUNK_SAMPLES, " samples, window_kbp=", window_kbp, ")")
+              CHUNK_SAMPLES, " samples, LESIONS_BP=", lesions_bp, ")")
   }
 
   # ============================================================

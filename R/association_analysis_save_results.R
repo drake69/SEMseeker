@@ -93,9 +93,14 @@ association_analysis_save_results <- function(results=NULL,fileNameResults, fami
 
   if(ncol(results[,!colnames(results) %in% group_column])>2)
   {
-    results <- results %>%
-      dplyr::group_by(across(all_of(group_column))) %>%
-      dplyr::summarise(across(everything(), ~ max(.x, na.rm = TRUE)), .groups = 'drop')
+    # AI-061+ (2026-06-09): use base |> pipe (R 4.1+) instead of %>%.
+    # The %>% reference was unresolved at runtime (no @importFrom magrittr)
+    # and caused "could not find function %>%" mid-association on ewas v31.
+    results <- results |>
+      dplyr::group_by(dplyr::across(dplyr::all_of(group_column))) |>
+      dplyr::summarise(dplyr::across(dplyr::everything(),
+                                     ~ max(.x, na.rm = TRUE)),
+                       .groups = 'drop')
 
     utils::write.csv2(results,fileNameResults , row.names  =  FALSE)
   }

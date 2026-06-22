@@ -2,8 +2,6 @@
 on:
   push:
     branches-ignore: [main, master]   # direct push to main/master is blocked
-  pull_request:
-    branches: [main, master, develop]
   workflow_dispatch:
     inputs:
       os:
@@ -78,7 +76,9 @@ jobs:
       - name: Install system libraries (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install cairo fontconfig pkg-config
+          brew install cairo fontconfig pkg-config libomp
+          # libomp is keg-only → symlink so dyld finds it when loading Rfast.so
+          sudo ln -sf "$(brew --prefix libomp)/lib/libomp.dylib" "$(brew --prefix)/lib/libomp.dylib"
           brew install --cask xquartz
 
       - name: Install system libraries (Linux)
@@ -136,15 +136,40 @@ jobs:
               getOption("repos")
             )
           )
-          # Install Bioconductor annotation packages (in Suggests — needed for array tech detection)
+          # Install Bioconductor packages used by the test suite. The set is
+          # explicitly enumerated and kept in sync by `test-0-suggests-installed.R`,
+          # the meta-test that scans every `skip_if_not_installed("pkg")` call in
+          # the test files and asserts the named pkg is available. CI fails fast
+          # if a test would silently skip due to a missing install here.
+          #
+          #   IlluminaHumanMethylation*anno  array tech detection
+          #   limma                          AI-040 lmFit+eBayes batch path
+          #                                  (test-apply_stat_model_batch.R)
+          #   AnnotationHub                  test-5-area-granges-build.R
+          #   TxDb.Hsapiens.UCSC.hg19.knownGene
+          #                                  test-5-annotation-concordance.R,
+          #                                  test-5-area-granges-build.R (genomic
+          #                                  feature joins)
           BiocManager::install(
             c(
               "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
               "IlluminaHumanMethylation450kanno.ilmn12.hg19",
-              "IlluminaHumanMethylation27kanno.ilmn12.hg19"
+              "IlluminaHumanMethylation27kanno.ilmn12.hg19",
+              "limma",
+              "AnnotationHub",
+              "TxDb.Hsapiens.UCSC.hg19.knownGene"
             ),
             ask = FALSE, update = FALSE
           )
+          # Install CRAN Suggests that are exercised by the test suite. These
+          # are deliberately enumerated (rather than installed via
+          # dependencies = "Suggests") because the full Suggests set pulls
+          # in heavy chains (pathfindR → ggkegg, ctdR, etc.) that are not
+          # needed for R CMD check and that have repeatedly broken CI.
+          #   Rfast    test-0-glm_model_bulk.R (AI-044 binomial_bulk)
+          #   mockery  test-association_model_limma.R (mocked bindings)
+          #   ggpubr   test-2-box-plot.R (box plot rendering)
+          install.packages(c("Rfast", "mockery", "ggpubr"))
         shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v2
