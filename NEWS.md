@@ -1,6 +1,6 @@
 # semseeker NEWS
 
-## semseeker 0.12.0 (dev)
+## semseeker 0.99.2
 
 ### Breaking changes
 
