@@ -93,10 +93,24 @@ parallel_session <- function()
   future_plan <- future::plan()
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Future Plan: ", future_plan)
 
+  # AI-184: multisession/cluster workers are fresh R processes spawned via
+  # parallelly::makeClusterPSOCK. When the parent runs under `renv`, those
+  # workers start with the SYSTEM .libPaths() (or have renv reset them on
+  # startup) and therefore cannot see SEMseeker or its dependencies, which
+  # live in the renv project library. The result is a silent death right
+  # after "I will work in multisession..." — workers fail at the first
+  # library() lookup with no R-visible error in the parent log.
+  #
+  # Fix: capture the parent .libPaths() (which includes the renv project
+  # library when renv is active) and propagate it to the workers via
+  # `rscript_libs`. multicore (fork) inherits libPaths from the parent and
+  # needs no special handling. See engineering-decisions.md.
+  parent_libs <- .libPaths()
+
   # TODO: improve planning parallel management using also cluster
   if(parallel_strategy=="multisession")
   {
-    future::plan( future::multisession, workers = nCore)
+    future::plan( future::multisession, workers = nCore, rscript_libs = parent_libs)
     log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work in multisession with:", nCore, " Cores")
   }
   if(parallel_strategy=="multicore")
@@ -108,12 +122,12 @@ parallel_session <- function()
   {
     if (!is.null(ssEnv$cluster_workers))
     {
-      future::plan( future::cluster, workers = ssEnv$cluster_workers)
+      future::plan( future::cluster, workers = ssEnv$cluster_workers, rscript_libs = parent_libs)
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work with a cluster with:",ssEnv$cluster_workers)
     }
     else
     {
-      future::plan( future::cluster, workers = nCore)
+      future::plan( future::cluster, workers = nCore, rscript_libs = parent_libs)
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work with a cluster with:", nCore," Cores")
     }
   }
