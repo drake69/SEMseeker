@@ -325,18 +325,17 @@ whether mean methylation (or intra-region spread) differs by phenotype, without
 any mutation-calling step.
 
 ```{r signal_analysis, eval=FALSE}
-# Differential mean-signal testing is just another `inference_details` spec:
-# the dependent term references the SIGNAL_MEAN marker, the predictor is the
-# phenotype, and `depth_analysis = 3` runs it per genomic area (e.g. GENE).
-# association_analysis() reads the matching SIGNAL_MEAN pivot table internally —
-# no manual parquet loading required.
+# inference_details specifies the PREDICTOR and the test — not a model formula.
+# `independent_variable` is the phenotype column, `family_test` the statistical
+# test. The dependent marker (SIGNAL_MEAN, MUTATIONS, …) is NOT named here: it
+# comes from the markers you ran through semseeker(); association_analysis()
+# iterates over them and reads the matching pivot tables internally.
 inference_details <- data.frame(
-  formula          = "SIGNAL_MEAN ~ Sample_Group",
-  family           = "wilcoxon",   # two independent groups, non-parametric
-  transformation_y = "none",
-  depth_analysis   = 3,            # per genomic area (region-level / EWAS-style)
-  filter_p_value   = TRUE,
-  stringsAsFactors = FALSE
+  independent_variable = "Sample_Group",
+  family_test          = "wilcoxon",   # two independent groups, non-parametric
+  transformation_y     = "none",
+  depth_analysis       = 3,            # per genomic area (region-level / EWAS-style)
+  filter_p_value       = TRUE
 )
 
 association_analysis(
