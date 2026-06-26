@@ -325,21 +325,25 @@ whether mean methylation (or intra-region spread) differs by phenotype, without
 any mutation-calling step.
 
 ```{r signal_analysis, eval=FALSE}
-library(polars)
-
-# Read mean-signal pivot at gene level
-signal_mean <- as.data.frame(
-  pl$read_parquet("~/semseeker_results/Data/SIGNAL_MEAN_GENE_WHOLE.parquet")
+# Differential mean-signal testing is just another `inference_details` spec:
+# the dependent term references the SIGNAL_MEAN marker, the predictor is the
+# phenotype, and `depth_analysis = 3` runs it per genomic area (e.g. GENE).
+# association_analysis() reads the matching SIGNAL_MEAN pivot table internally —
+# no manual parquet loading required.
+inference_details <- data.frame(
+  formula          = "SIGNAL_MEAN ~ Sample_Group",
+  family           = "wilcoxon",   # two independent groups, non-parametric
+  transformation_y = "none",
+  depth_analysis   = 3,            # per genomic area (region-level / EWAS-style)
+  filter_p_value   = TRUE,
+  stringsAsFactors = FALSE
 )
 
-# Run a Wilcoxon test between cases and controls on mean signal
 association_analysis(
-  result_folder   = "~/semseeker_results/",
-  sample_sheet    = sample_sheet,
-  marker          = c("SIGNAL_MEAN"),
-  areas           = c("GENE"),
-  stat_model      = list(type = "wilcoxon", alt = "two.sided"),
-  output_folder   = "~/semseeker_results/Stats/"
+  inference_details = inference_details,
+  result_folder     = "~/semseeker_results/",
+  parallel_strategy = "multicore",
+  maxResources      = 90
 )
 ```
 
