@@ -68,7 +68,10 @@ keys_create <- function(ssEnv, arguments)
   keys_areas_default <- data.frame("AREA"=c("GENE","ISLAND","DMR","CHR","PROBE"))
 
   keys_gene_subareas_default <- data.frame("AREA"="GENE", "SUBAREA"=c("BODY","TSS1500","TSS200","1STEXON","3UTR","5UTR","EXONBND","WHOLE"))
-  keys_island_subareas_default <- data.frame("AREA"="ISLAND","SUBAREA"=c("N_SHORE","S_SHORE","N_SHELF","S_SHELF", "WHOLE"))
+  # ISLAND context (Illumina Relation_to_Island, 6 categories): WHOLE = whole
+  # neighbourhood (core+shores+shelves, like GENE_WHOLE), ISLAND = core only,
+  # OPENSEA = CpGs outside every neighbourhood. See island_opensea.R.
+  keys_island_subareas_default <- data.frame("AREA"="ISLAND","SUBAREA"=c("ISLAND","N_SHORE","S_SHORE","N_SHELF","S_SHELF","OPENSEA","WHOLE"))
   keys_dmr_subareas_default <- data.frame("AREA"="DMR","SUBAREA"=c("WHOLE"))
   keys_chr_subareas_default <- data.frame("AREA"="CHR","SUBAREA"=c("WHOLE","CYTOBAND"))
   keys_probe_subareas_default <- data.frame("AREA"="PROBE","SUBAREA"=c("WHOLE"))

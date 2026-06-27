@@ -101,15 +101,37 @@ probe_annotation_build <- function(tech, force = FALSE) {
     if (length(hits) == 0L) NA_character_ else paste(hits, collapse = ";")
   }, character(1))
 
-  # ---- ISLAND columns ----
+  # ---- ISLAND columns (see island_opensea.R for the shared semantics) ----
+  # Relation_to_Island has six categories: Island, N_Shore, S_Shore, N_Shelf,
+  # S_Shelf, OpenSea. WHOLE is the whole island neighbourhood (core + shores +
+  # shelves), mirroring GENE_WHOLE; ISLAND is the core alone; OPENSEA are the
+  # CpGs outside every neighbourhood, labelled by the genomic gap that holds
+  # them ("chr:start-end"), exactly as islands are labelled by their coordinate.
   island_rel <- as.character(anno_df$Relation_to_Island)
   island_name <- as.character(anno_df$Islands_Name)
+  island_ctx <- c("Island", "N_Shore", "S_Shore", "N_Shelf", "S_Shelf")
 
-  anno_df$ISLAND_WHOLE   <- ifelse(island_rel == "Island",  island_name, NA_character_)
+  anno_df$ISLAND_WHOLE   <- ifelse(island_rel %in% island_ctx, island_name, NA_character_)
+  anno_df$ISLAND_ISLAND  <- ifelse(island_rel == "Island",  island_name, NA_character_)
   anno_df$ISLAND_N_SHORE <- ifelse(island_rel == "N_Shore", island_name, NA_character_)
   anno_df$ISLAND_S_SHORE <- ifelse(island_rel == "S_Shore", island_name, NA_character_)
   anno_df$ISLAND_N_SHELF <- ifelse(island_rel == "N_Shelf", island_name, NA_character_)
   anno_df$ISLAND_S_SHELF <- ifelse(island_rel == "S_Shelf", island_name, NA_character_)
+
+  # OPENSEA: assign each open-sea CpG the coordinate of the inter-neighbourhood
+  # gap containing it. Island cores are recovered from the Islands_Name strings.
+  anno_df$ISLAND_OPENSEA <- NA_character_
+  is_opensea <- island_rel == "OpenSea" & !is.na(island_rel)
+  if (any(is_opensea)) {
+    island_gr <- .islands_gr_from_names(island_name)
+    if (length(island_gr) > 0L) {
+      anno_df$ISLAND_OPENSEA[is_opensea] <- .assign_opensea_labels(
+        probe_chr = paste0("chr", anno_df$CHR[is_opensea]),
+        probe_pos = anno_df$START[is_opensea],
+        island_gr = island_gr
+      )
+    }
+  }
 
   # ---- CHR_CYTOBAND ----
   # Assigned by range overlap against the bundled cytoband_hg19 table.
@@ -141,8 +163,9 @@ probe_annotation_build <- function(tech, force = FALSE) {
     "PROBE", "CHR", "START", "END", tech,
     "GENE_BODY", "GENE_TSS200", "GENE_TSS1500", "GENE_1STEXON",
     "GENE_5UTR", "GENE_3UTR", "GENE_EXONBND", "GENE_WHOLE",
-    "ISLAND_WHOLE", "ISLAND_N_SHORE", "ISLAND_S_SHORE",
-    "ISLAND_N_SHELF", "ISLAND_S_SHELF",
+    "ISLAND_WHOLE", "ISLAND_ISLAND",
+    "ISLAND_N_SHORE", "ISLAND_S_SHORE",
+    "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
     "CHR_CYTOBAND", "DMR_WHOLE", "DMR_DMR"
   )
   anno_df <- anno_df[, intersect(keep, colnames(anno_df)), drop = FALSE]

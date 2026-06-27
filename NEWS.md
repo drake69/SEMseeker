@@ -23,6 +23,19 @@
 
 ### New features
 
+- **AI-190: CpG-island subareas aligned to Illumina `Relation_to_Island`.**
+  The `ISLAND` area now exposes all six Illumina contexts plus the whole
+  neighbourhood: `WHOLE`, `ISLAND`, `N_SHORE`, `S_SHORE`, `N_SHELF`,
+  `S_SHELF`, `OPENSEA`. Previously the island core (`Island`) and the
+  open-sea compartment (`OpenSea`) were lost. `ISLAND_WHOLE` is **redefined**
+  to mean the whole island neighbourhood (core + shores + shelves, ±4 kb),
+  mirroring `GENE_WHOLE`; use the new `ISLAND` subarea for the core alone.
+  `OPENSEA` groups each open-sea CpG by the inter-neighbourhood genomic gap
+  that contains it, labelled `chr:start-end` (never spanning a chromosome).
+  Semantics are centralised in `island_opensea.R` and shared by both the
+  Illumina (`probe_annotation_build`) and coordinate/AnnotationHub
+  (`area_granges_build`) backends. See the getting-started vignette.
+
 - **AI-044: binomial_bulk family + goodness-of-fit metrics extension.**
   New `family_test = "binomial_bulk"` dispatches to `glm_model_bulk()` for
   bulk per-probe logistic regression via `Rfast::glm_logistic` (parallelised

@@ -68,8 +68,9 @@ annotation_concordance_report <- function(tech         = "K850",
     areas <- c(
       "GENE_BODY", "GENE_TSS200", "GENE_TSS1500", "GENE_1STEXON",
       "GENE_5UTR", "GENE_3UTR",
-      "ISLAND_WHOLE", "ISLAND_N_SHORE", "ISLAND_S_SHORE",
-      "ISLAND_N_SHELF", "ISLAND_S_SHELF",
+      "ISLAND_WHOLE", "ISLAND_ISLAND",
+      "ISLAND_N_SHORE", "ISLAND_S_SHORE",
+      "ISLAND_N_SHELF", "ISLAND_S_SHELF", "ISLAND_OPENSEA",
       "CHR_CYTOBAND", "DMR_WHOLE", "DMR_DMR"
     )
   }

@@ -232,6 +232,49 @@ semseeker(
 )
 ```
 
+### Genomic areas & subareas
+
+After per-probe markers are computed, SEMseeker annotates each probe to the
+genomic **areas** (and their **subareas**) it belongs to, so that epimutations
+can be aggregated region-by-region. The available subareas per area:
+
+| Area | Subareas |
+|---|---|
+| `GENE` | `BODY`, `TSS1500`, `TSS200`, `1STEXON`, `5UTR`, `3UTR`, `EXONBND`, `WHOLE` |
+| `ISLAND` | `ISLAND`, `N_SHORE`, `S_SHORE`, `N_SHELF`, `S_SHELF`, `OPENSEA`, `WHOLE` |
+| `CHR` | `WHOLE`, `CYTOBAND` |
+| `DMR` | `WHOLE`, `DMR` |
+| `PROBE` | `WHOLE` |
+
+#### CpG-island context mapping (`ISLAND`)
+
+The `ISLAND` subareas mirror Illumina's `Relation_to_Island`, which classifies
+every probe into one of six mutually exclusive categories. SEMseeker maps them
+as follows — and, exactly as `GENE_WHOLE` covers the **whole gene**,
+`ISLAND_WHOLE` covers the **whole island neighbourhood**:
+
+| Illumina `Relation_to_Island` | SEMseeker subarea | Region label |
+|---|---|---|
+| `Island` | `ISLAND` | island coordinate (`chr:start-end`) |
+| `N_Shore` / `S_Shore` | `N_SHORE` / `S_SHORE` | island coordinate (±2 kb flank) |
+| `N_Shelf` / `S_Shelf` | `N_SHELF` / `S_SHELF` | island coordinate (2–4 kb flank) |
+| `OpenSea` | `OPENSEA` | gap coordinate (`chr:start-end`) |
+| *(union of the above except OpenSea)* | `WHOLE` | island coordinate |
+
+Notes:
+
+- **`WHOLE` = `ISLAND` + shores + shelves** (the whole CpG-island
+  neighbourhood, island core ±4 kb). It is **not** the island core alone —
+  use `ISLAND` for the core.
+- **`OPENSEA`** are the CpGs outside every neighbourhood. Each open-sea probe
+  is grouped by the genomic **gap** between neighbourhoods that contains it,
+  labelled by that gap's coordinate `chr:start-end`. A gap never crosses a
+  chromosome boundary, so no open-sea region spans chromosomes.
+- The same definitions apply to WGBS / long-read data, where the island
+  neighbourhoods are reconstructed from UCSC CpG-island coordinates instead of
+  the Illumina manifest, so array and sequencing analyses share identical
+  region semantics.
+
 <hr>
 
 ## Step 3 — Understand the output
