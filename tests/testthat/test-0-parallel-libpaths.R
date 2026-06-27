@@ -26,12 +26,14 @@ test_that("multisession workers inherit the parent .libPaths() (AI-184)", {
     verbosity         = 1
   )
   # Populate .pkgglobalenv$ssEnv (in-memory only) so get_session_info() finds it.
-  update_session_info(ssEnv, save_to_disk = FALSE)
+  # Internal (non-exported) functions must be qualified with ::: so the test
+  # resolves them under R CMD check (installed package), not just devtools::test().
+  SEMseeker:::update_session_info(ssEnv, save_to_disk = FALSE)
 
   # Restore a clean sequential plan whatever happens.
   on.exit(future::plan(future::sequential), add = TRUE)
 
-  parallel_session()
+  SEMseeker:::parallel_session()
 
   parent_libs <- .libPaths()
   worker_libs <- future::value(future::future(.libPaths(), seed = TRUE))
