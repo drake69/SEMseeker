@@ -223,8 +223,10 @@
   gr
 }
 
-.build_island_area <- function(subarea, genome_build) {
-  islands <- .get_cpg_islands(genome_build)
+.build_island_area <- function(subarea, genome_build, islands = NULL) {
+  # `islands` is injectable (a GRanges of island cores) so the WHOLE/ISLAND/
+  # OPENSEA/shore/shelf logic can be unit-tested without AnnotationHub.
+  if (is.null(islands)) islands <- .get_cpg_islands(genome_build)
 
   # OPENSEA: inter-neighbourhood gaps, self-labelled by coordinate. Returned
   # early because its ranges (and count) do not correspond to island cores.

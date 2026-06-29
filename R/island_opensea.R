@@ -96,6 +96,55 @@
   out
 }
 
+#' Build the seven ISLAND_* annotation columns from Illumina island context.
+#'
+#' Pure (no Bioconductor annotation package needed): operates on the four
+#' per-probe vectors the Illumina manifest provides. Shared by
+#' \code{probe_annotation_build()} and unit tests so the ISLAND/OPENSEA recoding
+#' is exercised without loading an array annotation package.
+#'
+#' @param island_rel Character vector: \code{Relation_to_Island} per probe.
+#' @param island_name Character vector: \code{Islands_Name} per probe
+#'   ("chr:start-end", shared by an island and its shores/shelves).
+#' @param chr Character vector: chromosome WITHOUT the "chr" prefix (as in
+#'   \code{anno_df$CHR}).
+#' @param start Integer vector: CpG position.
+#' @return Named list of seven character vectors: \code{ISLAND_WHOLE},
+#'   \code{ISLAND_ISLAND}, \code{ISLAND_N_SHORE}, \code{ISLAND_S_SHORE},
+#'   \code{ISLAND_N_SHELF}, \code{ISLAND_S_SHELF}, \code{ISLAND_OPENSEA}.
+#' @keywords internal
+#' @noRd
+.island_columns <- function(island_rel, island_name, chr, start) {
+  island_rel  <- as.character(island_rel)
+  island_name <- as.character(island_name)
+  ctx <- c("Island", "N_Shore", "S_Shore", "N_Shelf", "S_Shelf")
+
+  out <- list(
+    # WHOLE = whole neighbourhood (core + shores + shelves), like GENE_WHOLE.
+    ISLAND_WHOLE   = ifelse(island_rel %in% ctx,    island_name, NA_character_),
+    ISLAND_ISLAND  = ifelse(island_rel == "Island",  island_name, NA_character_),
+    ISLAND_N_SHORE = ifelse(island_rel == "N_Shore", island_name, NA_character_),
+    ISLAND_S_SHORE = ifelse(island_rel == "S_Shore", island_name, NA_character_),
+    ISLAND_N_SHELF = ifelse(island_rel == "N_Shelf", island_name, NA_character_),
+    ISLAND_S_SHELF = ifelse(island_rel == "S_Shelf", island_name, NA_character_),
+    ISLAND_OPENSEA = rep(NA_character_, length(island_rel))
+  )
+
+  # OPENSEA: label each open-sea CpG by the inter-neighbourhood gap holding it.
+  is_opensea <- island_rel == "OpenSea" & !is.na(island_rel)
+  if (any(is_opensea)) {
+    island_gr <- .islands_gr_from_names(island_name)
+    if (length(island_gr) > 0L) {
+      out$ISLAND_OPENSEA[is_opensea] <- .assign_opensea_labels(
+        probe_chr = paste0("chr", chr[is_opensea]),
+        probe_pos = start[is_opensea],
+        island_gr = island_gr
+      )
+    }
+  }
+  out
+}
+
 #' Parse Illumina \code{Islands_Name} coordinate strings into a GRanges.
 #'
 #' \code{Islands_Name} is the UCSC CpG-island coordinate (e.g.
