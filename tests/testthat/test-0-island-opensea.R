@@ -95,15 +95,9 @@ test_that(".build_island_area maps subareas with injected islands (no Annotation
     SEMseeker:::.build_island_area("FOOBAR", "hg19", islands = islands),
     regexp = "Unknown ISLAND subarea")
 })
-
-test_that(".build_island_area OPENSEA returns coordinate-labelled gaps", {
-  testthat::skip_if_not_installed("GenomeInfoDb")
-  islands <- GenomicRanges::GRanges(
-    "chr1", IRanges::IRanges(start = c(10000L, 30000L), end = c(11000L, 31000L)))
-  GenomeInfoDb::seqlengths(islands) <- c(chr1 = 50000L)
-
-  gaps_gr <- SEMseeker:::.build_island_area("OPENSEA", "hg19", islands = islands)
-  labs <- GenomicRanges::mcols(gaps_gr)$label
-  expect_true(all(grepl("^chr1:[0-9]+-[0-9]+$", labs)))
-  expect_true("chr1:15001-25999" %in% labs)
-})
+# NOTE: .build_island_area("OPENSEA") is intentionally NOT unit-tested here.
+# Its only logic beyond the shared .opensea_gaps() (already covered above) is a
+# GenomeInfoDb::seqlengths() read, and GenomeInfoDb must not appear in a
+# skip_if_not_installed() (test-0-suggests-installed.R forbids skip-guarding a
+# package that is not in the CI install list). The OpenSea gap computation is
+# fully exercised by the .opensea_gaps / .assign_opensea_labels tests.
