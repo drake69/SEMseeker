@@ -2,8 +2,8 @@
 #
 # Single source of truth for the ISLAND subarea definitions used by BOTH
 # annotation backends, so they cannot drift apart:
-#   * probe_annotation_build()  — Illumina array packages (Relation_to_Island)
-#   * area_granges_build()       — coordinate / AnnotationHub (WGBS, long-read)
+#   * anno_probe_annotation_build()  — Illumina array packages (Relation_to_Island)
+#   * anno_area_granges_build()       — coordinate / AnnotationHub (WGBS, long-read)
 #
 # Illumina's Relation_to_Island has six categories: Island, N_Shore, S_Shore,
 # N_Shelf, S_Shelf, OpenSea. Historically SEMseeker kept only the four
@@ -42,7 +42,7 @@
 #' @return GRanges of OpenSea regions with \code{mcols()$label} = "chr:start-end".
 #' @keywords internal
 #' @noRd
-.opensea_gaps <- function(island_gr, flank = .ISLAND_FLANK, chrom_ends = NULL) {
+.anno_opensea_gaps <- function(island_gr, flank = .ISLAND_FLANK, chrom_ends = NULL) {
   chrs   <- as.character(GenomicRanges::seqnames(island_gr))
   starts <- GenomicRanges::start(island_gr)
   ends   <- GenomicRanges::end(island_gr)
@@ -79,13 +79,13 @@
 #' @return Character vector of OpenSea region labels (NA where not OpenSea).
 #' @keywords internal
 #' @noRd
-.assign_opensea_labels <- function(probe_chr, probe_pos, island_gr) {
+.anno_assign_opensea_labels <- function(probe_chr, probe_pos, island_gr) {
   # Extend the per-chromosome universe to the furthest CpG so trailing OpenSea
   # probes land in a gap rather than falling off the last neighbourhood.
   max_per_chr <- tapply(probe_pos, probe_chr, max, na.rm = TRUE)
   chrom_ends  <- as.list(max_per_chr + .ISLAND_FLANK + 1L)
 
-  gaps_gr  <- .opensea_gaps(island_gr, chrom_ends = chrom_ends)
+  gaps_gr  <- .anno_opensea_gaps(island_gr, chrom_ends = chrom_ends)
   probe_gr <- GenomicRanges::GRanges(
     probe_chr, IRanges::IRanges(probe_pos, probe_pos))
 
@@ -100,7 +100,7 @@
 #'
 #' Pure (no Bioconductor annotation package needed): operates on the four
 #' per-probe vectors the Illumina manifest provides. Shared by
-#' \code{probe_annotation_build()} and unit tests so the ISLAND/OPENSEA recoding
+#' \code{anno_probe_annotation_build()} and unit tests so the ISLAND/OPENSEA recoding
 #' is exercised without loading an array annotation package.
 #'
 #' @param island_rel Character vector: \code{Relation_to_Island} per probe.
@@ -114,7 +114,7 @@
 #'   \code{ISLAND_N_SHELF}, \code{ISLAND_S_SHELF}, \code{ISLAND_OPENSEA}.
 #' @keywords internal
 #' @noRd
-.island_columns <- function(island_rel, island_name, chr, start) {
+.anno_island_columns <- function(island_rel, island_name, chr, start) {
   island_rel  <- as.character(island_rel)
   island_name <- as.character(island_name)
   ctx <- c("Island", "N_Shore", "S_Shore", "N_Shelf", "S_Shelf")
@@ -133,9 +133,9 @@
   # OPENSEA: label each open-sea CpG by the inter-neighbourhood gap holding it.
   is_opensea <- island_rel == "OpenSea" & !is.na(island_rel)
   if (any(is_opensea)) {
-    island_gr <- .islands_gr_from_names(island_name)
+    island_gr <- .anno_islands_gr_from_names(island_name)
     if (length(island_gr) > 0L) {
-      out$ISLAND_OPENSEA[is_opensea] <- .assign_opensea_labels(
+      out$ISLAND_OPENSEA[is_opensea] <- .anno_assign_opensea_labels(
         probe_chr = paste0("chr", chr[is_opensea]),
         probe_pos = start[is_opensea],
         island_gr = island_gr
@@ -154,7 +154,7 @@
 #' @return GRanges of unique island cores (seqlevels carry the "chr" prefix).
 #' @keywords internal
 #' @noRd
-.islands_gr_from_names <- function(names_vec) {
+.anno_islands_gr_from_names <- function(names_vec) {
   u <- unique(names_vec[!is.na(names_vec) & nzchar(names_vec)])
   m <- regmatches(u, regexec("^(chr[0-9XYM]+):([0-9]+)-([0-9]+)$", u))
   ok <- vapply(m, length, integer(1)) == 4L

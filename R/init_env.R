@@ -51,7 +51,7 @@
 .SS_FN_EXPORT <- c("analyze_single_sample","deltar_single_sample",
                    "dump_sample_as_bed_file", "delta_single_sample",
                    "dir_check_and_create", "file_path_build",
-                   "analyze_single_sample_both", "sort_by_chr_and_start",
+                   "analyze_single_sample_both", "anno_sort_by_chr_and_start",
                    "util_test_match_order", "lesions_get", "mutations_get")
 
 .apply_defaults <- function(arguments, defaults) {

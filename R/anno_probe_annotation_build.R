@@ -41,7 +41,7 @@
 #'   GENE_5UTR, GENE_3UTR, GENE_EXONBND, GENE_WHOLE.
 #' @keywords internal
 #' @noRd
-.gene_columns <- function(group_str, name_str) {
+.anno_gene_columns <- function(group_str, name_str) {
   gene_region_map <- c(
     GENE_BODY    = "Body",    GENE_TSS200  = "TSS200",  GENE_TSS1500 = "TSS1500",
     GENE_1STEXON = "1stExon", GENE_5UTR    = "5'UTR",   GENE_3UTR    = "3'UTR",
@@ -77,7 +77,7 @@
 #' @return Named list with a single \code{CHR_CYTOBAND} character vector.
 #' @keywords internal
 #' @noRd
-.chr_columns <- function(chr, start, cytoband = NULL) {
+.anno_chr_columns <- function(chr, start, cytoband = NULL) {
   if (is.null(cytoband)) cytoband <- SEMseeker::cytoband_hg19
   cb <- cytoband[!is.na(cytoband$CHR) & cytoband$CHR != "", , drop = FALSE]
   chr_vec   <- as.character(chr)
@@ -107,7 +107,7 @@
 #' @param force Logical; rebuild even when a cached annotation is available.
 #' @return A data frame of per-probe annotation columns.
 #' @keywords internal
-probe_annotation_build <- function(tech, force = FALSE) {
+anno_probe_annotation_build <- function(tech, force = FALSE) {
 
   ssEnv <- get_session_info()
  
@@ -148,17 +148,17 @@ probe_annotation_build <- function(tech, force = FALSE) {
   # island context AND its cytoband. The helpers are pure (no annotation-package
   # access), so each area's recoding is unit-tested without an Illumina package.
   col_groups <- c(
-    .gene_columns(anno_df$UCSC_RefGene_Group, anno_df$UCSC_RefGene_Name),
-    .island_columns(anno_df$Relation_to_Island, anno_df$Islands_Name,
+    .anno_gene_columns(anno_df$UCSC_RefGene_Group, anno_df$UCSC_RefGene_Name),
+    .anno_island_columns(anno_df$Relation_to_Island, anno_df$Islands_Name,
                     anno_df$CHR, anno_df$START),
-    .chr_columns(anno_df$CHR, anno_df$START)
+    .anno_chr_columns(anno_df$CHR, anno_df$START)
   )
   for (nm in names(col_groups)) anno_df[[nm]] <- col_groups[[nm]]
 
   # ---- DMR columns (1:many membership — NOT a 1:1 column) ----
   # A probe can belong to several DMRs, so this is a row-EXPANDING join, not a
   # per-probe column like GENE/ISLAND/CHR. The duplication is intentional and
-  # required: probe_features_get() selects [tech, PROBE, CHR, START, END,
+  # required: anno_probe_features_get() selects [tech, PROBE, CHR, START, END,
   # area_subarea] and dplyr::distinct()s — for DMR_* this preserves every
   # membership, while for the other areas the duplicate rows collapse back.
   dmr <- SEMseeker::dmr_annotation

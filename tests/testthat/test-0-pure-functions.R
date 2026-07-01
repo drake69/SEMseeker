@@ -7,7 +7,7 @@
 #  - apply_stat_model_sig_formula()       formula builder
 #  - exact_pvalue()                       permutation p-value calculator
 #  - model_performance()                  regression metric calculator
-#  - sort_by_chr_and_start()              genomic-coordinate sorter
+#  - anno_sort_by_chr_and_start()              genomic-coordinate sorter
 #  - compute_mean_delta_permutation_cpu() mean-difference permutation statistic
 #  - compute_spearman_permutation()       Spearman permutation statistic
 #  - compute_quantile_delta_permutation() quantile-difference permutation statistic
@@ -215,34 +215,34 @@ test_that("model_performance: rmse = sqrt(mse)", {
 })
 
 # ---------------------------------------------------------------------------
-# 7. sort_by_chr_and_start
+# 7. anno_sort_by_chr_and_start
 # ---------------------------------------------------------------------------
 
-test_that("sort_by_chr_and_start orders chromosomes correctly", {
+test_that("anno_sort_by_chr_and_start orders chromosomes correctly", {
   df <- data.frame(
     CHR   = c("chr2", "chr1", "chr10", "chrX"),
     START = c(100, 200, 50, 300),
     VAL   = 1:4
   )
-  sorted <- SEMseeker:::sort_by_chr_and_start(df)
+  sorted <- SEMseeker:::anno_sort_by_chr_and_start(df)
   expect_equal(as.character(sorted$CHR[1]), "chr1")
   expect_equal(as.character(sorted$CHR[2]), "chr2")
   expect_equal(as.character(sorted$CHR[3]), "chr10")
 })
 
-test_that("sort_by_chr_and_start sorts by START within same chromosome", {
+test_that("anno_sort_by_chr_and_start sorts by START within same chromosome", {
   df <- data.frame(
     CHR   = c("chr1", "chr1", "chr1"),
     START = c(300, 100, 200),
     VAL   = 1:3
   )
-  sorted <- SEMseeker:::sort_by_chr_and_start(df)
+  sorted <- SEMseeker:::anno_sort_by_chr_and_start(df)
   expect_equal(sorted$START, c(100, 200, 300))
 })
 
-test_that("sort_by_chr_and_start handles empty data.frame", {
+test_that("anno_sort_by_chr_and_start handles empty data.frame", {
   df <- data.frame(CHR = character(0), START = integer(0))
-  result <- SEMseeker:::sort_by_chr_and_start(df)
+  result <- SEMseeker:::anno_sort_by_chr_and_start(df)
   expect_equal(nrow(result), 0)
 })
 

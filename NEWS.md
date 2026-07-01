@@ -33,8 +33,8 @@
   `OPENSEA` groups each open-sea CpG by the inter-neighbourhood genomic gap
   that contains it, labelled `chr:start-end` (never spanning a chromosome).
   Semantics are centralised in `island_opensea.R` and shared by both the
-  Illumina (`probe_annotation_build`) and coordinate/AnnotationHub
-  (`area_granges_build`) backends. See the getting-started vignette.
+  Illumina (`anno_probe_annotation_build`) and coordinate/AnnotationHub
+  (`anno_area_granges_build`) backends. See the getting-started vignette.
 
 - **AI-044: binomial_bulk family + goodness-of-fit metrics extension.**
   New `family_test = "binomial_bulk"` dispatches to `glm_model_bulk()` for

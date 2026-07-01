@@ -21,12 +21,12 @@
 #' @return A polars LazyFrame with the PROBE column and one column per
 #'   sample. CHR/START/END/tech annotation columns are dropped after the
 #'   join, since downstream consumers only need the probe-keyed shape.
-position_pivot_to_probe <- function(signal_data)
+anno_position_pivot_to_probe <- function(signal_data)
 {
  
   ssEnv          <- get_session_info()
   tech_col       <- ssEnv$tech
-  probe_features <- probe_annotation_build(ssEnv$tech)[, c("PROBE", "CHR", "START", "END", tech_col)]
+  probe_features <- anno_probe_annotation_build(ssEnv$tech)[, c("PROBE", "CHR", "START", "END", tech_col)]
   probe_features_lf <- polars::as_polars_df(probe_features)$lazy()
 
   # Accept polars LazyFrame, polars DataFrame, or R data.frame/matrix.

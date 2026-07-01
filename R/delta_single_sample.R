@@ -39,7 +39,7 @@ delta_single_sample <- function(values, thresholds, sample_detail) {
     DELTA = joined$VALUE - high_thresholds,
     stringsAsFactors = FALSE
   )
-  deltas_hyper <- sort_by_chr_and_start(deltas_hyper)
+  deltas_hyper <- anno_sort_by_chr_and_start(deltas_hyper)
   deltas_hyper <- subset(deltas_hyper, deltas_hyper$DELTA > 0)[, c("CHR", "START", "END", "DELTA")]
 
   folder_to_save <- dir_check_and_create(ssEnv$result_folderData,
@@ -59,7 +59,7 @@ delta_single_sample <- function(values, thresholds, sample_detail) {
     DELTA = low_thresholds - joined$VALUE,
     stringsAsFactors = FALSE
   )
-  deltas_hypo <- sort_by_chr_and_start(deltas_hypo)
+  deltas_hypo <- anno_sort_by_chr_and_start(deltas_hypo)
   deltas_hypo <- subset(deltas_hypo, deltas_hypo$DELTA > 0)[, c("CHR", "START", "END", "DELTA")]
 
   folder_to_save <- dir_check_and_create(ssEnv$result_folderData,

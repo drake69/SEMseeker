@@ -5,7 +5,7 @@ test_that("signal-save",{
   ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
 
   # In the normal pipeline analyze_batch() calls get_meth_tech() before signal_save()
-  # so that ssEnv$tech is already set when probe_features_get() runs inside signal_save().
+  # so that ssEnv$tech is already set when anno_probe_features_get() runs inside signal_save().
   SEMseeker:::get_meth_tech(signal_data)
   SEMseeker:::signal_save(signal_data,mySampleSheet,batch_id )
 

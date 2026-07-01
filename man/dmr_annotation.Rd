@@ -22,7 +22,7 @@ Differentially methylated region (DMR) annotations for CpG probes on
 Illumina methylation arrays.  Contains only probes that overlap at least one
 known imprinted or disease-associated DMR.  This lightweight table
 (~1,600 rows) supplements the Bioconductor array annotation packages used by
-\code{\link{probe_annotation_build}}, which do not carry DMR-level
+\code{\link{anno_probe_annotation_build}}, which do not carry DMR-level
 annotations.
 }
 \keyword{datasets}

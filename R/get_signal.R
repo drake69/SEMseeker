@@ -49,7 +49,7 @@ source_data_get <- function(source_data, check_is_numeric=FALSE){
 
   # Normalize CHR to bare internal format if present
   if ("CHR" %in% colnames(source))
-    source$CHR <- normalize_chr(source$CHR, "internal")
+    source$CHR <- anno_normalize_chr(source$CHR, "internal")
 
   # check all values are numeric
   if (check_is_numeric & !all(vapply(source, is.numeric, logical(1))))

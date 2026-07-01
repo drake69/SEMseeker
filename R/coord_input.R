@@ -19,7 +19,7 @@
 #
 #   Area support for WGBS/LONGREAD in this release (B-01/B-02):
 #     Supported:  CHR_WHOLE, PROBE_WHOLE (coordinate-based, no annotation)
-#     Not yet:    GENE_*, ISLAND_*, DMR_* → requires area_granges_build() (C-04)
+#     Not yet:    GENE_*, ISLAND_*, DMR_* → requires anno_area_granges_build() (C-04)
 
 # ---------------------------------------------------------------------------
 # Column-name aliases recognised for coordinate columns
@@ -51,7 +51,7 @@
 
 # Build synthetic probe ID.
 .make_probe_id <- function(chr_vec, start_vec) {
-  paste0(normalize_chr(chr_vec, "internal"), "_", as.character(start_vec))
+  paste0(anno_normalize_chr(chr_vec, "internal"), "_", as.character(start_vec))
 }
 
 # ---------------------------------------------------------------------------
@@ -136,7 +136,7 @@ probe_id_to_coord <- function(probe_ids) {
 #' Build a minimal probe_features data frame from synthetic probe IDs.
 #'
 #' Used inside \code{analyze_batch()} for WGBS/LONGREAD data in place of the
-#' Bioconductor-annotation-based \code{probe_features_get("PROBE")} call.
+#' Bioconductor-annotation-based \code{anno_probe_features_get("PROBE")} call.
 #'
 #' @param probe_ids Character vector of synthetic probe IDs.
 #' @return data.frame with columns PROBE, CHR, START, END.

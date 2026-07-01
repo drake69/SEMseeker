@@ -4,7 +4,7 @@
 # DRAFT 2026-06-01 (AI-027 in semseeker/sestante/backlog.json). Parallel
 # implementation: nothing in the package calls this yet, the existing pivot
 # scan/aggregate paths are untouched. The intent is to converge callers onto
-# read_pivot() once validated; existing helpers (create_position_pivots, the
+# read_pivot() once validated; existing helpers (anno_create_position_pivots, the
 # inline polars::pl$scan_parquet(...) calls in get_pivot_both / coverage /
 # manhattan_plot) remain functional during the transition.
 #
@@ -27,7 +27,7 @@
 #'
 #' Unified accessor for the per-marker position pivot. If the pivot is already
 #' materialised as parquet (the cache produced by
-#' \code{\link{create_position_pivots}}), it is returned as a lazy
+#' \code{\link{anno_create_position_pivots}}), it is returned as a lazy
 #' \code{polars} frame. Otherwise, if the underlying per-sample \code{.bed} /
 #' \code{.bedgraph(.gz)} files exist, a streaming row-wise merge over those
 #' files is constructed lazily and returned. If neither exists, returns
@@ -72,7 +72,7 @@ read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
   # NB: this branch builds a wide pivot with CHR/START/END as the key columns
   # (a POSITION-shape table). It is only valid when area == "POSITION";
   # PROBE/GENE/ISLAND/... pivots have an AREA key column and are produced by
-  # annotate_position_pivots() from the POSITION pivot. Trying to fall back to
+  # anno_annotate_position_pivots() from the POSITION pivot. Trying to fall back to
   # stream_merge_bed for non-POSITION areas would write a POSITION-shape file
   # under a PROBE-shape filename and silently corrupt downstream reads.
   if (!identical(area, "POSITION")) {

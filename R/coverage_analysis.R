@@ -27,7 +27,7 @@ coverage_analysis <- function(observed_probes)
     if(exists("covered_count"))
       rm(covered_count)
 
-    probe_features <- probe_features_get(area_subarea)
+    probe_features <- anno_probe_features_get(area_subarea)
     if(plyr::empty(probe_features) | nrow(probe_features)==0)
       next
 

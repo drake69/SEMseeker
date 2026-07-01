@@ -85,7 +85,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     "signal_superior_thresholds","deltar_single_sample","signal_inferior_thresholds","iqr","signal_median_values",
     "bt","bonferroni_threshold", "probe_features", "analyze_single_sample_both", "delta_single_sample", "progress_bar",
     "progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_single_sample",
-    "get_session_info","bed_file_name","signal_thresholds","update_session_info","normalize_chr",
+    "get_session_info","bed_file_name","signal_thresholds","update_session_info","anno_normalize_chr",
     "existing_signal_mean","existing_mut_hyper","existing_mut_hypo","existing_deltas_hypo","existing_deltar_hypo",
     "dir_known_signal_mean","dir_known_mut_hyper","dir_known_mut_hypo","dir_known_deltas_hypo","dir_known_deltar_hypo")
   i <- 1
@@ -118,7 +118,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     if (file.exists(coverage_bed)) {
       coverage_sig <- utils::read.delim(coverage_bed, header = FALSE, sep = "\t")
       colnames(coverage_sig) <- c("CHR", "START", "END", "VALUE")
-      coverage_sig$CHR <- normalize_chr(coverage_sig$CHR, "internal")
+      coverage_sig$CHR <- anno_normalize_chr(coverage_sig$CHR, "internal")
       coverage_n_input  <- nrow(coverage_sig)
       coverage_n_ranges <- nrow(signal_thresholds)
       coverage_sig_lf <- polars::as_polars_df(
@@ -188,7 +188,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
       bed_filename <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
       signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
       colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
-      signal_values$CHR <- SEMseeker:::normalize_chr(signal_values$CHR, "internal")
+      signal_values$CHR <- SEMseeker:::anno_normalize_chr(signal_values$CHR, "internal")
 
       if (need_mut_hyper)
         SEMseeker:::analyze_single_sample( values = signal_values,thresholds = signal_thresholds, figure="HYPER", sample_detail = local_sample_detail)

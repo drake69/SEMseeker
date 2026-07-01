@@ -4,7 +4,7 @@
 # Background — the bug this test guards against:
 #
 #   Calling `collect_schema()` or `select(pl$len())$collect()` on the
-#   LazyFrame returned by `position_pivot_to_probe(signal_pivot)` FORCES
+#   LazyFrame returned by `anno_position_pivot_to_probe(signal_pivot)` FORCES
 #   Polars to execute the underlying inner-join on (CHR, START, END).
 #   Polars can NOT infer the post-join schema or row count without
 #   running the join (an inner join may drop or duplicate rows depending
@@ -28,7 +28,7 @@
 #                            to_data_frame()$len[1])                # FAST
 #   sample_cols <- setdiff(schema_cols_position,
 #                          c("CHR","START","END","PROBE"))
-#   signal_lazy <- position_pivot_to_probe(signal_pivot)            # lazy
+#   signal_lazy <- anno_position_pivot_to_probe(signal_pivot)            # lazy
 
 test_that("sample columns extracted from raw POSITION pivot match the PROBE pivot post-join", {
 
@@ -62,7 +62,7 @@ test_that("sample columns extracted from raw POSITION pivot match the PROBE pivo
   pivot_lazy <- polars::as_polars_df(pivot_df)$lazy()
 
   testthat::local_mocked_bindings(
-    probe_annotation_build = function(tech) anno,
+    anno_probe_annotation_build = function(tech) anno,
     .package = "SEMseeker"
   )
 
@@ -74,7 +74,7 @@ test_that("sample columns extracted from raw POSITION pivot match the PROBE pivo
   sample_cols_pre <- setdiff(schema_cols_position,
                              c("CHR", "START", "END", "PROBE"))
 
-  signal_lazy <- SEMseeker:::position_pivot_to_probe(pivot_lazy)
+  signal_lazy <- SEMseeker:::anno_position_pivot_to_probe(pivot_lazy)
 
   # Equivalence: sample columns from raw pivot match sample columns from
   # the PROBE pivot (post-join).
@@ -84,14 +84,14 @@ test_that("sample columns extracted from raw POSITION pivot match the PROBE pivo
   testthat::expect_setequal(sample_cols_pre, sample_cols_post)
   testthat::expect_setequal(sample_cols_pre, sample_names)
 
-  # n_probes from raw POSITION pivot = n rows post position_pivot_to_probe
+  # n_probes from raw POSITION pivot = n rows post anno_position_pivot_to_probe
   # (no probes dropped by the K850 filter in this synthetic data).
   collected <- as.data.frame(signal_lazy$collect())
   testthat::expect_equal(n_probes, nrow(collected))
   testthat::expect_equal(n_probes, nrow(anno))
 })
 
-test_that("schema extraction from raw POSITION pivot does NOT depend on position_pivot_to_probe call", {
+test_that("schema extraction from raw POSITION pivot does NOT depend on anno_position_pivot_to_probe call", {
 
   skip_on_cran()
 
@@ -123,7 +123,7 @@ test_that("schema extraction from raw POSITION pivot does NOT depend on position
   pivot_lazy <- polars::as_polars_df(pivot_df)$lazy()
 
   testthat::local_mocked_bindings(
-    probe_annotation_build = function(tech) anno,
+    anno_probe_annotation_build = function(tech) anno,
     .package = "SEMseeker"
   )
 
@@ -133,10 +133,10 @@ test_that("schema extraction from raw POSITION pivot does NOT depend on position
                             c("CHR", "START", "END", "S001", "S002"))
   testthat::expect_false("PROBE" %in% schema_cols)
 
-  # Now run position_pivot_to_probe — the resulting LazyFrame should be
+  # Now run anno_position_pivot_to_probe — the resulting LazyFrame should be
   # internally consistent without forcing materialisation of the raw
   # pivot's schema again.
-  signal_lazy <- SEMseeker:::position_pivot_to_probe(pivot_lazy)
+  signal_lazy <- SEMseeker:::anno_position_pivot_to_probe(pivot_lazy)
   testthat::expect_s3_class(signal_lazy, "polars_lazy_frame")
 
   # Resulting collect_schema reports PROBE as the new key.

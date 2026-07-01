@@ -2,7 +2,7 @@
 #'
 #' @return nothing
 #' @importFrom doRNG %dorng%
-annotate_position_pivots <- function ()
+anno_annotate_position_pivots <- function ()
 {
   start_time <- Sys.time()
   ssEnv <- get_session_info()
@@ -17,7 +17,7 @@ annotate_position_pivots <- function ()
     return()
 
   # Short-circuit: if every dest pivot already exists on disk, there is
-  # nothing to annotate. Avoids the unconditional probe_features_get()
+  # nothing to annotate. Avoids the unconditional anno_probe_features_get()
   # load of the Illumina manifest (~10-30s) and the spurious
   # "Annotating genomic area" log line in resume scenarios where no
   # actual annotation work is needed.
@@ -40,7 +40,7 @@ annotate_position_pivots <- function ()
 
   variables_to_export <- c("ssEnv", "dir_check_and_create", "subarea",
     "progress_bar","progression_index", "progression", "progressor_uuid",
-    "owner_session_uuid", "trace","probe_features_get", "localKeys",
+    "owner_session_uuid", "trace","anno_probe_features_get", "localKeys",
     "file_path_build","%>%","get_session_info","log_event")
 
   # doesn't work with parallel, tests throws error
@@ -59,10 +59,10 @@ annotate_position_pivots <- function ()
     if (!file.exists(dest_pivot_filename))
     {
       log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " File does not exists: ", dest_pivot_filename)
-      probe_features <- probe_features_get(area_subarea)
-      # NB (AI-027/AI-030): create_position_pivots + stream_merge_bed strip the
+      probe_features <- anno_probe_features_get(area_subarea)
+      # NB (AI-027/AI-030): anno_create_position_pivots + stream_merge_bed strip the
       # "chr" prefix from CHR for internal consistency, so the source pivot's
-      # CHR is "1", "X" … without prefix. probe_features_get() may return CHR
+      # CHR is "1", "X" … without prefix. anno_probe_features_get() may return CHR
       # either with or without prefix depending on the manifest table; we
       # normalise both sides to no-prefix before the inner join to avoid
       # 0-row joins.
@@ -141,7 +141,7 @@ annotate_position_pivots <- function ()
         if (length(slashed_areas) > 0L) {
           expansions <- vapply(
             slashed_areas,
-            function(s) paste(.smart_split_area_name(s), collapse = ";"),
+            function(s) paste(.anno_smart_split_area_name(s), collapse = ";"),
             character(1)
           )
           mapping_lf <- polars::as_polars_df(data.frame(

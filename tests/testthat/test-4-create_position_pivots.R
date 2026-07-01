@@ -1,4 +1,4 @@
-test_that("create_position_pivots", {
+test_that("anno_create_position_pivots", {
 
   tempFolder <- tempFolders[1]
   unlink(tempFolder, recursive = TRUE, force = TRUE)
@@ -50,10 +50,10 @@ test_that("create_position_pivots", {
   # prova con un subset di colonne che non ha le lesioni
 
   # test parial pivot creation
-  # SEMseeker:::create_position_pivots(mySampleSheet[1:10,],keys)
+  # SEMseeker:::anno_create_position_pivots(mySampleSheet[1:10,],keys)
 
   # test complete
-  SEMseeker:::create_position_pivots(mySampleSheet,keys)
+  SEMseeker:::anno_create_position_pivots(mySampleSheet,keys)
 
   # for (k in 1:nrow(keys))
   {

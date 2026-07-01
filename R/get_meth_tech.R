@@ -70,7 +70,7 @@ get_meth_tech <- function(signal_data) {
   msg  <- ""
 
   # ---- Step 1: annotation-package overlap (most accurate) ----
-  tech <- .detect_tech_from_anno(probe_ids)
+  tech <- .anno_detect_tech_from_anno(probe_ids)
   if (tech != "")
     msg <- paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
                  "technology identified as", tech,

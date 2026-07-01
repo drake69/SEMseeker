@@ -7,7 +7,7 @@
 #' \code{ssEnv} (genome_build, tech, semseeker_version, timestamp).
 #'
 #' Single point of responsibility for sidecar materialisation: callers that
-#' write pivots (\code{create_position_pivots}, \code{get_pivot_both},
+#' write pivots (\code{anno_create_position_pivots}, \code{get_pivot_both},
 #' \code{read_pivot}, \code{semseeker_core}, \code{recover}, ...) do not need
 #' to write sidecars themselves — they simply call this function once at the
 #' end of their work and let it scan for parquets without a sidecar.

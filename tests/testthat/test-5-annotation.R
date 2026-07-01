@@ -25,14 +25,14 @@ test_that("annotations", {
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Case",],
     probe_features = probe_features
   )
-  SEMseeker:::create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Case",],keys)
+  SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Case",],keys)
 
   sp <- SEMseeker:::analyze_population(signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Control",],
     probe_features = probe_features
   )
-  SEMseeker:::create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
+  SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
 
   # deltaX_get needs sample sheet CSV (normally written by analyze_batch)
   ssEnv2 <- SEMseeker:::get_session_info()
@@ -41,7 +41,7 @@ test_that("annotations", {
 
   SEMseeker:::deltaX_get()
 
-  SEMseeker:::annotate_position_pivots()
+  SEMseeker:::anno_annotate_position_pivots()
 
   # reload keys some subareas may have been removed because not presente as positions
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures, AREA != "POSITION")

@@ -84,7 +84,7 @@ pathway_pathfindR_circlize <- function(
 
         results$PATHWAY_CHR <- "pathway"
         ssEnv_local <- get_session_info()
-        probe_anno  <- probe_annotation_build(ssEnv_local$tech)
+        probe_anno  <- anno_probe_annotation_build(ssEnv_local$tech)
         genes_impacted_cytoband <- unique(
           probe_anno[probe_anno$GENE_WHOLE %in% results$GENE,
                      c("CHR", "START", "END", "CHR_CYTOBAND", "GENE_WHOLE")])

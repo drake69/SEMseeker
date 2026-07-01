@@ -39,7 +39,7 @@ mutations_get <- function(values, figure, thresholds, sampleName) {
     mutation <- as.numeric(joined$VALUE > joined$signal_superior_thresholds)
   }
 
-  mutation_annotated_sorted <- sort_by_chr_and_start(data.frame(
+  mutation_annotated_sorted <- anno_sort_by_chr_and_start(data.frame(
     CHR       = joined$CHR,
     START     = joined$START,
     END       = joined$END,

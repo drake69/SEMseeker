@@ -4,7 +4,7 @@
 #' Illumina methylation arrays.  Contains only probes that overlap at least one
 #' known imprinted or disease-associated DMR.  This lightweight table
 #' (~1,600 rows) supplements the Bioconductor array annotation packages used by
-#' \code{\link{probe_annotation_build}}, which do not carry DMR-level
+#' \code{\link{anno_probe_annotation_build}}, which do not carry DMR-level
 #' annotations.
 #'
 #' @format A data frame with three columns:
@@ -21,7 +21,7 @@
 #' cytoband_hg19
 #'
 #' Cytogenetic band coordinates for the hg19 human genome assembly.
-#' Used by \code{\link{probe_annotation_build}} to assign a \code{CHR_CYTOBAND}
+#' Used by \code{\link{anno_probe_annotation_build}} to assign a \code{CHR_CYTOBAND}
 #' label (e.g. \code{"q12.2"}) to each CpG probe based on its chromosomal
 #' position.  Band boundaries are derived from probe positions in the full
 #' Illumina EPIC annotation and cover all autosomes and sex chromosomes.

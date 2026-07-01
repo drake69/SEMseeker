@@ -6,7 +6,7 @@ test_that("signal_range_values", {
 
   # test range calculation with missed values: signal_range_values must error when data has NAs
   ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes)
-  # probe_features_get requires tech to be set; build equivalent manually
+  # anno_probe_features_get requires tech to be set; build equivalent manually
   probe_features_local <- probe_features[probe_features$PROBE %in% rownames(signal_data), c("CHR","START","END","PROBE")]
   probe_features_local <- probe_features_local[!is.na(probe_features_local$CHR),]
   # PROBE_WHOLE = canonical (AREA, SUBAREA) alias of PROBE — kept on probe_features

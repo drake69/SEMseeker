@@ -1,4 +1,4 @@
-#' Title manhattan_plot_marker_per_probe
+#' Title anno_manhattan_plot_marker_per_probe
 #'
 #' @param max_sample max number of samples to plot
 #' @param min_sample min number of samples to plot
@@ -21,7 +21,7 @@
 #'
 #' @return Invisibly \code{NULL}. The function saves PNG plot files to disk as a
 #'   side effect.
-manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe_name_min = "cg11680158", max_sample=0, min_sample=0 , min_signal_probe=0, label_font_size=3,
+anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe_name_min = "cg11680158", max_sample=0, min_sample=0 , min_signal_probe=0, label_font_size=3,
   hyper_color = "blue", hypo_color = "orange",  non_outlier_color = "grey",  limit_label_color = "blue",
   limit_line_color = "red", limit_line_color_median = "black",
   reference_samples_color = "cyan", show_labels = FALSE,
@@ -34,7 +34,7 @@ manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe
   log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will generate images for significative probes \n")
 
   study_summary <-   study_summary_get()
-  annotate_position_pivots()
+  anno_annotate_position_pivots()
 
   # ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, tech = tech)
   chart_folder <- dir_check_and_create(ssEnv$result_folderChart, "MARKER_PER_PROBE")

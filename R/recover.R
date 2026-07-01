@@ -15,10 +15,10 @@ recover <- function(result_folder, maxResources = 90,
 
   study_summary <-   study_summary_get()
 
-  create_position_pivots(study_summary,ssEnv$keys_markers_figures)
+  anno_create_position_pivots(study_summary,ssEnv$keys_markers_figures)
   deltaX_get()
   study_summary_total()
-  annotate_position_pivots()
+  anno_annotate_position_pivots()
 
   # Single point of sidecar materialisation (AI-027).
   ensure_sidecars(ssEnv$result_folderData)

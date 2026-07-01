@@ -1,4 +1,4 @@
-# AI-096 Phase 1 (2026-06-09): position_pivot_to_probe returns LazyFrame.
+# AI-096 Phase 1 (2026-06-09): anno_position_pivot_to_probe returns LazyFrame.
 #
 # Contract change: returns polars_lazy_frame (was R data.frame in the
 # legacy implementation). Caller is responsible for any materialization,
@@ -7,7 +7,7 @@
 # materialised 4–5 copies of the input, blowing 80+ GB peak on
 # ~367k × 4k inputs and triggering macOS jetsam OOM-kill silently.
 
-test_that("position_pivot_to_probe accepts a polars LazyFrame and returns a LazyFrame", {
+test_that("anno_position_pivot_to_probe accepts a polars LazyFrame and returns a LazyFrame", {
 
   skip_on_cran()
 
@@ -41,14 +41,14 @@ test_that("position_pivot_to_probe accepts a polars LazyFrame and returns a Lazy
   pivot_lazy <- polars::as_polars_df(pivot_df)$lazy()
   testthat::expect_s3_class(pivot_lazy, "polars_lazy_frame")
 
-  # Stub probe_annotation_build so the test does not require the Bioconductor
+  # Stub anno_probe_annotation_build so the test does not require the Bioconductor
   # annotation package (macOS setup.R skips loading it).
   testthat::local_mocked_bindings(
-    probe_annotation_build = function(tech) anno,
+    anno_probe_annotation_build = function(tech) anno,
     .package = "SEMseeker"
   )
 
-  out <- SEMseeker:::position_pivot_to_probe(pivot_lazy)
+  out <- SEMseeker:::anno_position_pivot_to_probe(pivot_lazy)
 
   # NEW CONTRACT (AI-096): lazy passthrough — return type is LazyFrame.
   testthat::expect_s3_class(out, "polars_lazy_frame")
@@ -72,7 +72,7 @@ test_that("position_pivot_to_probe accepts a polars LazyFrame and returns a Lazy
   testthat::expect_equal(collected[anno$PROBE, "S002"], pivot_df$S002)
 })
 
-test_that("position_pivot_to_probe still accepts an R data.frame input", {
+test_that("anno_position_pivot_to_probe still accepts an R data.frame input", {
 
   skip_on_cran()
 
@@ -100,18 +100,18 @@ test_that("position_pivot_to_probe still accepts an R data.frame input", {
   )
 
   testthat::local_mocked_bindings(
-    probe_annotation_build = function(tech) anno,
+    anno_probe_annotation_build = function(tech) anno,
     .package = "SEMseeker"
   )
 
-  out <- SEMseeker:::position_pivot_to_probe(pivot_df)
+  out <- SEMseeker:::anno_position_pivot_to_probe(pivot_df)
   testthat::expect_s3_class(out, "polars_lazy_frame")
   collected <- as.data.frame(out$collect())
   testthat::expect_setequal(collected$PROBE, anno$PROBE)
   testthat::expect_setequal(setdiff(colnames(collected), "PROBE"), "S001")
 })
 
-test_that("position_pivot_to_probe drops probes flagged FALSE for the tech", {
+test_that("anno_position_pivot_to_probe drops probes flagged FALSE for the tech", {
 
   skip_on_cran()
 
@@ -140,11 +140,11 @@ test_that("position_pivot_to_probe drops probes flagged FALSE for the tech", {
   )
 
   testthat::local_mocked_bindings(
-    probe_annotation_build = function(tech) anno,
+    anno_probe_annotation_build = function(tech) anno,
     .package = "SEMseeker"
   )
 
-  out <- SEMseeker:::position_pivot_to_probe(polars::as_polars_df(pivot_df)$lazy())
+  out <- SEMseeker:::anno_position_pivot_to_probe(polars::as_polars_df(pivot_df)$lazy())
   collected <- as.data.frame(out$collect())
   testthat::expect_setequal(collected$PROBE, anno$PROBE[anno$K850])
   testthat::expect_equal(nrow(collected), 2L)

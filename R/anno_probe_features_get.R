@@ -4,12 +4,12 @@
 #' for the requested area/subarea combination.
 #'
 #' For \strong{Illumina} data (K850/K450/K27), annotations are built from
-#' Bioconductor array annotation packages (see \code{\link{probe_annotation_build}})
+#' Bioconductor array annotation packages (see \code{\link{anno_probe_annotation_build}})
 #' and cached in the session environment.
 #'
 #' For \strong{WGBS} and \strong{LONGREAD} data, coordinates are read directly
 #' from the saved POSITION pivot parquet; semantic areas (GENE_*, ISLAND_*,
-#' CHR_CYTOBAND, DMR_*) are resolved via \code{\link{area_granges_build}} and
+#' CHR_CYTOBAND, DMR_*) are resolved via \code{\link{anno_area_granges_build}} and
 #' \code{GenomicRanges::findOverlaps()}.
 #'
 #' @section PROBE_WHOLE vs POSITION_WHOLE — technology semantics:
@@ -42,17 +42,17 @@
 #' @return A \code{data.frame} with columns \code{PROBE}, \code{CHR},
 #'   \code{START}, \code{END}, and the requested feature column.
 #'
-probe_features_get <- function(area_subarea) {
+anno_probe_features_get <- function(area_subarea) {
 
   ssEnv <- get_session_info()
 
   # Contract: prepare_batch_signal() (fresh path) or get_meth_tech() (resume
-  # path) should set ssEnv$tech before any probe_features_get() call site.
+  # path) should set ssEnv$tech before any anno_probe_features_get() call site.
   # Fallback: read the SIGNAL PROBE pivot and re-derive — kept for tests and
   # legacy callers that bypass prepare_batch_signal(). Loud WARNING so the
   # drift is observable.
   if (is.null(ssEnv$tech) || ssEnv$tech == "") {
-    log_event("WARNING: probe_features_get() called before ssEnv$tech is set. ",
+    log_event("WARNING: anno_probe_features_get() called before ssEnv$tech is set. ",
               "Falling back to lazy detection from SIGNAL PROBE pivot. ",
               "prepare_batch_signal() should run first in the normal pipeline.")
     signal_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
@@ -65,7 +65,7 @@ probe_features_get <- function(area_subarea) {
     }
     ssEnv <- get_meth_tech(signal_data_r)
     if (is.null(ssEnv$tech) || ssEnv$tech == "")
-      stop("probe_features_get: could not determine array technology.")
+      stop("anno_probe_features_get: could not determine array technology.")
   }
 
   if (!grepl("_", area_subarea))
@@ -75,7 +75,7 @@ probe_features_get <- function(area_subarea) {
   # WGBS / LONGREAD path
   # Coordinate-only areas (CHR_WHOLE, PROBE_WHOLE) are handled inline.
   # All semantic areas (GENE_*, ISLAND_*, CHR_CYTOBAND, DMR_*) are built
-  # via area_granges_build() and CpG assignments resolved with findOverlaps().
+  # via anno_area_granges_build() and CpG assignments resolved with findOverlaps().
   # -----------------------------------------------------------------------
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
 
@@ -85,7 +85,7 @@ probe_features_get <- function(area_subarea) {
     sig_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
     if (is.null(sig_pivot_lazy))
       stop("POSITION pivot not found. Ensure signal_save() completed before ",
-           "calling probe_features_get() for area '", area_subarea, "'.")
+           "calling anno_probe_features_get() for area '", area_subarea, "'.")
 
     pos <- as.data.frame(sig_pivot_lazy$collect())[, c("CHR", "START", "END")]
     probe_ids <- paste0(pos$CHR, "_", pos$START)
@@ -108,7 +108,7 @@ probe_features_get <- function(area_subarea) {
       return(probe_features)
     }
 
-    # --- Semantic areas via area_granges_build() + findOverlaps() ---
+    # --- Semantic areas via anno_area_granges_build() + findOverlaps() ---
     for (pkg in c("GenomicRanges", "IRanges", "S4Vectors")) {
       if (!requireNamespace(pkg, quietly = TRUE))
         stop("Package '", pkg, "' is required for WGBS/LONGREAD area analysis.\n",
@@ -122,7 +122,7 @@ probe_features_get <- function(area_subarea) {
     )
 
     # Build area GRanges (cached after first call per session)
-    area_gr <- area_granges_build(area_subarea,
+    area_gr <- anno_area_granges_build(area_subarea,
                                   genome_build = ssEnv$genome_build)
 
     # Assign each CpG to its overlapping area (ignore strand for methylation)
@@ -161,7 +161,7 @@ probe_features_get <- function(area_subarea) {
     stop("Annotation package '", pkg, "' is not installed. ",
          "Install it with: BiocManager::install('", pkg, "')")
   }
-  probe_features <- probe_annotation_build(ssEnv$tech)
+  probe_features <- anno_probe_annotation_build(ssEnv$tech)
 
   # Keep only probes matching the current technology
   probe_features <- probe_features[
@@ -179,10 +179,10 @@ probe_features_get <- function(area_subarea) {
     # Dead code removed (2026-06-10): a stray
     #   signal_data <- signal_data[rownames(signal_data) %in% signal_data$PROBE, ]
     # was sitting here referencing a variable that does not exist in
-    # probe_features_get()'s scope. It never ran when ssEnv$tech was set
+    # anno_probe_features_get()'s scope. It never ran when ssEnv$tech was set
     # by the legacy lazy-detection path (the function returned early via
     # the PROBE / CHR branch), but with the AREA-based call sites added
-    # by annotate_position_pivots() — area_subarea = "GENE_BODY",
+    # by anno_annotate_position_pivots() — area_subarea = "GENE_BODY",
     # "ISLAND_N_SHORE", etc. — the else-branch is now reached and the
     # broken reference halts the run.
   }

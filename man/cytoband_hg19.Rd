@@ -19,7 +19,7 @@ cytoband_hg19
 }
 \description{
 Cytogenetic band coordinates for the hg19 human genome assembly.
-Used by \code{\link{probe_annotation_build}} to assign a \code{CHR_CYTOBAND}
+Used by \code{\link{anno_probe_annotation_build}} to assign a \code{CHR_CYTOBAND}
 label (e.g. \code{"q12.2"}) to each CpG probe based on its chromosomal
 position.  Band boundaries are derived from probe positions in the full
 Illumina EPIC annotation and cover all autosomes and sex chromosomes.

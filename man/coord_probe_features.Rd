@@ -14,5 +14,5 @@ data.frame with columns PROBE, CHR, START, END.
 }
 \description{
 Used inside \code{analyze_batch()} for WGBS/LONGREAD data in place of the
-Bioconductor-annotation-based \code{probe_features_get("PROBE")} call.
+Bioconductor-annotation-based \code{anno_probe_features_get("PROBE")} call.
 }

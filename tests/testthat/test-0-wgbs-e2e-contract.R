@@ -28,10 +28,10 @@ test_that("probe_id_to_coord parses synthetic IDs round-trip with coord_probe_fe
 
 # ---- smart_split is a no-op on coord-encoded AREA names ----------------
 
-test_that(".smart_split_area_name is a no-op on coord-encoded AREA (no slash)", {
+test_that(".anno_smart_split_area_name is a no-op on coord-encoded AREA (no slash)", {
   coord_areas <- c("1_10000", "X_5000", "22_99999999")
   for (a in coord_areas) {
-    expect_equal(SEMseeker:::.smart_split_area_name(a), a,
+    expect_equal(SEMseeker:::.anno_smart_split_area_name(a), a,
                  info = sprintf("coord AREA '%s' must pass through unchanged", a))
   }
 })

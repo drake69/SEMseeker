@@ -1,7 +1,7 @@
 log_event <- function(...)
 {
   # Robustness: log_event must be callable even when no session has been
-  # initialised (e.g. area_granges_build() invoked standalone, outside of a
+  # initialised (e.g. anno_area_granges_build() invoked standalone, outside of a
   # full semseeker() run) AND when an earlier session left a stale
   # session_folder pointing at a tempdir that has since been unlink()-ed
   # (a common pattern in testthat runs). Silently no-op in both cases

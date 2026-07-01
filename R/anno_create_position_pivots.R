@@ -26,7 +26,7 @@
 #'
 #' @keywords internal
 #' @noRd
-create_position_pivots <- function(population, keys) {
+anno_create_position_pivots <- function(population, keys) {
 
   ssEnv <- get_session_info()
 
@@ -76,7 +76,7 @@ create_position_pivots <- function(population, keys) {
     if (length(bed_paths) == 0L) next
 
     log_event("INFO: ", Sys.time(),
-              " create_position_pivots[", marker, "_", figure,
+              " anno_create_position_pivots[", marker, "_", figure,
               "] stream-merging ", length(bed_paths), " bed file(s)")
 
     # One-shot lazy pivot built by polars Rust runtime (no R-side loop).

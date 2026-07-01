@@ -1,8 +1,8 @@
 #' Cross-pipeline annotation concordance report (Illumina manifest vs WGBS)
 #'
-#' Validates \code{\link{area_granges_build}} (the WGBS / long-read annotation
+#' Validates \code{\link{anno_area_granges_build}} (the WGBS / long-read annotation
 #' path) against the Illumina manifest annotation used by
-#' \code{\link{probe_annotation_build}}. The two pipelines are expected to
+#' \code{\link{anno_probe_annotation_build}}. The two pipelines are expected to
 #' assign CpGs to the same semantic areas (\code{GENE_*}, \code{ISLAND_*},
 #' \code{CHR_CYTOBAND}, \code{DMR_*}). This function takes a subset of Illumina
 #' probes of known annotation, runs the WGBS pipeline on the same coordinates,
@@ -48,11 +48,11 @@
 #'   \code{n_label_match_strict}, \code{n_label_match_intersection},
 #'   \code{concordance_rate_strict}, \code{concordance_rate_intersection}.
 #'
-#' @seealso \code{\link{probe_annotation_build}},
-#'   \code{\link{area_granges_build}}.
+#' @seealso \code{\link{anno_probe_annotation_build}},
+#'   \code{\link{anno_area_granges_build}}.
 #'
 #' @keywords internal
-annotation_concordance_report <- function(tech         = "K850",
+anno_concordance_report <- function(tech         = "K850",
                                           n_probes     = 1000L,
                                           genome_build = "hg19",
                                           areas        = NULL,
@@ -61,7 +61,7 @@ annotation_concordance_report <- function(tech         = "K850",
 
   for (pkg in c("GenomicRanges", "IRanges", "S4Vectors"))
     if (!requireNamespace(pkg, quietly = TRUE))
-      stop("annotation_concordance_report(): package '", pkg,
+      stop("anno_concordance_report(): package '", pkg,
            "' is required.")
 
   if (is.null(areas)) {
@@ -76,7 +76,7 @@ annotation_concordance_report <- function(tech         = "K850",
   }
 
   # --- Ground truth: Illumina manifest annotation ------------------------
-  anno <- probe_annotation_build(tech)
+  anno <- anno_probe_annotation_build(tech)
 
   # Bioconductor packages must not call set.seed() in package code (it
   # mutates the user's RNG state); withr::with_seed scopes the seed to
@@ -89,11 +89,11 @@ annotation_concordance_report <- function(tech         = "K850",
   # The CpG GRanges is rebuilt per area because different area_gr builders use
   # different seqname styles ("chr1" vs "1") depending on their data source
   # (AnnotationHub uses "chr1"; bundled cytoband/dmr tables use "1").
-  # .wgbs_labels_for_area() aligns seqnames to match the area's style.
+  # .anno_wgbs_labels_for_area() aligns seqnames to match the area's style.
 
   # --- Per-area comparison -----------------------------------------------
   rows <- lapply(areas, function(area) {
-    .concordance_for_area(area, subset_df, genome_build)
+    .anno_concordance_for_area(area, subset_df, genome_build)
   })
   report <- do.call(rbind, rows)
 
@@ -109,9 +109,9 @@ annotation_concordance_report <- function(tech         = "K850",
 # =========================================================================
 
 #' @keywords internal
-.concordance_for_area <- function(area_subarea, subset_df, genome_build) {
+.anno_concordance_for_area <- function(area_subarea, subset_df, genome_build) {
 
-  category <- .area_category(area_subarea)
+  category <- .anno_area_category(area_subarea)
 
   # --- Illumina labels (from manifest column) ---------------------------
   illumina_raw <- if (area_subarea %in% colnames(subset_df))
@@ -119,10 +119,10 @@ annotation_concordance_report <- function(tech         = "K850",
   else
     rep(NA_character_, nrow(subset_df))
 
-  illumina_sets <- lapply(illumina_raw, .normalize_label_set)
+  illumina_sets <- lapply(illumina_raw, .anno_normalize_label_set)
 
-  # --- WGBS labels (via area_granges_build + findOverlaps) --------------
-  wgbs_sets <- .wgbs_labels_for_area(area_subarea, subset_df, genome_build)
+  # --- WGBS labels (via anno_area_granges_build + findOverlaps) --------------
+  wgbs_sets <- .anno_wgbs_labels_for_area(area_subarea, subset_df, genome_build)
 
   # --- Per-CpG comparison -----------------------------------------------
   n       <- length(illumina_sets)
@@ -163,10 +163,10 @@ annotation_concordance_report <- function(tech         = "K850",
 }
 
 #' @keywords internal
-.wgbs_labels_for_area <- function(area_subarea, subset_df, genome_build) {
+.anno_wgbs_labels_for_area <- function(area_subarea, subset_df, genome_build) {
 
   area_gr <- tryCatch(
-    area_granges_build(area_subarea, genome_build = genome_build),
+    anno_area_granges_build(area_subarea, genome_build = genome_build),
     error = function(e) NULL
   )
   if (is.null(area_gr))
@@ -195,14 +195,14 @@ annotation_concordance_report <- function(tech         = "K850",
     by_q <- split(labels[sh], qh)
     for (q in names(by_q)) {
       qi <- as.integer(q)
-      out[[qi]] <- .normalize_label_set(by_q[[q]])
+      out[[qi]] <- .anno_normalize_label_set(by_q[[q]])
     }
   }
   out
 }
 
 #' @keywords internal
-.normalize_label_set <- function(x) {
+.anno_normalize_label_set <- function(x) {
   if (length(x) == 0L) return(character(0))
   # Accept vector of strings, possibly `;`-delimited
   x <- as.character(x)
@@ -218,7 +218,7 @@ annotation_concordance_report <- function(tech         = "K850",
 }
 
 #' @keywords internal
-.area_category <- function(area_subarea) {
+.anno_area_category <- function(area_subarea) {
   parts <- strsplit(area_subarea, "_", fixed = TRUE)[[1]]
   area  <- parts[1]
   switch(area,

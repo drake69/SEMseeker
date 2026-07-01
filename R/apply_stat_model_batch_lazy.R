@@ -216,7 +216,7 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
       key               = key,
       family_test       = family_test,
       probe_features    = if (!tech_is_longread)
-                            tryCatch(probe_features_get("PROBE"),
+                            tryCatch(anno_probe_features_get("PROBE"),
                                       error = function(e) NULL) else NULL,
       tech_is_longread  = tech_is_longread
     ),

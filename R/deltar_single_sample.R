@@ -48,7 +48,7 @@ deltar_single_sample <- function(values, thresholds, sample_detail) {
     DELTA = (joined$VALUE - high_thresholds) / dividend,
     stringsAsFactors = FALSE
   )
-  deltar_hyper <- sort_by_chr_and_start(deltar_hyper)
+  deltar_hyper <- anno_sort_by_chr_and_start(deltar_hyper)
   deltar_hyper <- subset(deltar_hyper, deltar_hyper$DELTA > 0)[, c("CHR", "START", "END", "DELTA")]
 
   folder_to_save <- dir_check_and_create(ssEnv$result_folderData,
@@ -68,7 +68,7 @@ deltar_single_sample <- function(values, thresholds, sample_detail) {
     DELTA = (low_thresholds - joined$VALUE) / dividend,
     stringsAsFactors = FALSE
   )
-  deltar_hypo <- sort_by_chr_and_start(deltar_hypo)
+  deltar_hypo <- anno_sort_by_chr_and_start(deltar_hypo)
   deltar_hypo <- subset(deltar_hypo, deltar_hypo$DELTA > 0)[, c("CHR", "START", "END", "DELTA")]
 
   folder_to_save <- dir_check_and_create(ssEnv$result_folderData,

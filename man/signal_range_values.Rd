@@ -11,7 +11,7 @@ signal_range_values(populationMatrix, batch_id, probe_features)
 
 \item{batch_id}{character string identifying the batch; used to name the cached parquet output file}
 
-\item{probe_features}{data.frame of probe annotations (from probe_features_get) with columns PROBE, CHR, START, END}
+\item{probe_features}{data.frame of probe annotations (from anno_probe_features_get) with columns PROBE, CHR, START, END}
 }
 \value{
 data.frame of per-probe thresholds with columns signal_inferior_thresholds,

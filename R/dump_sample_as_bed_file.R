@@ -13,7 +13,7 @@ dump_sample_as_bed_file <- function(data_to_dump, fileName) {
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " dump_sample_as_bed_file:", ssEnv$result_folderData)
 
   if (!plyr::empty(data_to_dump)) {
-    data_to_dump[, "CHR"] <- normalize_chr(data_to_dump[, "CHR"], "output")
+    data_to_dump[, "CHR"] <- anno_normalize_chr(data_to_dump[, "CHR"], "output")
   }
 
   # bed coordinate must start from zero!

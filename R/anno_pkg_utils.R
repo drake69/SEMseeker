@@ -102,7 +102,7 @@
 #' @return Named integer vector of overlap counts, or \code{""} if no packages
 #'   are available.
 #' @keywords internal
-.detect_tech_from_anno <- function(probe_ids) {
+.anno_detect_tech_from_anno <- function(probe_ids) {
 
   counts <- integer(0)
 

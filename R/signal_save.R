@@ -3,7 +3,7 @@ signal_save <- function(signal_data, sample_sheet, batch_id,
 {
   ssEnv <- get_session_info()
   # Resolve probe_features in priority order: explicit arg > attribute
-  # attached by prepare_batch_signal() > legacy probe_features_get() refetch.
+  # attached by prepare_batch_signal() > legacy anno_probe_features_get() refetch.
   # In the normal pipeline analyze_batch() routes signal_data through
   # prepare_batch_signal() so attr(., "probe_features") is set and the
   # third branch is never taken.
@@ -83,7 +83,7 @@ signal_save <- function(signal_data, sample_sheet, batch_id,
   # (probe_features è già una data.frame piccola in RAM) e iteriamo ognuna come
   # query lazy indipendente filtrata sul subset di PROBE corrispondente.
   pf <- if (!is.null(probe_features)) probe_features
-        else probe_features_get("PROBE")  # legacy fallback (test path)
+        else anno_probe_features_get("PROBE")  # legacy fallback (test path)
   # Slim pf to the 4 join-relevant cols. probe_features carries the full
   # annotation set (GENE_*, ISLAND_*, DMR_*, CHR_CYTOBAND, CHR_WHOLE,
   # PROBE_WHOLE) for downstream association lookup, but those columns

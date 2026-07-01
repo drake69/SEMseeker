@@ -33,7 +33,7 @@ deltaX_get_legacy <- function()
 
   variables_to_export <- c("ssEnv", "dir_check_and_create", "subarea",
     "progress_bar","progression_index", "progression", "progressor_uuid",
-    "owner_session_uuid", "trace","probe_features_get", "localKeys",
+    "owner_session_uuid", "trace","anno_probe_features_get", "localKeys",
     "file_path_build","%>%","get_session_info","log_event")
   sample_sheet_res <- data.frame()
   keys <- subset(keys,!is.na(SOURCE))

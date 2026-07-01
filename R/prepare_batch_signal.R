@@ -75,7 +75,7 @@ prepare_batch_signal <- function(signal_data,
   if (tech %in% c("WGBS", "LONGREAD")) {
     probe_features <- coord_probe_features(rownames(signal_data))
   } else {
-    probe_features <- probe_annotation_build(tech)
+    probe_features <- anno_probe_annotation_build(tech)
     # Drop the tech-specific TRUE/FALSE flag column once it's served its
     # purpose; downstream consumers only need the coordinate / annotation
     # columns.
@@ -85,7 +85,7 @@ prepare_batch_signal <- function(signal_data,
   }
 
   # ---- 3. Collapse duplicate PROBE rows --------------------------------
-  # probe_annotation_build() does a left-join with dmr_annotation, and
+  # anno_probe_annotation_build() does a left-join with dmr_annotation, and
   # dmr_annotation has ~744 duplicate PROBE entries (one CpG can belong
   # to multiple DMRs). Without collapsing, the merge inflates
   # probe_features and the downstream `nrow(signal_data) ==

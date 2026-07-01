@@ -6,7 +6,7 @@
 #' @return sorted dataframe
 
 #'
-sort_by_chr_and_start <- function(dataframe) {
+anno_sort_by_chr_and_start <- function(dataframe) {
 
   if (nrow(dataframe) == 0) {
     return(dataframe)

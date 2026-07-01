@@ -55,8 +55,8 @@ reference:
   - title: "Data & annotation"
     desc: "Pivot tables, position annotations, signal helpers"
     contents:
-      - create_position_pivots
-      - annotate_position_pivots
+      - anno_create_position_pivots
+      - anno_annotate_position_pivots
       - data_preparation
       - build_data_set_from_geo
   - title: "Datasets"

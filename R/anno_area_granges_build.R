@@ -21,14 +21,14 @@
 # Cross-study comparisons require the same reference genome (ssEnv$genome_build).
 #
 # This function builds GRanges for all areas EXCEPT PROBE/POSITION_WHOLE,
-# which are handled inline in probe_features_get() without annotation.
+# which are handled inline in anno_probe_features_get() without annotation.
 #
 # Supported area/subarea values:
 #   GENE:    TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, WHOLE
 #   ISLAND:  WHOLE, ISLAND, N_SHORE, S_SHORE, N_SHELF, S_SHELF, OPENSEA
 #   CHR:     WHOLE, CYTOBAND
 #   DMR:     WHOLE, DMR
-#   PROBE:   WHOLE  (coordinate-only, handled by probe_features_get())
+#   PROBE:   WHOLE  (coordinate-only, handled by anno_probe_features_get())
 #
 # All returned GRanges carry mcols()$label — the subarea identifier used
 # downstream to group CpGs (gene symbol, island coordinate, cytoband name …).
@@ -48,7 +48,7 @@
   mm10 = "TxDb.Mmusculus.UCSC.mm10.knownGene"
 )
 
-.get_txdb <- function(genome_build) {
+.anno_get_txdb <- function(genome_build) {
   pkg <- .TXDB_PKGS[[genome_build]]
   if (is.null(pkg))
     stop("No TxDb package defined for genome_build = '", genome_build, "'. ",
@@ -61,7 +61,7 @@
 
 # Map Entrez IDs → gene symbols using org.Hs.eg.db (optional).
 # Falls back to Entrez ID strings if the package is not available.
-.entrez_to_symbol <- function(entrez_ids) {
+.anno_entrez_to_symbol <- function(entrez_ids) {
   if (requireNamespace("org.Hs.eg.db", quietly = TRUE) &&
       requireNamespace("AnnotationDbi", quietly = TRUE)) {
     syms <- suppressMessages(
@@ -85,7 +85,7 @@
 # CpG island helper (AnnotationHub + disk cache)
 # ---------------------------------------------------------------------------
 
-.get_cpg_islands <- function(genome_build) {
+.anno_get_cpg_islands <- function(genome_build) {
   if (!requireNamespace("AnnotationHub", quietly = TRUE))
     stop("AnnotationHub is required for island areas.\n",
          "Install with: BiocManager::install('AnnotationHub')")
@@ -123,7 +123,7 @@
 # Individual area builders — each returns a GRanges with mcols()$label
 # ---------------------------------------------------------------------------
 
-.build_gene_area <- function(subarea, txdb) {
+.anno_build_gene_area <- function(subarea, txdb) {
   # TSS = single-base GRanges at each gene's transcription start (strand-aware)
   all_genes <- GenomicFeatures::genes(txdb, single.strand.genes.only = FALSE)
   # genes() can return a GRangesList for multi-strand genes; keep only GRanges
@@ -137,7 +137,7 @@
     names(all_genes)
   else
     GenomicRanges::mcols(all_genes)$gene_id
-  symbols <- .entrez_to_symbol(gene_ids)
+  symbols <- .anno_entrez_to_symbol(gene_ids)
 
   tss <- GenomicRanges::resize(all_genes, 1L, fix = "start")
 
@@ -213,7 +213,7 @@
     # 1STEXON, 5UTR, 3UTR, EXONBND: label by parent gene via names
     gene_ids <- names(gr)
     if (!is.null(gene_ids) && length(gene_ids) == length(gr)) {
-      syms <- .entrez_to_symbol(gene_ids)
+      syms <- .anno_entrez_to_symbol(gene_ids)
       GenomicRanges::mcols(gr)$label <- syms
     } else {
       GenomicRanges::mcols(gr)$label <- paste0("GENE_", subarea, "_",
@@ -223,16 +223,16 @@
   gr
 }
 
-.build_island_area <- function(subarea, genome_build, islands = NULL) {
+.anno_build_island_area <- function(subarea, genome_build, islands = NULL) {
   # `islands` is injectable (a GRanges of island cores) so the WHOLE/ISLAND/
   # OPENSEA/shore/shelf logic can be unit-tested without AnnotationHub.
-  if (is.null(islands)) islands <- .get_cpg_islands(genome_build)
+  if (is.null(islands)) islands <- .anno_get_cpg_islands(genome_build)
 
   # OPENSEA: inter-neighbourhood gaps, self-labelled by coordinate. Returned
   # early because its ranges (and count) do not correspond to island cores.
   # See island_opensea.R for the shared semantics with the Illumina backend.
   if (subarea == "OPENSEA")
-    return(.opensea_gaps(islands,
+    return(.anno_opensea_gaps(islands,
                          chrom_ends = as.list(GenomeInfoDb::seqlengths(islands))))
 
   # Unique island label: "seqname:start-end"
@@ -262,7 +262,7 @@
   gr
 }
 
-.build_chr_area <- function(subarea, genome_build, txdb) {
+.anno_build_chr_area <- function(subarea, genome_build, txdb) {
   if (subarea == "WHOLE") {
     si      <- GenomeInfoDb::seqinfo(txdb)
     lens    <- GenomeInfoDb::seqlengths(si)
@@ -302,7 +302,7 @@
   stop("Unknown CHR subarea: '", subarea, "'. Supported: WHOLE, CYTOBAND")
 }
 
-.build_dmr_area <- function(subarea) {
+.anno_build_dmr_area <- function(subarea) {
   # dmr_annotation maps Illumina probe IDs to DMR names (PROBE, DMR_WHOLE, DMR_DMR).
   # To get genomic coordinates we join with the K850 "Locations" table.
   dmr_obj <- tryCatch(
@@ -385,7 +385,7 @@
 #'
 #' @section PROBE_WHOLE semantics by technology:
 #' \code{PROBE_WHOLE} is \strong{not} handled by this function.  It is resolved
-#' inline by \code{\link{probe_features_get}}:
+#' inline by \code{\link{anno_probe_features_get}}:
 #' \itemize{
 #'   \item \strong{Illumina}: one row per array probe (manufacturer ID,
 #'     e.g. \code{cg00000029}).  Probe identity is meaningful and cross-study
@@ -408,7 +408,7 @@
 #' }
 #'
 #' @importFrom GenomicRanges GRanges
-area_granges_build <- function(area_subarea, genome_build = NULL) {
+anno_area_granges_build <- function(area_subarea, genome_build = NULL) {
 
   if (is.null(genome_build)) {
     ssEnv        <- tryCatch(get_session_info(), error = function(e) list())
@@ -425,7 +425,7 @@ area_granges_build <- function(area_subarea, genome_build = NULL) {
   # Check for GenomicRanges (needed for all paths)
   for (pkg in c("GenomicRanges", "IRanges", "S4Vectors")) {
     if (!requireNamespace(pkg, quietly = TRUE))
-      stop("Package '", pkg, "' is required for area_granges_build().\n",
+      stop("Package '", pkg, "' is required for anno_area_granges_build().\n",
            "Install with: BiocManager::install(c('GenomicRanges','IRanges','S4Vectors'))")
   }
 
@@ -438,18 +438,18 @@ area_granges_build <- function(area_subarea, genome_build = NULL) {
       if (!requireNamespace("GenomicFeatures", quietly = TRUE))
         stop("GenomicFeatures required for GENE areas.\n",
              "Install: BiocManager::install('GenomicFeatures')")
-      txdb <- .get_txdb(genome_build)
-      .build_gene_area(subarea, txdb)
+      txdb <- .anno_get_txdb(genome_build)
+      .anno_build_gene_area(subarea, txdb)
     },
     ISLAND = {
-      .build_island_area(subarea, genome_build)
+      .anno_build_island_area(subarea, genome_build)
     },
     CHR = {
-      txdb <- .get_txdb(genome_build)
-      .build_chr_area(subarea, genome_build, txdb)
+      txdb <- .anno_get_txdb(genome_build)
+      .anno_build_chr_area(subarea, genome_build, txdb)
     },
     DMR = {
-      .build_dmr_area(subarea)
+      .anno_build_dmr_area(subarea)
     },
     stop("Unknown area '", area, "' in area_subarea = '", area_subarea, "'.\n",
          "Supported areas: GENE, ISLAND, CHR, DMR")

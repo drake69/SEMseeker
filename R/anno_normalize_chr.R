@@ -14,22 +14,22 @@
 #' @return Character vector of normalized chromosome names.
 #'
 #' @examples
-#' normalize_chr(c("chr1", "chrX", "chr22"), "internal")
+#' anno_normalize_chr(c("chr1", "chrX", "chr22"), "internal")
 #' # => c("1", "X", "22")
 #'
-#' normalize_chr(c("1", "X", "22"), "output")
+#' anno_normalize_chr(c("1", "X", "22"), "output")
 #' # => c("chr1", "chrX", "chr22")
 #'
 #' # Idempotent:
-#' normalize_chr(c("1", "X"), "internal")
+#' anno_normalize_chr(c("1", "X"), "internal")
 #' # => c("1", "X")  — already bare, unchanged
 #'
-#' normalize_chr(c("chr1", "chrX"), "output")
+#' anno_normalize_chr(c("chr1", "chrX"), "output")
 #' # => c("chr1", "chrX")  — already prefixed, unchanged
 #'
 #' @keywords internal
 #' @noRd
-normalize_chr <- function(x, direction = c("internal", "output")) {
+anno_normalize_chr <- function(x, direction = c("internal", "output")) {
   direction <- match.arg(direction)
   x <- as.character(x)
   if (length(x) == 0L) return(character(0))

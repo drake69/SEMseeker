@@ -29,7 +29,7 @@ test_that("deltaX_get", {
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Case",],
     probe_features = probe_features
   )
-  SEMseeker:::create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Case",],keys)
+  SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Case",],keys)
 
   sp <- SEMseeker:::analyze_population(signal_data=signal_data,
     signal_thresholds = signal_thresholds,
@@ -37,7 +37,7 @@ test_that("deltaX_get", {
     probe_features = probe_features
   )
 
-  SEMseeker:::create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
+  SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
 
   # deltaX_get() calls study_summary_get() which reads the sample sheet CSV.
   # analyze_population is called directly here (bypassing analyze_batch which writes it),

@@ -1,7 +1,7 @@
 ## Concordance benchmark: Illumina manifest vs WGBS pipeline (C-04 validation).
 ##
 ## Strategy: take a subset of Illumina K850 probes (ground truth annotation
-## from the manifest), run the WGBS pipeline (area_granges_build() +
+## from the manifest), run the WGBS pipeline (anno_area_granges_build() +
 ## findOverlaps) on the same coordinates, and check that the two agree per
 ## area with sensible thresholds.
 ##
@@ -12,7 +12,7 @@
 ##     Label encodings differ between manifest (Islands_Name, UCSC RefGene)
 ##     and the WGBS path (AnnotationHub coords, TxDb knownGene symbols), so a
 ##     rigid string equality is not meaningful here. Instead the exploratory
-##     test below invokes annotation_concordance_report() over all areas
+##     test below invokes anno_concordance_report() over all areas
 ##     with assertions only on the structure of the report — the CSV it
 ##     produces is intended for paper figure `fig:illumina_wgbs_concordance`,
 ##     where human judgement can compare strict vs intersection rates per
@@ -24,7 +24,7 @@
 .req_illumina <- "IlluminaHumanMethylationEPICanno.ilm10b4.hg19"
 
 # -------------------------------------------------------------------------
-# Per-test setup/teardown: probe_annotation_build() requires an initialised
+# Per-test setup/teardown: anno_probe_annotation_build() requires an initialised
 # session (ssEnv). Wrap each call in a temp init_env()/close_env() scope.
 # -------------------------------------------------------------------------
 .with_session <- function(expr, envir = parent.frame()) {
@@ -54,7 +54,7 @@ test_that("annotation_concordance: CHR_CYTOBAND is 100% identical (bundled)", {
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
 
-  report <- .with_session(SEMseeker:::annotation_concordance_report(
+  report <- .with_session(SEMseeker:::anno_concordance_report(
     tech         = "K850",
     n_probes     = 500L,
     genome_build = "hg19",
@@ -73,7 +73,7 @@ test_that("annotation_concordance: DMR_WHOLE is 100% identical (bundled)", {
   skip_if_not_installed(.req_illumina)
   skip_if_not_installed("GenomicRanges")
 
-  report <- .with_session(SEMseeker:::annotation_concordance_report(
+  report <- .with_session(SEMseeker:::anno_concordance_report(
     tech         = "K850",
     n_probes     = 500L,
     genome_build = "hg19",
@@ -91,7 +91,7 @@ test_that("annotation_concordance: DMR_DMR is 100% identical (bundled)", {
   skip_if_not_installed(.req_illumina)
   skip_if_not_installed("GenomicRanges")
 
-  report <- .with_session(SEMseeker:::annotation_concordance_report(
+  report <- .with_session(SEMseeker:::anno_concordance_report(
     tech         = "K850",
     n_probes     = 500L,
     genome_build = "hg19",
@@ -107,7 +107,7 @@ test_that("annotation_concordance: DMR_DMR is 100% identical (bundled)", {
 # No assertion on rate values for txdb/annotationhub categories.
 # =========================================================================
 
-test_that("annotation_concordance_report returns correct structure", {
+test_that("anno_concordance_report returns correct structure", {
   skip_on_cran()
   # Illumina anno -> minfi -> GEOquery -> tcltk segfault on R 4.6 arm64 macOS
   skip_on_os("mac")
@@ -115,7 +115,7 @@ test_that("annotation_concordance_report returns correct structure", {
   skip_if_not_installed("GenomicRanges")
   skip_if_not_installed("TxDb.Hsapiens.UCSC.hg19.knownGene")
 
-  report <- .with_session(SEMseeker:::annotation_concordance_report(
+  report <- .with_session(SEMseeker:::anno_concordance_report(
     tech         = "K850",
     n_probes     = 100L,
     genome_build = "hg19",

@@ -43,10 +43,10 @@ analyze_batch <- function(signal_data, sample_sheet)
     # RESUME PATH — lazy passthrough
     # ----------------------------------------------------------------
     # AI-061+ (2026-06-09): extract schema + row count from the RAW
-    # POSITION pivot (signal_pivot) BEFORE the position_pivot_to_probe
+    # POSITION pivot (signal_pivot) BEFORE the anno_position_pivot_to_probe
     # join. Reason: signal_pivot is a direct scan_parquet LazyFrame, so
     # collect_schema() and select(pl$len())$collect() resolve from the
-    # parquet footer (O(1) metadata read). After position_pivot_to_probe
+    # parquet footer (O(1) metadata read). After anno_position_pivot_to_probe
     # builds the join LazyFrame, those same calls FORCE the join to
     # execute — Polars cannot infer the post-join schema/count without
     # running the join, which on ewas-scale (367k × 4014 cols) allocates
@@ -64,16 +64,16 @@ analyze_batch <- function(signal_data, sample_sheet)
     sample_cols <- setdiff(schema_cols_position,
                            c("CHR", "START", "END", "PROBE"))
 
-    # position_pivot_to_probe returns a LazyFrame post AI-096; the PROBE
+    # anno_position_pivot_to_probe returns a LazyFrame post AI-096; the PROBE
     # column is the probe identifier, sample columns follow.
     if ("CHR" %in% schema_cols_position) {
-      signal_lazy <- position_pivot_to_probe(signal_pivot)
+      signal_lazy <- anno_position_pivot_to_probe(signal_pivot)
     } else {
       signal_lazy <- signal_pivot
     }
     rm(signal_pivot)
 
-    # If position_pivot_to_probe (legacy or another caller) returned a
+    # If anno_position_pivot_to_probe (legacy or another caller) returned a
     # DataFrame instead of LazyFrame, coerce.
     if (inherits(signal_lazy, "polars_data_frame")) {
       signal_lazy <- signal_lazy$lazy()
@@ -120,16 +120,16 @@ analyze_batch <- function(signal_data, sample_sheet)
     if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
       probe_features <- coord_probe_features(probe_ids_vec)
     } else {
-      probe_features <- probe_features_get("PROBE")
+      probe_features <- anno_probe_features_get("PROBE")
       log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
-                " post-probe_features_get mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
+                " post-anno_probe_features_get mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
                 " n_rows=", nrow(probe_features))
       probe_features <- probe_features[probe_features$PROBE %in% probe_ids_vec, ]
     }
     log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
               " post-probe_features_filter mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
               " n_rows=", nrow(probe_features))
-    # NO sort_by_chr_and_start — sort gate is signal_save (already written).
+    # NO anno_sort_by_chr_and_start — sort gate is signal_save (already written).
     # NO signal_data row reorder — pivot rows are already canonical.
 
     # sample_group_check expects something with colnames(signal_data) →

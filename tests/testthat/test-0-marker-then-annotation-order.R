@@ -1,13 +1,13 @@
 # Meta-test: genomic annotation must run AFTER derived-marker computation.
 #
 # Invariant (richiesto esplicitamente): le annotazioni genomiche (Body, TSS,
-# Island shores/shelves, ...) prodotte da annotate_position_pivots() devono
+# Island shores/shelves, ...) prodotte da anno_annotate_position_pivots() devono
 # essere SEMPRE successive al calcolo dei marker derivati DELTAQ/DELTARQ/
 # DELTAP/DELTARP fatto da deltaX_get(). Inoltre, dove i POSITION pivot di base
-# vengono materializzati con create_position_pivots(), quella chiamata deve
+# vengono materializzati con anno_create_position_pivots(), quella chiamata deve
 # precedere deltaX_get() (deltaX_get legge i pivot DELTAS/DELTAR base).
 #
-# annotate_position_pivots() NON ricalcola i marker: legge il POSITION/WHOLE
+# anno_annotate_position_pivots() NON ricalcola i marker: legge il POSITION/WHOLE
 # pivot di ciascun marker (inclusi i derivati) e lo proietta su AREA/SUBAREA.
 # Se qualcuno invertisse l'ordine, le annotazioni dei marker derivati
 # leggerebbero pivot inesistenti o stantii. Questo test blocca l'inversione.
@@ -49,7 +49,7 @@
   first
 }
 
-test_that("deltaX_get() precedes annotate_position_pivots() in every caller", {
+test_that("deltaX_get() precedes anno_annotate_position_pivots() in every caller", {
   callers <- c("semseeker_core", "recover", "association_analysis")
 
   for (fun_name in callers) {
@@ -61,20 +61,20 @@ test_that("deltaX_get() precedes annotate_position_pivots() in every caller", {
 
     ord <- .first_call_orders(
       body(fn),
-      c("create_position_pivots", "deltaX_get", "annotate_position_pivots")
+      c("anno_create_position_pivots", "deltaX_get", "anno_annotate_position_pivots")
     )
 
-    # deltaX_get() and annotate_position_pivots() must BOTH appear and be ordered.
+    # deltaX_get() and anno_annotate_position_pivots() must BOTH appear and be ordered.
     expect_false(is.na(ord[["deltaX_get"]]),
       info = paste(fun_name, "must call deltaX_get()"))
-    expect_false(is.na(ord[["annotate_position_pivots"]]),
-      info = paste(fun_name, "must call annotate_position_pivots()"))
-    expect_lt(ord[["deltaX_get"]], ord[["annotate_position_pivots"]])
+    expect_false(is.na(ord[["anno_annotate_position_pivots"]]),
+      info = paste(fun_name, "must call anno_annotate_position_pivots()"))
+    expect_lt(ord[["deltaX_get"]], ord[["anno_annotate_position_pivots"]])
 
-    # Where create_position_pivots() is present, it must precede deltaX_get()
+    # Where anno_create_position_pivots() is present, it must precede deltaX_get()
     # (deltaX_get reads the base DELTAS/DELTAR POSITION pivots it writes).
-    if (!is.na(ord[["create_position_pivots"]])) {
-      expect_lt(ord[["create_position_pivots"]], ord[["deltaX_get"]])
+    if (!is.na(ord[["anno_create_position_pivots"]])) {
+      expect_lt(ord[["anno_create_position_pivots"]], ord[["deltaX_get"]])
     }
   }
 })

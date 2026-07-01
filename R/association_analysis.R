@@ -79,7 +79,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
   localKeys <- ssEnv$keys_markers_figures
 
   deltaX_get()
-  annotate_position_pivots()
+  anno_annotate_position_pivots()
 
   inference_details <- validate_inference_schema(unique(inference_details))
 

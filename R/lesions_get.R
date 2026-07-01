@@ -119,7 +119,7 @@ lesions_get <- function(grouping_column, mutation_annotated_sorted)
 
   lesionWeighted <- data.frame(as.data.frame(mutationAnnotatedSortedLocal), "LESIONS" = lesionWeighted)
 
-  lesionWeighted <- sort_by_chr_and_start(lesionWeighted)
+  lesionWeighted <- anno_sort_by_chr_and_start(lesionWeighted)
   lesionWeighted <- subset(lesionWeighted, lesionWeighted$LESIONS == TRUE)[, c("CHR", "START", "END")]
 
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Got lesions for sample !")

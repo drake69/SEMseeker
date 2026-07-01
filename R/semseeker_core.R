@@ -46,13 +46,13 @@ semseeker_core <- function(sample_sheet,
     sample_sheet_local$Sample_ID <- name_cleaning(sample_sheet_local$Sample_ID)
     utils::write.csv2(sample_sheet_local, file = file_path_build(ssEnv$result_folderData, paste0(batch_id,"_sample_sheet_original"),"csv",FALSE))
     analyze_batch(source_data_get(signal_data[[batch_id]]), sample_sheet_local)
-    create_position_pivots(sample_sheet_local,ssEnv$keys_markers_figures)
+    anno_create_position_pivots(sample_sheet_local,ssEnv$keys_markers_figures)
     log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), "Batch Executed in:", difftime(time1 = Sys.time(), time2= start_time,units = "mins") , " minutes.")
   }
 
   deltaX_get()
   study_summary_total()
-  annotate_position_pivots()
+  anno_annotate_position_pivots()
 
   # Single point of sidecar materialisation (AI-027).
   ensure_sidecars(ssEnv$result_folderData)
