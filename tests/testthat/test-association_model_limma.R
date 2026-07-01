@@ -46,7 +46,7 @@ test_that("limma_<degree> is accepted, limma_<degree>_<partition> is accepted, m
   formula_obj <- Y ~ IV
 
   # Valid: limma_2
-  res2 <- SEMseeker:::association_model_limma(
+  res2 <- SEMseeker:::assoc_model_limma(
     "limma_2", df, formula_obj,
     transformation_y = "", plot = FALSE,
     samples_sql_condition = "", key = key)
@@ -57,7 +57,7 @@ test_that("limma_<degree> is accepted, limma_<degree>_<partition> is accepted, m
   testthat::expect_equal(res2$r_model, "limma::lmFit+eBayes")
 
   # Valid with partition: limma_2_1
-  res2p <- SEMseeker:::association_model_limma(
+  res2p <- SEMseeker:::assoc_model_limma(
     "limma_2_1", df, formula_obj,
     transformation_y = "", plot = FALSE,
     samples_sql_condition = "", key = key)
@@ -65,14 +65,14 @@ test_that("limma_<degree> is accepted, limma_<degree>_<partition> is accepted, m
   testthat::expect_equal(res2p$PL_PERC, 1)
 
   # Malformed: empty result data.frame (logs ERROR, does not throw)
-  res_bad <- SEMseeker:::association_model_limma(
+  res_bad <- SEMseeker:::assoc_model_limma(
     "limma", df, formula_obj,
     transformation_y = "", plot = FALSE,
     samples_sql_condition = "", key = key)
   testthat::expect_equal(nrow(res_bad), 0L)
 
   # Malformed: non-numeric degree
-  res_bad2 <- SEMseeker:::association_model_limma(
+  res_bad2 <- SEMseeker:::assoc_model_limma(
     "limma_abc", df, formula_obj,
     transformation_y = "", plot = FALSE,
     samples_sql_condition = "", key = key)
@@ -82,21 +82,21 @@ test_that("limma_<degree> is accepted, limma_<degree>_<partition> is accepted, m
 
 # (2) Dispatcher guard (AI-038 dispatch=guard pattern) ----------------
 
-test_that("execute_model rejects family_test='limma_2' with an install hint when limma is missing", {
+test_that("assoc_execute_model rejects family_test='limma_2' with an install hint when limma is missing", {
   # We can't reliably uninstall limma in CI to assert this end-to-end.
   # Instead, exercise the requireNamespace path by rebinding it inside
   # the SEMseeker namespace for the duration of this test.
   #
-  # We previously used mockery::stub(where = SEMseeker:::execute_model, ...)
+  # We previously used mockery::stub(where = SEMseeker:::assoc_execute_model, ...)
   # but mockery operates on a *copy* of the function value and does not
-  # rewrite the actual namespace binding execute_model resolves at call
+  # rewrite the actual namespace binding assoc_execute_model resolves at call
   # time — so the stub silently never fired and the test passed at home
   # but failed under CI's --as-cran path. testthat::local_mocked_bindings
   # (3rd edition) edits the live namespace and is undone on exit.
   # requireNamespace isn't imported into SEMseeker's namespace (it's a
   # base function), so .package = "SEMseeker" can't find a binding.
   # Instead override the binding inside base for the duration of the
-  # call. SEMseeker:::execute_model resolves requireNamespace from base
+  # call. SEMseeker:::assoc_execute_model resolves requireNamespace from base
   # at call time, so this rewrites what it actually sees.
   testthat::local_mocked_bindings(
     requireNamespace = function(package, ...) {
@@ -109,7 +109,7 @@ test_that("execute_model rejects family_test='limma_2' with an install hint when
   df <- .sim_one_area()
   key <- .fake_key()
   testthat::expect_error(
-    SEMseeker:::execute_model(
+    SEMseeker:::assoc_execute_model(
       family_test = "limma_2",
       tempDataFrame = df,
       sig.formula   = Y ~ IV,
@@ -130,7 +130,7 @@ test_that("limma_2 per-area p-values agree with stats::lm on simulated data", {
   key <- .fake_key()
 
   # limma path
-  res_l <- SEMseeker:::association_model_limma(
+  res_l <- SEMseeker:::assoc_model_limma(
     "limma_2", df, Y ~ IV,
     transformation_y = "", plot = FALSE,
     samples_sql_condition = "", key = key)

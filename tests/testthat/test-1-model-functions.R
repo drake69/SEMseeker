@@ -2,11 +2,11 @@
 ## Session-based tests for model functions that require an active SEMseeker session.
 ##
 ## Covered:
-##   quantreg_model          — quantile regression (lqmm), tau in result
-##   mean_permutation        — CPU permutation test, p-value in result
-##   test_model_paired       — wilcoxon.paired branch
-##   covariates_model        — no-op pass-through (no scaling, no PCA, no dummies)
-##   association_model_polynomial — polynomial lm, degree in result  [requires caret]
+##   assoc_quantreg_model          — quantile regression (lqmm), tau in result
+##   assoc_mean_permutation        — CPU permutation test, p-value in result
+##   assoc_test_model_paired       — wilcoxon.paired branch
+##   assoc_covariates_model        — no-op pass-through (no scaling, no PCA, no dummies)
+##   assoc_model_polynomial — polynomial lm, degree in result  [requires caret]
 ##
 ## All tests use separate entries from tempFolders (indices 20–30) to avoid
 ## collisions with other test files.
@@ -28,10 +28,10 @@
 }
 
 # ---------------------------------------------------------------------------
-# quantreg_model
+# assoc_quantreg_model
 # ---------------------------------------------------------------------------
 
-test_that("quantreg_model returns a data.frame with tau column", {
+test_that("assoc_quantreg_model returns a data.frame with tau column", {
   tf <- tempFolders[20]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -41,7 +41,7 @@ test_that("quantreg_model returns a data.frame with tau column", {
   f   <- stats::as.formula("y ~ x")
   key <- .make_key2()
 
-  res <- SEMseeker:::quantreg_model(
+  res <- SEMseeker:::assoc_quantreg_model(
     family_test           = "quantreg_0.5",
     sig.formula           = f,
     tempDataFrame         = df,
@@ -57,7 +57,7 @@ test_that("quantreg_model returns a data.frame with tau column", {
   expect_equal(res$tau, 0.5)
 })
 
-test_that("quantreg_model: tau is preserved correctly for 0.25 quantile", {
+test_that("assoc_quantreg_model: tau is preserved correctly for 0.25 quantile", {
   tf <- tempFolders[21]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -67,7 +67,7 @@ test_that("quantreg_model: tau is preserved correctly for 0.25 quantile", {
   f   <- stats::as.formula("y ~ x")
   key <- .make_key2()
 
-  res <- SEMseeker:::quantreg_model(
+  res <- SEMseeker:::assoc_quantreg_model(
     family_test           = "quantreg_0.25",
     sig.formula           = f,
     tempDataFrame         = df,
@@ -83,10 +83,10 @@ test_that("quantreg_model: tau is preserved correctly for 0.25 quantile", {
 })
 
 # ---------------------------------------------------------------------------
-# mean_permutation
+# assoc_mean_permutation
 # ---------------------------------------------------------------------------
 
-test_that("mean_permutation returns a data.frame with pvalue", {
+test_that("assoc_mean_permutation returns a data.frame with pvalue", {
   tf <- tempFolders[22]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -96,7 +96,7 @@ test_that("mean_permutation returns a data.frame with pvalue", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key2()
 
-  res <- SEMseeker:::mean_permutation(
+  res <- SEMseeker:::assoc_mean_permutation(
     family_test           = "mean-permutation_20_20_0.95",
     sig.formula           = f,
     tempDataFrame         = df,
@@ -111,7 +111,7 @@ test_that("mean_permutation returns a data.frame with pvalue", {
   expect_true(is.numeric(res$pvalue))
 })
 
-test_that("mean_permutation: well-separated groups give small p-value", {
+test_that("assoc_mean_permutation: well-separated groups give small p-value", {
   tf <- tempFolders[23]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -124,7 +124,7 @@ test_that("mean_permutation: well-separated groups give small p-value", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key2()
 
-  res <- SEMseeker:::mean_permutation(
+  res <- SEMseeker:::assoc_mean_permutation(
     family_test           = "mean-permutation_50_50_0.95",
     sig.formula           = f,
     tempDataFrame         = df,
@@ -138,10 +138,10 @@ test_that("mean_permutation: well-separated groups give small p-value", {
 })
 
 # ---------------------------------------------------------------------------
-# test_model_paired  (wilcoxon.paired branch)
+# assoc_test_model_paired  (wilcoxon.paired branch)
 # ---------------------------------------------------------------------------
 
-test_that("test_model_paired wilcoxon.paired returns data.frame with pvalue", {
+test_that("assoc_test_model_paired wilcoxon.paired returns data.frame with pvalue", {
   tf <- tempFolders[24]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -155,7 +155,7 @@ test_that("test_model_paired wilcoxon.paired returns data.frame with pvalue", {
   key <- .make_key2()
   f   <- stats::as.formula("BURDEN ~ GROUP")
 
-  res <- SEMseeker:::test_model_paired(
+  res <- SEMseeker:::assoc_test_model_paired(
     family_test           = "wilcoxon.paired@PATIENT_ID",
     tempDataFrame         = df,
     sig.formula           = f,
@@ -172,7 +172,7 @@ test_that("test_model_paired wilcoxon.paired returns data.frame with pvalue", {
   expect_true(is.numeric(res$pvalue))
 })
 
-test_that("test_model_paired wilcoxon.paired: pre/post shift gives small p-value", {
+test_that("assoc_test_model_paired wilcoxon.paired: pre/post shift gives small p-value", {
   tf <- tempFolders[25]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -190,7 +190,7 @@ test_that("test_model_paired wilcoxon.paired: pre/post shift gives small p-value
   key <- .make_key2()
   f   <- stats::as.formula("BURDEN ~ GROUP")
 
-  res <- SEMseeker:::test_model_paired(
+  res <- SEMseeker:::assoc_test_model_paired(
     family_test           = "wilcoxon.paired@PATIENT_ID",
     tempDataFrame         = df,
     sig.formula           = f,
@@ -205,7 +205,7 @@ test_that("test_model_paired wilcoxon.paired: pre/post shift gives small p-value
   expect_lt(res$pvalue, 0.01)
 })
 
-test_that("test_model_paired: >2 group levels returns NA pvalue early", {
+test_that("assoc_test_model_paired: >2 group levels returns NA pvalue early", {
   tf <- tempFolders[26]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -218,7 +218,7 @@ test_that("test_model_paired: >2 group levels returns NA pvalue early", {
   key <- .make_key2()
   f   <- stats::as.formula("BURDEN ~ GROUP")
 
-  res <- SEMseeker:::test_model_paired(
+  res <- SEMseeker:::assoc_test_model_paired(
     family_test           = "wilcoxon.paired@PATIENT_ID",
     tempDataFrame         = df,
     sig.formula           = f,
@@ -234,10 +234,10 @@ test_that("test_model_paired: >2 group levels returns NA pvalue early", {
 })
 
 # ---------------------------------------------------------------------------
-# covariates_model  (no-op: no scaling, no PCA, no collinearity, no dummies)
+# assoc_covariates_model  (no-op: no scaling, no PCA, no collinearity, no dummies)
 # ---------------------------------------------------------------------------
 
-test_that("covariates_model: no-op returns list with covariates and study_summary", {
+test_that("assoc_covariates_model: no-op returns list with covariates and study_summary", {
   tf <- tempFolders[27]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -264,7 +264,7 @@ test_that("covariates_model: no-op returns list with covariates and study_summar
     samples_sql_condition = NULL
   )
 
-  result <- SEMseeker:::covariates_model(inference_detail, study_summary)
+  result <- SEMseeker:::assoc_covariates_model(inference_detail, study_summary)
 
   expect_type(result, "list")
   expect_true("covariates" %in% names(result))
@@ -273,10 +273,10 @@ test_that("covariates_model: no-op returns list with covariates and study_summar
 })
 
 # ---------------------------------------------------------------------------
-# association_model_polynomial  [requires caret]
+# assoc_model_polynomial  [requires caret]
 # ---------------------------------------------------------------------------
 
-test_that("association_model_polynomial: degree-2 no-covariate returns PL_DEGREE", {
+test_that("assoc_model_polynomial: degree-2 no-covariate returns PL_DEGREE", {
   skip_if_not_installed("caret")
 
   tf <- tempFolders[28]
@@ -288,7 +288,7 @@ test_that("association_model_polynomial: degree-2 no-covariate returns PL_DEGREE
   f   <- stats::as.formula("y ~ x")
   key <- .make_key2()
 
-  res <- SEMseeker:::association_model_polynomial(
+  res <- SEMseeker:::assoc_model_polynomial(
     family_test           = "polynomial_2_0.8",
     tempDataFrame         = df,
     sig.formula           = f,
@@ -303,7 +303,7 @@ test_that("association_model_polynomial: degree-2 no-covariate returns PL_DEGREE
   expect_equal(res$PL_PERC,   0.8)
 })
 
-test_that("association_model_polynomial: with covariate exercises polynomial_formula_build", {
+test_that("assoc_model_polynomial: with covariate exercises assoc_polynomial_formula_build", {
   skip_if_not_installed("caret")
 
   tf <- tempFolders[29]
@@ -320,7 +320,7 @@ test_that("association_model_polynomial: with covariate exercises polynomial_for
   f   <- stats::as.formula("y ~ x + cov")
   key <- .make_key2()
 
-  res <- SEMseeker:::association_model_polynomial(
+  res <- SEMseeker:::assoc_model_polynomial(
     family_test           = "polynomial_2_0.8",
     tempDataFrame         = df,
     sig.formula           = f,

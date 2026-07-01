@@ -9,7 +9,7 @@
 #      (HLA-A vs HLA_A both → HLA_A) — `make.unique()` disambiguates.
 #
 # These tests cover the pattern at the UNIT level. The downstream
-# integration (full apply_stat_model run + result CSV inspection) is
+# integration (full assoc_apply_stat_model run + result CSV inspection) is
 # left to higher-level smoke tests because of the foreach + multisession
 # setup overhead.
 
@@ -81,8 +81,8 @@ test_that("make.unique disambiguates collisions after sanitisation", {
 # — the full bulk path needs a non-trivial synthetic setup, which is
 # brittle and unrelated to the contract under test.
 
-test_that("apply_stat_model_batch_lazy does NOT '-'→'_' rewrite AREA (bulk path)", {
-  src <- paste(deparse(SEMseeker:::apply_stat_model_batch_lazy), collapse = "\n")
+test_that("assoc_apply_stat_model_batch_lazy does NOT '-'→'_' rewrite AREA (bulk path)", {
+  src <- paste(deparse(SEMseeker:::assoc_apply_stat_model_batch_lazy), collapse = "\n")
   # Polars-side normalisation that AI-106 removed:
   expect_false(
     grepl('str\\$replace_all\\(\\s*"-"\\s*,\\s*"_"\\s*\\)', src),
@@ -111,8 +111,8 @@ test_that("io_data_preparation does NOT '-'→'_' rewrite tempDataFrame colnames
   )
 })
 
-test_that("apply_stat_model carries the sanitize+memo+counter-rename pattern (per-gene)", {
-  src <- paste(deparse(SEMseeker:::apply_stat_model), collapse = "\n")
+test_that("assoc_apply_stat_model carries the sanitize+memo+counter-rename pattern (per-gene)", {
+  src <- paste(deparse(SEMseeker:::assoc_apply_stat_model), collapse = "\n")
   # Sanitize step
   expect_true(
     grepl('safe_cols\\s*<-\\s*gsub\\(\\s*"\\[\\^A-Za-z0-9_\\.\\]"\\s*,\\s*"_"\\s*,\\s*real_cols\\s*\\)', src),

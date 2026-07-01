@@ -12,9 +12,9 @@
 #' @param fileNameResults character. Path of the output CSV.
 #' @param filter_p_value logical.
 #' @param ssEnv list. Session environment from core_get_session_info().
-#' @param ... forwarded to apply_stat_model().
+#' @param ... forwarded to assoc_apply_stat_model().
 #' @return list(results = data.frame, processed_items = integer).
-#'   Side effect: writes the CSV via association_analysis_save_results().
+#'   Side effect: writes the CSV via assoc_analysis_save_results().
 #' @keywords internal
 sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
                                filter_p_value, ssEnv, ...) {
@@ -65,7 +65,7 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
         study_summary_local <- study_summary_local[
           complete.cases(study_summary_local[, column_selectors]), ]
       }
-      result_temp <- apply_stat_model(
+      result_temp <- assoc_apply_stat_model(
         tempDataFrame  = study_summary_local[, column_selectors],
         g_start        = g_start,
         family_test    = family_test,
@@ -94,7 +94,7 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   if (ncol(results) > 0)
     results <- results[, colSums(is.na(results)) < nrow(results), drop = FALSE]
   results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
-  association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
+  assoc_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
 
   list(results = results, processed_items = processed_items)
 }

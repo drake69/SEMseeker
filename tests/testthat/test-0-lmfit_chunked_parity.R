@@ -44,7 +44,7 @@ test_that("limma chunked per chr is bit-equal to monolithic (+ global eBayes)", 
   # Same design for both paths.
   design <- cbind(`(Intercept)` = 1, IV_1 = iv)
 
-  fit_mono <- SEMseeker:::lmfit_monolithic_lazy(
+  fit_mono <- SEMseeker:::assoc_lmfit_monolithic_lazy(
     pivot_lazy        = pivot_lazy,
     sample_cols_kept  = colnames(Y),
     design            = design,
@@ -55,7 +55,7 @@ test_that("limma chunked per chr is bit-equal to monolithic (+ global eBayes)", 
   )
   expect_true(inherits(fit_mono, "MArrayLM"))
 
-  fit_chunk <- SEMseeker:::lmfit_chunked_by_chr(
+  fit_chunk <- SEMseeker:::assoc_lmfit_chunked_by_chr(
     pivot_lazy        = pivot_lazy,
     sample_cols_kept  = colnames(Y),
     design            = design,

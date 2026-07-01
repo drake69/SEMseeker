@@ -37,7 +37,7 @@
   (`anno_area_granges_build`) backends. See the getting-started vignette.
 
 - **AI-044: binomial_bulk family + goodness-of-fit metrics extension.**
-  New `family_test = "binomial_bulk"` dispatches to `glm_model_bulk()` for
+  New `family_test = "binomial_bulk"` dispatches to `assoc_glm_model_bulk()` for
   bulk per-probe logistic regression via `Rfast::glm_logistic` (parallelised
   with `foreach %dorng%`), ~10-20× faster than the per-probe `stats::glm`
   path. Drop-in replacement for `family_test = "binomial"` at PROBE-level
@@ -91,7 +91,7 @@
   **stops** if `genome_build` differs across sessions (physically incomparable
   coordinates); **warns** if `tech` differs (cross-array meta-analysis is valid
   on the probe intersection but must be explicit).
-  `intra_study_association_replication()` now calls this guard internally: stops
+  `assoc_intra_study_association_replication()` now calls this guard internally: stops
   with a clear message when origin results carry a different `GENOME_BUILD` than
   the current session.
 
@@ -157,9 +157,9 @@
     start of `sem_analyze_population()` before the per-sample loop). Emitted once per batch:
     `input_positions | beta_range_positions | covered_by_inner_join`.
 
-### Bug fixes (A-09: bayes_analysis rewrite)
+### Bug fixes (A-09: assoc_bayes_analysis rewrite)
 
-- **`bayes_analysis()`: 9 bugs fixed** (A-09).
+- **`assoc_bayes_analysis()`: 9 bugs fixed** (A-09).
   - **Loop off-by-one** (bug 1): `for (a in length(markers))` iterated only once
     (`a = 2`, only "LESIONS"), silently skipping "MUTATIONS". Fixed with `seq_along()`.
   - **Wrong file path** (bug 2): `read_delim(io_pivot_file_name)` passed the function
@@ -176,7 +176,7 @@
     `inherits = FALSE, envir = environment()`.
   - **Duplicate `max()` computation** (bug 6): `max_P_case` was computed twice,
     `max_P_control` never computed → filtered output missed Control criterion.
-  - **Output filename typo** (bug 7): `"bayes_analisys"` → `"bayes_analysis"`.
+  - **Output filename typo** (bug 7): `"bayes_analisys"` → `"assoc_bayes_analysis"`.
   - **`c` as loop variable** (bug 8): foreach variable named `c` shadowed the base
     `c()` function. Renamed to `col_idx`.
   - **Hardcoded thresholds** (bug 9): 0.9 / 0.1 are now `bayes_case_threshold` and

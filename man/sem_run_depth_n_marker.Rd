@@ -35,15 +35,15 @@ sem_run_depth_n_marker(
 
 \item{results}{data.frame. Accumulator carried over from depth=1.}
 
-\item{start_time}{POSIXct. Job start, used by association_analysis_log().}
+\item{start_time}{POSIXct. Job start, used by assoc_analysis_log().}
 
 \item{processed_items}{integer. Counter carried over from depth=1.}
 
-\item{...}{forwarded to apply_stat_model().}
+\item{...}{forwarded to assoc_apply_stat_model().}
 }
 \value{
 list(results = data.frame, processed_items = integer).
-  Side effect: writes the CSV via association_analysis_save_results().
+  Side effect: writes the CSV via assoc_analysis_save_results().
 }
 \description{
 Extracted from association_analysis() (was inline at lines 294-418).

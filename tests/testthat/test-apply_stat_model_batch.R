@@ -1,7 +1,7 @@
 # AI-040 Fase 2 + Fase 3: batch path for limma_<N> and voom_<N>.
 #
 # Three things this file pins down:
-#   1. apply_stat_model_batch() returns one row per area, same schema
+#   1. assoc_apply_stat_model_batch() returns one row per area, same schema
 #      the per-area path returns area-by-area (so the FDR + selector
 #      machinery in the caller works unchanged).
 #   2. limma_<N> in batch mode produces DIFFERENT p-values than the
@@ -61,7 +61,7 @@
 }
 
 # Stub io_data_preparation if it's only available inside SEMseeker namespace —
-# we call apply_stat_model_batch directly with already-prepared input,
+# we call assoc_apply_stat_model_batch directly with already-prepared input,
 # bypassing io_data_preparation entirely by patching with a pass-through.
 .with_passthrough_data_prep <- function(code) {
   if (!"io_data_preparation" %in% ls(asNamespace("SEMseeker"))) {
@@ -86,7 +86,7 @@
 
 # (1) Schema and row count ---------------------------------------------
 
-test_that("apply_stat_model_batch returns one row per informative area with the polynomial schema", {
+test_that("assoc_apply_stat_model_batch returns one row per informative area with the polynomial schema", {
   testthat::skip_if_not_installed("limma")
 
   df  <- .sim_batch_continuous(n_samples = 60L, n_areas = 20L)
@@ -94,7 +94,7 @@ test_that("apply_stat_model_batch returns one row per informative area with the 
   # g_start = 4 -> columns 1..3 are Sample_ID, IV, COV1; cols 4..23 are 20 areas.
 
   res <- .with_passthrough_data_prep(
-    SEMseeker:::apply_stat_model_batch(
+    SEMseeker:::assoc_apply_stat_model_batch(
       tempDataFrame = df, g_start = 4L,
       family_test = "limma_2",
       covariates = "COV1", key = key,
@@ -124,7 +124,7 @@ test_that("limma_2 in batch mode produces different p-values than the degenerate
   key <- .fake_key()
 
   batch_res <- .with_passthrough_data_prep(
-    SEMseeker:::apply_stat_model_batch(
+    SEMseeker:::assoc_apply_stat_model_batch(
       tempDataFrame = df, g_start = 4L,
       family_test = "limma_2",
       covariates = "COV1", key = key,
@@ -137,7 +137,7 @@ test_that("limma_2 in batch mode produces different p-values than the degenerate
 
   # Per-area limma p-values from Fase 1 on the FIRST area only
   one_area_df <- df[, c("IV", "COV1", "GENE1")]
-  per_area <- SEMseeker:::association_model_limma(
+  per_area <- SEMseeker:::assoc_model_limma(
     "limma_2", one_area_df,
     sig.formula = GENE1 ~ IV + COV1,
     transformation_y = "", plot = FALSE,
@@ -177,7 +177,7 @@ test_that("voom_2 in batch mode runs on NB counts and gives calibrated p-values 
   key <- .fake_key()
 
   res <- .with_passthrough_data_prep(
-    SEMseeker:::apply_stat_model_batch(
+    SEMseeker:::assoc_apply_stat_model_batch(
       tempDataFrame = df, g_start = 4L,
       family_test = "voom_1",
       covariates = "COV1", key = key,
@@ -201,9 +201,9 @@ test_that("voom_2 in batch mode runs on NB counts and gives calibrated p-values 
   }
 })
 
-# (4) Guard: apply_stat_model dispatches batch families ----------------
+# (4) Guard: assoc_apply_stat_model dispatches batch families ----------------
 
-test_that("apply_stat_model intercepts limma_<N> / voom_<N> and routes to batch path", {
+test_that("assoc_apply_stat_model intercepts limma_<N> / voom_<N> and routes to batch path", {
   testthat::skip_if_not_installed("limma")
 
   df  <- .sim_batch_continuous(n_samples = 50L, n_areas = 10L)
@@ -213,7 +213,7 @@ test_that("apply_stat_model intercepts limma_<N> / voom_<N> and routes to batch 
   # don't need since the batch path bypasses core_get_session_info().
   res <- tryCatch(
     .with_passthrough_data_prep(
-      SEMseeker:::apply_stat_model(
+      SEMseeker:::assoc_apply_stat_model(
         tempDataFrame = df, g_start = 4L,
         family_test   = "limma_2",
         covariates    = "COV1", key = key,
@@ -224,7 +224,7 @@ test_that("apply_stat_model intercepts limma_<N> / voom_<N> and routes to batch 
         samples_sql_condition = "")
     ),
     error = function(e) {
-      # apply_stat_model still calls core_get_session_info() at the top, which
+      # assoc_apply_stat_model still calls core_get_session_info() at the top, which
       # fails without an initialised session. Tolerate that — if the error
       # comes from core_get_session_info() the dispatch is fine; if it comes
       # from elsewhere (e.g. the foreach path) the routing is broken.

@@ -2,7 +2,7 @@
 ## Unit tests for pure mathematical / statistical utility functions:
 ##   sem_ssim, sem_variation_of_information, io_convertTextToNumeric,
 ##   util_split_and_clean, sem_metrics_filter, sem_normalize_minimize, sem_normalize_maximize,
-##   util_substitute_infinite, calculate_collinearity_score
+##   util_substitute_infinite, assoc_calculate_collinearity_score
 ##
 ## These functions have no file I/O or network dependencies and can be
 ## exercised directly after devtools::load_all().
@@ -288,9 +288,9 @@ test_that("util_substitute_infinite: returns a data.frame", {
 })
 
 # -----------------------------------------------------------------------
-# calculate_collinearity_score  (calls core_log_event — uses tempFolders from setup.R)
+# assoc_calculate_collinearity_score  (calls core_log_event — uses tempFolders from setup.R)
 # -----------------------------------------------------------------------
-test_that("calculate_collinearity_score: uncorrelated variables → no removal", {
+test_that("assoc_calculate_collinearity_score: uncorrelated variables → no removal", {
   set.seed(42)
   SEMseeker:::core_init_env(result_folder = tempFolders[5], start_fresh = TRUE)
   df <- data.frame(
@@ -298,12 +298,12 @@ test_that("calculate_collinearity_score: uncorrelated variables → no removal",
     b = stats::rnorm(50),
     c = stats::rnorm(50)
   )
-  result <- SEMseeker:::calculate_collinearity_score(df)
+  result <- SEMseeker:::assoc_calculate_collinearity_score(df)
   expect_equal(length(result), 0)
   SEMseeker:::core_close_env()
 })
 
-test_that("calculate_collinearity_score: highly correlated variables flagged for removal", {
+test_that("assoc_calculate_collinearity_score: highly correlated variables flagged for removal", {
   set.seed(42)
   SEMseeker:::core_init_env(result_folder = tempFolders[6], start_fresh = TRUE)
   base <- stats::rnorm(50)
@@ -312,16 +312,16 @@ test_that("calculate_collinearity_score: highly correlated variables flagged for
     b = base + stats::rnorm(50, sd = 0.01),   # almost identical to a
     c = stats::rnorm(50)
   )
-  result <- SEMseeker:::calculate_collinearity_score(df)
+  result <- SEMseeker:::assoc_calculate_collinearity_score(df)
   expect_true(length(result) > 0)
   SEMseeker:::core_close_env()
 })
 
-test_that("calculate_collinearity_score: returns empty vector when no collinearity", {
+test_that("assoc_calculate_collinearity_score: returns empty vector when no collinearity", {
   set.seed(1)
   SEMseeker:::core_init_env(result_folder = tempFolders[7], start_fresh = TRUE)
   df <- data.frame(x = stats::rnorm(30), y = stats::rnorm(30))
-  result <- SEMseeker:::calculate_collinearity_score(df)
+  result <- SEMseeker:::assoc_calculate_collinearity_score(df)
   # No collinearity → returns c() (zero-length vector)
   expect_equal(length(result), 0)
   SEMseeker:::core_close_env()

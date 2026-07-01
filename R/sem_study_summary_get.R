@@ -16,7 +16,7 @@ sem_study_summary_get <- function(sql_sample_selection="")
   }
 
   study_summary <-   utils::read.csv2(summary_file)
-  study_summary <- filter_sql(sql_sample_selection, study_summary)
+  study_summary <- assoc_filter_sql(sql_sample_selection, study_summary)
 
   reference <- study_summary[study_summary$Sample_Group == "Reference",]
   no_reference <- study_summary[study_summary$Sample_Group != "Reference",]

@@ -1,4 +1,4 @@
-# Tests for validate_inference_schema()
+# Tests for assoc_validate_inference_schema()
 #
 # AI-035: strict schema validation of inference_details with fuzzy-match
 # suggestions on typos. These tests pin the user-facing diagnostic so
@@ -20,9 +20,9 @@ minimal_inference <- function() {
   )
 }
 
-test_that("validate_inference_schema accepts a minimal valid inference_details", {
+test_that("assoc_validate_inference_schema accepts a minimal valid inference_details", {
   df <- minimal_inference()
-  res <- expect_no_error(SEMseeker:::validate_inference_schema(df))
+  res <- expect_no_error(SEMseeker:::assoc_validate_inference_schema(df))
   # all 13 expected columns must be present after validation
   expected <- c("independent_variable", "family_test", "covariates",
                 "covariates_dummy", "covariates_pca", "collinearity_check",
@@ -32,59 +32,59 @@ test_that("validate_inference_schema accepts a minimal valid inference_details",
   expect_true(all(expected %in% colnames(res)))
 })
 
-test_that("validate_inference_schema fills missing optional columns with NA", {
+test_that("assoc_validate_inference_schema fills missing optional columns with NA", {
   df <- minimal_inference()
   # df has no transformation_x or areas_sql_condition
   expect_false("transformation_x" %in% colnames(df))
   expect_false("areas_sql_condition" %in% colnames(df))
-  res <- SEMseeker:::validate_inference_schema(df)
+  res <- SEMseeker:::assoc_validate_inference_schema(df)
   expect_true("transformation_x" %in% colnames(res))
   expect_true("areas_sql_condition" %in% colnames(res))
   expect_true(all(is.na(res$transformation_x)))
   expect_true(all(is.na(res$areas_sql_condition)))
 })
 
-test_that("validate_inference_schema errors on unknown columns in strict mode", {
+test_that("assoc_validate_inference_schema errors on unknown columns in strict mode", {
   df <- minimal_inference()
   df$totally_unknown <- "x"
   expect_error(
-    SEMseeker:::validate_inference_schema(df),
+    SEMseeker:::assoc_validate_inference_schema(df),
     "unknown column"
   )
 })
 
-test_that("validate_inference_schema fuzzy-suggests close-match typos", {
+test_that("assoc_validate_inference_schema fuzzy-suggests close-match typos", {
   df <- minimal_inference()
   df$samples_sql_condtion <- ""  # missing 'i' in 'condition'
   # error should mention the typo AND suggest the correct name
   expect_error(
-    SEMseeker:::validate_inference_schema(df),
+    SEMseeker:::assoc_validate_inference_schema(df),
     "samples_sql_condtion.*samples_sql_condition"
   )
 })
 
-test_that("validate_inference_schema suggests covariates_dummy for covariate_dummy typo", {
+test_that("assoc_validate_inference_schema suggests covariates_dummy for covariate_dummy typo", {
   df <- minimal_inference()
   df$covariate_dummy <- "Tissue"  # missing 's' (-> close to covariates_dummy)
-  err <- tryCatch(SEMseeker:::validate_inference_schema(df), error = identity)
+  err <- tryCatch(SEMseeker:::assoc_validate_inference_schema(df), error = identity)
   expect_s3_class(err, "error")
   # the error message should suggest the close match
   expect_match(conditionMessage(err), "covariate_dummy")
   expect_match(conditionMessage(err), "did you mean")
 })
 
-test_that("validate_inference_schema in lenient mode only warns, doesn't stop", {
+test_that("assoc_validate_inference_schema in lenient mode only warns, doesn't stop", {
   df <- minimal_inference()
   df$totally_unknown <- "x"
   expect_warning(
-    res <- SEMseeker:::validate_inference_schema(df, strict = FALSE),
+    res <- SEMseeker:::assoc_validate_inference_schema(df, strict = FALSE),
     "unknown column"
   )
   # in lenient mode the validation still fills missing required cols
   expect_true("transformation_x" %in% colnames(res))
 })
 
-test_that("validate_inference_schema whitelists engine-stamped runtime columns", {
+test_that("assoc_validate_inference_schema whitelists engine-stamped runtime columns", {
   df <- minimal_inference()
   # These are stamped by the engine on a previously-run inference. They
   # should NOT trigger the unknown-column error when validating again
@@ -96,5 +96,5 @@ test_that("validate_inference_schema whitelists engine-stamped runtime columns",
   df$end_time         <- Sys.time()
   df$processed_items  <- 0L
   df$processed_time   <- 0
-  expect_no_error(SEMseeker:::validate_inference_schema(df))
+  expect_no_error(SEMseeker:::assoc_validate_inference_schema(df))
 })

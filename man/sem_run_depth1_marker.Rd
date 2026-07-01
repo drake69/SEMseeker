@@ -28,11 +28,11 @@ ssEnv$keys_markers_figures).}
 
 \item{ssEnv}{list. Session environment from core_get_session_info().}
 
-\item{...}{forwarded to apply_stat_model().}
+\item{...}{forwarded to assoc_apply_stat_model().}
 }
 \value{
 list(results = data.frame, processed_items = integer).
-  Side effect: writes the CSV via association_analysis_save_results().
+  Side effect: writes the CSV via assoc_analysis_save_results().
 }
 \description{
 Extracted from association_analysis() (was inline at lines 218-290).

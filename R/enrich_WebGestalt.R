@@ -56,7 +56,7 @@ enrich_WebGestalt <- function(study,
           progress_bar(sprintf("Searching for disease using WebGestalt: %s with %s and %s",keys[i,]$COMBINED,enrich_method,type))
         key <- paste(keys[i,]$FIGURE,keys[i,]$MARKER,keys[i,]$AREA,keys[i,]$SUBAREA, sep="_")
 
-        results_inference <- association_results_get(
+        results_inference <- assoc_results_get(
           inference_detail =  inference_detail,
           marker = keys[i,"MARKER"],
           adjust_per_area= adjust_per_area,

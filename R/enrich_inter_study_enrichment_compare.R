@@ -2,14 +2,14 @@
 #' @description Compares enrichment (pathway/term) results across two or more
 #'   independent studies stored under `result_folder` and produces Venn diagrams
 #'   of the overlapping enriched terms. Part of the cross-study replication
-#'   workflow, alongside [inter_study_association_overlaps()].
+#'   workflow, alongside [assoc_inter_study_association_overlaps()].
 #' @param result_folder Path to the folder holding the per-study enrichment
 #'   results to be compared.
 #' @param ... Additional arguments forwarded to [core_init_env()] (e.g.
 #'   `maxResources`, `parallel_strategy`).
 #' @return Invisibly `NULL`; Venn diagrams and comparison tables are written
 #'   under `result_folder`.
-#' @seealso [inter_study_association_overlaps()],
+#' @seealso [assoc_inter_study_association_overlaps()],
 #'   [enrich_intra_study_enrichment_subsamples_overlaps()]
 #' @examples
 #' # See vignette("pathway-analysis", package = "SEMseeker") for a runnable

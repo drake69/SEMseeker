@@ -107,7 +107,7 @@ anno_annotate_position_pivots <- function ()
         # AI-050: Bioconductor anno-packages assign some probes to multiple
         # genes (intergenic overlaps, antisense, etc), producing composite
         # AREA strings like "NUDT6;SPATA5". Treating the composite as a
-        # single gene was a regression that (a) caused apply_stat_model to
+        # single gene was a regression that (a) caused assoc_apply_stat_model to
         # fail parsing (PVALUE=NA), (b) inflated false positives downstream
         # because a single p-value got smeared across N enrichment hits.
         # Fix: split on ";", explode to N rows, strip whitespace — each

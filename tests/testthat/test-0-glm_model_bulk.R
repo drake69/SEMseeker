@@ -1,7 +1,7 @@
 # AI-044 (2026-06-08): unit test for the binomial_bulk path.
 #
 # What this file pins down:
-#   1. glm_model_bulk() returns one row per probe with the legacy schema
+#   1. assoc_glm_model_bulk() returns one row per probe with the legacy schema
 #      (per-coef PVALUE/ESTIMATE + top-level PVALUE/PVALUE_ADJ) so the
 #      downstream CSV writer / FDR machinery sees the same column shape
 #      it would have seen with the per-probe stats::glm path.
@@ -9,7 +9,7 @@
 #      to ~4 decimal places on a simulated binary outcome with a factor IV.
 #   3. The AI-044 universal degenerate-burden filter (in io_data_preparation,
 #      hit upstream) ensures that all-zero / all-one probes never reach
-#      Rfast — but glm_model_bulk's per-probe safety net still returns NA
+#      Rfast — but assoc_glm_model_bulk's per-probe safety net still returns NA
 #      for any degenerate Y that somehow slips through.
 
 skip_if_no_rfast <- function() {
@@ -71,13 +71,13 @@ skip_if_no_rfast <- function() {
        AREA   = "PROBE",   SUBAREA = "WHOLE")
 }
 
-test_that("glm_model_bulk produces one row per probe with legacy schema", {
+test_that("assoc_glm_model_bulk produces one row per probe with legacy schema", {
   skip_if_no_rfast()
   tf <- .init_test_session(); on.exit(unlink(tf, recursive = TRUE), add = TRUE)
   df <- .sim_binary_factor(n_samples = 200L, n_probes = 40L)
   g_start <- attr(df, "g_start")
 
-  res <- SEMseeker:::glm_model_bulk(
+  res <- SEMseeker:::assoc_glm_model_bulk(
     tempDataFrame        = df,
     g_start              = g_start,
     family_test          = "binomial_bulk",
@@ -106,7 +106,7 @@ test_that("Rfast estimates roughly match stats::glm on the same data", {
   df <- .sim_binary_factor(n_samples = 300L, n_probes = 5L, seed = 11L)
   g_start <- attr(df, "g_start")
 
-  res <- SEMseeker:::glm_model_bulk(
+  res <- SEMseeker:::assoc_glm_model_bulk(
     tempDataFrame        = df,
     g_start              = g_start,
     family_test          = "binomial_bulk",
@@ -147,7 +147,7 @@ test_that("wrong family_test returns NULL", {
   skip_if_no_rfast()
   tf <- .init_test_session(); on.exit(unlink(tf, recursive = TRUE), add = TRUE)
   df <- .sim_binary_factor(n_samples = 50L, n_probes = 5L)
-  res <- SEMseeker:::glm_model_bulk(
+  res <- SEMseeker:::assoc_glm_model_bulk(
     tempDataFrame        = df,
     g_start              = attr(df, "g_start"),
     family_test          = "binomial",   # wrong: only binomial_bulk allowed

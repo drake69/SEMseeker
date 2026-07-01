@@ -1,0 +1,196 @@
+assoc_model_polynomial <- function (family_test, tempDataFrame, sig.formula , transformation_y, plot, samples_sql_condition=samples_sql_condition, key)
+{
+
+  area <- as.character(key$AREA)
+  subarea <- as.character(key$SUBAREA)
+  marker <- as.character(key$MARKER)
+  figure <- as.character(key$FIGURE)
+
+  ssEnv <- core_get_session_info()
+
+  # polynomial_degree_partition-partition_percentage
+  polynomial_params <- unlist(strsplit(as.character(family_test),"_"))
+
+  if(length(polynomial_params)!=3)
+  {
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " The polynomial model must have 3 parameters: polynomial followed by degree and partition percentage eg: polynomial_2_1 " )
+  }
+
+  degree <- as.numeric(polynomial_params[2])
+  res <- data.frame("PL_DEGREE"= degree)
+  partition_percentage <- as.numeric(polynomial_params[3])
+  res$PL_PERC <- partition_percentage
+  # res$sig.fromula <- as.character(sig.formula)
+
+  if(length(polynomial_params)==4)
+    res$r_model <- paste0("polynomial",polynomial_params[4], sep="")
+  else
+    res$r_model <- "polynomial"
+
+
+  tempDataFrame <- as.data.frame(tempDataFrame)
+  dep_var <- assoc_sig_formula_vars(sig.formula)
+  dependent_variable <- dep_var$dependent_variable
+  independent_variable <- dep_var$independent_variable
+  covariates <- dep_var$covariates
+
+  if(length(polynomial_params)==4)
+    if(polynomial_params[4]=="predictor")
+    {
+      dependent_variable <- dep_var$independent_variable
+      independent_variable <- dep_var$dependent_variable
+    }
+
+  if (nrow(tempDataFrame) == 0)
+    return(res)
+
+  # Split the data into training and test set
+  training.samples <- tempDataFrame[, dependent_variable] %>% caret::createDataPartition(p = partition_percentage, list = FALSE)
+
+  train.data  <- tempDataFrame[training.samples, ]
+  test.data <- tempDataFrame[-training.samples, ]
+
+  # Build the formula for the model
+  if(length(covariates)>0)
+  {
+    formula <- assoc_polynomial_formula_build(dependent_variable, independent_variable, degree, covariates)
+    polynomial_model_result <- stats::lm(formula, data = train.data, na.action = na.exclude)
+  }
+  else
+    # Build the polynomial_model_result
+    polynomial_model_result <- stats::lm(eval(parse(text=dependent_variable)) ~ stats::poly(eval(parse(text=independent_variable)),
+      degree, raw = TRUE), data = train.data, na.action = na.exclude)
+
+
+
+  # check id polynomial_model_result is null
+  if(is.null(polynomial_model_result))
+    return(res)
+
+  predictions <- stats::predict(polynomial_model_result)
+  if(partition_percentage < 1)
+  {
+    # Make predictions
+    predictions_test <- stats::predict(polynomial_model_result, newdata = test.data)
+    res <- cbind(res, assoc_model_performance(predictions, train.data[,dependent_variable], predictions_test, test.data[,dependent_variable]))
+  }
+  else
+    res <- cbind(res, assoc_model_performance(predictions, train.data[,dependent_variable], c(),c()))
+
+  # Coefficients and Confidence Intervals
+  coefficients <- coef(summary(polynomial_model_result))
+  # conf_int <- confint(polynomial_model_result)
+
+  # for each degree extract the p-value
+  for (i in seq_len(nrow(coefficients))) {
+    # i <- 1
+    p_value <- coefficients[i,4]
+
+    row_name <- rownames(coefficients)[i]
+    pval_name <- core_name_cleaning(paste0(row_name,"_pvalue"))
+    pval_name <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ","",pval_name))
+    pval_name <- core_name_cleaning(gsub("_RAW_EQ_TRUE","",pval_name))
+    pval_name <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE",independent_variable,pval_name))
+    p_value <- data.frame(p_value)
+    colnames(p_value) <- pval_name
+    res <- cbind(res, p_value)
+
+    estimate_name <- core_name_cleaning(paste0(row_name,"_estimate"))
+    estimate <- data.frame(estimate = coefficients[i,1])
+    colnames(estimate) <- core_name_cleaning(estimate_name)
+    res <- cbind(res, estimate)
+
+  }
+
+
+  # remove rowname from res
+  rownames(res) <- NULL
+  if(plot)
+  {
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", core_name_cleaning(samples_sql_condition)))
+
+    if(is.null(covariates) || length(covariates)  ==  0)
+      file_suffix <- ""
+    else
+    {
+      long_covariates <- length(covariates) > 2
+      # split each covariates by _
+      if (long_covariates)
+      {
+        covariates <- unlist(t(strsplit( gsub(" ","",covariates),split  =  "_", fixed  =  TRUE)))
+        covariates <- unique(covariates)
+      }
+      covariates <- paste(covariates, collapse = "_")
+    }
+
+    filename  <-  io_file_path_build(chartFolder,
+      c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, key$COMBINED),
+      ssEnv$plot_format)
+
+    # Predict the values for the plot
+    train.data$predicted <- predict(polynomial_model_result, newdata = train.data)
+
+    if(length(covariates)>0)
+    {
+      # Plot the data and the polynomial fit
+      ggp <- ggplot2::ggplot(train.data, ggplot2::aes_string(x = independent_variable, y = dependent_variable)) +
+        ggplot2::geom_point(color = ssEnv$color_palette[1]) +
+        ggplot2::stat_smooth(method = lm, formula = y ~ poly(x, degree, raw = TRUE), color = ssEnv$color_palette_darker[3]) +
+        ggplot2::xlab(independent_variable) +
+        ggplot2::ylab(dependent_variable) +
+        ggplot2::ggtitle("")
+    }
+    else
+    {
+      # do a plot with train.data, test.data and predictions with 3 different colors 1 color for train.data, 1 color for test.data and 1 color for predictions
+      ggp <- ggplot2::ggplot(train.data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
+        ggplot2::geom_point( color = ssEnv$color_palette[1] ) +
+        ggplot2::stat_smooth(method = lm, formula = y ~ poly(x, degree, raw = TRUE), color = ssEnv$color_palette_darker[3]) +
+        ggplot2::xlab(independent_variable) +
+        ggplot2::ylab(dependent_variable)
+    }
+
+    if(partition_percentage < 1)
+      ggp <- ggp + ggplot2::geom_line(ggplot2::aes_string(y = "predicted"), color = ssEnv$color_palette_darker[2])
+
+
+    if (partition_percentage < 1)
+      ggp <- ggp + ggplot2::geom_point(data = test.data, ggplot2::aes(y = predictions_test, x = eval(parse(text=independent_variable))), color = ssEnv$color_palette_darker[3]) +
+      ggplot2::xlab(independent_variable) +
+      ggplot2::ylab(dependent_variable)
+
+
+    ggplot2::ggsave(
+      filename,
+      plot = ggp,
+      scale = 1,
+      width = 8,
+      height = 8,
+      units = c("in"),
+      dpi = as.numeric(ssEnv$plot_resolution_ppi)
+    )
+
+    # data_to_save <- cbind(train.data, predicted = apply(train.data[,independent_variable],1, function(x) (poly(x, degree, raw = TRUE))))
+    # colnames(data_to_save) <- c("Independent_Variable","Dependent_Variable","Predicted")
+
+  }
+  # # do a plot with train.data, test.data and predictions with 3 different colors 1 color for train.data, 1 color for test.data and 1 color for predictions
+  # ggplot2::ggplot(train.data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
+  #   ggplot2::geom_point( color = ssEnv$color_palette[1] ) +
+  #   ggplot2::stat_smooth(method = lm, formula = y ~ stats::poly(x, degree, raw = TRUE))
+  #
+  # # do a plot with train.data, test.data and predictions with 3 different colors 1 color for train.data, 1 color for test.data and 1 color for predictions
+  # ggplot2::ggplot(train.data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
+  #   ggplot2::geom_point( color = ssEnv$color_palette[1] ) + ggplot2::stat_smooth(method = lm, formula = y ~ poly(x, degree, raw = TRUE)) +
+  #   ggplot2::geom_point(data = test.data, ggplot2::aes(y = predictions), color = ssEnv$color_palette[2])
+  #
+  # # do a plot with train.data, test.data and predictions with 3 different colors 1 color for train.data, 1 color for test.data and 1 color for predictions
+  # ggplot2::ggplot(train.data, ggplot2::aes(eval(parse(text=independent_variable)), eval(parse(text=dependent_variable))) ) +
+  #   ggplot2::geom_point( color = ssEnv$color_palette[1] ) + ggplot2::stat_smooth(method = lm, formula = y ~ poly(x, degree, raw = TRUE)) +
+  #   ggplot2::geom_point(data = test.data, ggplot2::aes(y = predictions), color = ssEnv$color_palette[2]) +
+  #   ggplot2::geom_point(data = data.frame(train.data,polynomial_model_result$residuals) , ggplot2::aes(y = polynomial_model_result$residuals), color = "cyan")
+  #
+  return (res)
+}
+
+# polynomial_model_result("polynomial_4_0.8", sample_sheet, "DELTARQ_HYPO ~ Age")

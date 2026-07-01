@@ -1,5 +1,5 @@
 ## test-1-test_model.R
-## Regression tests for test_model() — the statistical-test dispatcher.
+## Regression tests for assoc_test_model() — the statistical-test dispatcher.
 ##
 ## Before the fixes these tests document, three branches crashed immediately:
 ##   chisq.test  — line 47: `rea$effect_size`  (object 'rea' not found)
@@ -9,7 +9,7 @@
 ##                  the value had been stored in res$statistic_parameter)
 ##
 ## Each test below exercises one branch end-to-end.
-## All require an active session (test_model calls core_get_session_info()).
+## All require an active session (assoc_test_model calls core_get_session_info()).
 
 # ---------------------------------------------------------------------------
 # Helpers shared across tests in this file
@@ -32,7 +32,7 @@
 # t.test branch  (was crashing: d = statistic_parameter)
 # ---------------------------------------------------------------------------
 
-test_that("test_model t.test returns a data.frame with pvalue", {
+test_that("assoc_test_model t.test returns a data.frame with pvalue", {
   tf <- tempFolders[1]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -41,7 +41,7 @@ test_that("test_model t.test returns a data.frame with pvalue", {
   key <- .make_key()
   f   <- stats::as.formula("BURDEN ~ GROUP")
 
-  res <- SEMseeker:::test_model(
+  res <- SEMseeker:::assoc_test_model(
     family_test = "t.test", tempDataFrame = df,
     sig.formula = f, burdenValue = "BURDEN",
     independent_variable = "GROUP", transformation_y = "",
@@ -54,7 +54,7 @@ test_that("test_model t.test returns a data.frame with pvalue", {
   expect_true(is.numeric(res$pvalue))
 })
 
-test_that("test_model t.test: clearly separated groups give small p-value", {
+test_that("assoc_test_model t.test: clearly separated groups give small p-value", {
   tf <- tempFolders[2]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -67,7 +67,7 @@ test_that("test_model t.test: clearly separated groups give small p-value", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- SEMseeker:::assoc_test_model(
     "t.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
   expect_lt(res$pvalue, 0.001)
@@ -77,7 +77,7 @@ test_that("test_model t.test: clearly separated groups give small p-value", {
 # chisq.test branch  (was crashing: rea$effect_size)
 # ---------------------------------------------------------------------------
 
-test_that("test_model chisq.test returns a data.frame with pvalue", {
+test_that("assoc_test_model chisq.test returns a data.frame with pvalue", {
   tf <- tempFolders[3]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -91,7 +91,7 @@ test_that("test_model chisq.test returns a data.frame with pvalue", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- SEMseeker:::assoc_test_model(
     "chisq.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 
@@ -105,7 +105,7 @@ test_that("test_model chisq.test returns a data.frame with pvalue", {
 # bartlett.test branch  (was crashing: rea$effect_size + wrong data passed)
 # ---------------------------------------------------------------------------
 
-test_that("test_model bartlett.test returns a data.frame with pvalue", {
+test_that("assoc_test_model bartlett.test returns a data.frame with pvalue", {
   tf <- tempFolders[4]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -114,7 +114,7 @@ test_that("test_model bartlett.test returns a data.frame with pvalue", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- SEMseeker:::assoc_test_model(
     "bartlett.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 
@@ -124,7 +124,7 @@ test_that("test_model bartlett.test returns a data.frame with pvalue", {
   expect_true("effect_size" %in% tolower(colnames(res)))
 })
 
-test_that("test_model bartlett.test: equal-variance groups give large p-value", {
+test_that("assoc_test_model bartlett.test: equal-variance groups give large p-value", {
   tf <- tempFolders[5]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -137,7 +137,7 @@ test_that("test_model bartlett.test: equal-variance groups give large p-value", 
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- SEMseeker:::assoc_test_model(
     "bartlett.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
   expect_gt(res$pvalue, 0.05)
@@ -147,7 +147,7 @@ test_that("test_model bartlett.test: equal-variance groups give large p-value", 
 # wilcoxon branch — direct unit test (also exercised through pipeline)
 # ---------------------------------------------------------------------------
 
-test_that("test_model wilcoxon returns pvalue and effect_size columns", {
+test_that("assoc_test_model wilcoxon returns pvalue and effect_size columns", {
   tf <- tempFolders[6]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -156,7 +156,7 @@ test_that("test_model wilcoxon returns pvalue and effect_size columns", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- SEMseeker:::assoc_test_model(
     "wilcoxon", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 
@@ -169,7 +169,7 @@ test_that("test_model wilcoxon returns pvalue and effect_size columns", {
 # kruskal.test branch
 # ---------------------------------------------------------------------------
 
-test_that("test_model kruskal.test with 3 groups returns pvalue", {
+test_that("assoc_test_model kruskal.test with 3 groups returns pvalue", {
   tf <- tempFolders[7]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -182,7 +182,7 @@ test_that("test_model kruskal.test with 3 groups returns pvalue", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- SEMseeker:::assoc_test_model(
     "kruskal.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 
@@ -191,7 +191,7 @@ test_that("test_model kruskal.test with 3 groups returns pvalue", {
   expect_lt(res$pvalue, 0.05)
 })
 
-test_that("test_model kruskal.test with single group returns NA pvalue", {
+test_that("assoc_test_model kruskal.test with single group returns NA pvalue", {
   tf <- tempFolders[8]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -203,7 +203,7 @@ test_that("test_model kruskal.test with single group returns NA pvalue", {
   f   <- stats::as.formula("BURDEN ~ GROUP")
   key <- .make_key()
 
-  res <- SEMseeker:::test_model(
+  res <- SEMseeker:::assoc_test_model(
     "kruskal.test", df, f, "BURDEN", "GROUP", "", FALSE, "", key
   )
 

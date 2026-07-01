@@ -26,7 +26,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
   transformation_x <- as.character(transformation_x)
   independentVariableIsFactor <- FALSE
   independent_variableLevels <- NULL
-  if (is.family_dicotomic(family_test))
+  if (assoc_is_family_dicotomic(family_test))
   {
     test_factor <- as.factor(tempDataFrame[, independent_variable])
     #
@@ -228,7 +228,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
 
   # AI-106 (2026-06-09): no more colname sanitisation here. Names stay
   # pass-through from the upstream annotation (HLA-A, chr10:...-..., etc).
-  # The per-gene foreach in apply_stat_model() applies its own LOCAL
+  # The per-gene foreach in assoc_apply_stat_model() applies its own LOCAL
   # safe<->real memoised mapping ONLY for the duration of the formula
   # machinery (R formula identifiers cannot contain '-' or ':'), then
   # reverses the mapping before assigning AREA_OF_TEST in the result.

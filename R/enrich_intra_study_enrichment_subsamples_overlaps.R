@@ -93,7 +93,7 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
             {
               temp_res <- utils::read.csv2(pathway_report_path)
               if(nrow(temp_res) != 0)
-                temp_res <- filter_sql(pathways_sql_selection,temp_res)
+                temp_res <- assoc_filter_sql(pathways_sql_selection,temp_res)
 
               if(nrow(temp_res) != 0)
               {

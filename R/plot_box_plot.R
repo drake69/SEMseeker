@@ -1,6 +1,6 @@
 plot_box_plot <- function (dataFrameToPlot, independent_variable,dependent_variable, transformation_y, family_test, samples_sql_condition="",key)
 {
-  if (!is.family_dicotomic(family_test))
+  if (!assoc_is_family_dicotomic(family_test))
     return()
 
   area <- as.character(key$AREA)

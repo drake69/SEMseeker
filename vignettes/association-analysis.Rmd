@@ -558,20 +558,20 @@ meta-analyse results across studies:
 
 ```{r cross_study, eval=FALSE}
 # Overlap significant hits across two studies
-inter_study_association_overlaps(
+assoc_inter_study_association_overlaps(
   studies       = list("~/study_A/", "~/study_B/"),
   result_folder = "~/meta_results/",
   pvalue_column = "PVALUE_ADJ_ALL_BH"
 )
 
 # Meta-analysis (combines p-values / effect sizes)
-inter_study_association_meta_analysis(
+assoc_inter_study_association_meta_analysis(
   studies       = list("~/study_A/", "~/study_B/"),
   result_folder = "~/meta_results/"
 )
 
 # Subsample stability analysis (bootstrap cohort sub-sampling)
-intra_study_association_subsamples_overlaps(
+assoc_intra_study_association_subsamples_overlaps(
   result_folder = "~/semseeker_results/",
   n_subsamples  = 100,
   fraction      = 0.8
@@ -583,7 +583,7 @@ intra_study_association_subsamples_overlaps(
 ## Complementary: Bayesian posterior probability
 
 While `association_analysis()` reports frequentist p-values / q-values for each
-region, `bayes_analysis()` provides the *probabilistic complement*: per-region
+region, `assoc_bayes_analysis()` provides the *probabilistic complement*: per-region
 posterior probabilities computed via empirical Bayes.
 
 For each `(MARKER, AREA, SUBAREA, AREA_OF_TEST)` it estimates:
@@ -596,8 +596,8 @@ configured thresholds (`bayes_case_threshold` and `bayes_control_threshold`).
 Output is written as CSV files under `<result_folder>/Euristic/`, sorted by
 posterior probability.
 
-```{r bayes_analysis, eval=FALSE}
-bayes_analysis(
+```{r assoc_bayes_analysis, eval=FALSE}
+assoc_bayes_analysis(
   result_folder           = "~/semseeker_results/",
   independent_variable    = "Sample_Group",
   bayes_case_threshold    = 0.9,   # min P(case | epimutated)
@@ -637,13 +637,13 @@ files are written to `<result_folder>/Euristic/`.
 
 ## Cross-study replication
 
-`intra_study_association_replication()` reruns the association on a target study restricted
+`assoc_intra_study_association_replication()` reruns the association on a target study restricted
 to the regions that were already significant in a reference study, then merges
 the two result sets. It's the standard "replication / validation" workflow when
 you have a discovery cohort and a validation cohort.
 
 ```{r cross_study_replication, eval=FALSE}
-intra_study_association_replication(
+assoc_intra_study_association_replication(
   inference_details_origin = inference_discovery,
   inference_details        = inference_validation,
   result_folder            = "~/semseeker_replication/",

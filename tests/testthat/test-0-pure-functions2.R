@@ -1,59 +1,59 @@
 # Tests for additional pure / deterministic helper functions
 #
 # Covered:
-#  - pow()                        base^exponent utility (10E_model.R)
+#  - assoc_pow()                        base^exponent utility (10E_model.R)
 #  - util_join_values_to_thresholds()  Polars positional inner join (join_values_to_thresholds.R)
 #  - sem_metrics_ranking()            ranking helper using metrics_properties (metrics_ranking.R)
-#  - model_performance()          train+test path and overfitting detection (model_performance.R)
-#  - compute_quantreg_permutation() quantile regression single-permutation draw
+#  - assoc_model_performance()          train+test path and overfitting detection (model_performance.R)
+#  - assoc_compute_quantreg_permutation() quantile regression single-permutation draw
 
 # ---------------------------------------------------------------------------
-# 1. pow
+# 1. assoc_pow
 # ---------------------------------------------------------------------------
 
-test_that("pow: basic integer arithmetic", {
-  expect_equal(SEMseeker:::pow(2, 3),  8)
-  expect_equal(SEMseeker:::pow(10, 0), 1)
-  expect_equal(SEMseeker:::pow(5, 1),  5)
-  expect_equal(SEMseeker:::pow(3, 2),  9)
+test_that("assoc_pow: basic integer arithmetic", {
+  expect_equal(SEMseeker:::assoc_pow(2, 3),  8)
+  expect_equal(SEMseeker:::assoc_pow(10, 0), 1)
+  expect_equal(SEMseeker:::assoc_pow(5, 1),  5)
+  expect_equal(SEMseeker:::assoc_pow(3, 2),  9)
 })
 
-test_that("pow: fractional exponent (square root)", {
-  expect_equal(SEMseeker:::pow(4, 0.5), 2)
-  expect_equal(SEMseeker:::pow(9, 0.5), 3)
-  expect_equal(SEMseeker:::pow(8, 1/3), 2, tolerance = 1e-10)
+test_that("assoc_pow: fractional exponent (square root)", {
+  expect_equal(SEMseeker:::assoc_pow(4, 0.5), 2)
+  expect_equal(SEMseeker:::assoc_pow(9, 0.5), 3)
+  expect_equal(SEMseeker:::assoc_pow(8, 1/3), 2, tolerance = 1e-10)
 })
 
-test_that("pow: base 10 matches 10^x", {
-  expect_equal(SEMseeker:::pow(10,  2),   100)
-  expect_equal(SEMseeker:::pow(10,  3),  1000)
-  expect_equal(SEMseeker:::pow(10, -1),   0.1, tolerance = 1e-15)
-  expect_equal(SEMseeker:::pow(10, -2),  0.01, tolerance = 1e-15)
+test_that("assoc_pow: base 10 matches 10^x", {
+  expect_equal(SEMseeker:::assoc_pow(10,  2),   100)
+  expect_equal(SEMseeker:::assoc_pow(10,  3),  1000)
+  expect_equal(SEMseeker:::assoc_pow(10, -1),   0.1, tolerance = 1e-15)
+  expect_equal(SEMseeker:::assoc_pow(10, -2),  0.01, tolerance = 1e-15)
 })
 
-test_that("pow: zero base", {
-  expect_equal(SEMseeker:::pow(0, 5), 0)
-  expect_equal(SEMseeker:::pow(0, 0), 1)  # 0^0 = 1 by R convention
+test_that("assoc_pow: zero base", {
+  expect_equal(SEMseeker:::assoc_pow(0, 5), 0)
+  expect_equal(SEMseeker:::assoc_pow(0, 0), 1)  # 0^0 = 1 by R convention
 })
 
-test_that("pow: negative base with integer exponent", {
-  expect_equal(SEMseeker:::pow(-2, 2),  4)
-  expect_equal(SEMseeker:::pow(-2, 3), -8)
-  expect_equal(SEMseeker:::pow(-3, 2),  9)
+test_that("assoc_pow: negative base with integer exponent", {
+  expect_equal(SEMseeker:::assoc_pow(-2, 2),  4)
+  expect_equal(SEMseeker:::assoc_pow(-2, 3), -8)
+  expect_equal(SEMseeker:::assoc_pow(-3, 2),  9)
 })
 
-test_that("pow: vectorised over base", {
-  result <- SEMseeker:::pow(c(1, 2, 3, 4), 2)
+test_that("assoc_pow: vectorised over base", {
+  result <- SEMseeker:::assoc_pow(c(1, 2, 3, 4), 2)
   expect_equal(result, c(1, 4, 9, 16))
 })
 
-test_that("pow: vectorised over exponent", {
-  result <- SEMseeker:::pow(2, c(0, 1, 2, 3))
+test_that("assoc_pow: vectorised over exponent", {
+  result <- SEMseeker:::assoc_pow(2, c(0, 1, 2, 3))
   expect_equal(result, c(1, 2, 4, 8))
 })
 
-test_that("pow: result type is numeric", {
-  expect_true(is.numeric(SEMseeker:::pow(3, 3)))
+test_that("assoc_pow: result type is numeric", {
+  expect_true(is.numeric(SEMseeker:::assoc_pow(3, 3)))
 })
 
 # ---------------------------------------------------------------------------
@@ -289,73 +289,73 @@ test_that("sem_metrics_ranking: Inf values are replaced before ranking (no infin
 })
 
 # ---------------------------------------------------------------------------
-# 4. model_performance — train+test path and overfitting detection
+# 4. assoc_model_performance — train+test path and overfitting detection
 # (extends the basic tests in test-0-pure-functions.R)
 # ---------------------------------------------------------------------------
 
-test_that("model_performance: train+test path adds *_test columns", {
+test_that("assoc_model_performance: train+test path adds *_test columns", {
   train_fit <- c(1.0, 2.0, 3.0, 4.0)
   train_exp <- c(1.1, 1.9, 3.1, 3.9)
   test_fit  <- c(5.0, 6.0)
   test_exp  <- c(5.5, 6.5)
-  res <- SEMseeker:::model_performance(train_fit, train_exp, test_fit, test_exp)
+  res <- SEMseeker:::assoc_model_performance(train_fit, train_exp, test_fit, test_exp)
   expected_test_cols <- c("mse_test", "rmse_test", "mape_test",
                           "mae_test", "r_squared_test", "overfitting")
   expect_true(all(expected_test_cols %in% colnames(res)))
 })
 
-test_that("model_performance: rmse_test = sqrt(mse_test)", {
+test_that("assoc_model_performance: rmse_test = sqrt(mse_test)", {
   train_fit <- c(1, 2, 3, 4, 5)
   train_exp <- c(1, 2, 3, 4, 5)
   test_fit  <- c(1.5, 2.5, 3.5)
   test_exp  <- c(1.0, 2.0, 3.0)
-  res <- SEMseeker:::model_performance(train_fit, train_exp, test_fit, test_exp)
+  res <- SEMseeker:::assoc_model_performance(train_fit, train_exp, test_fit, test_exp)
   expect_equal(res$rmse_test, sqrt(res$mse_test), tolerance = 1e-10)
 })
 
-test_that("model_performance: perfect train and test → overfitting = FALSE", {
+test_that("assoc_model_performance: perfect train and test → overfitting = FALSE", {
   x <- c(1, 2, 3, 4, 5)
-  res <- SEMseeker:::model_performance(x, x, x, x)
+  res <- SEMseeker:::assoc_model_performance(x, x, x, x)
   expect_equal(res$mse,      0)
   expect_equal(res$mse_test, 0)
   expect_false(res$overfitting)
 })
 
-test_that("model_performance: terrible test performance → overfitting = TRUE", {
+test_that("assoc_model_performance: terrible test performance → overfitting = TRUE", {
   # Perfect fit on train, reversed fit on test
   train_fit <- c(1, 2, 3, 4, 5)
   train_exp <- c(1, 2, 3, 4, 5)  # mse_train = 0
   test_fit  <- c(1, 2, 3, 4, 5)
   test_exp  <- c(5, 4, 3, 2, 1)  # mse_test >> 0
-  res <- SEMseeker:::model_performance(train_fit, train_exp, test_fit, test_exp)
+  res <- SEMseeker:::assoc_model_performance(train_fit, train_exp, test_fit, test_exp)
   expect_true(res$overfitting)
 })
 
-test_that("model_performance: r_squared_test in [0, 1] for near-perfect predictions", {
+test_that("assoc_model_performance: r_squared_test in [0, 1] for near-perfect predictions", {
   train_fit <- c(1.0, 2.0, 3.0, 4.0)
   train_exp <- c(1.0, 2.0, 3.0, 4.0)
   test_fit  <- c(1.1, 1.9, 3.1, 3.9)
   test_exp  <- c(1.0, 2.0, 3.0, 4.0)
-  res <- SEMseeker:::model_performance(train_fit, train_exp, test_fit, test_exp)
+  res <- SEMseeker:::assoc_model_performance(train_fit, train_exp, test_fit, test_exp)
   expect_gte(res$r_squared_test, 0.9)
   expect_lte(res$r_squared_test, 1.0)
 })
 
-test_that("model_performance: mse_test reflects actual squared residuals on test set", {
+test_that("assoc_model_performance: mse_test reflects actual squared residuals on test set", {
   # Use varied training data to avoid 0/0 → NaN in r_squared computation
   train_fit <- c(1, 2, 3, 4)
   train_exp <- c(1, 2, 3, 4)  # perfect train, non-constant → r_squared = 1
   test_fit  <- c(2, 3, 4, 5)
   test_exp  <- c(1, 2, 3, 4)  # each prediction off by 1 → mse_test = 1
-  res <- SEMseeker:::model_performance(train_fit, train_exp, test_fit, test_exp)
+  res <- SEMseeker:::assoc_model_performance(train_fit, train_exp, test_fit, test_exp)
   expect_equal(res$mse_test, 1.0, tolerance = 1e-10)
 })
 
 # ---------------------------------------------------------------------------
-# 5. compute_quantreg_permutation
+# 5. assoc_compute_quantreg_permutation
 # ---------------------------------------------------------------------------
 
-test_that("compute_quantreg_permutation: returns a numeric scalar", {
+test_that("assoc_compute_quantreg_permutation: returns a numeric scalar", {
   skip_if_not_installed("lqmm")
   set.seed(42)
   n  <- 30
@@ -365,12 +365,12 @@ test_that("compute_quantreg_permutation: returns a numeric scalar", {
   )
   f       <- stats::as.formula("burden ~ age")
   control <- list(loop_tol_ll = 1e-5, loop_max_iter = 10000, verbose = FALSE)
-  result  <- SEMseeker:::compute_quantreg_permutation(f, df, tau = 0.5, lqm_control = control)
+  result  <- SEMseeker:::assoc_compute_quantreg_permutation(f, df, tau = 0.5, lqm_control = control)
   expect_length(result, 1)
   expect_true(is.numeric(result))
 })
 
-test_that("compute_quantreg_permutation: shuffle changes the coefficient", {
+test_that("assoc_compute_quantreg_permutation: shuffle changes the coefficient", {
   skip_if_not_installed("lqmm")
   set.seed(7)
   n  <- 40
@@ -381,8 +381,8 @@ test_that("compute_quantreg_permutation: shuffle changes the coefficient", {
   f       <- stats::as.formula("burden ~ pheno")
   control <- list(loop_tol_ll = 1e-5, loop_max_iter = 10000, verbose = FALSE)
 
-  obs   <- SEMseeker:::compute_quantreg_permutation(f, df, tau = 0.5, lqm_control = control)
-  perms <- replicate(20, SEMseeker:::compute_quantreg_permutation(f, df, tau = 0.5,
+  obs   <- SEMseeker:::assoc_compute_quantreg_permutation(f, df, tau = 0.5, lqm_control = control)
+  perms <- replicate(20, SEMseeker:::assoc_compute_quantreg_permutation(f, df, tau = 0.5,
                                                                   lqm_control = control))
   # Shuffled permutations should not all equal the observed coefficient
   expect_false(all(perms == obs))

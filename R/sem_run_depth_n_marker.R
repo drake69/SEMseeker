@@ -13,11 +13,11 @@
 #' @param ssEnv list. Session environment.
 #' @param selected_areas character vector or empty.
 #' @param results data.frame. Accumulator carried over from depth=1.
-#' @param start_time POSIXct. Job start, used by association_analysis_log().
+#' @param start_time POSIXct. Job start, used by assoc_analysis_log().
 #' @param processed_items integer. Counter carried over from depth=1.
-#' @param ... forwarded to apply_stat_model().
+#' @param ... forwarded to assoc_apply_stat_model().
 #' @return list(results = data.frame, processed_items = integer).
-#'   Side effect: writes the CSV via association_analysis_save_results().
+#'   Side effect: writes the CSV via assoc_analysis_save_results().
 #' @keywords internal
 sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
                                 filter_p_value, ssEnv, selected_areas,
@@ -93,7 +93,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     if (is.null(pivot_lazy)) {
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
         " File not found:", pivot_filename, ".")
-      association_analysis_log(cbind(prep$inference_detail, keys[k, ]),
+      assoc_analysis_log(cbind(prep$inference_detail, keys[k, ]),
         start_time, Sys.time(), processed_items)
       next
     }
@@ -103,7 +103,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # AI-061: low-memory lazy path for limma_/voom_ families. Bypass the
     # full pivot materialisation + transpose + sample_sheet merge that
     # the legacy chunked loop runs below, all of which together peak at
-    # ~30× the raw matrix on a 366k-probe pivot. apply_stat_model_batch_lazy()
+    # ~30× the raw matrix on a 366k-probe pivot. assoc_apply_stat_model_batch_lazy()
     # consumes the LazyFrame directly, applies the AI-043 resume filter
     # in polars, and materialises ONE R matrix only.
     is_batch_family <- grepl("^(limma|voom)_", family_test)
@@ -121,7 +121,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
                 "': lazy polars path (AI-061). area_to_remove=",
                 length(area_to_remove))
 
-      result_temp_local_batch <- apply_stat_model_batch_lazy(
+      result_temp_local_batch <- assoc_apply_stat_model_batch_lazy(
         pivot_lazy           = pivot_lazy,
         sample_sheet         = prep$sample_names,
         family_test          = family_test,
@@ -141,15 +141,15 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
       if (new_rows_appended) {
         results <- plyr::rbind.fill(results, result_temp_local_batch)
         results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
-        association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
+        assoc_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
       }
 
-      association_analysis_log(cbind(prep$inference_detail, keys[k, ]),
+      assoc_analysis_log(cbind(prep$inference_detail, keys[k, ]),
         start_time, Sys.time(), processed_items)
       if (nrow(results) != 0)
         results <- subset(results, MARKER == key$MARKER)
 
-      # Force release of polars wrappers + apply_stat_model_batch_lazy locals
+      # Force release of polars wrappers + assoc_apply_stat_model_batch_lazy locals
       # (y_mat ~12 GB on 367k×4k SIGNAL@PROBE + MArrayLM fit + voom weights
       # + design). R's lazy GC otherwise carries them across iterations and
       # the second batch on the same family OOMs at ~165 GB compressed
@@ -258,7 +258,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
           core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
             " Missing values in the data frame!")
         }
-        result_temp_local_batch <- apply_stat_model(
+        result_temp_local_batch <- assoc_apply_stat_model(
           tempDataFrame   = batch_df,
           g_start         = g_start,
           family_test     = family_test,
@@ -281,16 +281,16 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
         new_rows_appended_chunk <- !is.null(result_temp_local_batch) &&
                                    nrow(result_temp_local_batch) > 0L
         if (new_rows_appended_chunk) {
-          association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
+          assoc_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
           n_new_rows_total <- (if (exists("n_new_rows_total")) n_new_rows_total else 0L) +
                               nrow(result_temp_local_batch)
         }
       }
     }
 
-    association_analysis_log(cbind(prep$inference_detail, keys[k, ]),
+    assoc_analysis_log(cbind(prep$inference_detail, keys[k, ]),
       start_time, Sys.time(), processed_items)
-    association_analysis_log(cbind(prep$inference_detail, keys[k, ]),
+    assoc_analysis_log(cbind(prep$inference_detail, keys[k, ]),
       start_time, Sys.time(), processed_items)
     if (nrow(results) != 0)
       results <- subset(results, MARKER == key$MARKER)
@@ -298,7 +298,7 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
 
   # final per-marker save (was lines 428-430)
   results <- results[, !grepl("SAMPLES_SQL_CONDITION", colnames(results)), drop = FALSE]
-  association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
+  assoc_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
 
   list(results = results, processed_items = processed_items)
 }

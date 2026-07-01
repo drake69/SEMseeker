@@ -2,7 +2,7 @@
 #
 # Covered:
 #  - util_split_and_clean()           pure string-splitting helper
-#  - validate_family_test()      returns TRUE/FALSE for known/unknown families
+#  - assoc_validate_family_test()      returns TRUE/FALSE for known/unknown families
 #  - association_analysis()      end-to-end at depth=1 (sample-level)
 #
 # Note on parallel strategy for integration tests (tests 3 and 4):
@@ -44,56 +44,56 @@ test_that("util_split_and_clean respects a custom split delimiter", {
 })
 
 # ---------------------------------------------------------------------------
-# 2. validate_family_test — needs a live session for core_log_event()
+# 2. assoc_validate_family_test — needs a live session for core_log_event()
 # ---------------------------------------------------------------------------
 
-test_that("validate_family_test accepts standard parametric families", {
+test_that("assoc_validate_family_test accepts standard parametric families", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
-  expect_true(SEMseeker:::validate_family_test("gaussian"))
-  expect_true(SEMseeker:::validate_family_test("binomial"))
-  expect_true(SEMseeker:::validate_family_test("poisson"))
-  expect_true(SEMseeker:::validate_family_test("wilcoxon"))
-  expect_true(SEMseeker:::validate_family_test("t.test"))
-  expect_true(SEMseeker:::validate_family_test("pearson"))
-  expect_true(SEMseeker:::validate_family_test("spearman"))
-  expect_true(SEMseeker:::validate_family_test("kendall"))
+  expect_true(SEMseeker:::assoc_validate_family_test("gaussian"))
+  expect_true(SEMseeker:::assoc_validate_family_test("binomial"))
+  expect_true(SEMseeker:::assoc_validate_family_test("poisson"))
+  expect_true(SEMseeker:::assoc_validate_family_test("wilcoxon"))
+  expect_true(SEMseeker:::assoc_validate_family_test("t.test"))
+  expect_true(SEMseeker:::assoc_validate_family_test("pearson"))
+  expect_true(SEMseeker:::assoc_validate_family_test("spearman"))
+  expect_true(SEMseeker:::assoc_validate_family_test("kendall"))
 
   SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
-test_that("validate_family_test accepts parametric family variants", {
+test_that("assoc_validate_family_test accepts parametric family variants", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   # quantreg family (grepl match)
-  expect_true(SEMseeker:::validate_family_test("quantreg_0.5"))
+  expect_true(SEMseeker:::assoc_validate_family_test("quantreg_0.5"))
   # quantreg-permutation requires exactly 5 underscore-separated parts
-  expect_true(SEMseeker:::validate_family_test("quantreg-permutation_0.5_5_10_0.9"))
+  expect_true(SEMseeker:::assoc_validate_family_test("quantreg-permutation_0.5_5_10_0.9"))
   # polynomial / exp / log variants
-  expect_true(SEMseeker:::validate_family_test("polynomial_4_1"))
-  expect_true(SEMseeker:::validate_family_test("exp_1"))
-  expect_true(SEMseeker:::validate_family_test("log_1"))
+  expect_true(SEMseeker:::assoc_validate_family_test("polynomial_4_1"))
+  expect_true(SEMseeker:::assoc_validate_family_test("exp_1"))
+  expect_true(SEMseeker:::assoc_validate_family_test("log_1"))
 
   SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
-test_that("validate_family_test rejects NULL, NA, and unknown strings", {
+test_that("assoc_validate_family_test rejects NULL, NA, and unknown strings", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
-  expect_false(SEMseeker:::validate_family_test(NULL))
-  expect_false(SEMseeker:::validate_family_test(NA))
-  expect_false(SEMseeker:::validate_family_test("not_a_valid_test"))
+  expect_false(SEMseeker:::assoc_validate_family_test(NULL))
+  expect_false(SEMseeker:::assoc_validate_family_test(NA))
+  expect_false(SEMseeker:::assoc_validate_family_test("not_a_valid_test"))
 
   SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
@@ -154,7 +154,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
   # ── Step 2: build a minimal inference_details ─────────────────────────────
   # Use "spearman" to avoid the caret::createDataPartition / GLM path
   # (gaussian calls caret which can fail when mutation counts contain NaN).
-  # Spearman correlation goes through test_model which is NaN-safe.
+  # Spearman correlation goes through assoc_test_model which is NaN-safe.
   # transformation_x must always be present (accessed without NA-guard).
   inference_details <- data.frame(
     independent_variable = "Phenotest",
@@ -193,8 +193,8 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
                            full.names = TRUE)
   testthat::expect_true(length(csv_files) > 0)
 
-  # ── Step 6: the main result CSV (not the covariates_model side-file) has rows
-  result_csv <- csv_files[!grepl("(?i)covariates_model", csv_files)][1]
+  # ── Step 6: the main result CSV (not the assoc_covariates_model side-file) has rows
+  result_csv <- csv_files[!grepl("(?i)assoc_covariates_model", csv_files)][1]
   if (!is.na(result_csv) && file.exists(result_csv)) {
     result_df <- utils::read.csv2(result_csv)
     testthat::expect_true(nrow(result_df) > 0)
@@ -278,7 +278,7 @@ test_that("association_analysis depth=3 reads area pivots and writes inference C
   testthat::expect_true(length(csv_files) > 0)
 
   # depth=3 must produce rows with DEPTH > 1 (area-level), not only DEPTH=1
-  result_csv <- csv_files[!grepl("(?i)covariates_model", csv_files)][1]
+  result_csv <- csv_files[!grepl("(?i)assoc_covariates_model", csv_files)][1]
   if (!is.na(result_csv) && file.exists(result_csv) && file.info(result_csv)$size > 10) {
     result_df <- utils::read.csv2(result_csv)
     if ("DEPTH" %in% colnames(result_df) && nrow(result_df) > 0) {
@@ -300,7 +300,7 @@ test_that("association_analysis depth=3 reads area pivots and writes inference C
 })
 
 # ---------------------------------------------------------------------------
-# T2 — polynomial_2_1 family: exercises execute_model dispatch beyond GLM
+# T2 — polynomial_2_1 family: exercises assoc_execute_model dispatch beyond GLM
 # ---------------------------------------------------------------------------
 
 test_that("association_analysis polynomial family runs without error", {
@@ -338,10 +338,10 @@ test_that("association_analysis polynomial family runs without error", {
 })
 
 # ---------------------------------------------------------------------------
-# T3 — covariates: exercises covariates_model (collinearity check, sample filter)
+# T3 — covariates: exercises assoc_covariates_model (collinearity check, sample filter)
 # ---------------------------------------------------------------------------
 
-test_that("association_analysis with covariates runs and produces a covariates_model side-file", {
+test_that("association_analysis with covariates runs and produces a assoc_covariates_model side-file", {
   tempFolder <- .aa_setup_result_folder()
 
   inference_details <- data.frame(
@@ -413,7 +413,7 @@ test_that("association_analysis is idempotent: second run on same folder does no
   inference_dir <- file.path(tempFolder, "Inference")
   csv_files <- list.files(inference_dir, pattern = "\\.csv$", recursive = TRUE,
                            full.names = TRUE)
-  result_csv <- csv_files[!grepl("(?i)covariates_model", csv_files)][1]
+  result_csv <- csv_files[!grepl("(?i)assoc_covariates_model", csv_files)][1]
   testthat::skip_if(is.na(result_csv) || !file.exists(result_csv),
                     "No primary result CSV produced — cannot verify idempotency")
 

@@ -21,7 +21,7 @@ Invisibly `NULL`; Venn diagrams and comparison tables are written
 Compares enrichment (pathway/term) results across two or more
   independent studies stored under `result_folder` and produces Venn diagrams
   of the overlapping enriched terms. Part of the cross-study replication
-  workflow, alongside [inter_study_association_overlaps()].
+  workflow, alongside [assoc_inter_study_association_overlaps()].
 }
 \examples{
 # See vignette("pathway-analysis", package = "SEMseeker") for a runnable
@@ -29,6 +29,6 @@ Compares enrichment (pathway/term) results across two or more
 invisible(NULL)
 }
 \seealso{
-[inter_study_association_overlaps()],
+[assoc_inter_study_association_overlaps()],
   [enrich_intra_study_enrichment_subsamples_overlaps()]
 }

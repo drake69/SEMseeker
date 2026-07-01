@@ -72,7 +72,7 @@ enrich_pathfindR <- function(study,
           # existing_db <-   unique(pathway_report$source)
         }
 
-        results_inference <- association_results_get(
+        results_inference <- assoc_results_get(
           inference_detail =  inference_detail,
           marker = keys[i,"MARKER"],
           adjust_per_area= adjust_per_area,

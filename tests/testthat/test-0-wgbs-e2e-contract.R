@@ -83,10 +83,10 @@ test_that("AI-098 source-level: skip predicates live in sem_run_depth_n_marker",
   )
 })
 
-# ---- lmfit_chunked_by_chr: chromosome extraction strategy --------------
+# ---- assoc_lmfit_chunked_by_chr: chromosome extraction strategy --------------
 
-test_that("lmfit_chunked_by_chr extracts CHR for long-reads via AREA string split on '_'", {
-  src <- paste(deparse(SEMseeker:::lmfit_chunked_by_chr), collapse = "\n")
+test_that("assoc_lmfit_chunked_by_chr extracts CHR for long-reads via AREA string split on '_'", {
+  src <- paste(deparse(SEMseeker:::assoc_lmfit_chunked_by_chr), collapse = "\n")
   # WGBS / LONGREAD strategy: split on "_" and pick first chunk
   expect_true(
     grepl('str\\$split\\("_"\\)\\$list\\$get\\(0L\\)', src),

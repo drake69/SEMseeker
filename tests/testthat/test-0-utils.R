@@ -5,7 +5,7 @@
 #  - io_file_path_build()        path construction helper
 #  - io_name_composer()          filename fragment assembler
 #  - util_data_frame_add_column()  safe column add/update on data.frames
-#  - filter_sql()             SQL-condition row filter (requires sqldf)
+#  - assoc_filter_sql()             SQL-condition row filter (requires sqldf)
 
 # ---------------------------------------------------------------------------
 # 1. util_boolean_check
@@ -145,28 +145,28 @@ test_that("util_data_frame_add_column preserves existing columns", {
 })
 
 # ---------------------------------------------------------------------------
-# 5. filter_sql
+# 5. assoc_filter_sql
 # ---------------------------------------------------------------------------
-# filter_sql uses sqldf internally and calls core_log_event (requires a session).
+# assoc_filter_sql uses sqldf internally and calls core_log_event (requires a session).
 # Tests that exercise the sqldf path are wrapped with core_init_env / close_env.
 # sqldf resolves table names from the calling frame; we therefore call
-# filter_sql via a thin wrapper so that the local variable name matches
+# assoc_filter_sql via a thin wrapper so that the local variable name matches
 # what the function expects.
 
-test_that("filter_sql returns data unchanged for empty conditions", {
+test_that("assoc_filter_sql returns data unchanged for empty conditions", {
   df <- data.frame(x = 1:5, g = c("a","b","a","b","a"))
-  result <- SEMseeker:::filter_sql(c(), df)
+  result <- SEMseeker:::assoc_filter_sql(c(), df)
   expect_equal(nrow(result), nrow(df))
 })
 
-test_that("filter_sql filters rows by numeric condition", {
+test_that("assoc_filter_sql filters rows by numeric condition", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   df <- data.frame(x = 1:10)
-  result <- SEMseeker:::filter_sql("x > 5", df)
+  result <- SEMseeker:::assoc_filter_sql("x > 5", df)
   expect_true(all(result$x > 5))
   expect_equal(nrow(result), 5)
 
@@ -174,7 +174,7 @@ test_that("filter_sql filters rows by numeric condition", {
   unlink(tempFolder, recursive = TRUE)
 })
 
-test_that("filter_sql filters rows by character condition", {
+test_that("assoc_filter_sql filters rows by character condition", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
@@ -185,7 +185,7 @@ test_that("filter_sql filters rows by character condition", {
     grp = c("case", "control", "case"),
     stringsAsFactors = FALSE
   )
-  result <- SEMseeker:::filter_sql("grp = 'case'", df)
+  result <- SEMseeker:::assoc_filter_sql("grp = 'case'", df)
   expect_equal(nrow(result), 2)
   expect_true(all(result$grp == "case"))
 
@@ -193,7 +193,7 @@ test_that("filter_sql filters rows by character condition", {
   unlink(tempFolder, recursive = TRUE)
 })
 
-test_that("filter_sql applies multiple conditions sequentially", {
+test_that("assoc_filter_sql applies multiple conditions sequentially", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
@@ -201,21 +201,21 @@ test_that("filter_sql applies multiple conditions sequentially", {
 
   df <- data.frame(x = 1:10, y = c(rep("A",5), rep("B",5)),
                    stringsAsFactors = FALSE)
-  result <- SEMseeker:::filter_sql(c("x > 3", "x < 8"), df)
+  result <- SEMseeker:::assoc_filter_sql(c("x > 3", "x < 8"), df)
   expect_true(all(result$x > 3 & result$x < 8))
 
   SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
-test_that("filter_sql returns empty data.frame when no rows match", {
+test_that("assoc_filter_sql returns empty data.frame when no rows match", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
   SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   df <- data.frame(x = 1:5)
-  result <- SEMseeker:::filter_sql("x > 100", df)
+  result <- SEMseeker:::assoc_filter_sql("x > 100", df)
   expect_equal(nrow(result), 0)
 
   SEMseeker:::core_close_env()
