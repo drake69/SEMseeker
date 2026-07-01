@@ -1,9 +1,9 @@
-#' create_heatmap load the multiple bed resulting from
+#' plot_create_heatmap load the multiple bed resulting from
 #' analysis organized into files and folders per marker and produce a pivot
 #'
 #' @return nothing
 #' @importFrom doRNG %dorng%
-create_heatmap <- function() {
+plot_create_heatmap <- function() {
 
   ssEnv <- get_session_info()
   sample_group_comb <- utils::combn(ssEnv$keys_sample_groups, 2)

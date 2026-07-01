@@ -21,7 +21,7 @@
 #' @examples
 #' result_dir <- tempdir()
 #' \dontrun{
-#' manhattan_plot_per_area(
+#' plot_manhattan_plot_per_area(
 #'   marker        = "DELTARP",
 #'   figure        = "HYPO",
 #'   area          = "GENE",
@@ -33,7 +33,7 @@
 #' }
 #' @export
 #'
-manhattan_plot_per_area <- function(marker,figure,area,subarea,family, adjust_method,phenotype, only_significant_areas=FALSE){
+plot_manhattan_plot_per_area <- function(marker,figure,area,subarea,family, adjust_method,phenotype, only_significant_areas=FALSE){
 
   if(only_significant_areas)
   {

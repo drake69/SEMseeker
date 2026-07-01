@@ -1,13 +1,13 @@
 ## test-2-box-plot.R
-## Tests for box.plot(): assert PNG files are created for the box-plot
+## Tests for plot_box_plot(): assert PNG files are created for the box-plot
 ## and violin-plot variants. Requires ggpubr (in Suggests).
 ##
-## box.plot() is a side-effect function: it writes two PNG files per call
+## plot_box_plot() is a side-effect function: it writes two PNG files per call
 ## (one boxplot, one violin) under the session chart folder. The tests below
 ## verify that both files exist after the call and that non-dichotomous
 ## families are silently skipped.
 
-test_that("box.plot: wilcoxon call creates boxplot and violin PNG files", {
+test_that("plot_box_plot: wilcoxon call creates boxplot and violin PNG files", {
   skip_if_not_installed("ggpubr")
 
   tf  <- tempFolders[30]
@@ -21,7 +21,7 @@ test_that("box.plot: wilcoxon call creates boxplot and violin PNG files", {
   )
   key <- list(AREA = "GENE", SUBAREA = "TSS200", MARKER = "MUTATIONS", FIGURE = "K850")
 
-  SEMseeker:::box.plot(
+  SEMseeker:::plot_box_plot(
     dataFrameToPlot       = df,
     independent_variable  = "GROUP",
     dependent_variable    = "BURDEN",
@@ -37,7 +37,7 @@ test_that("box.plot: wilcoxon call creates boxplot and violin PNG files", {
   expect_gte(length(png_files), 2)  # boxplot + violin
 })
 
-test_that("box.plot: t.test family also creates PNG files", {
+test_that("plot_box_plot: t.test family also creates PNG files", {
   skip_if_not_installed("ggpubr")
 
   tf  <- tempFolders[31]
@@ -51,7 +51,7 @@ test_that("box.plot: t.test family also creates PNG files", {
   )
   key <- list(AREA = "GENE", SUBAREA = "TSS200", MARKER = "MUTATIONS", FIGURE = "K850")
 
-  SEMseeker:::box.plot(
+  SEMseeker:::plot_box_plot(
     dataFrameToPlot       = df,
     independent_variable  = "GROUP",
     dependent_variable    = "BURDEN",
@@ -67,7 +67,7 @@ test_that("box.plot: t.test family also creates PNG files", {
   expect_gte(length(png_files), 2)
 })
 
-test_that("box.plot: non-dichotomous family (pearson) is skipped silently", {
+test_that("plot_box_plot: non-dichotomous family (pearson) is skipped silently", {
   skip_if_not_installed("ggpubr")
 
   tf  <- tempFolders[32]
@@ -78,7 +78,7 @@ test_that("box.plot: non-dichotomous family (pearson) is skipped silently", {
   key <- list(AREA = "GENE", SUBAREA = "TSS200", MARKER = "MUTATIONS", FIGURE = "K850")
 
   # Should return NULL invisibly without creating any files
-  result <- SEMseeker:::box.plot(
+  result <- SEMseeker:::plot_box_plot(
     dataFrameToPlot       = df,
     independent_variable  = "GROUP",
     dependent_variable    = "BURDEN",

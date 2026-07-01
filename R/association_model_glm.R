@@ -88,7 +88,7 @@ glm_model <- function(family_test, tempDataFrame, sig.formula, transformation_y,
     ggp <- NULL
     if(plot)
     {
-      # ggp <- box.plot(dataFrameToPlot, independent_variable,burdenValue, transformation_y, family_test)
+      # ggp <- plot_box_plot(dataFrameToPlot, independent_variable,burdenValue, transformation_y, family_test)
       #
       ggp <- ggplot2::ggplot(train.data, ggplot2::aes_string(x = independent_variable, y = dependent_variable)) +
         ggplot2::geom_point( color = ssEnv$color_palette[1] ) +

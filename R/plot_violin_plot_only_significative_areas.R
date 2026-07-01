@@ -1,5 +1,5 @@
 #' @importFrom doRNG %dorng%
-violin_plot_only_significative_areas <- function(fileNameResults, inference_detail, figure, marker,area, subarea, independent_variable, transformation_y)
+plot_violin_plot_only_significative_areas <- function(fileNameResults, inference_detail, figure, marker,area, subarea, independent_variable, transformation_y)
 {
   inference_inference_file <- ""
   area <- ""

@@ -43,7 +43,7 @@ test_model_paired <- function (family_test, tempDataFrame, sig.formula,burdenVal
   if(family_test=="wilcoxon.paired")
   {
     if (plot)
-      box.plot(tempDataFrameOriginal, independent_variable,burdenValue, transformation_y, family_test, samples_sql_condition, key)
+      plot_box_plot(tempDataFrameOriginal, independent_variable,burdenValue, transformation_y, family_test, samples_sql_condition, key)
 
     result_w  <- suppressWarnings(stats::wilcox.test(tempDataFrame[,first_category], tempDataFrame[,second_category], exact=TRUE, paired = TRUE))
     res$pvalue <- result_w$p.value
@@ -90,7 +90,7 @@ test_model_paired <- function (family_test, tempDataFrame, sig.formula,burdenVal
   if(family_test=="t.test.paired")
   {
     if (plot)
-      box.plot(tempDataFrameOriginal, independent_variable,burdenValue, transformation_y, family_test, samples_sql_condition, key)
+      plot_box_plot(tempDataFrameOriginal, independent_variable,burdenValue, transformation_y, family_test, samples_sql_condition, key)
 
     result_w  <-stats::t.test(formula= sig.formula, data = as.data.frame(tempDataFrame), paired = TRUE)
     res$pvalue <- result_w$p.value

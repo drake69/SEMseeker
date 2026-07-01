@@ -5,8 +5,8 @@
 #   - dump_sample_as_bed_file()  writes a tab-separated BED file;
 #                                prepends "chr" if absent; sorts by CHR/START/END
 #
-# The companion chart test (test-2-box-plot.R) already covers box.plot() PNG
-# generation.  manhattan_plot_per_area() depends on pivot parquet files and is
+# The companion chart test (test-2-box-plot.R) already covers plot_box_plot() PNG
+# generation.  plot_manhattan_plot_per_area() depends on pivot parquet files and is
 # tested end-to-end via test-6-semseeker.R + test-7-association_analysis.R.
 # The tests here focus on the low-level I/O helper used by analyze_single_sample().
 

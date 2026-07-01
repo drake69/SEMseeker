@@ -71,7 +71,7 @@ volcano_plot_inference <- function(inference_detail,
       as.numeric(ssEnv$plot_resolution_ppi) else 600
   }
   # AI-044 (2026-06-09): use SEMseeker's pastel palette (`color_palette`)
-  # consistently with the rest of the package (box.plot, fitted model
+  # consistently with the rest of the package (plot_box_plot, fitted model
   # charts). `color_palette_darker` is a base-R name vector used for
   # accent strokes (e.g. trend lines); raw "red" / "blue" look harsh
   # against pastel-filled charts.

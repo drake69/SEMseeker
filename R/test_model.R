@@ -27,7 +27,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
   if(family_test=="chisq.test")
   {
     # if (plot)
-    #   box.plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
+    #   plot_box_plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
 
     tempDataFrame <- as.data.frame(tempDataFrame)
     dep_var <- strsplit(gsub("\ ","",as.character(sig.formula)),"~")
@@ -52,7 +52,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
   if(family_test=="bartlett.test")
   {
     if (plot)
-      box.plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
+      plot_box_plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
 
     tempDataFrame <- as.data.frame(tempDataFrame)
     dep_var <- strsplit(gsub("\ ","",as.character(sig.formula)),"~")
@@ -73,7 +73,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
   if (family_test=="fisher.test")
   {
     if (plot)
-      box.plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
+      plot_box_plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
 
     tempDataFrame <- as.data.frame(tempDataFrame)
     dep_var <- strsplit(gsub("\ ","",as.character(sig.formula)),"~")
@@ -93,7 +93,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
   if (family_test=="kruskal.test")
   {
     if (plot)
-      box.plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test, samples_sql_condition, key)
+      plot_box_plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test, samples_sql_condition, key)
 
     tempDataFrame <- as.data.frame(tempDataFrame)
     dep_var <- strsplit(gsub("\ ","",as.character(sig.formula)),"~")
@@ -185,7 +185,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
     }
 
     if (plot)
-      box.plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
+      plot_box_plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
 
     result_w  <- suppressWarnings(stats::wilcox.test(formula= sig.formula, data = as.data.frame(tempDataFrame), exact=TRUE))
     res$pvalue <- result_w$p.value
@@ -232,7 +232,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
   if(family_test=="t.test")
   {
     if (plot)
-      box.plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
+      plot_box_plot(tempDataFrame, independent_variable,burdenValue, transformation_y, family_test,samples_sql_condition, key)
 
     result_w  <-stats::t.test(formula= sig.formula, data = as.data.frame(tempDataFrame))
     res$pvalue <- result_w$p.value

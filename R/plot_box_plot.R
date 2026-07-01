@@ -1,4 +1,4 @@
-box.plot <- function (dataFrameToPlot, independent_variable,dependent_variable, transformation_y, family_test, samples_sql_condition="",key)
+plot_box_plot <- function (dataFrameToPlot, independent_variable,dependent_variable, transformation_y, family_test, samples_sql_condition="",key)
 {
   if (!is.family_dicotomic(family_test))
     return()
