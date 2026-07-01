@@ -30,7 +30,7 @@ plot_create_heatmap <- function() {
       subarea <- localKeys[j,"SUBAREA"]
       marker <- localKeys[j,"MARKER"]
       figure <- localKeys[j,"FIGURE"]
-      chartFolder <- dir_check_and_create(ssEnv$result_folderChart, area)
+      chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart, area)
 
       annotatedData <-  read_annotated_bed(figure,marker,area,subarea)
       annotatedData <- subset(annotatedData, annotatedData$SAMPLE_GROUP %in% sample_group_comb)

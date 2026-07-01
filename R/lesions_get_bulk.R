@@ -5,7 +5,7 @@
 #' polars+R-side matrix ops. La versione single-sample (per il path legacy
 #' `analyze_population()` per-sample loop) e' in `R/lesions_get.R`. Pattern:
 #' `<funzione_single_sample>` + `<funzione_single_sample>_bulk` come
-#' altri sites del package (signal_save, deltaX_get).
+#' altri sites del package (io_signal_save, deltaX_get).
 #'
 #' Usa una **physical window in bp** centrata su ogni position p, con radius
 #' `LESIONS_BP` letto da ssEnv (default 5000 bp, vedi AI-092 + AI-048).

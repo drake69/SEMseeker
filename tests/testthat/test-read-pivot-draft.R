@@ -1,8 +1,8 @@
-# DRAFT 2026-06-01 (AI-027). Minimal smoke tests for read_pivot() dispatch.
+# DRAFT 2026-06-01 (AI-027). Minimal smoke tests for io_read_pivot() dispatch.
 # Not wired into production yet; runs in CI to make sure the new code parses
 # and dispatches correctly on tiny fixtures.
 
-test_that("read_pivot() returns NULL when no storage exists", {
+test_that("io_read_pivot() returns NULL when no storage exists", {
 
   skip_on_cran()
 
@@ -15,11 +15,11 @@ test_that("read_pivot() returns NULL when no storage exists", {
           add = TRUE)
 
   testthat::expect_null(
-    SEMseeker:::read_pivot("MUTATIONS", "HYPER")
+    SEMseeker:::io_read_pivot("MUTATIONS", "HYPER")
   )
 })
 
-test_that("read_pivot() prefers cached parquet over bed files", {
+test_that("io_read_pivot() prefers cached parquet over bed files", {
 
   skip_on_cran()
 
@@ -32,18 +32,18 @@ test_that("read_pivot() prefers cached parquet over bed files", {
           add = TRUE)
 
   # Write a 1-row stub parquet at the expected pivot location
-  pivot_path <- SEMseeker:::pivot_file_name_parquet("MUTATIONS", "HYPER",
+  pivot_path <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER",
                                                    "POSITION", "WHOLE")
   dir.create(dirname(pivot_path), recursive = TRUE, showWarnings = FALSE)
   polars::as_polars_df(data.frame(CHR = "1", START = 1L, END = 2L,
                                   SAMPLE_X = 0.0))$write_parquet(pivot_path)
 
-  result <- SEMseeker:::read_pivot("MUTATIONS", "HYPER")
+  result <- SEMseeker:::io_read_pivot("MUTATIONS", "HYPER")
   testthat::expect_s3_class(result, "polars_lazy_frame")
   testthat::expect_true("SAMPLE_X" %in% colnames(result$collect()))
 })
 
-test_that("stream_merge_bed() builds a lazy frame from minimal bed fixtures", {
+test_that("io_stream_merge_bed() builds a lazy frame from minimal bed fixtures", {
 
   skip_on_cran()
 
@@ -57,7 +57,7 @@ test_that("stream_merge_bed() builds a lazy frame from minimal bed fixtures", {
   writeLines(c("chr1\t100\t101\t0.5", "chr1\t200\t201\t0.7"), bg1)
   writeLines(c("chr1\t100\t101\t0.3", "chr1\t300\t301\t0.9"), bg2)
 
-  merged <- SEMseeker:::stream_merge_bed(c(bg1, bg2), "MUTATIONS", "HYPER")
+  merged <- SEMseeker:::io_stream_merge_bed(c(bg1, bg2), "MUTATIONS", "HYPER")
   testthat::expect_s3_class(merged, "polars_lazy_frame")
 
   out <- merged$collect()

@@ -51,11 +51,11 @@ deltar_single_sample <- function(values, thresholds, sample_detail) {
   deltar_hyper <- anno_sort_by_chr_and_start(deltar_hyper)
   deltar_hyper <- subset(deltar_hyper, deltar_hyper$DELTA > 0)[, c("CHR", "START", "END", "DELTA")]
 
-  folder_to_save <- dir_check_and_create(ssEnv$result_folderData,
+  folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData,
     c(as.character(sample_detail$Sample_Group), "DELTAR_HYPER"))
-  dump_sample_as_bed_file(
+  io_dump_sample_as_bed_file(
     data_to_dump = deltar_hyper,
-    fileName     = file_path_build(folder_to_save,
+    fileName     = io_file_path_build(folder_to_save,
                      c(as.character(sample_detail$Sample_ID), "DELTAR", "HYPER"),
                      "bedgraph", add_gz = TRUE)
   )
@@ -71,11 +71,11 @@ deltar_single_sample <- function(values, thresholds, sample_detail) {
   deltar_hypo <- anno_sort_by_chr_and_start(deltar_hypo)
   deltar_hypo <- subset(deltar_hypo, deltar_hypo$DELTA > 0)[, c("CHR", "START", "END", "DELTA")]
 
-  folder_to_save <- dir_check_and_create(ssEnv$result_folderData,
+  folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData,
     c(as.character(sample_detail$Sample_Group), "DELTAR_HYPO"))
-  dump_sample_as_bed_file(
+  io_dump_sample_as_bed_file(
     data_to_dump = deltar_hypo,
-    fileName     = file_path_build(folder_to_save,
+    fileName     = io_file_path_build(folder_to_save,
                      c(as.character(sample_detail$Sample_ID), "DELTAR", "HYPO"),
                      "bedgraph", add_gz = TRUE)
   )

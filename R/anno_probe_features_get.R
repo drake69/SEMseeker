@@ -55,7 +55,7 @@ anno_probe_features_get <- function(area_subarea) {
     log_event("WARNING: anno_probe_features_get() called before ssEnv$tech is set. ",
               "Falling back to lazy detection from SIGNAL PROBE pivot. ",
               "prepare_batch_signal() should run first in the normal pipeline.")
-    signal_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
+    signal_pivot_lazy <- io_read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
     if (is.null(signal_pivot_lazy))
       stop("SIGNAL_MEAN PROBE pivot not available — cannot detect technology.")
     signal_data_r <- as.data.frame(signal_pivot_lazy$collect())
@@ -82,9 +82,9 @@ anno_probe_features_get <- function(area_subarea) {
     # AI-027: read via unified dispatcher. NULL means neither cached
     # nor per-sample bed files exist for SIGNAL_MEAN — same failure
     # mode as the previous file.exists() check.
-    sig_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
+    sig_pivot_lazy <- io_read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
     if (is.null(sig_pivot_lazy))
-      stop("POSITION pivot not found. Ensure signal_save() completed before ",
+      stop("POSITION pivot not found. Ensure io_signal_save() completed before ",
            "calling anno_probe_features_get() for area '", area_subarea, "'.")
 
     pos <- as.data.frame(sig_pivot_lazy$collect())[, c("CHR", "START", "END")]

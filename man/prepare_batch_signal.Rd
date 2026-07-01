@@ -11,7 +11,7 @@ prepare_batch_signal(signal_data, tech = NULL, sex_chromosome_remove = TRUE)
 (Illumina probe IDs like `"cg00050873"` for K27/K450/K850, or
 coordinate-encoded `"{CHR}_{START}"` strings for WGBS/LONGREAD).
 Sample columns follow. Must be PROBE-keyed, i.e. already passed
-through `normalize_signal_input()`.}
+through `io_normalize_signal_input()`.}
 
 \item{tech}{Character scalar. One of `"K27"`, `"K450"`, `"K850"`,
 `"WGBS"`, `"LONGREAD"`. If `NULL` (default) the function calls

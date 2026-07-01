@@ -10,9 +10,9 @@ enrich_WebGestalt <- function(study,
   ssEnv <- get_session_info()
   pvalue_column <- name_cleaning(pvalue_column)
   keys <- unique(ssEnv$keys_for_pathway)
-  path <- dir_check_and_create(ssEnv$result_folderEnrichment,c("WebGestalt",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+  path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("WebGestalt",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
   tmp <- tempdir()
-  tempFolder <- dir_check_and_create(tmp,c("/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]")))
+  tempFolder <- io_dir_check_and_create(tmp,c("/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]")))
 
 
   #check if optional package is installed
@@ -36,7 +36,7 @@ enrich_WebGestalt <- function(study,
       {
         projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  ,
           pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
-        filenameResult <- file_path_build(path,projectName,"csv")
+        filenameResult <- io_file_path_build(path,projectName,"csv")
         # if(file.exists(filenameResult))
         #   next
 
@@ -168,7 +168,7 @@ enrich_WebGestalt <- function(study,
         # # browser
         # if(min(enrichResultToPlot$FDR) < as.numeric((ssEnv$alpha)))
         # {
-        plotFileName <- file_path_build(path,projectName,ssEnv$plot_format)
+        plotFileName <- io_file_path_build(path,projectName,ssEnv$plot_format)
         # grDevices::png(file= plotFileName, width=2048,height=2048, bg = "transparent")
         enrichResultToPlot <- as.data.frame(enrichResultToPlot)
         enrichResultToPlot <- enrichResultToPlot[order(enrichResultToPlot$expect),]
@@ -216,7 +216,7 @@ enrich_WebGestalt <- function(study,
     if(exists("enrichResultFinal"))
     {
       projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
-      filenameResult <- file_path_build(path,projectName,"csv")
+      filenameResult <- io_file_path_build(path,projectName,"csv")
       enrich_result_save(enrichResultFinal, filenameResult, "WebGestalt")
       rm(enrichResultFinal)
     }

@@ -38,7 +38,7 @@ intra_study_association_replication <- function(inference_details_origin, infere
 
     marker <- markers[a]
 
-    inference_filename <- inference_file_name(inference_detail = inference_details, folder = ssEnv$result_folderInference, marker = marker, file_extension = "csv")
+    inference_filename <- io_inference_file_name(inference_detail = inference_details, folder = ssEnv$result_folderInference, marker = marker, file_extension = "csv")
 
     if(file.exists(inference_filename))
       next
@@ -77,7 +77,7 @@ intra_study_association_replication <- function(inference_details_origin, infere
 
 
 
-    inference_filename_origin <- inference_file_name(inference_detail = inference_details_origin, folder = ssEnv$result_folderInference, marker = marker, file_extension = "csv")
+    inference_filename_origin <- io_inference_file_name(inference_detail = inference_details_origin, folder = ssEnv$result_folderInference, marker = marker, file_extension = "csv")
     data_origin <- utils::read.csv2(inference_filename_origin)
     data <- utils::read.csv2(inference_filename)
 

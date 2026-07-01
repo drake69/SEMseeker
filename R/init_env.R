@@ -49,8 +49,8 @@
 )
 
 .SS_FN_EXPORT <- c("analyze_single_sample","deltar_single_sample",
-                   "dump_sample_as_bed_file", "delta_single_sample",
-                   "dir_check_and_create", "file_path_build",
+                   "io_dump_sample_as_bed_file", "delta_single_sample",
+                   "io_dir_check_and_create", "io_file_path_build",
                    "analyze_single_sample_both", "anno_sort_by_chr_and_start",
                    "util_test_match_order", "lesions_get", "mutations_get")
 
@@ -104,7 +104,7 @@
     ssEnv <- list()
   }
   ssEnv$session_id <- if (is.null(ssEnv$session_id)) 0 else ssEnv$session_id + 1
-  ssEnv$session_folder <- dir_check_and_create(result_folder, c("Log"))
+  ssEnv$session_folder <- io_dir_check_and_create(result_folder, c("Log"))
   ssEnv$seed <- 7658776
   update_session_info(ssEnv)
   ssEnv
@@ -130,7 +130,7 @@
                                sep = "")
   ssEnv$result_folder <- result_folder
   for (key in names(.SS_FOLDERS))
-    ssEnv[[key]] <- dir_check_and_create(result_folder, .SS_FOLDERS[[key]])
+    ssEnv[[key]] <- io_dir_check_and_create(result_folder, .SS_FOLDERS[[key]])
   ssEnv
 }
 

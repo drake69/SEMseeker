@@ -8,8 +8,8 @@
 # — the coordinate format introduced by B-01 (WGBS) and B-02 (ONT long-read).
 #
 # Covered:
-#   1. is_coord_format()         detects CHR/START columns correctly
-#   2. normalize_signal_input()  converts coord df → probe-indexed matrix
+#   1. io_is_coord_format()         detects CHR/START columns correctly
+#   2. io_normalize_signal_input()  converts coord df → probe-indexed matrix
 #   3. get_meth_tech()           sets ssEnv$tech = "LONGREAD" for coord input
 #   4. mutations_get()           HYPO / HYPER with coord-derived values + thresholds
 #   5. delta_single_sample()     continuous delta metric from coord input
@@ -66,24 +66,24 @@
 # 1. Format detection
 # ---------------------------------------------------------------------------
 
-test_that("is_coord_format: detects coordinate data.frame (CHR/START columns)", {
+test_that("io_is_coord_format: detects coordinate data.frame (CHR/START columns)", {
   df <- .build_coord_signal(n_pos = 10L, n_samples = 2L)
-  expect_true(SEMseeker:::is_coord_format(df))
+  expect_true(SEMseeker:::io_is_coord_format(df))
 })
 
-test_that("is_coord_format: rejects cg*-indexed Illumina matrix", {
+test_that("io_is_coord_format: rejects cg*-indexed Illumina matrix", {
   # signal_data from setup.R has cg* rownames → NOT coord format
-  expect_false(SEMseeker:::is_coord_format(signal_data))
+  expect_false(SEMseeker:::io_is_coord_format(signal_data))
 })
 
 # ---------------------------------------------------------------------------
-# 2. normalize_signal_input
+# 2. io_normalize_signal_input
 # ---------------------------------------------------------------------------
 
-test_that("normalize_signal_input: coord df → probe-indexed matrix, no CHR/START/END cols", {
+test_that("io_normalize_signal_input: coord df → probe-indexed matrix, no CHR/START/END cols", {
   df <- .build_coord_signal(n_pos = 20L, n_samples = 3L)
-  result <- SEMseeker:::normalize_signal_input(df)
-  expect_false(SEMseeker:::is_coord_format(result))
+  result <- SEMseeker:::io_normalize_signal_input(df)
+  expect_false(SEMseeker:::io_is_coord_format(result))
   expect_false("CHR"   %in% colnames(result))
   expect_false("START" %in% colnames(result))
   expect_false("END"   %in% colnames(result))
@@ -91,22 +91,22 @@ test_that("normalize_signal_input: coord df → probe-indexed matrix, no CHR/STA
   expect_equal(ncol(result), 3L)  # 3 sample columns
 })
 
-test_that("normalize_signal_input: probe IDs are CHR_START format", {
+test_that("io_normalize_signal_input: probe IDs are CHR_START format", {
   df <- data.frame(CHR = "chr1", START = 12345L, END = 12345L, S1 = 0.7)
-  result <- SEMseeker:::normalize_signal_input(df)
+  result <- SEMseeker:::io_normalize_signal_input(df)
   # chr prefix stripped → "1_12345"
   expect_equal(rownames(result), "1_12345")
 })
 
-test_that("normalize_signal_input: passes Illumina matrix unchanged", {
+test_that("io_normalize_signal_input: passes Illumina matrix unchanged", {
   # Illumina matrix should pass through untouched
-  result <- SEMseeker:::normalize_signal_input(signal_data)
+  result <- SEMseeker:::io_normalize_signal_input(signal_data)
   expect_identical(result, signal_data)
 })
 
-test_that("normalize_signal_input: preserves beta values after conversion", {
+test_that("io_normalize_signal_input: preserves beta values after conversion", {
   df <- data.frame(CHR = "chr1", START = 5000L, END = 5000L, S1 = 0.42)
-  result <- SEMseeker:::normalize_signal_input(df)
+  result <- SEMseeker:::io_normalize_signal_input(df)
   expect_equal(as.numeric(result[1, 1]), 0.42, tolerance = 1e-10)
 })
 
@@ -120,7 +120,7 @@ test_that("get_meth_tech: coord-format signal sets tech to WGBS (not an Illumina
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   coord_df  <- .build_coord_signal(n_pos = 30L, n_samples = 3L)
-  probe_mat <- SEMseeker:::normalize_signal_input(coord_df)
+  probe_mat <- SEMseeker:::io_normalize_signal_input(coord_df)
   env       <- SEMseeker:::get_meth_tech(probe_mat)
   # Coordinate-format data has synthetic "CHR_POS" probe IDs that don't match
   # any Illumina array manifest → get_meth_tech classifies them as WGBS
@@ -319,11 +319,11 @@ test_that("signal_single_sample: writes bedgraph file for coordinate-format samp
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   coord_df  <- .build_coord_signal(n_pos = 20L, n_samples = 2L)
-  probe_mat <- SEMseeker:::normalize_signal_input(coord_df)
+  probe_mat <- SEMseeker:::io_normalize_signal_input(coord_df)
 
   # Build probe_features from the converted matrix (CHR/START/END recovered via
-  # probe_id_to_coord)
-  pf <- SEMseeker:::coord_probe_features(rownames(probe_mat))
+  # io_probe_id_to_coord)
+  pf <- SEMseeker:::io_coord_probe_features(rownames(probe_mat))
 
   sample_detail <- data.frame(
     Sample_ID    = colnames(probe_mat)[1],

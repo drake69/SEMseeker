@@ -39,7 +39,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
     stringsAsFactors = FALSE
   )
 
-  signal_path <- SEMseeker:::pivot_file_name_parquet("SIGNAL", "MEAN",
+  signal_path <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "MEAN",
                                                     "POSITION", "WHOLE")
   dir.create(dirname(signal_path), recursive = TRUE, showWarnings = FALSE)
   polars::as_polars_df(probe_df)$write_parquet(signal_path)
@@ -82,7 +82,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
   }
 
   # ---- Verify DELTAS_HYPER ------------------------------------------------
-  deltas_hyper_path <- SEMseeker:::pivot_file_name_parquet("DELTAS", "HYPER",
+  deltas_hyper_path <- SEMseeker:::io_pivot_file_name_parquet("DELTAS", "HYPER",
                                                           "POSITION", "WHOLE")
   testthat::expect_true(file.exists(deltas_hyper_path))
 
@@ -97,7 +97,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
                          tolerance = 1e-10, ignore_attr = TRUE)
 
   # ---- Verify DELTAS_HYPO ------------------------------------------------
-  deltas_hypo_path <- SEMseeker:::pivot_file_name_parquet("DELTAS", "HYPO",
+  deltas_hypo_path <- SEMseeker:::io_pivot_file_name_parquet("DELTAS", "HYPO",
                                                          "POSITION", "WHOLE")
   testthat::expect_true(file.exists(deltas_hypo_path))
 
@@ -108,7 +108,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
                          tolerance = 1e-10, ignore_attr = TRUE)
 
   # ---- Verify MUTATIONS_HYPER --------------------------------------------
-  mut_hyper_path <- SEMseeker:::pivot_file_name_parquet("MUTATIONS", "HYPER",
+  mut_hyper_path <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER",
                                                        "POSITION", "WHOLE")
   testthat::expect_true(file.exists(mut_hyper_path))
 
@@ -118,7 +118,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
   testthat::expect_equal(actual_mut, expected_mut, ignore_attr = TRUE)
 
   # ---- Verify DELTAR_HYPER -----------------------------------------------
-  deltar_hyper_path <- SEMseeker:::pivot_file_name_parquet("DELTAR", "HYPER",
+  deltar_hyper_path <- SEMseeker:::io_pivot_file_name_parquet("DELTAR", "HYPER",
                                                           "POSITION", "WHOLE")
   testthat::expect_true(file.exists(deltar_hyper_path))
 
@@ -129,7 +129,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
                          tolerance = 1e-9, ignore_attr = TRUE)
 
   # ---- Verify LESIONS_HYPER existence + shape ----------------------------
-  les_hyper_path <- SEMseeker:::pivot_file_name_parquet("LESIONS", "HYPER",
+  les_hyper_path <- SEMseeker:::io_pivot_file_name_parquet("LESIONS", "HYPER",
                                                        "POSITION", "WHOLE")
   testthat::expect_true(file.exists(les_hyper_path))
 

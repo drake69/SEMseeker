@@ -42,10 +42,10 @@ semseeker_core <- function(sample_sheet,
     start_time <- Sys.time()
     ssEnv$running_batch_id <- batch_id
     ssEnv <- update_session_info(ssEnv)
-    sample_sheet_local <- source_data_get(sample_sheet[[batch_id]])
+    sample_sheet_local <- io_source_data_get(sample_sheet[[batch_id]])
     sample_sheet_local$Sample_ID <- name_cleaning(sample_sheet_local$Sample_ID)
-    utils::write.csv2(sample_sheet_local, file = file_path_build(ssEnv$result_folderData, paste0(batch_id,"_sample_sheet_original"),"csv",FALSE))
-    analyze_batch(source_data_get(signal_data[[batch_id]]), sample_sheet_local)
+    utils::write.csv2(sample_sheet_local, file = io_file_path_build(ssEnv$result_folderData, paste0(batch_id,"_sample_sheet_original"),"csv",FALSE))
+    analyze_batch(io_source_data_get(signal_data[[batch_id]]), sample_sheet_local)
     anno_create_position_pivots(sample_sheet_local,ssEnv$keys_markers_figures)
     log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), "Batch Executed in:", difftime(time1 = Sys.time(), time2= start_time,units = "mins") , " minutes.")
   }

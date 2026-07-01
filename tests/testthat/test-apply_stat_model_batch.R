@@ -60,14 +60,14 @@
              stringsAsFactors = FALSE)
 }
 
-# Stub data_preparation if it's only available inside SEMseeker namespace —
+# Stub io_data_preparation if it's only available inside SEMseeker namespace —
 # we call apply_stat_model_batch directly with already-prepared input,
-# bypassing data_preparation entirely by patching with a pass-through.
+# bypassing io_data_preparation entirely by patching with a pass-through.
 .with_passthrough_data_prep <- function(code) {
-  if (!"data_preparation" %in% ls(asNamespace("SEMseeker"))) {
+  if (!"io_data_preparation" %in% ls(asNamespace("SEMseeker"))) {
     return(code)
   }
-  orig <- SEMseeker:::data_preparation
+  orig <- SEMseeker:::io_data_preparation
   passthrough <- function(family_test, transformation_y, tempDataFrame,
                           independent_variable, g_start, g_end, FALSE_,
                           covariates, depth_analysis, key,
@@ -75,11 +75,11 @@
     list(tempDataFrame = tempDataFrame,
          independent_variableLevels = c(NA, NA))
   }
-  unlockBinding("data_preparation", asNamespace("SEMseeker"))
-  assign("data_preparation", passthrough, envir = asNamespace("SEMseeker"))
+  unlockBinding("io_data_preparation", asNamespace("SEMseeker"))
+  assign("io_data_preparation", passthrough, envir = asNamespace("SEMseeker"))
   on.exit({
-    assign("data_preparation", orig, envir = asNamespace("SEMseeker"))
-    lockBinding("data_preparation", asNamespace("SEMseeker"))
+    assign("io_data_preparation", orig, envir = asNamespace("SEMseeker"))
+    lockBinding("io_data_preparation", asNamespace("SEMseeker"))
   }, add = TRUE)
   force(code)
 }

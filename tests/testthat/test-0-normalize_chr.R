@@ -84,7 +84,7 @@ test_that("round-trip: output → internal → output is identity", {
 #
 # This is the exact scenario that caused covered_by_inner_join = 0:
 # signal_thresholds has CHR = "1" (bare, from probe_features join),
-# bedgraph files written by dump_sample_as_bed_file have CHR = "chr1".
+# bedgraph files written by io_dump_sample_as_bed_file have CHR = "chr1".
 # Reading back without SEMseeker:::anno_normalize_chr("internal") breaks the join.
 # ---------------------------------------------------------------------------
 test_that("BED round-trip: bare CHR survives write+read cycle", {
@@ -99,7 +99,7 @@ test_that("BED round-trip: bare CHR survives write+read cycle", {
     stringsAsFactors = FALSE
   )
 
-  # Write as BED (adds chr prefix, as dump_sample_as_bed_file does)
+  # Write as BED (adds chr prefix, as io_dump_sample_as_bed_file does)
   tmp <- tempfile(fileext = ".bed")
   on.exit(unlink(tmp), add = TRUE)
   bed_out <- internal_df

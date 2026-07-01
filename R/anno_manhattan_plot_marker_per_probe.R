@@ -37,9 +37,9 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
   anno_annotate_position_pivots()
 
   # ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, tech = tech)
-  chart_folder <- dir_check_and_create(ssEnv$result_folderChart, "MARKER_PER_PROBE")
+  chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart, "MARKER_PER_PROBE")
 
-  sample_sheet <- utils::read.csv2(file_path_build(ssEnv$result_folderData, "1_sample_sheet_original","csv"), sep=";", header = TRUE, stringsAsFactors = FALSE)
+  sample_sheet <- utils::read.csv2(io_file_path_build(ssEnv$result_folderData, "1_sample_sheet_original","csv"), sep=";", header = TRUE, stringsAsFactors = FALSE)
   references <- sample_sheet[sample_sheet$Sample_Group == "Reference", "Sample_ID"]
 
   localKeys <- unique(ssEnv$keys_markers_figures$MARKER)
@@ -50,7 +50,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
   median_signal_probes <- 0
   # low_signal_probes <- 0.1 * high_signal_probes
   low_signal_probes <- 0
-  probes_stat_fname <- file_path_build( ssEnv$result_folderData, "PROBES_STAT","csv")
+  probes_stat_fname <- io_file_path_build( ssEnv$result_folderData, "PROBES_STAT","csv")
 
   if(((probe_name_max != "cg11680158") | (probe_name_min != "cg11680158")) & file.exists(probes_stat_fname))
     unlink(probes_stat_fname)
@@ -79,7 +79,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
       {
         if(ssEnv$showprogress)
           progress_bar(sprintf("Collecting stats for marker %s", marker))
-        count_m <- get_pivot_both(marker)
+        count_m <- io_get_pivot_both(marker)
         if (nrow(count_m)==0)
           tempKeys <- tempKeys[-k]
         else
@@ -154,18 +154,18 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
   tempKeys <- tempKeys[!grepl("SIGNAL", tempKeys)]
   # AI-027: read via unified dispatcher; cached parquet is the normal
   # path (CASE 1). The fname variable is kept for the error message below.
-  fname <- pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE","WHOLE")
-  signal_pivot_lazy <- read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
+  fname <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE","WHOLE")
+  signal_pivot_lazy <- io_read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
   if (is.null(signal_pivot_lazy))
     stop("SIGNAL_MEAN PROBE pivot not found at ", fname,
          " — manhattan plot requires the SEM signal pivot.")
   signal_data <- as.data.frame(signal_pivot_lazy$collect())
 
-  # threshold_data <- fst::read_fst(file_path_build( ssEnv$result_folderData,"1_signal_thresholds","fst"))
-  threshold_data <- as.data.frame(polars::pl$read_parquet(file_path_build( ssEnv$result_folderData,"1_signal_thresholds","parquet")))
+  # threshold_data <- fst::read_fst(io_file_path_build( ssEnv$result_folderData,"1_signal_thresholds","fst"))
+  threshold_data <- as.data.frame(polars::pl$read_parquet(io_file_path_build( ssEnv$result_folderData,"1_signal_thresholds","parquet")))
 
   # AI-106 (2026-06-09): no more colname sanitisation. Sample_ID are
-  # passed through from the upstream pivot writers (signal_save,
+  # passed through from the upstream pivot writers (io_signal_save,
   # analyze_population_bulk). The `colnames(signal_data) %in%
   # colnames(marker_data)` match below relies on both pivots writing
   # Sample_ID in the SAME raw format.
@@ -198,7 +198,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
     if (length(files) > 0)
       next
 
-    marker_data <- get_pivot_both(marker)
+    marker_data <- io_get_pivot_both(marker)
     if(nrow(marker_data)==0)
       next
     if(any(!(colnames(signal_data) %in% colnames(marker_data))))
@@ -290,7 +290,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
           plot.title = ggplot2::element_text(hjust = 0.5)
         )
 
-      plot_filename <- file_path_build(chart_folder,c(selection, probe_name,marker),ssEnv$plot_format)
+      plot_filename <- io_file_path_build(chart_folder,c(selection, probe_name,marker),ssEnv$plot_format)
       ggplot2::ggsave(filename =plot_filename,plot = pp,units = "in", width = 6, height = 2, dpi=as.numeric(ssEnv$plot_resolution_ppi))
 
 
@@ -338,7 +338,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
         ggplot2::theme(legend.position = "none", axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5), plot.title = ggplot2::element_text(hjust = 0.5))
       # ggplot2::scale_x_continuous(limits = c(1, NA)) # Adjust the limits to exclude 0
 
-      plot_filename <- file_path_build(chart_folder,c(selection, probe_name,"SIGNAL_OUTLIER"),ssEnv$plot_format)
+      plot_filename <- io_file_path_build(chart_folder,c(selection, probe_name,"SIGNAL_OUTLIER"),ssEnv$plot_format)
       ggplot2::ggsave(filename = plot_filename,plot = pp,units = "in", width = 6, height = 4, dpi=as.numeric(ssEnv$plot_resolution_ppi))
 
       if(ssEnv$showprogress)

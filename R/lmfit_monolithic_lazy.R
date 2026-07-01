@@ -15,7 +15,7 @@
 #' Run a single monolithic lmFit (optionally with voom) on a lazy pivot
 #'
 #' @param pivot_lazy `polars_lazy_frame` already filtered for
-#'   `area_to_remove` and transformed by `data_preparation_lazy()`.
+#'   `area_to_remove` and transformed by `io_data_preparation_lazy()`.
 #'   First column MUST be `AREA` (probe / position identifier); the
 #'   remaining columns are samples.
 #' @param sample_cols_kept Character vector — sample column names that

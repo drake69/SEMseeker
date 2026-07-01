@@ -62,10 +62,10 @@ beta, call \code{\link{mvalue_to_beta}} explicitly before \code{semseeker()}.
 Supported \code{input} forms:
 \itemize{
   \item Character vector of bedmethyl file paths (\code{.bed}/\code{.tsv}/
-    \code{.bedmethyl}) — parsed via \code{\link{bedmethyl_read}}.
+    \code{.bedmethyl}) — parsed via \code{\link{io_bedmethyl_read}}.
   \item Data frame with \code{CHR}/\code{START}[\code{/END}] columns
     (WGBS / long-read coordinate format) — normalised via
-    \code{\link{normalize_signal_input}}.
+    \code{\link{io_normalize_signal_input}}.
   \item Matrix or data frame with probe-ID rownames (Illumina array) —
     passed through unchanged.
   \item List of any of the above, one element per batch.

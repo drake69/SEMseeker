@@ -1,6 +1,6 @@
 # AI-096 (2026-06-09): lazy passthrough for the resume path. The legacy
 # behaviour materialised the SIGNAL pivot into a ~12 GB R data.frame even
-# in resume mode (where signal_save would just early-return), then doubled
+# in resume mode (where io_signal_save would just early-return), then doubled
 # that with an R-side match+sort to align signal_data with probe_features.
 # Peak ~24 GB R-side + Polars residuo on 367k × 4013 → macOS silent jetsam
 # kill on 64 GB Macs (v18, v21 confirmed). This refactor:
@@ -9,19 +9,19 @@
 #     Polars LazyFrame end-to-end. Extract schema (colnames, nrow) lazily.
 #     Reference population thresholds use a lazy column subset materialised
 #     ONLY for the ~10% reference samples → 1-2 GB peak instead of 12.
-#     signal_save call is skipped entirely (would have early-returned).
+#     io_signal_save call is skipped entirely (would have early-returned).
 #     analyze_population_bulk reads the pivot lazily from disk and ignores
 #     the signal_data arg.
 #
 #   - In FRESH mode (pivot must be built): keep R-side materialisation
 #     for inpute_missing_values (median needs row-wise access) and for the
-#     signal_save fresh-path write. BUT skip the R-side probe_features
-#     match+sort — signal_save's per-chr chunked sort is the canonical
+#     io_signal_save fresh-path write. BUT skip the R-side probe_features
+#     match+sort — io_signal_save's per-chr chunked sort is the canonical
 #     sort gate (see `single-sort-gate-at-pivot-save` memory) so the input
 #     row order doesn't matter.
 #
 # Sort gate policy: there is exactly ONE canonical sort in the pipeline,
-# inside `signal_save()`, chunked per-chr by START → sink_parquet. Every
+# inside `io_signal_save()`, chunked per-chr by START → sink_parquet. Every
 # downstream consumer reads from disk and trusts that order. No re-sort.
 
 analyze_batch <- function(signal_data, sample_sheet)
@@ -35,7 +35,7 @@ analyze_batch <- function(signal_data, sample_sheet)
   # AI-027: read via unified dispatcher. CASE 2 (streaming merge) lets
   # the SEM step pick up raw bed/bedgraph files when the SIGNAL_MEAN
   # pivot has not been materialised yet.
-  signal_pivot <- read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
+  signal_pivot <- io_read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
   resume_mode  <- !is.null(signal_pivot)
 
   if (resume_mode) {
@@ -118,7 +118,7 @@ analyze_batch <- function(signal_data, sample_sheet)
               " post-probe_ids_collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
               " n_probe_ids=", length(probe_ids_vec))
     if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
-      probe_features <- coord_probe_features(probe_ids_vec)
+      probe_features <- io_coord_probe_features(probe_ids_vec)
     } else {
       probe_features <- anno_probe_features_get("PROBE")
       log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
@@ -129,7 +129,7 @@ analyze_batch <- function(signal_data, sample_sheet)
     log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
               " post-probe_features_filter mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
               " n_rows=", nrow(probe_features))
-    # NO anno_sort_by_chr_and_start — sort gate is signal_save (already written).
+    # NO anno_sort_by_chr_and_start — sort gate is io_signal_save (already written).
     # NO signal_data row reorder — pivot rows are already canonical.
 
     # sample_group_check expects something with colnames(signal_data) →
@@ -141,7 +141,7 @@ analyze_batch <- function(signal_data, sample_sheet)
     if (!is.null(sample_group_checkResult)) stop(sample_group_checkResult)
     rm(signal_data_check)
 
-    # signal_save would early-return (POSITION pivot exists). Skip the
+    # io_signal_save would early-return (POSITION pivot exists). Skip the
     # call entirely — saves a function frame and the misleading log line.
     log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " Signal data already saved (resume mode); skipping signal_save.")
@@ -248,7 +248,7 @@ analyze_batch <- function(signal_data, sample_sheet)
   }
 
   # ------------------------------------------------------------------
-  # FRESH PATH — R-side materialisation required for inpute + signal_save
+  # FRESH PATH — R-side materialisation required for inpute + io_signal_save
   # ------------------------------------------------------------------
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " working on batch:", batch_id, " of ", nrow(signal_data),
@@ -256,7 +256,7 @@ analyze_batch <- function(signal_data, sample_sheet)
   colnames(signal_data) <- name_cleaning(colnames(signal_data))
 
   # Transparent conversion: WGBS/LONGREAD coordinate input → synthetic probe IDs
-  signal_data <- normalize_signal_input(signal_data)
+  signal_data <- io_normalize_signal_input(signal_data)
   signal_data <- util_substitute_infinite(signal_data)
   signal_data <- inpute_missing_values(signal_data)
   signal_data <- as.data.frame(signal_data)
@@ -269,7 +269,7 @@ analyze_batch <- function(signal_data, sample_sheet)
   # AI-106+ (2026-06-09): single source of truth for input → annotation
   # alignment. prepare_batch_signal() centralises:
   #   - tech-specific probe_features build (manifest for Illumina,
-  #     coord_probe_features for WGBS / LONGREAD)
+  #     io_coord_probe_features for WGBS / LONGREAD)
   #   - dmr_annotation duplicate-PROBE collapse
   #   - intersection with input rownames
   #   - uniform sex-chromosome removal across all techs
@@ -294,9 +294,9 @@ analyze_batch <- function(signal_data, sample_sheet)
     stop(sample_group_checkResult)
   }
 
-  signal_save(signal_data, sample_sheet, batch_id, probe_features = probe_features)
+  io_signal_save(signal_data, sample_sheet, batch_id, probe_features = probe_features)
   log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " post-signal_save  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+            " post-io_signal_save  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
   # Reference population subset and thresholds. probe IDs are kept as
   # rownames (preserved by data.frame column subsetting). NO extra

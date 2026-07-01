@@ -8,7 +8,7 @@
 #     (~5 ms per fit × 600k probes × 4 inference cycles ≈ hours).
 #   - Rfast::glm_logistic is a C++ Newton-Raphson implementation,
 #     ~10-20× faster than stats::glm; combined with the AI-044
-#     degenerate-burden filter in data_preparation (~92% of LESIONS
+#     degenerate-burden filter in io_data_preparation (~92% of LESIONS
 #     probes removed before reaching here) we get ~2-3 min total
 #     instead of ~60 min for the scheda 3a-NEW binomial dispatch.
 #
@@ -38,8 +38,8 @@
 #' @param dototal logical; ignored (kept for caller-symmetry).
 #' @param session_folder character; ignored (kept for caller-symmetry).
 #' @param independent_variable character; single column name (factor IV).
-#' @param depth_analysis integer; passed to data_preparation().
-#' @param samples_sql_condition character; passed to data_preparation().
+#' @param depth_analysis integer; passed to io_data_preparation().
+#' @param samples_sql_condition character; passed to io_data_preparation().
 #' @param ... ignored.
 #'
 #' @return data.frame with one row per kept probe, schema as above.
@@ -69,13 +69,13 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     return(NULL)
   }
 
-  # 1. data_preparation: factors the IV (is.family_dicotomic branch),
+  # 1. io_data_preparation: factors the IV (is.family_dicotomic branch),
   # then runs the AI-044 universal degenerate-burden filter — so by the
   # time we get back, tempDataFrame only contains informative probes.
   transformation_x_local <- if (exists("inference_detail", inherits = TRUE) &&
                                 !is.null(inference_detail$transformation_x))
     as.character(inference_detail$transformation_x) else "none"
-  prepared <- data_preparation(family_test, transformation_y, tempDataFrame,
+  prepared <- io_data_preparation(family_test, transformation_y, tempDataFrame,
                                 independent_variable, g_start, ncol(tempDataFrame),
                                 FALSE, covariates, depth_analysis, key,
                                 transformation_x = transformation_x_local)
@@ -86,7 +86,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   g_end <- length(cols)
   if (g_start > g_end) {
     log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " glm_model_bulk: no probes survived data_preparation — returning NULL.")
+              " glm_model_bulk: no probes survived io_data_preparation — returning NULL.")
     return(NULL)
   }
   probe_cols <- cols[g_start:g_end]
@@ -169,7 +169,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     na_vec <- c(rep(NA_real_, ncoef_local), rep(NA_real_, ncoef_local),
                 rep(NA_real_, n_metrics))
     y <- y_mat[, j]
-    # Skip degenerate Y (safety net — data_preparation should have caught it).
+    # Skip degenerate Y (safety net — io_data_preparation should have caught it).
     if (length(unique(y)) < 2L) return(na_vec)
     f <- tryCatch(
       Rfast::glm_logistic(x = X_design, y = y),

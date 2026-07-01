@@ -25,7 +25,7 @@
 #'   (Illumina probe IDs like `"cg00050873"` for K27/K450/K850, or
 #'   coordinate-encoded `"{CHR}_{START}"` strings for WGBS/LONGREAD).
 #'   Sample columns follow. Must be PROBE-keyed, i.e. already passed
-#'   through `normalize_signal_input()`.
+#'   through `io_normalize_signal_input()`.
 #' @param tech Character scalar. One of `"K27"`, `"K450"`, `"K850"`,
 #'   `"WGBS"`, `"LONGREAD"`. If `NULL` (default) the function calls
 #'   `get_meth_tech()` to detect it.
@@ -73,7 +73,7 @@ prepare_batch_signal <- function(signal_data,
   # encoded PROBE IDs directly. Both routes produce a data.frame keyed by
   # PROBE with CHR / START / END columns at minimum.
   if (tech %in% c("WGBS", "LONGREAD")) {
-    probe_features <- coord_probe_features(rownames(signal_data))
+    probe_features <- io_coord_probe_features(rownames(signal_data))
   } else {
     probe_features <- anno_probe_annotation_build(tech)
     # Drop the tech-specific TRUE/FALSE flag column once it's served its

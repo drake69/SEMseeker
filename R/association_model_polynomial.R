@@ -107,7 +107,7 @@ association_model_polynomial <- function (family_test, tempDataFrame, sig.formul
   rownames(res) <- NULL
   if(plot)
   {
-    chartFolder <- dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
 
     if(is.null(covariates) || length(covariates)  ==  0)
       file_suffix <- ""
@@ -123,7 +123,7 @@ association_model_polynomial <- function (family_test, tempDataFrame, sig.formul
       covariates <- paste(covariates, collapse = "_")
     }
 
-    filename  <-  file_path_build(chartFolder,
+    filename  <-  io_file_path_build(chartFolder,
       c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, key$COMBINED),
       ssEnv$plot_format)
 

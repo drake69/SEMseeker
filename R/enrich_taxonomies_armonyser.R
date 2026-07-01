@@ -35,9 +35,9 @@ enrich_taxonomies_armonyser <- function(inference_details, result_folder, pvalue
         # id <- 2
         inference_detail <- inference_details[id,]
         if(key_enrichment_format[pt,"type"]=="Pathway")
-          path <- dir_check_and_create(ssEnv$result_folderEnrichment,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+          path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
         else
-          path <- dir_check_and_create(ssEnv$result_folderPhenotype,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+          path <- io_dir_check_and_create(ssEnv$result_folderPhenotype,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
         family_test <- inference_detail$family_test
         transformation_y <- as.character(inference_detail$transformation_y)
         independent_variable <- inference_detail$independent_variable
@@ -51,14 +51,14 @@ enrich_taxonomies_armonyser <- function(inference_details, result_folder, pvalue
           file_name <- enrich_phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
             suffix=ifelse(disease=="","",paste("_",disease,sep="")),
             pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
-          file_name <- file_path_build(path,file_name,"csv")
+          file_name <- io_file_path_build(path,file_name,"csv")
           # chech agin with disease without underscore
           if(!file.exists(file_name))
           {
             file_name <- enrich_phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
               suffix=ifelse(disease=="","",paste(disease,sep="")),
               pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
-            file_name <- file_path_build(path,file_name,"csv")
+            file_name <- io_file_path_build(path,file_name,"csv")
           }
 
           # check with without_signal at the end for pathfindR
@@ -67,7 +67,7 @@ enrich_taxonomies_armonyser <- function(inference_details, result_folder, pvalue
             file_name <- enrich_phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
               suffix=ifelse(disease=="","",paste(disease,sep="")),
               pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
-            file_name <- file_path_build(path,c(file_name,"without_signal"),"csv")
+            file_name <- io_file_path_build(path,c(file_name,"without_signal"),"csv")
           }
 
 

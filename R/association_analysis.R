@@ -74,7 +74,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     ssEnv$result_folderData)
 
   if (start_fresh) unlink(ssEnv$result_folderInference, recursive = TRUE)
-  dir_check_and_create(ssEnv$result_folderInference, c())
+  io_dir_check_and_create(ssEnv$result_folderInference, c())
 
   localKeys <- ssEnv$keys_markers_figures
 
@@ -104,7 +104,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
 
     for (marker in unique(localKeys$MARKER)) {
       keys <- unique(localKeys[localKeys$MARKER == marker, ])
-      fileNameResults <- inference_file_name(prep$inference_detail, marker,
+      fileNameResults <- io_inference_file_name(prep$inference_detail, marker,
         ssEnv$result_folderInference,
         prefix = ifelse(length(areas_selection) == 0, "",
           paste(areas_selection, "_", sep = "")))

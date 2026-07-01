@@ -103,17 +103,17 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
 
   # AI-044 / AI-061 (2026-06-09): apply transformation_y + universal
   # degenerate-burden filter LAZILY before materialisation. Before this
-  # change the lazy path silently skipped data_preparation() entirely,
+  # change the lazy path silently skipped io_data_preparation() entirely,
   # so any `transformation_y` ≠ "none" on a limma_/voom_ inference_detail
   # produced a CSV with UN-transformed values (silent bug), and rows with
   # var(Y) == 0 made it through to lmFit producing NaN t-stats. See
-  # `data_preparation_lazy()` for the polars-native equivalent of the
-  # R-side `data_preparation()` Y-side transformations + AI-044 filter.
+  # `io_data_preparation_lazy()` for the polars-native equivalent of the
+  # R-side `io_data_preparation()` Y-side transformations + AI-044 filter.
   # Unification of the two paths is tracked as AI-097 in the backlog.
   schema_pre <- names(pivot_lazy$collect_schema())
   sample_cols_pre <- setdiff(schema_pre, c("AREA", "PROBE", "CHR", "START", "END",
                                             "K27", "K450", "K850"))
-  pivot_lazy <- data_preparation_lazy(
+  pivot_lazy <- io_data_preparation_lazy(
     pivot_lazy        = pivot_lazy,
     sample_cols       = sample_cols_pre,
     transformation_y  = transformation_y,

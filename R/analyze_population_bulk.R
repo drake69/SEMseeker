@@ -5,7 +5,7 @@
 #' bulk Polars sul SIGNAL pivot wide gia' scritto da signal_save.
 #'
 #' Pipeline:
-#'   1. SIGNAL pivot esiste gia' (signal_save) -> niente per-sample SIGNAL dump.
+#'   1. SIGNAL pivot esiste gia' (io_signal_save) -> niente per-sample SIGNAL dump.
 #'   2. DELTAS_HYPER pivot = (SIGNAL - high_threshold) clip lower=0  (per-col bulk)
 #'      DELTAS_HYPO  pivot = (low_threshold - SIGNAL) clip lower=0
 #'   3. MUTATIONS_{HYPER,HYPO} pivot = (DELTAS > 0) cast Int32
@@ -23,7 +23,7 @@
 #'   - bulk: ~10-30 min (lazy ops Polars + per-sample LESIONS in memoria)
 #'
 #' @param signal_data passato per compatibilita' di firma, ignorato (usiamo
-#'   il pivot SIGNAL gia' su disco da signal_save).
+#'   il pivot SIGNAL gia' su disco da io_signal_save).
 #' @param sample_sheet df con Sample_ID, Sample_Group; usato per liste sample.
 #' @param signal_thresholds df con CHR, START, END,
 #'   signal_superior_thresholds (high), signal_inferior_thresholds (low),
@@ -52,7 +52,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   # AI-061+ (2026-06-09): EARLY-RETURN if every destination pivot already
   # exists. The per-figure skip checks further down inside this function
   # do guard the actual compute, but the SETUP between [start] and the
-  # first per-figure block — read_pivot SIGNAL + collect_schema(4014
+  # first per-figure block — io_read_pivot SIGNAL + collect_schema(4014
   # cols) + with_columns(cast Categorical→String) + lazy join — still
   # runs every call. On ewas-scale (367k × 4013) that setup alone
   # peaked ~30 GB R+Polars even in pure-resume mode (v25/v26/v27/v28
@@ -63,7 +63,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   for (marker in c("DELTAS", "DELTAR", "MUTATIONS", "LESIONS")) {
     for (figure in c("HYPER", "HYPO")) {
       all_destinations <- c(all_destinations,
-        pivot_file_name_parquet(marker, figure, "POSITION", "WHOLE"))
+        io_pivot_file_name_parquet(marker, figure, "POSITION", "WHOLE"))
     }
   }
   if (length(all_destinations) > 0L && all(file.exists(all_destinations))) {
@@ -73,11 +73,11 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
     return(invisible(NULL))
   }
 
-  signal_pivot_path <- pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
+  signal_pivot_path <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
   if (!file.exists(signal_pivot_path)) {
     stop("[analyze_population_bulk] SIGNAL POSITION pivot mancante: ",
          signal_pivot_path,
-         " — signal_save() deve essere chiamato prima.")
+         " — io_signal_save() deve essere chiamato prima.")
   }
 
   # AI-061+ (2026-06-09): use the in-memory `signal_thresholds`
@@ -126,14 +126,14 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   # tocca le sample. Quindi possiamo derivarlo dal pivot raw senza pagare
   # quel picco.
   raw_signal_schema <- names(
-    read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")$collect_schema()
+    io_read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")$collect_schema()
   )
   coord_cols  <- c("CHR", "START", "END", ".HIGH", ".LOW")
   sample_cols <- setdiff(raw_signal_schema, coord_cols)
 
-  # Carica SIGNAL pivot lazy + cast CHR to String (signal_save lascia Categorical
+  # Carica SIGNAL pivot lazy + cast CHR to String (io_signal_save lascia Categorical
   # mentre thr_lazy ha String -> mismatch nel join) + join thresholds
-  signal_lazy <- read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")$
+  signal_lazy <- io_read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")$
     with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$
     join(thr_lazy, on = c("CHR", "START", "END"), how = "inner")
 
@@ -146,7 +146,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   # DELTAS_HYPER[s, p] = max(SIGNAL[s,p] - high[p], 0)
   # DELTAS_HYPO[s, p]  = max(low[p] - SIGNAL[s,p], 0)
   for (figure in c("HYPER", "HYPO")) {
-    deltas_path <- pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
+    deltas_path <- io_pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
     if (file.exists(deltas_path)) {
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " [bulk] DELTAS_", figure, " pivot already exists, skip")
@@ -171,14 +171,14 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
 
   # ---- Step 3: MUTATIONS_{HYPER,HYPO} bulk = (DELTAS > 0) cast Int32 -----
   for (figure in c("HYPER", "HYPO")) {
-    mut_path <- pivot_file_name_parquet("MUTATIONS", figure, "POSITION", "WHOLE")
+    mut_path <- io_pivot_file_name_parquet("MUTATIONS", figure, "POSITION", "WHOLE")
     if (file.exists(mut_path)) {
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " [bulk] MUTATIONS_", figure, " pivot already exists, skip")
       next
     }
     t0 <- Sys.time()
-    deltas_path <- pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
+    deltas_path <- io_pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
     deltas_lazy <- polars::pl$scan_parquet(deltas_path)
     mut_exprs <- lapply(sample_cols, function(s) {
       polars::pl$col(s)$gt(0)$cast(polars::pl$Int32)$alias(s)
@@ -192,14 +192,14 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
 
   # ---- Step 4: DELTAR_{HYPER,HYPO} bulk = DELTAS / (high - low) ----------
   for (figure in c("HYPER", "HYPO")) {
-    deltar_path <- pivot_file_name_parquet("DELTAR", figure, "POSITION", "WHOLE")
+    deltar_path <- io_pivot_file_name_parquet("DELTAR", figure, "POSITION", "WHOLE")
     if (file.exists(deltar_path)) {
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " [bulk] DELTAR_", figure, " pivot already exists, skip")
       next
     }
     t0 <- Sys.time()
-    deltas_path <- pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
+    deltas_path <- io_pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
     deltas_lazy <- polars::pl$scan_parquet(deltas_path)$
       with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$
       join(thr_lazy$select(c("CHR", "START", "END", ".HIGH", ".LOW")),
@@ -230,14 +230,14 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   CHUNK_SAMPLES  <- 200L  # gruppi di sample per limitare RAM
 
   for (figure in c("HYPER", "HYPO")) {
-    lesions_path <- pivot_file_name_parquet("LESIONS", figure, "POSITION", "WHOLE")
+    lesions_path <- io_pivot_file_name_parquet("LESIONS", figure, "POSITION", "WHOLE")
     if (file.exists(lesions_path)) {
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " [bulk] LESIONS_", figure, " pivot already exists, skip")
       next
     }
     t0 <- Sys.time()
-    mut_path <- pivot_file_name_parquet("MUTATIONS", figure, "POSITION", "WHOLE")
+    mut_path <- io_pivot_file_name_parquet("MUTATIONS", figure, "POSITION", "WHOLE")
 
     sample_chunks <- split(sample_cols,
                           ceiling(seq_along(sample_cols) / CHUNK_SAMPLES))

@@ -9,8 +9,8 @@ plot_box_plot <- function (dataFrameToPlot, independent_variable,dependent_varia
   figure <- as.character(key$FIGURE)
 
   ssEnv <- get_session_info()
-  chartFolder <- dir_check_and_create(ssEnv$result_folderChart,c("COMPARISON",name_cleaning(as.character(samples_sql_condition))))
-  filename  <-  file_path_build(chartFolder,toupper(c("BOX_PLOT",family_test,as.character(transformation_y), independent_variable,"Vs", dependent_variable,area, subarea, marker, figure)),ssEnv$plot_format)
+  chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("COMPARISON",name_cleaning(as.character(samples_sql_condition))))
+  filename  <-  io_file_path_build(chartFolder,toupper(c("BOX_PLOT",family_test,as.character(transformation_y), independent_variable,"Vs", dependent_variable,area, subarea, marker, figure)),ssEnv$plot_format)
   if(!file.exists(filename))
   {
     # grDevices::png(file =  filename, width = 2480,height = 2480, pointsize  =  15, res = ssEnv$plot_resolution)
@@ -69,7 +69,7 @@ plot_box_plot <- function (dataFrameToPlot, independent_variable,dependent_varia
 
 
     #### VIOLIN PLOT #####
-    filename  <-  file_path_build(chartFolder,
+    filename  <-  io_file_path_build(chartFolder,
       toupper(c("VIOLIN_PLOT",family_test,as.character(transformation_y), independent_variable,"Vs", dependent_variable,area, subarea, marker, figure)),ssEnv$plot_format)
 
     # p <- ggplot2::ggplot(dataFrameToPlot, ggplot2::aes_string(x = independent_variable, y = dependent_variable)) +

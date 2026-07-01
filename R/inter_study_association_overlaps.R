@@ -50,7 +50,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
   ssEnv <- get_session_info(result_folder)
 
   log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y")," inference files aggregated!")
-  # filename <- inference_file_name( inference_detail, "AGGREGATED",ssEnv$result_folderInference,file_extension = "csv",suffix = "", prefix = "")
+  # filename <- io_inference_file_name( inference_detail, "AGGREGATED",ssEnv$result_folderInference,file_extension = "csv",suffix = "", prefix = "")
   # write.csv2(aggregated_study_results, filename, row.names = F)
   # create a file with max of pvalue column for the cross study and mean of statistic parameter
   if(nrow(aggregated_study_results)>0)
@@ -95,8 +95,8 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
       }
       # rename pvalue_column to the original name
       colnames(tt)[colnames(tt) == "alpha"] <- pvalue_column
-      dest_folder <- dir_check_and_create(ssEnv$result_folderInference,name_cleaning(inference_detail$areas_sql_condition))
-      filename <- inference_file_name(inference_detail, m, dest_folder ,prefix="" )
+      dest_folder <- io_dir_check_and_create(ssEnv$result_folderInference,name_cleaning(inference_detail$areas_sql_condition))
+      filename <- io_inference_file_name(inference_detail, m, dest_folder ,prefix="" )
 
       if(file.exists(filename))
       {
@@ -182,12 +182,12 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
     # for (i in seq_along(markers))
     # {
     #   marker <- markers[i]
-    #   filename <- inference_file_name(inference_detail, marker,ssEnv$result_folderInference,file_extension = "csv",suffix = "", prefix = "")
+    #   filename <- io_inference_file_name(inference_detail, marker,ssEnv$result_folderInference,file_extension = "csv",suffix = "", prefix = "")
     #   aggregated_study_results_table_marker <- subset(aggregated_study_results_table, MARKER == marker)
     #   aggregated_study_results_table_marker$DEPTH <- 3
     #   write.csv2(aggregated_study_results_table_marker, filename, row.names = F)
     # }
-    filename <- inference_file_name(inference_detail, paste0(markers, collapse = "_") ,ssEnv$result_folderInference,file_extension = "csv",suffix = "AGGREGATED", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
+    filename <- io_inference_file_name(inference_detail, paste0(markers, collapse = "_") ,ssEnv$result_folderInference,file_extension = "csv",suffix = "AGGREGATED", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
     utils::write.csv2(aggregated_study_results_table, filename, row.names = FALSE)
     log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  aggregated files saved!")
     # for( j in 2:length(studies_to_comb))
@@ -224,7 +224,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
             next
           # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
           categories <- util_pretty_label(categories)
-          folder <- dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",areas_sql_condition))
+          folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",areas_sql_condition))
           filename <-
             paste(
               folder,  "/",
@@ -319,7 +319,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
           overlaps <- Reduce(intersect, SPLIT)
           if(length(overlaps)>0)
           {
-            filename <- inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),ssEnv$result_folderInference,file_extension = "csv",suffix = "OVERLAPS", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
+            filename <- io_inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),ssEnv$result_folderInference,file_extension = "csv",suffix = "OVERLAPS", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
             overlaps <- data.frame("AREA_OF_TEST" = overlaps)
             utils::write.csv2(overlaps, filename, append = TRUE)
           }

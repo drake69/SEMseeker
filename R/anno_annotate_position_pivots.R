@@ -22,7 +22,7 @@ anno_annotate_position_pivots <- function ()
   # "Annotating genomic area" log line in resume scenarios where no
   # actual annotation work is needed.
   all_dest_exist <- all(vapply(seq_len(nrow(localKeys)), function(i) {
-    file.exists(pivot_file_name_parquet(
+    file.exists(io_pivot_file_name_parquet(
       localKeys[i, "MARKER"], localKeys[i, "FIGURE"],
       localKeys[i, "AREA"],   localKeys[i, "SUBAREA"]))
   }, logical(1)))
@@ -38,10 +38,10 @@ anno_annotate_position_pivots <- function ()
   if(ssEnv$showprogress)
     progress_bar <- progressr::progressor(along = seq_len(nrow(localKeys)))
 
-  variables_to_export <- c("ssEnv", "dir_check_and_create", "subarea",
+  variables_to_export <- c("ssEnv", "io_dir_check_and_create", "subarea",
     "progress_bar","progression_index", "progression", "progressor_uuid",
     "owner_session_uuid", "trace","anno_probe_features_get", "localKeys",
-    "file_path_build","%>%","get_session_info","log_event")
+    "io_file_path_build","%>%","get_session_info","log_event")
 
   # doesn't work with parallel, tests throws error
   for(i in seq_len(nrow(localKeys)))
@@ -53,14 +53,14 @@ anno_annotate_position_pivots <- function ()
     area <- as.character(localKeys[i,"AREA"])
     # TO DO: remove subarea whole from probe features
     area_subarea <- paste(area,"_", ifelse (subarea=="","WHOLE",subarea) , sep="")
-    source_pivot_filename <- pivot_file_name_parquet(marker, figure, "POSITION","WHOLE")
-    dest_pivot_filename <- pivot_file_name_parquet(marker, figure, area,subarea)
+    source_pivot_filename <- io_pivot_file_name_parquet(marker, figure, "POSITION","WHOLE")
+    dest_pivot_filename <- io_pivot_file_name_parquet(marker, figure, area,subarea)
     # i <- 1
     if (!file.exists(dest_pivot_filename))
     {
       log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " File does not exists: ", dest_pivot_filename)
       probe_features <- anno_probe_features_get(area_subarea)
-      # NB (AI-027/AI-030): anno_create_position_pivots + stream_merge_bed strip the
+      # NB (AI-027/AI-030): anno_create_position_pivots + io_stream_merge_bed strip the
       # "chr" prefix from CHR for internal consistency, so the source pivot's
       # CHR is "1", "X" … without prefix. anno_probe_features_get() may return CHR
       # either with or without prefix depending on the manifest table; we
@@ -85,7 +85,7 @@ anno_annotate_position_pivots <- function ()
         # the normal path here; CASE 2 (streaming merge from bed/bedgraph)
         # makes this resilient to a missing materialised pivot when raw
         # per-sample files still exist.
-        pivot <- read_pivot(marker, figure, "POSITION", "WHOLE")
+        pivot <- io_read_pivot(marker, figure, "POSITION", "WHOLE")
         pivot <- pivot$with_columns(
           polars::pl$col("START")$cast(polars::pl$Int32),
           polars::pl$col("END")$cast(polars::pl$Int32),

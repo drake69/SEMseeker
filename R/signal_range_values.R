@@ -13,7 +13,7 @@ signal_range_values <- function(populationMatrix, batch_id, probe_features) {
 
   ssEnv <- get_session_info()
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Starting signal thresholds calculation.")
-  thresholds_file_name <- file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")
+  thresholds_file_name <- io_file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")
   if(file.exists(thresholds_file_name))
   {
     result <- as.data.frame(polars::pl$read_parquet(thresholds_file_name))

@@ -7,7 +7,7 @@
 #      it would have seen with the per-probe stats::glm path.
 #   2. Coefficient estimates from Rfast::glm_logistic match stats::glm
 #      to ~4 decimal places on a simulated binary outcome with a factor IV.
-#   3. The AI-044 universal degenerate-burden filter (in data_preparation,
+#   3. The AI-044 universal degenerate-burden filter (in io_data_preparation,
 #      hit upstream) ensures that all-zero / all-one probes never reach
 #      Rfast — but glm_model_bulk's per-probe safety net still returns NA
 #      for any degenerate Y that somehow slips through.

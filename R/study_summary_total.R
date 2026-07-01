@@ -20,7 +20,7 @@ study_summary_total <- function()
     # AI-027: read via unified dispatcher. NULL means no pivot AND no
     # streaming-merge source — skip the key with the same semantics as
     # the previous file.exists() guard.
-    pivot <- read_pivot(marker, figure, area, subarea)
+    pivot <- io_read_pivot(marker, figure, area, subarea)
     if (is.null(pivot))
       next
     # remove CHR START END columns
@@ -52,9 +52,9 @@ study_summary_total <- function()
   study_summary <- study_summary[, !(colnames(study_summary) %in% col_temp)]
   study_summary <- merge(study_summary, temp_result, by="Sample_ID", all.x=TRUE)
   study_summary$PROBES_COUNT <- ssEnv$probes_count
-  # file_path_build() uppercases via name_cleaning() — on-disk name is
+  # io_file_path_build() uppercases via name_cleaning() — on-disk name is
   # SAMPLE_SHEET_RESULT.csv. Linux ext4 is case-sensitive; readers that
-  # hard-code the path must use the uppercase form. See file_path_build().
-  summary_file <- file_path_build( ssEnv$result_folderData, "sample_sheet_result","csv")
+  # hard-code the path must use the uppercase form. See io_file_path_build().
+  summary_file <- io_file_path_build( ssEnv$result_folderData, "sample_sheet_result","csv")
   utils::write.csv2(study_summary,summary_file, row.names = FALSE)
 }

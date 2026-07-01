@@ -31,9 +31,9 @@ test_that("delta_single_sample",{
     sample_detail = sample_detail
   )
 
-  result_folderData  <-  SEMseeker:::dir_check_and_create(tempFolder, "Data")
-  outputFolder <- SEMseeker:::dir_check_and_create(result_folderData, c(sample_detail$Sample_Group, "DELTAS_HYPER"))
-  fileName <- SEMseeker:::file_path_build(outputFolder, c(sample_detail$Sample_ID, "DELTAS", "HYPER"), "bedgraph", add_gz = TRUE)
+  result_folderData  <-  SEMseeker:::io_dir_check_and_create(tempFolder, "Data")
+  outputFolder <- SEMseeker:::io_dir_check_and_create(result_folderData, c(sample_detail$Sample_Group, "DELTAS_HYPER"))
+  fileName <- SEMseeker:::io_file_path_build(outputFolder, c(sample_detail$Sample_ID, "DELTAS", "HYPER"), "bedgraph", add_gz = TRUE)
   testthat::expect_true(file.exists(fileName))
 
   # message("fileName: ", fileName)
@@ -43,9 +43,9 @@ test_that("delta_single_sample",{
   testthat::expect_true(nrow(res)>0)
 
   ####################################################################################
-  # result_folderData  <-  SEMseeker:::dir_check_and_create(tempFolder, "Data")
-  # outputFolder <- SEMseeker:::dir_check_and_create(result_folderData,c("Control","DELTAS_HYPERS"))
-  # fileName <- SEMseeker:::file_path_build(outputFolder,c(mySampleSheet[1,c("Sample_ID")],"DELTAS","HYPERS"), "bedgraph", add_gz = TRUE)
+  # result_folderData  <-  SEMseeker:::io_dir_check_and_create(tempFolder, "Data")
+  # outputFolder <- SEMseeker:::io_dir_check_and_create(result_folderData,c("Control","DELTAS_HYPERS"))
+  # fileName <- SEMseeker:::io_file_path_build(outputFolder,c(mySampleSheet[1,c("Sample_ID")],"DELTAS","HYPERS"), "bedgraph", add_gz = TRUE)
   # testthat::expect_true(file.exists(fileName))
   #
   # # message("fileName: ", fileName)

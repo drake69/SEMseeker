@@ -11,7 +11,7 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
   ssEnv <- get_session_info()
   resultFolder <- ssEnv$result_folderInference
 
-  inferenceFile <- inference_file_name(inference_detail, marker, ssEnv$result_folderInference)
+  inferenceFile <- io_inference_file_name(inference_detail, marker, ssEnv$result_folderInference)
   if(adjust_per_area && adjust_globally)
   {
     log_event("ERROR: Can adjust per area or globbaly not both!", format(Sys.time(), "%a %b %d %X %Y"))

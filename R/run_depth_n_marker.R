@@ -84,12 +84,12 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     if (key$AREA == "POSITION" && !tech_is_longread) next
     if (key$AREA == "PROBE"    &&  tech_is_longread) next
 
-    pivot_filename <- pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+    pivot_filename <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
 
     # AI-027: read via unified dispatcher. Returns NULL when neither the
     # cached parquet nor per-sample bed/bedgraph files are available,
     # which is the case run_depth_n_marker needs to skip with a warning.
-    pivot_lazy <- read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+    pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
     if (is.null(pivot_lazy)) {
       log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
         " File not found:", pivot_filename, ".")
@@ -171,7 +171,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # folded into 'results' once, before the for-k loop opened.
     #
     # AI-062: gene names with '-' (e.g. 'HLA-A', 'ANKHD1-EIF4EBP3') are
-    # rewritten to '_' by data_preparation()'s colname sanitisation, so the
+    # rewritten to '_' by io_data_preparation()'s colname sanitisation, so the
     # AREA_OF_TEST that lands in the CSV uses underscores while the AREA
     # column inside the freshly-read pivot still has the dash. Without
     # normalising both sides of the %in% test, ~281 genes with dashes were

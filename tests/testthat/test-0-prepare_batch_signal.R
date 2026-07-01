@@ -8,7 +8,7 @@
 #      collapses dmr_annotation duplicates, intersects with input, removes
 #      X/Y, aligns signal_data to probe_features.
 #   2. WGBS / LONGREAD path: builds probe_features from synthetic
-#      "{CHR}_{START}" rownames via coord_probe_features().
+#      "{CHR}_{START}" rownames via io_coord_probe_features().
 #   3. Sex-chromosome removal is applied uniformly (toggle off vs on).
 #   4. Post-call invariants:
 #        nrow(signal_data) == nrow(probe_features)
@@ -17,7 +17,7 @@
 #        no X/Y when sex_chromosome_remove = TRUE
 
 
-# ---- WGBS path: coord_probe_features (no manifest dependency) -----------
+# ---- WGBS path: io_coord_probe_features (no manifest dependency) -----------
 
 test_that("WGBS path produces aligned signal_data + probe_features with no X/Y", {
   skip_on_cran()

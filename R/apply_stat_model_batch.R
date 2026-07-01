@@ -21,7 +21,7 @@
 
 #' Fit a batch limma / voom model across all genomic areas at once.
 #'
-#' @param tempDataFrame data.frame after data_preparation(); rows are
+#' @param tempDataFrame data.frame after io_data_preparation(); rows are
 #'   samples, columns are: independent variable + covariates + one
 #'   column per genomic area (the burden for that area).
 #' @param g_start integer index of the first area column (everything
@@ -72,7 +72,7 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
 
   # Same pre-processing the per-area path runs
   transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
-  prepared <- data_preparation(family_test, transformation_y, tempDataFrame,
+  prepared <- io_data_preparation(family_test, transformation_y, tempDataFrame,
                                 independent_variable, g_start, ncol(tempDataFrame),
                                 FALSE, covariates, depth_analysis, key,
                                 transformation_x = transformation_x_local)

@@ -11,10 +11,10 @@
 #' Supported \code{input} forms:
 #' \itemize{
 #'   \item Character vector of bedmethyl file paths (\code{.bed}/\code{.tsv}/
-#'     \code{.bedmethyl}) — parsed via \code{\link{bedmethyl_read}}.
+#'     \code{.bedmethyl}) — parsed via \code{\link{io_bedmethyl_read}}.
 #'   \item Data frame with \code{CHR}/\code{START}[\code{/END}] columns
 #'     (WGBS / long-read coordinate format) — normalised via
-#'     \code{\link{normalize_signal_input}}.
+#'     \code{\link{io_normalize_signal_input}}.
 #'   \item Matrix or data frame with probe-ID rownames (Illumina array) —
 #'     passed through unchanged.
 #'   \item List of any of the above, one element per batch.
@@ -125,16 +125,16 @@ semseeker <- function(input,
 
   signal_data <- switch(
     input_type,
-    bedmethyl = bedmethyl_read(input),
-    coord_df  = normalize_signal_input(input),
+    bedmethyl = io_bedmethyl_read(input),
+    coord_df  = io_normalize_signal_input(input),
     matrix    = input,
     stop(".dispatch_one(): unknown input_type '", input_type, "'.")
   )
 
-  # coord_df path: normalize_signal_input() returns probe-ID-indexed df already
-  # bedmethyl path: returns coord df → also run through normalize_signal_input
+  # coord_df path: io_normalize_signal_input() returns probe-ID-indexed df already
+  # bedmethyl path: returns coord df → also run through io_normalize_signal_input
   if (identical(input_type, "bedmethyl")) {
-    signal_data <- normalize_signal_input(signal_data)
+    signal_data <- io_normalize_signal_input(signal_data)
   }
 
   signal_data
@@ -152,7 +152,7 @@ semseeker <- function(input,
     stop(".detect_input_type(): character input with unsupported extensions: ",
          paste(unique(exts), collapse = ", "))
   }
-  if (is.data.frame(input) && is_coord_format(input))
+  if (is.data.frame(input) && io_is_coord_format(input))
     return("coord_df")
   if (is.matrix(input) || is.data.frame(input))
     return("matrix")

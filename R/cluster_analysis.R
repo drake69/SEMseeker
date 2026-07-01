@@ -14,7 +14,7 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
 
   if(start_fresh)
     unlink(ssEnv$result_folderInference, recursive = TRUE)
-  dir_check_and_create(ssEnv$result_folderInference,c())
+  io_dir_check_and_create(ssEnv$result_folderInference,c())
   localKeys <- ssEnv$keys_areas_subareas_markers_figures
 
   localKeys <- localKeys[localKeys$AREA != "POSITION", ]
@@ -44,15 +44,15 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
     for ( k in seq_len(nrow(localKeys)))
     {
       key <- localKeys[k,]
-      chart_folder <- dir_check_and_create(ssEnv$result_folderChart, c("CLUSTER_ANALYSIS", name_cleaning(sql_sample_selection)))
-      plot_filename <- file_path_build(baseFolder = chart_folder,
+      chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart, c("CLUSTER_ANALYSIS", name_cleaning(sql_sample_selection)))
+      plot_filename <- io_file_path_build(baseFolder = chart_folder,
         detailsFilename = c(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA, cluster_variable_name), extension = ssEnv$plot_format )
 
       if(file.exists(plot_filename))
         next
 
       # AI-027: read via unified dispatcher.
-      pivot_lazy <- read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+      pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
       if (is.null(pivot_lazy))
         next
       pivot_data <- as.data.frame(pivot_lazy$collect())
@@ -80,7 +80,7 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
 
 
       # Save the plot
-      plot_filename <- file_path_build(baseFolder = chart_folder,
+      plot_filename <- io_file_path_build(baseFolder = chart_folder,
         detailsFilename = c(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA, cluster_variable_name), extension = "png")
       ggplot2::ggsave(plot_filename, plot = plot, width = 8, height = 6, dpi = ssEnv$plot_resolution_ppi, units = "in")
 

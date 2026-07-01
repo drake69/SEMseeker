@@ -114,7 +114,7 @@ volcano_plot_inference <- function(inference_detail,
   if (length(areas_sql) == 0L || !nzchar(areas_sql)) areas_sql <- ""
 
   inference_folder <- file.path(result_folder, "Inference")
-  chart_folder     <- dir_check_and_create(file.path(result_folder, "Chart"),
+  chart_folder     <- io_dir_check_and_create(file.path(result_folder, "Chart"),
                                             c("VOLCANO"))
 
   # If markers not supplied, scan Inference/ for CSVs that match the
@@ -147,11 +147,11 @@ volcano_plot_inference <- function(inference_detail,
     # mirrors what `association_analysis()` wrote (handles covariates_dummy
     # split-by-"+", dummy/pca tokens, samples_sql_condition subfolder).
     csv_path <- tryCatch(
-      inference_file_name(inference_detail, marker, inference_folder,
+      io_inference_file_name(inference_detail, marker, inference_folder,
                           file_extension = "csv"),
       error = function(e) {
         log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-                  " volcano_plot_inference: inference_file_name failed for ",
+                  " volcano_plot_inference: io_inference_file_name failed for ",
                   marker, ": ", conditionMessage(e),
                   " — falling back to manual list.files() scan.")
         NULL

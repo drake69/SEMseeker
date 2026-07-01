@@ -86,7 +86,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
   g_end <- ncol(tempDataFrame)
   transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
-  prepared_data <- data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, FALSE, covariates, depth_analysis, key, transformation_x = transformation_x_local)
+  prepared_data <- io_data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, FALSE, covariates, depth_analysis, key, transformation_x = transformation_x_local)
   # if(ncol(prepared_data$tempDataFrame) != ncol(tempDataFrame))
   #   return(NULL)
 
@@ -125,7 +125,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
   to_export <- c("cols", "family_test", "covariates", "independent_variable", "tempDataFrame",
     "independent_variable1stLevel", "independent_variable2ndLevel",
     "key", "transformation_y","exact_pvalue","g_end",
-    "data_preparation","apply_stat_model_sig.formula","quantreg_permutation_model",
+    "io_data_preparation","apply_stat_model_sig.formula","quantreg_permutation_model",
     "apply_stat_model_sig_formula", "data_distribution_info", "glm_model", "test_model", "test_model_paired", "Breusch_Pagan_pvalue",
     "progress_bar","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_values","ssEnv","g_start",
     "execute_model", "is.family_dicotomic", "log_event","mediate","mediation","get_session_info", "samples_sql_condition",

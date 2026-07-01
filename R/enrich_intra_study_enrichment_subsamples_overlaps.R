@@ -87,8 +87,8 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
           {
             inference_detail <- inference_details[i,]
             enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, localKeys[a,],prefix ="", suffix= signal_suffixes[s] , association_pvalue_column, ssEnv$alpha, significance)
-            path <- dir_check_and_create(ssEnv$result_folderEnrichment,c(enrichment_package, name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(association_results_sql_condition)))
-            pathway_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
+            path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c(enrichment_package, name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(association_results_sql_condition)))
+            pathway_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
             if(file.exists(pathway_report_path))
             {
               temp_res <- utils::read.csv2(pathway_report_path)
@@ -157,7 +157,7 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
           if(length(categories)<2)
             next
 
-          dest_folder <- dir_check_and_create(ssEnv$result_folderChart,c("PATHWAYS_CROSS_SAMPLE_ANALYSIS",association_results_sql_condition,
+          dest_folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("PATHWAYS_CROSS_SAMPLE_ANALYSIS",association_results_sql_condition,
             name_cleaning(enrichment_package),name_cleaning(pathways_sql_selection),name_cleaning(samples_sql_folder)))
           filename <-
             paste(
@@ -211,13 +211,13 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
 
           log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y"),"  venn diagram completed !")
 
-          dest_folder <- dir_check_and_create(ssEnv$result_folderEnrichment,c("PATHWAYS_CROSS_SAMPLE_ANALYSIS",association_results_sql_condition,
+          dest_folder <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("PATHWAYS_CROSS_SAMPLE_ANALYSIS",association_results_sql_condition,
             name_cleaning(enrichment_package),name_cleaning(pathways_sql_selection),name_cleaning(samples_sql_folder)))
           inference_detail$samples_sql_condition <- ""
           overlaps <- Reduce(intersect, SPLIT)
           if(length(overlaps)>0)
           {
-            filename <- inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),dest_folder,file_extension = "csv",suffix = "OVERLAPS", prefix = "")
+            filename <- io_inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),dest_folder,file_extension = "csv",suffix = "OVERLAPS", prefix = "")
             overlaps <- data.frame(overlaps)
             colnames(overlaps) <- column_of_id
             overlaps <- merge(overlaps, pathway_results, by = column_of_id)
@@ -227,7 +227,7 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
           # create a pivot table
           if (length(categories) > 1)
           {
-            filename <- inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),dest_folder,file_extension = "csv",suffix = "PIVOT", prefix = "")
+            filename <- io_inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),dest_folder,file_extension = "csv",suffix = "PIVOT", prefix = "")
             # Create a simple pivot table
             pivot_table <- pathway_results %>%
               dplyr::count(eval(parse(text=column_of_id)), KEY_SELECTOR) %>%   # Count occurrences of combinations

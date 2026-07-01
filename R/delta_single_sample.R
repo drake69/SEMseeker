@@ -42,11 +42,11 @@ delta_single_sample <- function(values, thresholds, sample_detail) {
   deltas_hyper <- anno_sort_by_chr_and_start(deltas_hyper)
   deltas_hyper <- subset(deltas_hyper, deltas_hyper$DELTA > 0)[, c("CHR", "START", "END", "DELTA")]
 
-  folder_to_save <- dir_check_and_create(ssEnv$result_folderData,
+  folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData,
     c(as.character(sample_detail$Sample_Group), "DELTAS_HYPER"))
-  dump_sample_as_bed_file(
+  io_dump_sample_as_bed_file(
     data_to_dump = deltas_hyper,
-    fileName     = file_path_build(folder_to_save,
+    fileName     = io_file_path_build(folder_to_save,
                      c(as.character(sample_detail$Sample_ID), "DELTAS", "HYPER"),
                      "bedgraph", add_gz = TRUE)
   )
@@ -62,11 +62,11 @@ delta_single_sample <- function(values, thresholds, sample_detail) {
   deltas_hypo <- anno_sort_by_chr_and_start(deltas_hypo)
   deltas_hypo <- subset(deltas_hypo, deltas_hypo$DELTA > 0)[, c("CHR", "START", "END", "DELTA")]
 
-  folder_to_save <- dir_check_and_create(ssEnv$result_folderData,
+  folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData,
     c(as.character(sample_detail$Sample_Group), "DELTAS_HYPO"))
-  dump_sample_as_bed_file(
+  io_dump_sample_as_bed_file(
     data_to_dump = deltas_hypo,
-    fileName     = file_path_build(folder_to_save,
+    fileName     = io_file_path_build(folder_to_save,
                      c(as.character(sample_detail$Sample_ID), "DELTAS", "HYPO"),
                      "bedgraph", add_gz = TRUE)
   )

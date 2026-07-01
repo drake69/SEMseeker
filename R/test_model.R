@@ -257,9 +257,9 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
 
     if (plot)
     {
-      chartFolder <- dir_check_and_create(ssEnv$result_folderChart,c("CORRELATION",name_cleaning(as.character(samples_sql_condition))))
+      chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("CORRELATION",name_cleaning(as.character(samples_sql_condition))))
       # plot a scatter plot of the burden value vs the independent variable and a linear regression line
-      filename  <-  file_path_build(chartFolder,toupper(c(family_test,as.character(transformation_y), independent_variable,"Vs", burdenValue,area, subarea)),ssEnv$plot_format)
+      filename  <-  io_file_path_build(chartFolder,toupper(c(family_test,as.character(transformation_y), independent_variable,"Vs", burdenValue,area, subarea)),ssEnv$plot_format)
       grDevices::png(filename, width = 9, height = 9, units="in", res = as.numeric(ssEnv$plot_resolution_ppi))
       plot(tempDataFrame[,burdenValue], tempDataFrame[,independent_variable], xlab = burdenValue, ylab = independent_variable, main = paste("Correlation between", burdenValue, "and", independent_variable), pch = 19)
       abline(lm(tempDataFrame[,independent_variable] ~ tempDataFrame[,burdenValue]), col = "blue")

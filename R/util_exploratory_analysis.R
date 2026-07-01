@@ -50,10 +50,10 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
 
   ssEnv <- get_session_info()
   log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will explore your data for project \n in ", ssEnv$result_folderData)
-  folder_path <- dir_check_and_create(ssEnv$result_folderData,paste0("Exploratory_", exploration_phase))
+  folder_path <- io_dir_check_and_create(ssEnv$result_folderData,paste0("Exploratory_", exploration_phase))
 
   # remove Sample_Group and unique
-  sample_sheet <- source_data_get(sample_sheet)
+  sample_sheet <- io_source_data_get(sample_sheet)
   sample_sheet <- sample_sheet[,!grepl("Sample_Group", colnames(sample_sheet))]
   sample_sheet <- unique(sample_sheet)
 
@@ -62,7 +62,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   # rename columns as defined in the sample_sheet_mapping
   if (!is.null(sample_sheet_mapping)) {
     step <- step + 1
-    map <- source_data_get(paste0(mapping_folder,sample_sheet_mapping))
+    map <- io_source_data_get(paste0(mapping_folder,sample_sheet_mapping))
     colun_to_remove <- map[map$Mapping == delete_keyword, "Variable"]
     sample_sheet <- sample_sheet[,!(colnames(sample_sheet) %in% colun_to_remove)]
     map <- map[map$Mapping != delete_keyword,]
@@ -73,7 +73,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
       names_col[names_col == map$Variable[i]] <- map$Mapping[i]
       colnames(sample_sheet) <- names_col
     }
-    file_path <- file_path_build(folder_path,c(step, "cleaned_sample_sheet") ,"csv")
+    file_path <- io_file_path_build(folder_path,c(step, "cleaned_sample_sheet") ,"csv")
     write.csv2(sample_sheet, file_path, row.names = FALSE)
   }
 
@@ -83,7 +83,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
     step <- step + 1
     for (i in seq_along(values_mapping))
     {
-      map <- source_data_get(paste0(mapping_folder,values_mapping[i]))
+      map <- io_source_data_get(paste0(mapping_folder,values_mapping[i]))
       from <- colnames(map)[1]
       to <- colnames(map)[2]
       if (from==to)
@@ -106,7 +106,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
       # remove column of from
       sample_sheet <- sample_sheet[,!(colnames(sample_sheet)==from)]
     }
-    file_path <- file_path_build(folder_path,c(step, "cleaned_sample_sheet") ,"csv")
+    file_path <- io_file_path_build(folder_path,c(step, "cleaned_sample_sheet") ,"csv")
     write.csv2(sample_sheet, file_path, row.names = FALSE)
   }
 
@@ -116,8 +116,8 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
       variable_splitted <- strsplit(variable,"\\+")
       variable_1 <- variable_splitted[[1]][1]
       variable_2 <- variable_splitted[[1]][2]
-      file_path <- file_path_build(removal_folder, c(variable,"pivot"),"xlsx")
-      rules <- source_data_get(file_path)
+      file_path <- io_file_path_build(removal_folder, c(variable,"pivot"),"xlsx")
+      rules <- io_source_data_get(file_path)
       # get first column
       first_var <- data.frame("variable_1"= rules[,variable_1])
       # other vars
@@ -156,10 +156,10 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   sample_sheet_report <- util_describe_dataframe(sample_sheet)
   # order desc by Missing_Values_Percent
   sample_sheet_report <- sample_sheet_report[order(-sample_sheet_report$Missing_Values_Percent),]
-  file_path <- file_path_build(folder_path,c(step,"sample_sheet_report"),"csv")
+  file_path <- io_file_path_build(folder_path,c(step,"sample_sheet_report"),"csv")
   sample_sheet_report[sample_sheet_report=="0 (0%)"] <- " "
   write.csv2(sample_sheet_report, file_path, row.names = FALSE)
-  save_latex_table(sample_sheet_report, file_path, paste0("Descriptive statistics of the sample sheet ", collapse = " "))
+  io_save_latex_table(sample_sheet_report, file_path, paste0("Descriptive statistics of the sample sheet ", collapse = " "))
 
   # remove columns with all NA
   sample_sheet[, colSums(!is.na(sample_sheet)) > max_missed_sample_sheet * nrow(sample_sheet)]
@@ -277,11 +277,11 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
       # rename Col1
       colnames(total_row)[which(colnames(total_row)=="Col1")] <- first_col
       pivot_rel_freq <- plyr::rbind.fill(pivot_rel_freq, total_row)
-      file_path <- file_path_build(folder_path, c(step, variable,"pivot"),"csv")
+      file_path <- io_file_path_build(folder_path, c(step, variable,"pivot"),"csv")
       # replace 0 (0%) with null string
       pivot_rel_freq[pivot_rel_freq=="0 (0%)"] <- " "
       write.csv2(pivot_rel_freq, file_path, row.names = FALSE)
-      save_latex_table(pivot_rel_freq, file_path, paste0("Descriptive statistics for ",variable,sep=" ", collapse = " "))
+      io_save_latex_table(pivot_rel_freq, file_path, paste0("Descriptive statistics for ",variable,sep=" ", collapse = " "))
     }
 
   if(length(numerical_variables)>0)
@@ -315,13 +315,13 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
     }
     if(nrow(num_res_data)==0)
       return()
-    file_path <- file_path_build(folder_path,c(step, "numeric_variable_pivot"),"csv")
+    file_path <- io_file_path_build(folder_path,c(step, "numeric_variable_pivot"),"csv")
     num_res_data[num_res_data=="0 (0%)"] <- " "
     write.csv2(num_res_data, file_path, row.names = FALSE)
-    save_latex_table(num_res_data, file_path, "Descriptive statistics for numerioc variables" )
+    io_save_latex_table(num_res_data, file_path, "Descriptive statistics for numerioc variables" )
   }
 
-  signal_data <- source_data_get(signal_data, TRUE)
+  signal_data <- io_source_data_get(signal_data, TRUE)
   colnames(signal_data) <- name_cleaning(colnames(signal_data))
 
   # signal_data <- signal_data[1:1000,]
@@ -361,15 +361,15 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
     "Tech"=ssEnv$tech,
     "Is Beta"=ssEnv$beta)
 
-  file_path <- file_path_build(folder_path, c(step,"signal_data_report"),"csv")
+  file_path <- io_file_path_build(folder_path, c(step,"signal_data_report"),"csv")
   signal_data_report[signal_data_report=="0 (0%)"] <- " "
   write.csv2(signal_data_report, file_path, row.names = FALSE)
-  save_latex_table(signal_data_report, file_path, "Signal data summary" )
+  io_save_latex_table(signal_data_report, file_path, "Signal data summary" )
 
   step <- step + 1
   rm(signal_data)
   gc()
-  signal_data <- source_data_get(signal_data_original)
+  signal_data <- io_source_data_get(signal_data_original)
   colnames(signal_data) <- name_cleaning(colnames(signal_data))
   # signal_data <- signal_data[1:1000,]
 
@@ -381,12 +381,12 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   signal_data <- as.data.frame(signal_data[, colnames(signal_data) %in% c("PROBE",sample_sheet[, sample_id_column])])
   signal_data <- signal_data[,c("PROBE",colnames(signal_data)[seq_len(ncol(signal_data)-1)])]
   # save cleaned signal data
-  file_path <- file_path_build(folder_path, c(step,"cleaned_signal_data"),"parquet")
+  file_path <- io_file_path_build(folder_path, c(step,"cleaned_signal_data"),"parquet")
   polars::as_polars_df(as.data.frame(signal_data))$write_parquet(file_path)
 
   # save cleaned sample_sheet
   sample_sheet <- sample_sheet[sample_sheet[,sample_id_column] %in% colnames(signal_data),]
-  file_path <- file_path_build(folder_path, c(step,"cleaned_sample_sheet") ,"csv")
+  file_path <- io_file_path_build(folder_path, c(step,"cleaned_sample_sheet") ,"csv")
   write.csv2(sample_sheet, file_path, row.names = FALSE)
 
 

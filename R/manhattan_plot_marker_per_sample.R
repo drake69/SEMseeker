@@ -45,16 +45,16 @@ manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_range
     figures=c("BOTH","HYPER","HYPO"), areas="PROBE", ...)
   # ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE,
   #   figures=c("BOTH","HYPER","HYPO"), areas="PROBE", markers = "DELTAQ")
-  chart_folder <- dir_check_and_create(ssEnv$result_folderChart, "MARKER_PER_SAMPLE")
+  chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart, "MARKER_PER_SAMPLE")
 
   localKeys <- unique(ssEnv$keys_markers_figures$MARKER)
   tempKeys <- localKeys
   for(k in seq_along(localKeys)){
     marker <- as.character(localKeys[k])
-    pivot_subfolder <- dir_check_and_create(result_folderPivot,marker)
-    fname_both <- file_path_build( pivot_subfolder ,c(marker, "BOTH", "PROBE","WHOLE"),"csv", add_gz = TRUE)
-    fname_hypo <- file_path_build( pivot_subfolder ,c(marker, "HYPO", "PROBE","WHOLE"),"csv", add_gz = TRUE)
-    fname_hyper <- file_path_build( pivot_subfolder ,c(marker, "HYPER", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    pivot_subfolder <- io_dir_check_and_create(result_folderPivot,marker)
+    fname_both <- io_file_path_build( pivot_subfolder ,c(marker, "BOTH", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    fname_hypo <- io_file_path_build( pivot_subfolder ,c(marker, "HYPO", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    fname_hyper <- io_file_path_build( pivot_subfolder ,c(marker, "HYPER", "PROBE","WHOLE"),"csv", add_gz = TRUE)
 
     if (!file.exists(fname_both) | !file.exists(fname_hypo) | !file.exists(fname_hyper))
       tempKeys <- tempKeys[-k]
@@ -67,8 +67,8 @@ manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_range
   {
 
     marker <- as.character(tempKeys[j])
-    pivot_subfolder <- dir_check_and_create(result_folderPivot,marker)
-    fname_both <- file_path_build( pivot_subfolder ,c(marker, "BOTH", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    pivot_subfolder <- io_dir_check_and_create(result_folderPivot,marker)
+    fname_both <- io_file_path_build( pivot_subfolder ,c(marker, "BOTH", "PROBE","WHOLE"),"csv", add_gz = TRUE)
     if(!file.exists(fname_both))
       next
 
@@ -94,7 +94,7 @@ manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_range
     sample_marker_both <- as.numeric(as.vector(t(sample_marker_both)))
     probes <- marker_data_both$SAMPLEID
 
-    fname_hypo <- file_path_build( pivot_subfolder ,c(marker, "HYPO", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    fname_hypo <- io_file_path_build( pivot_subfolder ,c(marker, "HYPO", "PROBE","WHOLE"),"csv", add_gz = TRUE)
     if(!file.exists(fname_hypo))
       next
 
@@ -118,7 +118,7 @@ manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_range
     sample_marker_hypo <- as.numeric(as.vector(t(sample_marker_hypo)))
     sample_marker_hypo <- ifelse(sample_marker_hypo!=0,"Hypo","")
 
-    fname_hyper <- file_path_build( pivot_subfolder ,c(marker, "HYPER", "PROBE","WHOLE"),"csv", add_gz = TRUE)
+    fname_hyper <- io_file_path_build( pivot_subfolder ,c(marker, "HYPER", "PROBE","WHOLE"),"csv", add_gz = TRUE)
     if(!file.exists(fname_hyper))
       next
     marker_data_hyper <- utils::read.csv2(fname_hyper, sep  =  ";")
@@ -181,7 +181,7 @@ manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_range
     #   ggplot2::theme_classic() +
     #   ggplot2::theme(legend.position = "none", axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5), plot.title = ggplot2::element_text(hjust = 0.5))
 
-    plot_filename <- file_path_build(chart_folder,c(sample_name,marker),ssEnv$plot_format)
+    plot_filename <- io_file_path_build(chart_folder,c(sample_name,marker),ssEnv$plot_format)
     ggplot2::ggsave(filename =plot_filename,plot = pp,
       # units = "in", width = 6, height = 2,
       dpi=as.numeric(ssEnv$plot_resolution))

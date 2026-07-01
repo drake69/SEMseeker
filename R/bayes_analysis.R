@@ -62,7 +62,7 @@ bayes_analysis <- function(
   # ── Outer loop: one pass per marker (MUTATIONS, LESIONS) ──────────────────
   for (a in seq_along(markers)) {   # A-09 fix 1: seq_along, not length()
 
-    fileNameResults <- file_path_build(
+    fileNameResults <- io_file_path_build(
       baseFolder      = ssEnv$result_folderEuristic,
       detailsFilename = c(markers[a], "bayes_analysis"),   # A-09 fix 7: typo
       extension       = "csv"
@@ -92,14 +92,14 @@ bayes_analysis <- function(
     for (k in seq_len(nrow(keys))) {
 
       key           <- keys[k, ]
-      pivot_filename <- pivot_file_name(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+      pivot_filename <- io_pivot_file_name(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
 
       if (!file.exists(pivot_filename)) next
 
       log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
         " [bayes_analysis] Reading pivot: ", pivot_filename)
 
-      # A-09 fix 2: use pivot_filename (variable), not pivot_file_name (function)
+      # A-09 fix 2: use pivot_filename (variable), not io_pivot_file_name (function)
       pivot <- readr::read_delim(
         pivot_filename,
         col_types      = readr::cols(.default = readr::col_double(),
@@ -254,7 +254,7 @@ bayes_analysis <- function(
       P_to_be_Case_cond_to_be_Epimutated    == max_P_case
     )
 
-    fileNameFiltered <- file_path_build(
+    fileNameFiltered <- io_file_path_build(
       baseFolder      = ssEnv$result_folderEuristic,
       detailsFilename = c(markers[a], "filtered_bayes_analysis"),  # A-09 fix 7: typo
       extension       = "csv"

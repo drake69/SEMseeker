@@ -59,9 +59,9 @@ diagnostic_performance <-
     for (a in seq_along(markers))
     {
       # a <- 2
-      dest_path <- dir_check_and_create(ssEnv$result_folderEuristic, samples_sql_selection)
-      fileNameResults <- file_path_build(baseFolder =  dest_path,detailsFilename =  c( as.character(markers[a]),independent_variable, "sensitivity_specificity_analisys"),extension = "csv")
-      fileNameResultsTemp <- file_path_build(baseFolder =  dest_path,detailsFilename =  c( as.character(markers[a]),independent_variable,"sensitivity_specificity_analisys","tmp"),extension = "csv")
+      dest_path <- io_dir_check_and_create(ssEnv$result_folderEuristic, samples_sql_selection)
+      fileNameResults <- io_file_path_build(baseFolder =  dest_path,detailsFilename =  c( as.character(markers[a]),independent_variable, "sensitivity_specificity_analisys"),extension = "csv")
+      fileNameResultsTemp <- io_file_path_build(baseFolder =  dest_path,detailsFilename =  c( as.character(markers[a]),independent_variable,"sensitivity_specificity_analisys","tmp"),extension = "csv")
 
       localKeys_1 <- ssEnv$keys_areas_subareas_markers_figures
       keys <- localKeys_1[localKeys_1$MARKER == markers[a], ]
@@ -81,13 +81,13 @@ diagnostic_performance <-
       }
 
       nkeys <- nrow(keys)
-      variables_to_export_nested <- c("variables_to_export","keys","result_folderPivot","sample_names","ssEnv","file_path_build")
+      variables_to_export_nested <- c("variables_to_export","keys","result_folderPivot","sample_names","ssEnv","io_file_path_build")
       if (nrow(keys) > 0)
         for (k in seq_len(nkeys))
         {
           # k <- 3
           key <- keys [k, ]
-          fname <- pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+          fname <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
           if (file.exists(fname))
           {
             log_event("INFO: ",
@@ -95,14 +95,14 @@ diagnostic_performance <-
               " Starting to read pivot:",
               fname,
               ".")
-            # pivot <- readr::read_delim(pivot_file_name,
+            # pivot <- readr::read_delim(io_pivot_file_name,
             #   col_types = readr::cols(
             #     .default = readr::col_double(),
             #     AREA = readr::col_character(),
             #   ),
             #   show_col_types=FALSE, progress=FALSE)
             # AI-027: read via unified dispatcher.
-            ss_pivot_lazy <- read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+            ss_pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
             tempDataFrame <- as.data.frame(ss_pivot_lazy$collect())
             row.names(tempDataFrame) <- tempDataFrame$AREA
             if (length(areas_selection) > 0)

@@ -9,7 +9,7 @@ test_that("semeeker", {
   # "sequential" so the test works under devtools::load_all() too. The
   # "multisession" strategy from setup.R only resolves SEMseeker::: against
   # the INSTALLED package, which makes load_all-time test runs fail on
-  # post-merge signature changes (e.g. AI-075 bed_file_name(skip_dir_create)).
+  # post-merge signature changes (e.g. AI-075 io_bed_file_name(skip_dir_create)).
   # Same rationale as test-7-association_analysis.R.
   SEMseeker::semseeker(
     input         = signal_data,
@@ -32,7 +32,7 @@ test_that("semeeker", {
     area <- as.character(key$AREA)
     subarea <- as.character(key$SUBAREA)
 
-    mutations_pivot_file_name <- SEMseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
+    mutations_pivot_file_name <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
     # NOTE: silent next preserved on purpose. The iteration builds
     # MUTATIONS_<figure> for EVERY figure in keys (including SIGNAL_MEAN),
     # so a hard expect_true(file.exists(...)) here fires false positives for
@@ -44,14 +44,14 @@ test_that("semeeker", {
     else
       next
 
-    pivot_file_name <- SEMseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
+    io_pivot_file_name <- SEMseeker:::io_pivot_file_name_parquet(marker,figure,area,subarea)
     # derived markers (LESIONS, DELTA*) may not exist when mutations are too
     # sparse for that figure × area × subarea combo — see AI-090 to rework
     # the iteration so we can hard-assert presence on the combos that ARE
     # supposed to exist.
-    if(!file.exists(pivot_file_name))
+    if(!file.exists(io_pivot_file_name))
       next
-    pivot <- as.data.frame(polars::pl$read_parquet(pivot_file_name))
+    pivot <- as.data.frame(polars::pl$read_parquet(io_pivot_file_name))
 
     pivot <- pivot[,-c(1:3)]
     mutations_pivot <- mutations_pivot[,-c(1:3)]
@@ -86,7 +86,7 @@ test_that("semeeker", {
     }
 
     # Per-sample BED presence is NOT a valid invariant for derived markers.
-    # By design (long-reads readiness) dump_sample_as_bed_file() skips
+    # By design (long-reads readiness) io_dump_sample_as_bed_file() skips
     # writing when the per-sample data has 0 rows — DELTAS/DELTAR/LESIONS
     # can legitimately be empty for a given (sample, figure) even when
     # MUTATIONS is not. The pivot-level expectations above (cols match,

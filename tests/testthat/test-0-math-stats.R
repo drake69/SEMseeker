@@ -1,6 +1,6 @@
 ## test-0-math-stats.R
 ## Unit tests for pure mathematical / statistical utility functions:
-##   ssim, variation_of_information, convertTextToNumeric,
+##   ssim, variation_of_information, io_convertTextToNumeric,
 ##   util_split_and_clean, metrics_filter, normalize_minimize, normalize_maximize,
 ##   util_substitute_infinite, calculate_collinearity_score
 ##
@@ -88,27 +88,27 @@ test_that("variation_of_information: perfectly correlated partitions give 0", {
 })
 
 # -----------------------------------------------------------------------
-# convertTextToNumeric
+# io_convertTextToNumeric
 # -----------------------------------------------------------------------
-test_that("convertTextToNumeric: plain decimal with dot", {
-  expect_equal(SEMseeker:::convertTextToNumeric("3.14"), 3.14)
+test_that("io_convertTextToNumeric: plain decimal with dot", {
+  expect_equal(SEMseeker:::io_convertTextToNumeric("3.14"), 3.14)
 })
 
-test_that("convertTextToNumeric: European decimal comma", {
-  expect_equal(SEMseeker:::convertTextToNumeric("3,14"), 3.14)
+test_that("io_convertTextToNumeric: European decimal comma", {
+  expect_equal(SEMseeker:::io_convertTextToNumeric("3,14"), 3.14)
 })
 
-test_that("convertTextToNumeric: integer string", {
-  expect_equal(SEMseeker:::convertTextToNumeric("42"), 42)
+test_that("io_convertTextToNumeric: integer string", {
+  expect_equal(SEMseeker:::io_convertTextToNumeric("42"), 42)
 })
 
-test_that("convertTextToNumeric: US thousands separator (1,200,000.34)", {
-  result <- SEMseeker:::convertTextToNumeric("1,200,000.34")
+test_that("io_convertTextToNumeric: US thousands separator (1,200,000.34)", {
+  result <- SEMseeker:::io_convertTextToNumeric("1,200,000.34")
   expect_equal(result, 1200000.34)
 })
 
-test_that("convertTextToNumeric: European thousands separator (1.200.000,34)", {
-  result <- SEMseeker:::convertTextToNumeric("1.200.000,34")
+test_that("io_convertTextToNumeric: European thousands separator (1.200.000,34)", {
+  result <- SEMseeker:::io_convertTextToNumeric("1.200.000,34")
   expect_equal(result, 1200000.34)
 })
 

@@ -71,9 +71,9 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   existing_deltas_hypo <- .existing_bed_set("DELTAS", "HYPO")
   existing_deltar_hypo <- .existing_bed_set("DELTAR", "HYPO")
 
-  # AI-075b: pass skip_dir_create=TRUE to bed_file_name ONLY when the
+  # AI-075b: pass skip_dir_create=TRUE to io_bed_file_name ONLY when the
   # existing_set for that (marker, figure) is non-empty (= prova certa che
-  # la dir esiste). Empty set => skip_dir_create=FALSE => dir_check_and_create
+  # la dir esiste). Empty set => skip_dir_create=FALSE => io_dir_check_and_create
   # corre normalmente per creare la dir. No assunzioni cieche.
   dir_known_signal_mean <- length(existing_signal_mean) > 0L
   dir_known_mut_hyper   <- length(existing_mut_hyper)   > 0L
@@ -85,7 +85,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     "signal_superior_thresholds","deltar_single_sample","signal_inferior_thresholds","iqr","signal_median_values",
     "bt","bonferroni_threshold", "probe_features", "analyze_single_sample_both", "delta_single_sample", "progress_bar",
     "progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_single_sample",
-    "get_session_info","bed_file_name","signal_thresholds","update_session_info","anno_normalize_chr",
+    "get_session_info","io_bed_file_name","signal_thresholds","update_session_info","anno_normalize_chr",
     "existing_signal_mean","existing_mut_hyper","existing_mut_hypo","existing_deltas_hypo","existing_deltar_hypo",
     "dir_known_signal_mean","dir_known_mut_hyper","dir_known_mut_hypo","dir_known_deltas_hypo","dir_known_deltar_hypo")
   i <- 1
@@ -94,7 +94,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   # foreach::foreach(i =1:nrow(sample_sheet), .export = variables_to_export) %dorng% {
     local_sample_detail <- sample_sheet[i,]
     ssEnv <- get_session_info()
-    bed_filename <- bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN", skip_dir_create = dir_known_signal_mean)
+    bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN", skip_dir_create = dir_known_signal_mean)
     if(!(bed_filename %in% existing_signal_mean)) {
       signal_values <- signal_data[,local_sample_detail$Sample_ID]
       signal_single_sample( signal_values,local_sample_detail,probe_features)
@@ -112,7 +112,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   # Uses the first sample's signal bed file (just written above) for positions.
   {
     coverage_first_sample <- sample_sheet[1L, ]
-    coverage_bed <- bed_file_name(coverage_first_sample$Sample_ID,
+    coverage_bed <- io_bed_file_name(coverage_first_sample$Sample_ID,
                                   coverage_first_sample$Sample_Group,
                                   "SIGNAL", "MEAN")
     if (file.exists(coverage_bed)) {
@@ -159,7 +159,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     .packages = "SEMseeker"
   ) %dorng% {
     # CRITICAL (E-14): multisession workers are fresh R processes where
-    # .pkgglobalenv$ssEnv is empty. All internal helpers (bed_file_name,
+    # .pkgglobalenv$ssEnv is empty. All internal helpers (io_bed_file_name,
     # analyze_single_sample, etc.) call get_session_info() which reads from
     # .pkgglobalenv — NOT from the exported `ssEnv` variable. Without this
     # call, multisession workers fail with "get_session_info called without
@@ -174,10 +174,10 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     # 4 stat syscalls per sample (~16k saved on a 4000-sample population).
     # skip_dir_create=TRUE because all destination dirs were ensured ONCE at
     # the top of analyze_population — no per-sample dir_check_and_create.
-    bed_mut_hyper   <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER", skip_dir_create = dir_known_mut_hyper)
-    bed_mut_hypo    <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO", skip_dir_create = dir_known_mut_hypo)
-    bed_deltas_hypo <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO", skip_dir_create = dir_known_deltas_hypo)
-    bed_deltar_hypo <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAR","HYPO", skip_dir_create = dir_known_deltar_hypo)
+    bed_mut_hyper   <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPER", skip_dir_create = dir_known_mut_hyper)
+    bed_mut_hypo    <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "MUTATIONS","HYPO", skip_dir_create = dir_known_mut_hypo)
+    bed_deltas_hypo <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAS","HYPO", skip_dir_create = dir_known_deltas_hypo)
+    bed_deltar_hypo <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "DELTAR","HYPO", skip_dir_create = dir_known_deltar_hypo)
     need_mut_hyper   <- !(bed_mut_hyper   %in% existing_mut_hyper)
     need_mut_hypo    <- !(bed_mut_hypo    %in% existing_mut_hypo)
     need_deltas_hypo <- !(bed_deltas_hypo %in% existing_deltas_hypo)
@@ -185,7 +185,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
 
     # Only pay the read.delim cost when at least one figure needs computing.
     if (need_mut_hyper || need_mut_hypo || need_deltas_hypo || need_deltar_hypo) {
-      bed_filename <- SEMseeker:::bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
+      bed_filename <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
       signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
       colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
       signal_values$CHR <- SEMseeker:::anno_normalize_chr(signal_values$CHR, "internal")

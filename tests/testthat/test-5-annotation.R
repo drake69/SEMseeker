@@ -36,7 +36,7 @@ test_that("annotations", {
 
   # deltaX_get needs sample sheet CSV (normally written by analyze_batch)
   ssEnv2 <- SEMseeker:::get_session_info()
-  sample_sheet_csv <- SEMseeker:::file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
+  sample_sheet_csv <- SEMseeker:::io_file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
   utils::write.csv2(mySampleSheet, file=sample_sheet_csv)
 
   SEMseeker:::deltaX_get()
@@ -55,22 +55,22 @@ test_that("annotations", {
     area <- key$AREA
     subarea <- key$SUBAREA
 
-    mutations_pivot_file_name_parquet <- SEMseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
+    mutations_pivot_file_name_parquet <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
     if(file.exists(mutations_pivot_file_name_parquet))
       mutations_pivot <- polars::pl$read_parquet(mutations_pivot_file_name_parquet)|> as.data.frame()
     else
       next
 
-    mutations_position_pivot_file_name_parquet <- SEMseeker:::pivot_file_name_parquet("MUTATIONS",figure,"POSITION","")
+    mutations_position_pivot_file_name_parquet <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS",figure,"POSITION","")
     if(file.exists(mutations_position_pivot_file_name_parquet))
       mutations_position_pivot <- polars::pl$read_parquet(mutations_position_pivot_file_name_parquet)|> as.data.frame()
     else
       next
 
-    pivot_file_name_parquet <- SEMseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
-    testthat::expect_true(file.exists(pivot_file_name_parquet))
-    if(file.exists(pivot_file_name_parquet))
-      pivot <- polars::pl$read_parquet(pivot_file_name_parquet)|> as.data.frame()
+    io_pivot_file_name_parquet <- SEMseeker:::io_pivot_file_name_parquet(marker,figure,area,subarea)
+    testthat::expect_true(file.exists(io_pivot_file_name_parquet))
+    if(file.exists(io_pivot_file_name_parquet))
+      pivot <- polars::pl$read_parquet(io_pivot_file_name_parquet)|> as.data.frame()
     else
       pivot <- NULL
 

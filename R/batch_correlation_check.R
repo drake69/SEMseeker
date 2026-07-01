@@ -28,10 +28,10 @@
 #   sample_sheet <- study_summary_get()
 #   localKeys <- expand.grid("FIGURE"=ssEnv$keys_figures_default[,1],"MARKER"= ssEnv$keys_markers[,1])
 # 
-#   batch_analysis_folder <- dir_check_and_create(ssEnv$result_folderData,"Batch_Analysis")
-#   chartFolder <- dir_check_and_create(ssEnv$result_folderChart,"BATCH")
+#   batch_analysis_folder <- io_dir_check_and_create(ssEnv$result_folderData,"Batch_Analysis")
+#   chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,"BATCH")
 # 
-#   to_export <- c("localKeys", "sample_sheet", "%dorng%", "g", "dir_check_and_create", "ssEnv", "file_path_build",
+#   to_export <- c("localKeys", "sample_sheet", "%dorng%", "g", "io_dir_check_and_create", "ssEnv", "io_file_path_build",
 #     "batch_analysis_folder", "iter", "RNGseed", "checkRNGversion", "getRNG", "%||%", ".getDoParName", "getDoParName",
 #     "getDoBackend", "setDoBackend", "RNGtype", "showRNG", "doRNGversion", ".getRNG", ".getRNGattribute", "hasRNG",
 #     "isNumber", "isReal", "isInteger", "nextRNG", ".foreachGlobals", "RNGkind", "setRNG", "RNGprovider",
@@ -48,8 +48,8 @@
 #       {
 #         update_session_info(ssEnv)
 #         pop <- sample_groups[g]
-#         tempresult_folderData <- dir_check_and_create(ssEnv$result_folderData,c(as.character(pop) ,paste(as.character(key$MARKER),"_",as.character(key$FIGURE),sep="")))
-#         file_to_read <- file_path_build(tempresult_folderData, c("MULTIPLE", as.character(key$MARKER), as.character(key$FIGURE)), "fst")
+#         tempresult_folderData <- io_dir_check_and_create(ssEnv$result_folderData,c(as.character(pop) ,paste(as.character(key$MARKER),"_",as.character(key$FIGURE),sep="")))
+#         file_to_read <- io_file_path_build(tempresult_folderData, c("MULTIPLE", as.character(key$MARKER), as.character(key$FIGURE)), "fst")
 #         if(file.exists(file_to_read))
 #         {
 #           temp <- fst::read_fst(file_to_read, as.data.table = TRUE)
@@ -127,7 +127,7 @@
 #       pca_contrib$Batch_ID <- as.factor(pca_contrib$Batch_ID)
 #     }
 #     pca_contrib <- as.data.frame(pca_contrib)
-#     result_file <- file_path_build(batch_analysis_folder, c("pca_contrib", as.character(key$MARKER), as.character(key$FIGURE)), "csv", add_gz=TRUE)
+#     result_file <- io_file_path_build(batch_analysis_folder, c("pca_contrib", as.character(key$MARKER), as.character(key$FIGURE)), "csv", add_gz=TRUE)
 #     utils::write.csv2(gzfile(pca_contrib),result_file,row.names = FALSE)
 # 
 #     if(length(unique(t(unique(stats::na.omit(pca_contrib[,!(colnames(pca_contrib) %in% c("Batch_ID"))])))))==1
@@ -190,7 +190,7 @@
 #     result_cor <- merge(result_cor, dunn.results, by="dim")
 #     rm(dunn.results)
 # 
-#     result_file <- file_path_build(batch_analysis_folder, c("batch_cor", as.character(key$MARKER), as.character(key$FIGURE)), "csv", add_gz=TRUE)
+#     result_file <- io_file_path_build(batch_analysis_folder, c("batch_cor", as.character(key$MARKER), as.character(key$FIGURE)), "csv", add_gz=TRUE)
 #     utils::write.csv2(gzfile(result_cor),result_file,row.names = FALSE)
 # 
 #     result_cor <- subset(result_cor, result_cor$p.value < as.numeric(ssEnv$alpha))
@@ -207,7 +207,7 @@
 #       summary_cor <- result_cor
 #     # result_cor
 #   }
-#   result_file <- file_path_build(batch_analysis_folder, c("result","cor"), "csv", add_gz=TRUE)
+#   result_file <- io_file_path_build(batch_analysis_folder, c("result","cor"), "csv", add_gz=TRUE)
 #   utils::write.csv2(gzfile(summary_cor),result_file,row.names = FALSE)
 # 
 # }

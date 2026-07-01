@@ -99,10 +99,10 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
       # rename pvalue_column to the original name
       colnames(tt)[colnames(tt) == "alpha"] <- pvalue_column
 
-      dest_folder <- dir_check_and_create(ssEnv$result_folderInference,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), name_cleaning(paste(family_test, pvalue_column, run_prefix))))
+      dest_folder <- io_dir_check_and_create(ssEnv$result_folderInference,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), name_cleaning(paste(family_test, pvalue_column, run_prefix))))
       inference_detail <- inference_details[1,]
       inference_detail$samples_sql_condition <- ""
-      filename <- inference_file_name(inference_detail, marker, dest_folder ,prefix="" )
+      filename <- io_inference_file_name(inference_detail, marker, dest_folder ,prefix="" )
 
       utils::write.csv2(tt, filename, row.names = FALSE)
     }
@@ -169,12 +169,12 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
     # for (i in seq_along(markers))
     # {
     #   marker <- markers[i]
-    #   filename <- inference_file_name(inference_detail, marker,ssEnv$result_folderInference,file_extension = "csv",suffix = "", prefix = "")
+    #   filename <- io_inference_file_name(inference_detail, marker,ssEnv$result_folderInference,file_extension = "csv",suffix = "", prefix = "")
     #   aggregated_results_table_marker <- subset(aggregated_results_table, MARKER == marker)
     #   aggregated_results_table_marker$DEPTH <- 3
     #   write.csv2(aggregated_results_table_marker, filename, row.names = F)
     # }
-    filename <- inference_file_name(inference_detail, paste0(markers, collapse = "_") ,dest_folder,file_extension = "csv",
+    filename <- io_inference_file_name(inference_detail, paste0(markers, collapse = "_") ,dest_folder,file_extension = "csv",
       suffix = "AGGREGATED", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
     write.csv2(aggregated_results_table, filename, row.names = FALSE)
     log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  aggregated files saved!")
@@ -226,7 +226,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
             next
           # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
           categories <- util_pretty_label(categories)
-          dest_folder <- dir_check_and_create(ssEnv$result_folderChart,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), name_cleaning(paste(family_test, pvalue_column, run_prefix))))
+          dest_folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), name_cleaning(paste(family_test, pvalue_column, run_prefix))))
           filename <-
             paste(
               dest_folder,  "/",
@@ -354,7 +354,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
           overlaps <- Reduce(intersect, SPLIT)
           if(length(overlaps)>0)
           {
-            filename <- inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),dest_folder,file_extension = "csv",suffix = "OVERLAPS", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
+            filename <- io_inference_file_name(inference_detail, paste(keys[i, ]$AREA, keys[i, ]$SUBAREA, keys[i, ]$MARKER, keys[i, ]$FIGURE , sep="_"),dest_folder,file_extension = "csv",suffix = "OVERLAPS", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
             overlaps <- data.frame("AREA_OF_TEST" = overlaps)
             utils::write.csv2(overlaps, filename, append = TRUE)
           }

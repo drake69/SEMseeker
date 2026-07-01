@@ -1,25 +1,25 @@
 # AI-109 (2026-06-09): contract-level E2E tests for the WGBS / LONGREAD
 # code path. The bulk of SEMseeker's runtime testing has been against
 # Illumina (K27/K450/K850); long-reads exercise a different set of
-# helpers (coord_probe_features, AI-098 tech-aware AREA skip, chunked
+# helpers (io_coord_probe_features, AI-098 tech-aware AREA skip, chunked
 # per-chr lmFit). These tests build SYNTHETIC long-read data and assert
 # the contracts that those helpers must satisfy.
 #
 # Synthetic probe-ID format: "{CHR}_{START}", with CHR carrying NO "chr"
-# prefix (per probe_id_to_coord in R/coord_input.R). E.g. "1_10000",
+# prefix (per io_probe_id_to_coord in R/coord_input.R). E.g. "1_10000",
 # "X_5000".
 
-# ---- coord_probe_features round-trip ----------------------------------
+# ---- io_coord_probe_features round-trip ----------------------------------
 
-test_that("probe_id_to_coord parses synthetic IDs round-trip with coord_probe_features", {
+test_that("io_probe_id_to_coord parses synthetic IDs round-trip with io_coord_probe_features", {
   probe_ids <- c("1_10000", "1_20000", "2_30000", "X_5000", "Y_99999")
 
-  coords <- SEMseeker:::probe_id_to_coord(probe_ids)
+  coords <- SEMseeker:::io_probe_id_to_coord(probe_ids)
   expect_equal(coords$CHR,   c("1", "1", "2", "X", "Y"))
   expect_equal(coords$START, c(10000L, 20000L, 30000L, 5000L, 99999L))
   expect_equal(coords$END,   coords$START + 1L)
 
-  pf <- SEMseeker:::coord_probe_features(probe_ids)
+  pf <- SEMseeker:::io_coord_probe_features(probe_ids)
   expect_equal(pf$PROBE, probe_ids)
   expect_equal(pf$CHR,   coords$CHR)
   expect_equal(pf$START, coords$START)

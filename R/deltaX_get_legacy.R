@@ -31,10 +31,10 @@ deltaX_get_legacy <- function()
   else
     progress_bar <- ""
 
-  variables_to_export <- c("ssEnv", "dir_check_and_create", "subarea",
+  variables_to_export <- c("ssEnv", "io_dir_check_and_create", "subarea",
     "progress_bar","progression_index", "progression", "progressor_uuid",
     "owner_session_uuid", "trace","anno_probe_features_get", "localKeys",
-    "file_path_build","%>%","get_session_info","log_event")
+    "io_file_path_build","%>%","get_session_info","log_event")
   sample_sheet_res <- data.frame()
   keys <- subset(keys,!is.na(SOURCE))
   keys <- subset(keys,!is.na(Q))
@@ -51,12 +51,12 @@ deltaX_get_legacy <- function()
     source_marker <- key$SOURCE
     marker <- key$MARKER
 
-    pivot_file_nameparquet_dest_hyper <- pivot_file_name_parquet(marker,"HYPER","POSITION","WHOLE")
-    pivot_file_nameparquet_dest_hypo <- pivot_file_name_parquet(marker,"HYPO","POSITION","WHOLE")
+    pivot_file_nameparquet_dest_hyper <- io_pivot_file_name_parquet(marker,"HYPER","POSITION","WHOLE")
+    pivot_file_nameparquet_dest_hypo <- io_pivot_file_name_parquet(marker,"HYPO","POSITION","WHOLE")
     if(file.exists(pivot_file_nameparquet_dest_hyper) & file.exists(pivot_file_nameparquet_dest_hypo))
       next
 
-    pivot_file_nameparquet <- pivot_file_name_parquet(source_marker,"HYPER",area_position,subarea_position)
+    pivot_file_nameparquet <- io_pivot_file_name_parquet(source_marker,"HYPER",area_position,subarea_position)
     if (!file.exists(pivot_file_nameparquet)) {
       log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
         " [deltaX_get] Source parquet not found, skipping marker=", marker,
@@ -73,7 +73,7 @@ deltaX_get_legacy <- function()
     vector_shaped_hyper[vector_shaped_hyper==0] <- NA
     length_hyper <- length(vector_shaped_hyper)
 
-    pivot_file_nameparquet <- pivot_file_name_parquet(source_marker,"HYPO",area_position,subarea_position)
+    pivot_file_nameparquet <- io_pivot_file_name_parquet(source_marker,"HYPO",area_position,subarea_position)
     if (!file.exists(pivot_file_nameparquet)) {
       log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
         " [deltaX_get] Source parquet not found, skipping marker=", marker,
@@ -124,7 +124,7 @@ save_figure <- function(colname_pivot,dim_pivot,vector_figure,positions,sample_s
   vector_figure <- as.data.frame(vector_figure)
   colnames(vector_figure) <- colname_pivot
   vector_figure <- cbind(positions,vector_figure)
-  pivot_file_nameparquet <- pivot_file_name_parquet(marker,figure,area,subarea)
+  pivot_file_nameparquet <- io_pivot_file_name_parquet(marker,figure,area,subarea)
   vector_figure <- polars::as_polars_df(as.data.frame(vector_figure))
   vector_figure <- vector_figure$sort(c("CHR", "START"), descending = FALSE)
   vector_figure$write_parquet(pivot_file_nameparquet)
@@ -139,7 +139,7 @@ save_figure <- function(colname_pivot,dim_pivot,vector_figure,positions,sample_s
   for(c in 4:(ncol(vector_figure)))
   {
     sample_id <- colnames(vector_figure)[c]
-    bed_fname <- bed_file_name(sample_id,sample_sheet[sample_sheet$Sample_ID==sample_id,"Sample_Group"],marker,figure)
+    bed_fname <- io_bed_file_name(sample_id,sample_sheet[sample_sheet$Sample_ID==sample_id,"Sample_Group"],marker,figure)
     if(ssEnv$showprogress)
       progress_bar(sprintf("Saving bed file %s of %s, %s.",sample_id,marker, figure))
     if(file.exists(bed_fname))
@@ -150,7 +150,7 @@ save_figure <- function(colname_pivot,dim_pivot,vector_figure,positions,sample_s
     # drop rows with NA
     result <- result[complete.cases(result),]
     result <- result[result[,4]>0,]
-    bed_filename <- bed_file_name(sample_id,sample_group,marker,figure)
-    dump_sample_as_bed_file(result,bed_filename)
+    bed_filename <- io_bed_file_name(sample_id,sample_group,marker,figure)
+    io_dump_sample_as_bed_file(result,bed_filename)
   }
 }

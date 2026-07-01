@@ -103,11 +103,11 @@ test_that("run_depth_n_marker does NOT '-'→'_' rewrite AREA before resume matc
   )
 })
 
-test_that("data_preparation does NOT '-'→'_' rewrite tempDataFrame colnames", {
-  src <- paste(deparse(SEMseeker:::data_preparation), collapse = "\n")
+test_that("io_data_preparation does NOT '-'→'_' rewrite tempDataFrame colnames", {
+  src <- paste(deparse(SEMseeker:::io_data_preparation), collapse = "\n")
   expect_false(
     grepl('gsub\\(\\s*"-"\\s*,\\s*"_"\\s*,\\s*colnames\\(tempDataFrame\\)\\s*\\)', src),
-    info = "AI-106 removed data_preparation's colname sanitisation — keep it removed"
+    info = "AI-106 removed io_data_preparation's colname sanitisation — keep it removed"
   )
 })
 

@@ -57,8 +57,8 @@ reference:
     contents:
       - anno_create_position_pivots
       - anno_annotate_position_pivots
-      - data_preparation
-      - build_data_set_from_geo
+      - io_data_preparation
+      - io_build_data_set_from_geo
   - title: "Datasets"
     contents:
       - PROBES

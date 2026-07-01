@@ -17,21 +17,21 @@ analyze_single_sample <- function(values, thresholds, figure, sample_detail) {
   if (nrow(mutation_annotated_sorted_to_save) != 0)
     mutation_annotated_sorted_to_save$VALUE <- 1
 
-  folder_to_save <- dir_check_and_create(ssEnv$result_folderData,c(as.character(sample_detail$Sample_Group),paste0("MUTATIONS","_", figure, sep = "")))
+  folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData,c(as.character(sample_detail$Sample_Group),paste0("MUTATIONS","_", figure, sep = "")))
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  "analyze_single_sample:",folder_to_save)
-  dump_sample_as_bed_file(
+  io_dump_sample_as_bed_file(
     data_to_dump = mutation_annotated_sorted_to_save,
-    fileName = file_path_build(folder_to_save,c(sample_detail$Sample_ID,"MUTATIONS",figure),"bed", add_gz=TRUE)
+    fileName = io_file_path_build(folder_to_save,c(sample_detail$Sample_ID,"MUTATIONS",figure),"bed", add_gz=TRUE)
   )
 
   lesionWeighted <- lesions_get(grouping_column = "CHR", mutation_annotated_sorted = mutation_annotated_sorted)
   if(nrow(lesionWeighted) != 0)
     lesionWeighted$VALUE <- 1
 
-  folder_to_save <- dir_check_and_create(ssEnv$result_folderData,c(as.character(sample_detail$Sample_Group),paste0("LESIONS","_", figure, sep = "")))
-  dump_sample_as_bed_file(
+  folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData,c(as.character(sample_detail$Sample_Group),paste0("LESIONS","_", figure, sep = "")))
+  io_dump_sample_as_bed_file(
     data_to_dump = lesionWeighted,
-    fileName = file_path_build(folder_to_save,c(sample_detail$Sample_ID,"LESIONS",figure),"bed", add_gz=TRUE)
+    fileName = io_file_path_build(folder_to_save,c(sample_detail$Sample_ID,"LESIONS",figure),"bed", add_gz=TRUE)
   )
 
 }

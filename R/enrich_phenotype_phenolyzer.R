@@ -40,17 +40,17 @@ enrich_phenotype_phenolyzer <- function(study,
   for(i in seq_len(nrow(keys)))
   {
     random_string <- stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]")
-    tempFolder <- dir_check_and_create(tmp,c("/semseeker/",random_string))
+    tempFolder <- io_dir_check_and_create(tmp,c("/semseeker/",random_string))
 
     if(ssEnv$showprogress)
       progress_bar(sprintf("Searching for disease using phenolyzer: %s",keys[i,]$COMBINED))
     key <- paste(keys[i,]$FIGURE,keys[i,]$MARKER,keys[i,]$AREA,keys[i,]$SUBAREA, sep="_")
 
-    base_path <- dir_check_and_create(ssEnv$result_folderPhenotype,c("phenolyzer",name_cleaning(inference_detail$areas_sql_condition)))
-    path <- dir_check_and_create(baseFolder = base_path, subFolders = "scores")
+    base_path <- io_dir_check_and_create(ssEnv$result_folderPhenotype,c("phenolyzer",name_cleaning(inference_detail$areas_sql_condition)))
+    path <- io_dir_check_and_create(baseFolder = base_path, subFolders = "scores")
     annotated_gene_file <- file.path(tempFolder,"ex8.annotated_gene_scores")
     enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=paste("_",disease_label,"_gene_scores",sep=""), pvalue_column=pvalue_column, ssEnv$alpha, significance)
-    phenotype_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
+    phenotype_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
     #
     if(file.exists(phenotype_report_path))
       next
@@ -84,7 +84,7 @@ enrich_phenotype_phenolyzer <- function(study,
       next
 
     enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=disease_label, pvalue_column=pvalue_column, ssEnv$alpha, significance)
-    phenotype_report_path <- file_path_build(base_path,enrich_phenotype_analysis_name,"csv")
+    phenotype_report_path <- io_file_path_build(base_path,enrich_phenotype_analysis_name,"csv")
 
     if(statistic_parameter!="")
       gene_set <- results_inference[,c("AREA_OF_TEST",statistic_parameter,pvalue_column)]
@@ -176,30 +176,30 @@ enrich_phenotype_phenolyzer <- function(study,
     annotated_genes$diseases <- paste(diseases$DISEASE, collapse = ";")
 
     enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=paste("_", disease_label,"_report",sep=""), pvalue_column=pvalue_column, ssEnv$alpha, significance)
-    path <- dir_check_and_create(baseFolder = base_path, subFolders = "summary")
-    phenotype_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
+    path <- io_dir_check_and_create(baseFolder = base_path, subFolders = "summary")
+    phenotype_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
     utils::write.csv2(annotated_genes, phenotype_report_path)
 
 
-    path <- dir_check_and_create(baseFolder = base_path, subFolders = "scores")
+    path <- io_dir_check_and_create(baseFolder = base_path, subFolders = "scores")
     annotated_gene_file <- file.path(tempFolder,"ex8.annotated_gene_scores")
     enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=paste("_", disease_label,"_gene_scores",sep=""), pvalue_column=pvalue_column, ssEnv$alpha, significance)
-    phenotype_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
+    phenotype_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
     file.copy(annotated_gene_file, phenotype_report_path, overwrite = TRUE)
 
 
-    path <- dir_check_and_create(baseFolder = base_path, subFolders = "worldcloud")
+    path <- io_dir_check_and_create(baseFolder = base_path, subFolders = "worldcloud")
     # copy all files ending with _wordcloud.png to the worldcloud folder
     wordcloud_files <- list.files(tempFolder, pattern = "_wordcloud.png", full.names = TRUE)
     for (w in seq_along(wordcloud_files))
     {
       wordcloud_file <- wordcloud_files[w]
       enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=paste(disease_label,"_wordcloud",sep=""), pvalue_column=pvalue_column, ssEnv$alpha, significance)
-      phenotype_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"png")
+      phenotype_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"png")
       file.copy(wordcloud_file, phenotype_report_path, overwrite = TRUE)
     }
 
-    # path <- dir_check_and_create(baseFolder = base_path, subFolders = "disease")
+    # path <- io_dir_check_and_create(baseFolder = base_path, subFolders = "disease")
     # copy all files ending with _diseases.png to the worldcloud folder
     diseases_files <- list.files(tempFolder, pattern = "_diseases", full.names = TRUE)
 
@@ -214,7 +214,7 @@ enrich_phenotype_phenolyzer <- function(study,
       diseases_summary <- plyr::rbind.fill(diseases_summary, disease_temp)
 
       projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix= disease_label  , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
-      filenameResult <- file_path_build(base_path,projectName,"csv")
+      filenameResult <- io_file_path_build(base_path,projectName,"csv")
       utils::write.csv2(disease_temp, filenameResult)
     }
 
@@ -229,7 +229,7 @@ enrich_phenotype_phenolyzer <- function(study,
   # transformation_y <- inference_detail$transformation_y
   # significance_label <- ifelse(significance, "significant", "non_significant")
   # analysis_name <- paste("summary",pvalue_column, significance_label, ssEnv$alpha, as.character(transformation_y), as.character(family_test), sep="_")
-  # phenotype_report_path <- file_path_build(base_path,analysis_name,"csv")
+  # phenotype_report_path <- io_file_path_build(base_path,analysis_name,"csv")
   # if(file.exists(phenotype_report_path))
   # {
   #   disease_temp <- utils::read.csv2(phenotype_report_path)

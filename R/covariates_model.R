@@ -165,9 +165,9 @@ covariates_model <- function(inference_detail, study_summary)
 
   post_columns <- colnames(study_summary)
   columns_to_save <- post_columns[!post_columns %in% prev_columns]
-  inf_file_name <- inference_file_name(inference_detail,"",ssEnv$result_folderInference,"csv",  suffix = "covariates_model_")
+  inf_file_name <- io_inference_file_name(inference_detail,"",ssEnv$result_folderInference,"csv",  suffix = "covariates_model_")
   write.csv2(study_summary[,c("Sample_ID",columns_to_save)], file = inf_file_name, row.names = FALSE)
-  # file_path <- file_path_build(ssEnv$result_folderData, "sample_sheet_result" ,"csv")
+  # file_path <- io_file_path_build(ssEnv$result_folderData, "sample_sheet_result" ,"csv")
   # write.csv2(study_summary, file_path, row.names = FALSE)
 
   return (list(covariates = covariates, study_summary = study_summary, inference_detail = inference_detail))

@@ -6,7 +6,7 @@
 #   1. it bounds the chunk size to a known fraction (~5%–20% of the
 #      genome for human autosomes),
 #   2. it composes naturally with the canonical CHR/START sort gate
-#      written by signal_save() — each chr-block is already contiguous
+#      written by io_signal_save() — each chr-block is already contiguous
 #      and pre-sorted on disk, so the lazy filter is a single linear
 #      scan,
 #   3. it's tech-agnostic: Illumina probes have a chromosome
@@ -32,7 +32,7 @@
 #' Fit limma::lmFit one chromosome at a time on a lazy pivot
 #'
 #' @param pivot_lazy `polars_lazy_frame` already filtered for
-#'   `area_to_remove` and transformed by `data_preparation_lazy()`.
+#'   `area_to_remove` and transformed by `io_data_preparation_lazy()`.
 #'   First column MUST be `AREA` (probe / position identifier); the
 #'   remaining columns are samples.
 #' @param sample_cols_kept Character vector — sample column names that

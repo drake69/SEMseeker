@@ -28,6 +28,6 @@ Contract change: callers that need PROBE as a column see it as a
 regular polars String column. Callers that previously read `rownames`
 must switch to selecting / collecting the `PROBE` column.
 
-Order: input must already be sorted (sort gate = signal_save chunked
+Order: input must already be sorted (sort gate = io_signal_save chunked
 per-chr by START). This function preserves order via `unique(maintain_order=TRUE)`.
 }

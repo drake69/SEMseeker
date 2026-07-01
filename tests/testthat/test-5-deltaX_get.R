@@ -43,14 +43,14 @@ test_that("deltaX_get", {
   # analyze_population is called directly here (bypassing analyze_batch which writes it),
   # so we write it manually with original mixed-case Sample_IDs.
   ssEnv2 <- SEMseeker:::get_session_info()
-  sample_sheet_csv <- SEMseeker:::file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
+  sample_sheet_csv <- SEMseeker:::io_file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
   utils::write.csv2(mySampleSheet, file=sample_sheet_csv)
 
   ss <- SEMseeker:::deltaX_get()
 
-  # BED file names go through file_path_build() -> name_cleaning() which
+  # BED file names go through io_file_path_build() -> name_cleaning() which
   # uppercases sample IDs; pivot column names are derived from BED basenames
-  # via stream_merge_bed(). So pivot colnames are uppercase regardless of
+  # via io_stream_merge_bed(). So pivot colnames are uppercase regardless of
   # whether the pipeline went through analyze_batch.
   cleaned_sample_ids <- SEMseeker:::name_cleaning(mySampleSheet$Sample_ID)
 
@@ -71,17 +71,17 @@ test_that("deltaX_get", {
     area <- as.character(key$AREA)
     subarea <- as.character(key$SUBAREA)
 
-    mutations_pivot_file_name <- SEMseeker:::pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
+    mutations_pivot_file_name <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS",figure,area,subarea)
     if(file.exists(mutations_pivot_file_name))
       mutations_pivot <- as.data.frame(polars::pl$read_parquet(mutations_pivot_file_name))
     else
       next
 
-    pivot_file_name <- SEMseeker:::pivot_file_name_parquet(marker,figure,area,subarea)
+    io_pivot_file_name <- SEMseeker:::io_pivot_file_name_parquet(marker,figure,area,subarea)
     # derived markers may not exist with sparse synthetic data
-    if(!file.exists(pivot_file_name))
+    if(!file.exists(io_pivot_file_name))
       next
-    pivot <- as.data.frame(polars::pl$read_parquet(pivot_file_name))
+    pivot <- as.data.frame(polars::pl$read_parquet(io_pivot_file_name))
 
     pivot <- pivot[,-c(1:3)]
     mutations_pivot <- mutations_pivot[,-c(1:3)]
@@ -115,7 +115,7 @@ test_that("deltaX_get", {
     }
 
     # Per-sample BED presence is NOT a valid invariant for derived markers.
-    # By design (long-reads readiness) dump_sample_as_bed_file() skips
+    # By design (long-reads readiness) io_dump_sample_as_bed_file() skips
     # writing when the per-sample data has 0 rows — DELTAS/DELTAR/LESIONS
     # can legitimately be empty for a given (sample, figure) even when
     # MUTATIONS is not. Pivot-level expectations above are authoritative.

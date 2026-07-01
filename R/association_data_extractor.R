@@ -28,7 +28,7 @@ association_data_extractor <- function(inference_details,destination_folder="", 
 
       keys <- localKeys[localKeys$MARKER==markers[a],]
       keys <- unique(keys)
-      fileNameResults <- inference_file_name(inference_detail, markers[a], ssEnv$result_folderInference)
+      fileNameResults <- io_inference_file_name(inference_detail, markers[a], ssEnv$result_folderInference)
       if (file.exists(fileNameResults))
       {
         results_inference <- utils::read.csv2(fileNameResults, header  =  TRUE)

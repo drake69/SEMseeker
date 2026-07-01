@@ -47,7 +47,7 @@
   Standard errors are derived from the Fisher information at the MLE
   (`Var(β̂) = (X' diag(p(1-p)) X)^{-1}`), matching `stats::glm` Wald output.
 
-  `data_preparation()` gains a universal degenerate-burden filter: columns
+  `io_data_preparation()` gains a universal degenerate-burden filter: columns
   with `var(Y) == 0` are dropped before reaching the model. Critical for
   LESIONS @ PROBE where ~92% of probes are all-zero across samples
   (manifest-aligned pivot, retained for positional join with annotations).
@@ -122,7 +122,7 @@
   where the session singleton is empty.
 
 - **`chr` prefix mismatch in Polars join** (E-13).
-  `dump_sample_as_bed_file()` prepends `chr` to chromosome names, but
+  `io_dump_sample_as_bed_file()` prepends `chr` to chromosome names, but
   `signal_thresholds` retains bare numbers from probe annotations. The inner
   join in `util_join_values_to_thresholds()` returned 0 rows → no mutations detected.
   Fix: `util_join_values_to_thresholds()` now strips the `chr` prefix from both sides
@@ -162,7 +162,7 @@
 - **`bayes_analysis()`: 9 bugs fixed** (A-09).
   - **Loop off-by-one** (bug 1): `for (a in length(markers))` iterated only once
     (`a = 2`, only "LESIONS"), silently skipping "MUTATIONS". Fixed with `seq_along()`.
-  - **Wrong file path** (bug 2): `read_delim(pivot_file_name)` passed the function
+  - **Wrong file path** (bug 2): `read_delim(io_pivot_file_name)` passed the function
     object instead of the local variable `pivot_filename` → runtime connection error.
   - **Missing assignment** (bug 3): `tempDataFrame` used before being assigned from
     `pivot` → "object not found" crash. Added `tempDataFrame <- pivot`.

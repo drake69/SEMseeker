@@ -2,7 +2,7 @@
 # Tests for BED / bedgraph file generation functions
 #
 # Covered:
-#   - dump_sample_as_bed_file()  writes a tab-separated BED file;
+#   - io_dump_sample_as_bed_file()  writes a tab-separated BED file;
 #                                prepends "chr" if absent; sorts by CHR/START/END
 #
 # The companion chart test (test-2-box-plot.R) already covers plot_box_plot() PNG
@@ -28,7 +28,7 @@
 # 1. Basic file creation
 # ---------------------------------------------------------------------------
 
-test_that("dump_sample_as_bed_file: creates the output file", {
+test_that("io_dump_sample_as_bed_file: creates the output file", {
   tf <- tempFolders[25]
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -36,11 +36,11 @@ test_that("dump_sample_as_bed_file: creates the output file", {
   set.seed(1)
   df   <- .make_bed_df(5L)
   path <- file.path(tf, "test_output.bed")
-  SEMseeker:::dump_sample_as_bed_file(data_to_dump = df, fileName = path)
+  SEMseeker:::io_dump_sample_as_bed_file(data_to_dump = df, fileName = path)
   expect_true(file.exists(path))
 })
 
-test_that("dump_sample_as_bed_file: output has correct number of rows", {
+test_that("io_dump_sample_as_bed_file: output has correct number of rows", {
   tf <- tempFolders[26]
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -49,39 +49,39 @@ test_that("dump_sample_as_bed_file: output has correct number of rows", {
   n    <- 8L
   df   <- .make_bed_df(n)
   path <- file.path(tf, "test_rows.bed")
-  SEMseeker:::dump_sample_as_bed_file(data_to_dump = df, fileName = path)
+  SEMseeker:::io_dump_sample_as_bed_file(data_to_dump = df, fileName = path)
 
   written <- read.table(path, sep = "\t", header = FALSE)
   expect_equal(nrow(written), n)
 })
 
-test_that("dump_sample_as_bed_file: prepends 'chr' when chromosome has no prefix", {
+test_that("io_dump_sample_as_bed_file: prepends 'chr' when chromosome has no prefix", {
   tf <- tempFolders[27]
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df   <- .make_bed_df(3L, add_chr_prefix = FALSE)  # CHR = "1", "2", "3"
   path <- file.path(tf, "test_chr_prefix.bed")
-  SEMseeker:::dump_sample_as_bed_file(data_to_dump = df, fileName = path)
+  SEMseeker:::io_dump_sample_as_bed_file(data_to_dump = df, fileName = path)
 
   written <- read.table(path, sep = "\t", header = FALSE)
   expect_true(all(startsWith(as.character(written[[1]]), "chr")))
 })
 
-test_that("dump_sample_as_bed_file: does NOT double-prepend 'chr'", {
+test_that("io_dump_sample_as_bed_file: does NOT double-prepend 'chr'", {
   tf <- tempFolders[28]
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df   <- .make_bed_df(3L, add_chr_prefix = TRUE)  # CHR = "chr1", "chr2", "chr3"
   path <- file.path(tf, "test_no_double_chr.bed")
-  SEMseeker:::dump_sample_as_bed_file(data_to_dump = df, fileName = path)
+  SEMseeker:::io_dump_sample_as_bed_file(data_to_dump = df, fileName = path)
 
   written <- read.table(path, sep = "\t", header = FALSE)
   expect_false(any(startsWith(as.character(written[[1]]), "chrchr")))
 })
 
-test_that("dump_sample_as_bed_file: output is sorted by CHR then START", {
+test_that("io_dump_sample_as_bed_file: output is sorted by CHR then START", {
   tf <- tempFolders[29]
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -95,7 +95,7 @@ test_that("dump_sample_as_bed_file: output is sorted by CHR then START", {
     stringsAsFactors = FALSE
   )
   path <- file.path(tf, "test_sorted.bed")
-  SEMseeker:::dump_sample_as_bed_file(data_to_dump = df, fileName = path)
+  SEMseeker:::io_dump_sample_as_bed_file(data_to_dump = df, fileName = path)
 
   written <- read.table(path, sep = "\t", header = FALSE,
                          colClasses = c("character", "numeric", "numeric", "numeric"))
@@ -104,7 +104,7 @@ test_that("dump_sample_as_bed_file: output is sorted by CHR then START", {
   expect_equal(written[[2]], c(1000, 2000, 1000, 3000))
 })
 
-test_that("dump_sample_as_bed_file: empty data.frame does not create file", {
+test_that("io_dump_sample_as_bed_file: empty data.frame does not create file", {
   tf <- tempFolders[22]
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -112,12 +112,12 @@ test_that("dump_sample_as_bed_file: empty data.frame does not create file", {
   df_empty <- data.frame(CHR = character(0), START = numeric(0),
                           END = numeric(0), VALUE = numeric(0))
   path <- file.path(tf, "test_empty.bed")
-  SEMseeker:::dump_sample_as_bed_file(data_to_dump = df_empty, fileName = path)
+  SEMseeker:::io_dump_sample_as_bed_file(data_to_dump = df_empty, fileName = path)
   # Empty data.frame → plyr::empty returns TRUE → file should NOT be written
   expect_false(file.exists(path))
 })
 
-test_that("dump_sample_as_bed_file: rows with NA START are dropped", {
+test_that("io_dump_sample_as_bed_file: rows with NA START are dropped", {
   tf <- tempFolders[23]
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -130,12 +130,12 @@ test_that("dump_sample_as_bed_file: rows with NA START are dropped", {
     stringsAsFactors = FALSE
   )
   path <- file.path(tf, "test_na_start.bed")
-  SEMseeker:::dump_sample_as_bed_file(data_to_dump = df, fileName = path)
+  SEMseeker:::io_dump_sample_as_bed_file(data_to_dump = df, fileName = path)
   written <- read.table(path, sep = "\t", header = FALSE)
   expect_equal(nrow(written), 2L)  # NA row dropped
 })
 
-test_that("dump_sample_as_bed_file: gz extension — readr writes without error", {
+test_that("io_dump_sample_as_bed_file: gz extension — readr writes without error", {
   tf <- tempFolders[24]
   SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -145,7 +145,7 @@ test_that("dump_sample_as_bed_file: gz extension — readr writes without error"
   # Even without .gz extension, the function writes via readr::write_tsv which
   # auto-detects gz from the path if needed. Without .gz, it writes plain text.
   expect_no_error(
-    SEMseeker:::dump_sample_as_bed_file(data_to_dump = df, fileName = path)
+    SEMseeker:::io_dump_sample_as_bed_file(data_to_dump = df, fileName = path)
   )
   expect_true(file.exists(path))
 })

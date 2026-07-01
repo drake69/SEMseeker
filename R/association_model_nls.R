@@ -158,8 +158,8 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
     # train.data$predicted <- predicted
     # train.data$fitted <- nls_model_model_result$m$fitted
 
-    chartFolder <- dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
-    filename  <-  file_path_build(chartFolder,
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
+    filename  <-  io_file_path_build(chartFolder,
       c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, key$COMBINED),
       ssEnv$plot_format)
 

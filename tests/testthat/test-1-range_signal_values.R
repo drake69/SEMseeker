@@ -26,7 +26,7 @@ test_that("signal_range_values", {
 
   ####################################################################################
   # check thresholds file exists
-  testthat::expect_true(file.exists(SEMseeker:::file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")))
+  testthat::expect_true(file.exists(SEMseeker:::io_file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")))
 
   ####################################################################################
   # test no probe are lost

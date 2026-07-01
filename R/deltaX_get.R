@@ -86,10 +86,10 @@ deltaX_get <- function(markers = NULL) {
     mar   <- as.character(key$MARKER)
     Q_val <- as.integer(key$Q)
 
-    dest_h <- pivot_file_name_parquet(mar, "HYPER", area, subarea)
-    dest_o <- pivot_file_name_parquet(mar, "HYPO",  area, subarea)
-    src_h  <- pivot_file_name_parquet(src, "HYPER", area, subarea)
-    src_o  <- pivot_file_name_parquet(src, "HYPO",  area, subarea)
+    dest_h <- io_pivot_file_name_parquet(mar, "HYPER", area, subarea)
+    dest_o <- io_pivot_file_name_parquet(mar, "HYPO",  area, subarea)
+    src_h  <- io_pivot_file_name_parquet(src, "HYPER", area, subarea)
+    src_o  <- io_pivot_file_name_parquet(src, "HYPO",  area, subarea)
 
     if (file.exists(dest_h) && file.exists(dest_o)) {
       log_event("INFO: ", Sys.time(),
@@ -111,8 +111,8 @@ deltaX_get <- function(markers = NULL) {
 
     # AI-027: read via unified dispatcher. The file.exists() guard above
     # has already filtered out cases where neither source pivot exists.
-    lf_h <- read_pivot(src, "HYPER", area, subarea)
-    lf_o <- read_pivot(src, "HYPO",  area, subarea)
+    lf_h <- io_read_pivot(src, "HYPER", area, subarea)
+    lf_o <- io_read_pivot(src, "HYPO",  area, subarea)
     cols_h <- setdiff(names(lf_h$collect_schema()), c("CHR", "START", "END"))
     cols_o <- setdiff(names(lf_o$collect_schema()), c("CHR", "START", "END"))
 

@@ -1,7 +1,7 @@
 # AI-109 follow-up (2026-06-09): contract-level E2E tests for the
 # bedmethyl parser (modkit / nanopolish output). bedmethyl is the
 # canonical long-read methylation-call file format; SEMseeker accepts
-# it through `bedmethyl_read()` which converts a directory of modkit
+# it through `io_bedmethyl_read()` which converts a directory of modkit
 # files into the wide SEMseeker coordinate-indexed data frame.
 #
 # Modkit bedmethyl schema (tab-separated, no header):
@@ -19,7 +19,7 @@
 #  12+ additional modkit columns  (ignored by SEMseeker)
 #
 # Tests below generate synthetic modkit files in tempdir() and assert
-# the contract that `bedmethyl_read()` must satisfy.
+# the contract that `io_bedmethyl_read()` must satisfy.
 
 # ---- helper: write a synthetic modkit bedmethyl file ----------------------
 
@@ -47,7 +47,7 @@
 
 # ---- single-file read: schema + value-range contract --------------------
 
-test_that("bedmethyl_read parses a single modkit file and returns SEMseeker shape", {
+test_that("io_bedmethyl_read parses a single modkit file and returns SEMseeker shape", {
   skip_on_cran()
 
   td <- tempfile("ai109_bedm_single_")
@@ -65,7 +65,7 @@ test_that("bedmethyl_read parses a single modkit file and returns SEMseeker shap
   fpath <- file.path(td, "SAMPLE_A.bed")
   .write_synthetic_bedmethyl(fpath, rows)
 
-  out <- SEMseeker:::bedmethyl_read(fpath)
+  out <- SEMseeker:::io_bedmethyl_read(fpath)
 
   # Shape: CHR, START, END + 1 sample column
   expect_equal(colnames(out), c("CHR", "START", "END", "SAMPLE_A"))
@@ -83,7 +83,7 @@ test_that("bedmethyl_read parses a single modkit file and returns SEMseeker shap
 
 # ---- coverage filter ----------------------------------------------------
 
-test_that("bedmethyl_read drops positions below min_coverage", {
+test_that("io_bedmethyl_read drops positions below min_coverage", {
   skip_on_cran()
 
   td <- tempfile("ai109_bedm_cov_")
@@ -102,24 +102,24 @@ test_that("bedmethyl_read drops positions below min_coverage", {
   .write_synthetic_bedmethyl(fpath, rows)
 
   # Default min_coverage = 5: drops the middle row
-  out_default <- SEMseeker:::bedmethyl_read(fpath)
+  out_default <- SEMseeker:::io_bedmethyl_read(fpath)
   expect_equal(nrow(out_default), 2L)
   expect_equal(out_default$START, c(100L, 300L))
 
   # min_coverage = 10: keeps only rows with coverage >= 10
-  out_strict <- SEMseeker:::bedmethyl_read(fpath, min_coverage = 10L)
+  out_strict <- SEMseeker:::io_bedmethyl_read(fpath, min_coverage = 10L)
   expect_equal(nrow(out_strict), 2L)
   expect_equal(out_strict$START, c(100L, 300L))
 
   # min_coverage = 11: only the row with coverage 100 survives
-  out_strict2 <- SEMseeker:::bedmethyl_read(fpath, min_coverage = 11L)
+  out_strict2 <- SEMseeker:::io_bedmethyl_read(fpath, min_coverage = 11L)
   expect_equal(nrow(out_strict2), 1L)
   expect_equal(out_strict2$START, 300L)
 })
 
 # ---- multi-sample outer join --------------------------------------------
 
-test_that("bedmethyl_read outer-joins multiple files on (CHR, START, END)", {
+test_that("io_bedmethyl_read outer-joins multiple files on (CHR, START, END)", {
   skip_on_cran()
 
   td <- tempfile("ai109_bedm_multi_")
@@ -141,7 +141,7 @@ test_that("bedmethyl_read outer-joins multiple files on (CHR, START, END)", {
   .write_synthetic_bedmethyl(fA, rowsA)
   .write_synthetic_bedmethyl(fB, rowsB)
 
-  out <- SEMseeker:::bedmethyl_read(c(fA, fB))
+  out <- SEMseeker:::io_bedmethyl_read(c(fA, fB))
 
   # Outer-join: 3 unique positions (100 only in A, 200 in both, 300 only in B)
   expect_equal(colnames(out), c("CHR", "START", "END", "SAMP_A", "SAMP_B"))
@@ -163,7 +163,7 @@ test_that("bedmethyl_read outer-joins multiple files on (CHR, START, END)", {
 
 # ---- custom sample IDs override basename --------------------------------
 
-test_that("bedmethyl_read uses caller-supplied sample_ids over filename", {
+test_that("io_bedmethyl_read uses caller-supplied sample_ids over filename", {
   skip_on_cran()
 
   td <- tempfile("ai109_bedm_ids_")
@@ -178,21 +178,21 @@ test_that("bedmethyl_read uses caller-supplied sample_ids over filename", {
   fA <- file.path(td, "weird-name with spaces.bed")
   .write_synthetic_bedmethyl(fA, rows)
 
-  out <- SEMseeker:::bedmethyl_read(fA, sample_ids = "TCGA_AB_001")
+  out <- SEMseeker:::io_bedmethyl_read(fA, sample_ids = "TCGA_AB_001")
   expect_equal(colnames(out), c("CHR", "START", "END", "TCGA_AB_001"))
   expect_equal(out$TCGA_AB_001, 0.60)
 })
 
 # ---- error handling: missing file ---------------------------------------
 
-test_that("bedmethyl_read errors clearly on missing file path", {
+test_that("io_bedmethyl_read errors clearly on missing file path", {
   expect_error(
-    SEMseeker:::bedmethyl_read(c("/tmp/this/does/not/exist.bed")),
+    SEMseeker:::io_bedmethyl_read(c("/tmp/this/does/not/exist.bed")),
     "file\\(s\\) not found"
   )
 })
 
-test_that("bedmethyl_read errors on sample_ids length mismatch", {
+test_that("io_bedmethyl_read errors on sample_ids length mismatch", {
   skip_on_cran()
 
   td <- tempfile("ai109_bedm_lenmis_")
@@ -208,14 +208,14 @@ test_that("bedmethyl_read errors on sample_ids length mismatch", {
   .write_synthetic_bedmethyl(fA, rows)
 
   expect_error(
-    SEMseeker:::bedmethyl_read(fA, sample_ids = c("X", "Y")),
+    SEMseeker:::io_bedmethyl_read(fA, sample_ids = c("X", "Y")),
     "sample_ids length must match"
   )
 })
 
 # ---- stable ordering: sort by CHR then START ----------------------------
 
-test_that("bedmethyl_read output is sorted by CHR then START", {
+test_that("io_bedmethyl_read output is sorted by CHR then START", {
   skip_on_cran()
 
   td <- tempfile("ai109_bedm_sort_")
@@ -234,7 +234,7 @@ test_that("bedmethyl_read output is sorted by CHR then START", {
   fpath <- file.path(td, "S.bed")
   .write_synthetic_bedmethyl(fpath, rows)
 
-  out <- SEMseeker:::bedmethyl_read(fpath)
+  out <- SEMseeker:::io_bedmethyl_read(fpath)
 
   # Sorted: chr1:100, chr1:500, chr2:100, chr2:200
   expect_equal(out$CHR,   c("chr1", "chr1", "chr2", "chr2"))
@@ -243,21 +243,21 @@ test_that("bedmethyl_read output is sorted by CHR then START", {
 
 # ---- empty file_paths fails fast ----------------------------------------
 
-test_that("bedmethyl_read errors when no file_paths are provided", {
+test_that("io_bedmethyl_read errors when no file_paths are provided", {
   expect_error(
-    SEMseeker:::bedmethyl_read(character(0)),
+    SEMseeker:::io_bedmethyl_read(character(0)),
     "no file_paths provided"
   )
 })
 
-# ---- integration: bedmethyl → coord_probe_features round-trip -----------
+# ---- integration: bedmethyl → io_coord_probe_features round-trip -----------
 #
 # bedmethyl gives us CHR/START/END. Downstream SEMseeker code expects
 # PROBE IDs in "{CHR}_{START}" form (see R/coord_input.R). Verify the
 # bedmethyl output can be converted to that form and that
-# coord_probe_features() round-trips coordinates back unchanged.
+# io_coord_probe_features() round-trips coordinates back unchanged.
 
-test_that("bedmethyl output is compatible with coord_probe_features", {
+test_that("bedmethyl output is compatible with io_coord_probe_features", {
   skip_on_cran()
 
   td <- tempfile("ai109_bedm_pf_")
@@ -275,14 +275,14 @@ test_that("bedmethyl output is compatible with coord_probe_features", {
   fpath <- file.path(td, "SAMP.bed")
   .write_synthetic_bedmethyl(fpath, rows)
 
-  out <- SEMseeker:::bedmethyl_read(fpath)
+  out <- SEMseeker:::io_bedmethyl_read(fpath)
 
   # Build synthetic probe IDs in SEMseeker {CHR}_{START} format
   probe_ids <- paste(out$CHR, out$START, sep = "_")
   expect_equal(probe_ids, c("1_10000", "1_20000", "X_99999"))
 
-  pf <- SEMseeker:::coord_probe_features(probe_ids)
-  # Round-trip: coord_probe_features recovers the same CHR/START/END
+  pf <- SEMseeker:::io_coord_probe_features(probe_ids)
+  # Round-trip: io_coord_probe_features recovers the same CHR/START/END
   expect_equal(pf$CHR,   out$CHR)
   expect_equal(pf$START, out$START)
   expect_equal(pf$END,   out$START + 1L)

@@ -29,16 +29,16 @@ test_that("analyze_single_sample", {
     sample_detail = sample_detail
   )
 
-  hypo_mutations_folder <- SEMseeker:::dir_check_and_create(ssEnv$result_folderData,
+  hypo_mutations_folder <- SEMseeker:::io_dir_check_and_create(ssEnv$result_folderData,
     c(sample_detail$Sample_Group, "MUTATIONS_HYPO"))
-  hypo_mutations_file <- SEMseeker:::file_path_build(
+  hypo_mutations_file <- SEMseeker:::io_file_path_build(
     hypo_mutations_folder, c(sample_detail$Sample_ID, "MUTATIONS", "HYPO"), "bed", add_gz = TRUE)
 
   # MUTATIONS bed file is always written (mutations exist for synthetic data)
   testthat::expect_true(file.exists(hypo_mutations_file))
 
   # LESIONS folder is always created even when no significant lesions exist
-  hypo_lesions_folder <- SEMseeker:::dir_check_and_create(ssEnv$result_folderData,
+  hypo_lesions_folder <- SEMseeker:::io_dir_check_and_create(ssEnv$result_folderData,
     c(sample_detail$Sample_Group, "LESIONS_HYPO"))
   testthat::expect_true(dir.exists(hypo_lesions_folder))
 
@@ -50,14 +50,14 @@ test_that("analyze_single_sample", {
     sample_detail = sample_detail
   )
 
-  hyper_mutations_folder <- SEMseeker:::dir_check_and_create(ssEnv$result_folderData,
+  hyper_mutations_folder <- SEMseeker:::io_dir_check_and_create(ssEnv$result_folderData,
     c(sample_detail$Sample_Group, "MUTATIONS_HYPER"))
-  hyper_mutations_file <- SEMseeker:::file_path_build(
+  hyper_mutations_file <- SEMseeker:::io_file_path_build(
     hyper_mutations_folder, c(sample_detail$Sample_ID, "MUTATIONS", "HYPER"), "bed", add_gz = TRUE)
 
   testthat::expect_true(file.exists(hyper_mutations_file))
 
-  hyper_lesions_folder <- SEMseeker:::dir_check_and_create(ssEnv$result_folderData,
+  hyper_lesions_folder <- SEMseeker:::io_dir_check_and_create(ssEnv$result_folderData,
     c(sample_detail$Sample_Group, "LESIONS_HYPER"))
   testthat::expect_true(dir.exists(hyper_lesions_folder))
 

@@ -42,7 +42,7 @@ plot_manhattan_plot_per_area <- function(marker,figure,area,subarea,family, adju
     # select for family, marker and figure, adjust_method, area and subarea
   }
 
-  pivot_data <- pivot_to_long_format(marker, figure, area,subarea)
+  pivot_data <- io_pivot_to_long_format(marker, figure, area,subarea)
 
   group_variable <- pivot_data[,area]
 

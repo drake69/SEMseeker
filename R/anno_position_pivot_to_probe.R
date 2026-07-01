@@ -11,7 +11,7 @@
 #' regular polars String column. Callers that previously read `rownames`
 #' must switch to selecting / collecting the `PROBE` column.
 #'
-#' Order: input must already be sorted (sort gate = signal_save chunked
+#' Order: input must already be sorted (sort gate = io_signal_save chunked
 #' per-chr by START). This function preserves order via `unique(maintain_order=TRUE)`.
 #'
 #' @param signal_data polars LazyFrame, polars DataFrame, or R data.frame
@@ -38,7 +38,7 @@ anno_position_pivot_to_probe <- function(signal_data)
     else                                                  polars::as_polars_df(signal_data)$lazy()
 
   # Single lazy chain: join on coords, dedupe preserving input order
-  # (sort gate is signal_save per AI-096 §single-sort-gate-at-pivot-save),
+  # (sort gate is io_signal_save per AI-096 §single-sort-gate-at-pivot-save),
   # filter probes matching the detected technology, drop annotation columns.
   # NO collect() — caller takes a LazyFrame. Materialisation, if needed,
   # is the caller's explicit decision.

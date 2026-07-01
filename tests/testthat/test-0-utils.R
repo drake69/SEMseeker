@@ -2,8 +2,8 @@
 #
 # Covered:
 #  - util_boolean_check()          string/logical/NA → logical coercion
-#  - file_path_build()        path construction helper
-#  - name_composer()          filename fragment assembler
+#  - io_file_path_build()        path construction helper
+#  - io_name_composer()          filename fragment assembler
 #  - util_data_frame_add_column()  safe column add/update on data.frames
 #  - filter_sql()             SQL-condition row filter (requires sqldf)
 
@@ -41,75 +41,75 @@ test_that("util_boolean_check returns FALSE for arbitrary strings", {
 })
 
 # ---------------------------------------------------------------------------
-# 2. file_path_build
+# 2. io_file_path_build
 # ---------------------------------------------------------------------------
 
-test_that("file_path_build assembles path correctly", {
-  result <- SEMseeker:::file_path_build("/base", c("a", "b"), "csv")
+test_that("io_file_path_build assembles path correctly", {
+  result <- SEMseeker:::io_file_path_build("/base", c("a", "b"), "csv")
   expect_true(grepl("^/base", result))
   expect_true(grepl("A_B\\.csv$", result))
 })
 
-test_that("file_path_build adds .gz when add_gz = TRUE", {
-  result <- SEMseeker:::file_path_build("/base", c("sample"), "bed", add_gz = TRUE)
+test_that("io_file_path_build adds .gz when add_gz = TRUE", {
+  result <- SEMseeker:::io_file_path_build("/base", c("sample"), "bed", add_gz = TRUE)
   expect_true(endsWith(result, ".gz"))
   expect_true(grepl("\\.bed\\.gz$", result))
 })
 
-test_that("file_path_build does not add .gz when add_gz = FALSE", {
-  result <- SEMseeker:::file_path_build("/base", c("sample"), "csv", add_gz = FALSE)
+test_that("io_file_path_build does not add .gz when add_gz = FALSE", {
+  result <- SEMseeker:::io_file_path_build("/base", c("sample"), "csv", add_gz = FALSE)
   expect_false(endsWith(result, ".gz"))
 })
 
-test_that("file_path_build cleans the filename part (upper, underscore)", {
-  result <- SEMseeker:::file_path_build("/tmp", c("hello world", "foo.bar"), "txt")
+test_that("io_file_path_build cleans the filename part (upper, underscore)", {
+  result <- SEMseeker:::io_file_path_build("/tmp", c("hello world", "foo.bar"), "txt")
   fname <- basename(result)
   expect_true(grepl("HELLO_WORLD", fname))
   expect_true(grepl("FOO_BAR",     fname))
 })
 
-test_that("file_path_build collapses multiple filenames with underscore", {
-  result <- SEMseeker:::file_path_build("/tmp", c("A", "B", "C"), "csv")
+test_that("io_file_path_build collapses multiple filenames with underscore", {
+  result <- SEMseeker:::io_file_path_build("/tmp", c("A", "B", "C"), "csv")
   expect_true(grepl("A_B_C", basename(result)))
 })
 
-test_that("file_path_build avoids double dots", {
-  result <- SEMseeker:::file_path_build("/tmp", c("X"), "csv")
+test_that("io_file_path_build avoids double dots", {
+  result <- SEMseeker:::io_file_path_build("/tmp", c("X"), "csv")
   expect_false(grepl("\\.\\.", result))
 })
 
 # ---------------------------------------------------------------------------
-# 3. name_composer
+# 3. io_name_composer
 # ---------------------------------------------------------------------------
 
-test_that("name_composer joins fragments with underscore", {
-  result <- SEMseeker:::name_composer("a", "b", "c")
+test_that("io_name_composer joins fragments with underscore", {
+  result <- SEMseeker:::io_name_composer("a", "b", "c")
   expect_equal(result, "a_b_c")
 })
 
-test_that("name_composer replaces spaces with underscore", {
-  result <- SEMseeker:::name_composer("hello world", "foo")
+test_that("io_name_composer replaces spaces with underscore", {
+  result <- SEMseeker:::io_name_composer("hello world", "foo")
   expect_false(grepl(" ", result))
   expect_true(grepl("_", result))
 })
 
-test_that("name_composer replaces colons with underscore", {
-  result <- SEMseeker:::name_composer("key:value")
+test_that("io_name_composer replaces colons with underscore", {
+  result <- SEMseeker:::io_name_composer("key:value")
   expect_false(grepl(":", result))
 })
 
-test_that("name_composer collapses double underscores", {
-  result <- SEMseeker:::name_composer("a", "", "b")
+test_that("io_name_composer collapses double underscores", {
+  result <- SEMseeker:::io_name_composer("a", "", "b")
   expect_false(grepl("__", result))
 })
 
-test_that("name_composer avoids double dots", {
-  result <- SEMseeker:::name_composer("file.name", ".csv")
+test_that("io_name_composer avoids double dots", {
+  result <- SEMseeker:::io_name_composer("file.name", ".csv")
   expect_false(grepl("\\.\\.", result))
 })
 
-test_that("name_composer handles a single fragment", {
-  result <- SEMseeker:::name_composer("single")
+test_that("io_name_composer handles a single fragment", {
+  result <- SEMseeker:::io_name_composer("single")
   expect_equal(result, "single")
 })
 
