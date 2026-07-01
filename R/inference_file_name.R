@@ -30,8 +30,8 @@ inference_file_name <- function(inference_detail, marker, folder,file_extension=
     file_suffix <- c(file_suffix, paste("pca", sep = "_"))
 
   file_result_prefix <- paste("DEPTH",depth_analysis, file_result_prefix,sep = "_")
-  file_result_prefix = paste(prefix, file_result_prefix, sep = "_")
-  file_suffix = paste(file_suffix, suffix, sep = "_")
+  file_result_prefix <- paste(prefix, file_result_prefix, sep = "_")
+  file_suffix <- paste(file_suffix, suffix, sep = "_")
 
   if(length(inference_detail$samples_sql_condition)>0)
     folder <- dir_check_and_create(folder,name_cleaning(inference_detail$samples_sql_condition))

@@ -5,12 +5,12 @@ compare_markers <- function(inference_detail, result_folder, studies, adjust_per
   localKeys <- ssEnv$keys_areas_subareas_markers_figures
 
   aggregated_markers_results <- data.frame()
-  for (a in 1:nrow(localKeys))
+  for (a in seq_len(nrow(localKeys)))
   {
     MARKER <- localKeys[a, "MARKER"]
     AREA <- localKeys[a, "AREA"]
     # for each study in studies
-    for (s in 1:nrow(studies))
+    for (s in seq_len(nrow(studies)))
     {
       # get the inference details for the study
       temp_res <- association_results_get(inference_detail = inference_detail, marker = MARKER, area= AREA,

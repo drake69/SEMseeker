@@ -31,13 +31,13 @@ phenotype_phenolyzer <- function(study,
   keys <- unique(ssEnv$keys_for_pathway)
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:(nrow(keys)))
+    progress_bar <- progressr::progressor(along = seq_len(nrow(keys)))
   else
     progress_bar <- ""
 
   diseases_summary <- data.frame()
   seq <-0
-  for(i in 1:nrow(keys))
+  for(i in seq_len(nrow(keys)))
   {
     random_string <- stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]")
     tempFolder <- dir_check_and_create(tmp,c("/semseeker/",random_string))
@@ -172,7 +172,7 @@ phenotype_phenolyzer <- function(study,
     annotated_genes$key <- key
     annotated_genes$seq <- seq
     annotated_genes$gene_count <- nrow(gene_set)
-    annotated_genes$order <- 1:nrow(annotated_genes)
+    annotated_genes$order <- seq_len(nrow(annotated_genes))
     annotated_genes$diseases <- paste(diseases$DISEASE, collapse = ";")
 
     phenotype_analysis_name <- phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=paste("_", disease_label,"_report",sep=""), pvalue_column=pvalue_column, ssEnv$alpha, significance)
@@ -214,7 +214,7 @@ phenotype_phenolyzer <- function(study,
       diseases_summary <- plyr::rbind.fill(diseases_summary, disease_temp)
 
       projectName <- phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix= disease_label  , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
-      filenameResult = file_path_build(base_path,projectName,"csv")
+      filenameResult <- file_path_build(base_path,projectName,"csv")
       utils::write.csv2(disease_temp, filenameResult)
     }
 

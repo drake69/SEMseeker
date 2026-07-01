@@ -14,7 +14,7 @@ name_composer <- function(...)
 
   # check if the final character is underscore
   if(fname[length(fname)]=="_")
-    fname <- fname[1:(length(fname)-1)]
+    fname <- fname[seq_len(length(fname)-1)]
 
   return(fname)
 }

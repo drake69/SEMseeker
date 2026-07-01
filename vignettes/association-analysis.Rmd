@@ -558,20 +558,20 @@ meta-analyse results across studies:
 
 ```{r cross_study, eval=FALSE}
 # Overlap significant hits across two studies
-association_cross_studies_overlaps(
+inter_study_association_overlaps(
   studies       = list("~/study_A/", "~/study_B/"),
   result_folder = "~/meta_results/",
   pvalue_column = "PVALUE_ADJ_ALL_BH"
 )
 
 # Meta-analysis (combines p-values / effect sizes)
-association_cross_studies_meta_analysis(
+inter_study_association_meta_analysis(
   studies       = list("~/study_A/", "~/study_B/"),
   result_folder = "~/meta_results/"
 )
 
 # Subsample stability analysis (bootstrap cohort sub-sampling)
-association_cross_subsamples_overlaps(
+intra_study_association_subsamples_overlaps(
   result_folder = "~/semseeker_results/",
   n_subsamples  = 100,
   fraction      = 0.8
@@ -633,9 +633,6 @@ Output (per marker) is sorted descending by `SCORE`; the top rows are the
 regions with the most promising diagnostic profile in the studied cohort. CSV
 files are written to `<result_folder>/Euristic/`.
 
-> The function was previously named `ss_analysis()`. The old name still works
-> as a deprecated alias but emits a warning — please migrate.
-
 <hr>
 
 ## Cross-study replication
@@ -653,9 +650,6 @@ intra_study_association_replication(
   parallel_strategy        = "multicore"
 )
 ```
-
-> The function was previously named `association_to_association()`. The old
-> name still works as a deprecated alias but emits a warning.
 
 <hr>
 

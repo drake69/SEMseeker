@@ -34,7 +34,7 @@ mediation_quantreg_model_1 <- function(family_test,tempDataFrame, sig.formula, t
   {
     covariates <- vars[[3]][-c(1)]
     # transform covariates in a vector of string
-    covariates <- sapply(covariates, as.character)
+    covariates <- vapply(covariates, as.character, character(1))
   } else
     covariates <- c()
 

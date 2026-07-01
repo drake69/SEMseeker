@@ -17,7 +17,7 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
   {
     ssEnv$alpha <- a
     update_session_info(ssEnv)
-    for (pt in 1:nrow(key_enrichment_format))
+    for (pt in seq_len(nrow(key_enrichment_format)))
     {
       if(key_enrichment_format[pt,"label"]=="phenolyzer")
         disease <- disease_original
@@ -29,7 +29,7 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
       column_of_description <- key_enrichment_format[pt,"column_of_description"]
       column_of_enrichment <- key_enrichment_format[pt,"column_of_enrichment"]
 
-      for (id in 1:nrow(inference_details))
+      for (id in seq_len(nrow(inference_details)))
       {
         # id <- 1
         # id <- 2
@@ -46,19 +46,19 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
         file_prfx <- paste(independent_variable, transformation_y,family_test,covariates, pvalue_column,ssEnv$alpha, sep="_")
 
         missed_keys <- data.frame()
-        for (i in 1:nrow(keys))
+        for (i in seq_len(nrow(keys)))
         {
           file_name <- phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
             suffix=ifelse(disease=="","",paste("_",disease,sep="")),
             pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
-          file_name = file_path_build(path,file_name,"csv")
+          file_name <- file_path_build(path,file_name,"csv")
           # chech agin with disease without underscore
           if(!file.exists(file_name))
           {
             file_name <- phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
               suffix=ifelse(disease=="","",paste(disease,sep="")),
               pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
-            file_name = file_path_build(path,file_name,"csv")
+            file_name <- file_path_build(path,file_name,"csv")
           }
 
           # check with without_signal at the end for pathfindR
@@ -67,7 +67,7 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
             file_name <- phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
               suffix=ifelse(disease=="","",paste(disease,sep="")),
               pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
-            file_name = file_path_build(path,c(file_name,"without_signal"),"csv")
+            file_name <- file_path_build(path,c(file_name,"without_signal"),"csv")
           }
 
 
@@ -110,10 +110,10 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
           }
           pathway_result$by_keyword <- FALSE
           if(length(keywords)>0)
-            pathway_result[,"by_keyword"] <- sapply(pathway_result[,column_of_description], function(x) any(grepl(paste(keywords, collapse = "|"), x, ignore.case = TRUE)))
+            pathway_result[,"by_keyword"] <- vapply(pathway_result[,column_of_description], function(x) any(grepl(paste(keywords, collapse = "|"), x, ignore.case = TRUE)), logical(1))
           if(length(stop_keywords)>0)
             # remove item with the stop kewywords where by_keyword is TRUE
-            pathway_result[pathway_result$by_keyword,"by_keyword"] <- sapply(pathway_result[pathway_result$by_keyword,column_of_description], function(x) !any(grepl(paste(stop_keywords, collapse = "|"), x, ignore.case = TRUE)))
+            pathway_result[pathway_result$by_keyword,"by_keyword"] <- vapply(pathway_result[pathway_result$by_keyword,column_of_description], function(x) !any(grepl(paste(stop_keywords, collapse = "|"), x, ignore.case = TRUE)), logical(1))
 
           # assign the same column name
           colnames(pathway_result)[colnames(pathway_result)==column_of_id] <- "ID"

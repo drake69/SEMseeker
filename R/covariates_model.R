@@ -82,11 +82,11 @@ covariates_model <- function(inference_detail, study_summary)
     if(length(covariates)  !=  0)
     {
       # check if all covariates are numeric
-      if(!all(sapply(study_summary[,covariates], is.numeric)))
+      if(!all(vapply(study_summary[,covariates], is.numeric, logical(1))))
         log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), " Not all covariates are numeric! Skipped.")
 
 
-      zero_var_cols <- sapply(study_summary[, covariates], function(x) sd(x, na.rm = TRUE) == 0)
+      zero_var_cols <- vapply(study_summary[, covariates], function(x) sd(x, na.rm = TRUE) == 0, logical(1))
       # Keep only non-constant columns
       filtered_covariates <- covariates[!zero_var_cols]
 

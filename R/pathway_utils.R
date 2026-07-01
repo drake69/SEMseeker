@@ -23,7 +23,7 @@ find_unique_gene_sets <- function(split_list) {
   }
 
   # remove empty sets
-  unique_sets <- unique_sets[sapply(unique_sets, length) > 0]
+  unique_sets <- unique_sets[vapply(unique_sets, length, integer(1)) > 0]
   return(unique_sets)
 }
 
@@ -40,7 +40,8 @@ find_unique_gene_sets <- function(split_list) {
 #'
 wrap_it <- function(x, len)
 {
-  sapply(x, function(y) paste0(strwrap(y, len),
+  vapply(x, function(y) paste0(strwrap(y, len),
     collapse = "\n"),
+    character(1),
     USE.NAMES = FALSE)
 }

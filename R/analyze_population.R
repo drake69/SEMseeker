@@ -47,7 +47,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   #   width= 60)
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:nrow(sample_sheet))
+    progress_bar <- progressr::progressor(along = seq_len(nrow(sample_sheet)))
 
   # AI-075: precompute the set of bed/bedgraph files already on disk for each
   # (marker, figure) combo USED in this population, in ONE list.files() scan
@@ -90,7 +90,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     "dir_known_signal_mean","dir_known_mut_hyper","dir_known_mut_hypo","dir_known_deltas_hypo","dir_known_deltar_hypo")
   i <- 1
 
-  for(i in 1:nrow(sample_sheet)) {
+  for(i in seq_len(nrow(sample_sheet))) {
   # foreach::foreach(i =1:nrow(sample_sheet), .export = variables_to_export) %dorng% {
     local_sample_detail <- sample_sheet[i,]
     ssEnv <- get_session_info()
@@ -146,7 +146,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
 
   progress_bar <- NULL
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:nrow(sample_sheet))
+    progress_bar <- progressr::progressor(along = seq_len(nrow(sample_sheet)))
 
   rm(signal_data)
   # for(i in 1:nrow(sample_sheet)) {
@@ -154,7 +154,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   # Internal helpers are prefixed with SEMseeker::: because they live in the
   # namespace (not in the caller's frame) and .export does not cover them.
   foreach::foreach(
-    i = 1:nrow(sample_sheet),
+    i = seq_len(nrow(sample_sheet)),
     .export = variables_to_export,
     .packages = "SEMseeker"
   ) %dorng% {

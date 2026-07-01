@@ -23,7 +23,7 @@ phenotype_analysis_name <- function(inference_detail, key,prefix = "", suffix=""
   else
     file_suffix <- paste(covariates, collapse = "_")
 
-  file_suffix = paste(file_suffix, suffix, sep = "_")
+  file_suffix <- paste(file_suffix, suffix, sep = "_")
 
   if(length(covariates_dummy)!=0)
     file_suffix <- paste0(file_suffix,paste(covariates_dummy, collapse = "_"), "_dummy", sep = "_")

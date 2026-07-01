@@ -52,7 +52,7 @@ source_data_get <- function(source_data, check_is_numeric=FALSE){
     source$CHR <- normalize_chr(source$CHR, "internal")
 
   # check all values are numeric
-  if (check_is_numeric & !all(sapply(source, is.numeric)))
+  if (check_is_numeric & !all(vapply(source, is.numeric, logical(1))))
   {
     log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") , " source_data ", source_data, " contains non-numeric values !")
     stop()

@@ -25,12 +25,12 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
 
 
   aggregated_study_results <- data.frame()
-  for (a in 1:nrow(localKeys))
+  for (a in seq_len(nrow(localKeys)))
   {
     MARKER <- localKeys[a, "MARKER"]
     AREA <- localKeys[a, "AREA"]
     # for each study in studies
-    for (s in 1:nrow(studies))
+    for (s in seq_len(nrow(studies)))
     {
       # get the inference details for the study
       result_folder_study <- studies[s,"RESULT_FOLDER"]
@@ -114,12 +114,12 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
   aggregated_study_results <- data.frame()
   for (signif in c(TRUE,FALSE))
   {
-    for (a in 1:nrow(localKeys))
+    for (a in seq_len(nrow(localKeys)))
     {
       MARKER <- localKeys[a, "MARKER"]
       AREA <- localKeys[a, "AREA"]
       # for each study in studies
-      for (s in 1:nrow(studies))
+      for (s in seq_len(nrow(studies)))
       {
         # get the inference details for the study
         result_folder_study <- studies[s,"RESULT_FOLDER"]
@@ -207,7 +207,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
 
         # Load library
         # library(VennDiagram)
-        for (i in 1:nrow(keys))
+        for (i in seq_len(nrow(keys)))
         {
           # i <- 1
           area_set <- results_inference_comb[

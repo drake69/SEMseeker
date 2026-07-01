@@ -70,7 +70,7 @@ relu_model <- function (family_test, tempDataFrame, sig.formula, transformation_
   # conf_int <- confint(relu_model_result)
 
   # for a and b extract the p-value
-  for (i in 1:nrow(coefficients)) {
+  for (i in seq_len(nrow(coefficients))) {
     # i <- 1
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
@@ -91,7 +91,7 @@ relu_model <- function (family_test, tempDataFrame, sig.formula, transformation_
   if(plot & !any(is.na(predictions)))
   {
     chartFolder <- dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
-    filename  =  file_path_build(chartFolder,c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable),ssEnv$plot_format)
+    filename  <-  file_path_build(chartFolder,c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable),ssEnv$plot_format)
 
     ggp <- ggplot2::ggplot(train.data, ggplot2::aes_string(x = independent_variable, y = dependent_variable)) +
       ggplot2::geom_point(color = ssEnv$color_palette[1]) +

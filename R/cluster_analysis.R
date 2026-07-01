@@ -20,7 +20,7 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
   localKeys <- localKeys[localKeys$AREA != "POSITION", ]
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:(nrow(localKeys)*length(cluster_variables)))
+    progress_bar <- progressr::progressor(along = seq_len(nrow(localKeys)*length(cluster_variables)))
   else
     progress_bar <- ""
 
@@ -41,7 +41,7 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
       stop()
     }
 
-    for ( k in 1:nrow(localKeys))
+    for ( k in seq_len(nrow(localKeys)))
     {
       key <- localKeys[k,]
       chart_folder <- dir_check_and_create(ssEnv$result_folderChart, c("CLUSTER_ANALYSIS", name_cleaning(sql_sample_selection)))

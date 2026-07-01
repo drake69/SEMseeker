@@ -124,9 +124,9 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
     kruska_wallis_summary <- kw_result$p.value
 
     # for each group combination extract the p-value
-    for (i in 1:nrow(kruska_wallis_summary)) {
+    for (i in seq_len(nrow(kruska_wallis_summary))) {
       # i <-1
-      for (j in 1:ncol(kruska_wallis_summary)) {
+      for (j in seq_len(ncol(kruska_wallis_summary))) {
         # j <- 1
         p_value <- kruska_wallis_summary[i,j][1]
         row <- as.character(rownames(kruska_wallis_summary)[i])
@@ -224,7 +224,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
     # Calculate rank-biserial correlation as effect size
     res$RANK_BISERIAL_CORRELATION <- result_w$statistic / (length(SPLIT[[1]]) * length(SPLIT[[2]]))
     # Calculate power
-    power_result = pwr::pwr.t2n.test(d = res$effect_size_estimate, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
+    power_result <- pwr::pwr.t2n.test(d = res$effect_size_estimate, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
     res$power <- power_result$power
   }
 
@@ -240,7 +240,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
     dep_var <- strsplit(gsub("\ ","",as.character(sig.formula)),"~")
     SPLIT <- split(tempDataFrame[,dep_var[[2]]], tempDataFrame[,dep_var[[3]]])
     res$statistic_parameter <- mean(SPLIT[[1]]) - mean(SPLIT[[2]])
-    power_result = pwr::pwr.t2n.test(d = res$statistic_parameter, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
+    power_result <- pwr::pwr.t2n.test(d = res$statistic_parameter, n1 = length(SPLIT[[1]]), n2=length(SPLIT[[2]]), sig.level = as.numeric(ssEnv$alpha), power = NULL)
     res$power <- power_result$power
   }
 
@@ -259,7 +259,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
     {
       chartFolder <- dir_check_and_create(ssEnv$result_folderChart,c("CORRELATION",name_cleaning(as.character(samples_sql_condition))))
       # plot a scatter plot of the burden value vs the independent variable and a linear regression line
-      filename  =  file_path_build(chartFolder,toupper(c(family_test,as.character(transformation_y), independent_variable,"Vs", burdenValue,area, subarea)),ssEnv$plot_format)
+      filename  <-  file_path_build(chartFolder,toupper(c(family_test,as.character(transformation_y), independent_variable,"Vs", burdenValue,area, subarea)),ssEnv$plot_format)
       grDevices::png(filename, width = 9, height = 9, units="in", res = as.numeric(ssEnv$plot_resolution_ppi))
       plot(tempDataFrame[,burdenValue], tempDataFrame[,independent_variable], xlab = burdenValue, ylab = independent_variable, main = paste("Correlation between", burdenValue, "and", independent_variable), pch = 19)
       abline(lm(tempDataFrame[,independent_variable] ~ tempDataFrame[,burdenValue]), col = "blue")

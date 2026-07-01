@@ -87,8 +87,8 @@
   if (length(arguments) > 0) {
     arguments <- lapply(arguments, function(x) if (is.character(x)) gsub(" ", "", x) else x)
     arguments <- lapply(arguments, function(x) if (is.character(x)) x[x != ""] else x)
-    arguments <- arguments[sapply(arguments, function(x) length(x) > 0)]
-    arguments <- arguments[sapply(arguments, function(x) !is.null(x))]
+    arguments <- arguments[vapply(arguments, function(x) length(x) > 0, logical(1))]
+    arguments <- arguments[vapply(arguments, function(x) !is.null(x), logical(1))]
   }
   arguments[["areas_selection"]] <- NULL
   arguments

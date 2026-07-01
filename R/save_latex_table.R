@@ -14,7 +14,7 @@ save_latex_table <- function(data, dest_file_name_csv, caption)
     cat("\\begin{table}[H]\n\\centering\n\\scriptsize\n")
     xtable::print.xtable(x,
       include.rownames = FALSE,
-      hline.after = c(-1, 0, 1:nrow(x)), # Add horizontal lines after each row
+      hline.after = c(-1, 0, seq_len(nrow(x))), # Add horizontal lines after each row
       sanitize.colnames.function = function(y) paste0('\\textbf{', y, '}'),
       booktabs = FALSE,
       floating = FALSE)

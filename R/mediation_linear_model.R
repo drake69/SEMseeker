@@ -59,7 +59,7 @@ mediation_linear_model <- function(family_test,tempDataFrame, sig.formula, trans
   {
     covariates <- vars[[3]][-c(1)]
     # transform covariates in a vector of string
-    covariates <- sapply(covariates, as.character)
+    covariates <- vapply(covariates, as.character, character(1))
   } else
     covariates <- c()
 

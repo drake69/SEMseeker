@@ -34,7 +34,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
     MARKER <- localKeys[a, "MARKER"]
     AREA <- localKeys[a, "AREA"]
     # for each SAMPLES_SQL_CONDITION in inference_details
-    for (i in 1:nrow(inference_details))
+    for (i in seq_len(nrow(inference_details)))
     {
       # get the inference detail
       temp_res <- association_results_get(inference_detail = inference_details[i,], marker = MARKER, area= AREA,
@@ -111,12 +111,12 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
   aggregated_results <- data.frame()
   for (signif in c(TRUE))
   {
-    for (a in 1:nrow(localKeys))
+    for (a in seq_len(nrow(localKeys)))
     {
       MARKER <- localKeys[a, "MARKER"]
       AREA <- localKeys[a, "AREA"]
       # for each SAMPLES_SQL_CONDITION in inference_details
-      for (i in 1:nrow(inference_details))
+      for (i in seq_len(nrow(inference_details)))
       {
         temp_res <- association_results_get(inference_detail = inference_details[i,], marker = MARKER, area= AREA,
           adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
@@ -193,7 +193,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
 
         # Load library
         # library(VennDiagram)
-        for (i in 1:nrow(keys))
+        for (i in seq_len(nrow(keys)))
         {
           # i <- 1
           area_set <- results_inference_comb[

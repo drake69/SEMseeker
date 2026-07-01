@@ -121,7 +121,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   if (length(covariates) > 0L && any(nzchar(covariates))) {
     cov_used <- intersect(covariates[nzchar(covariates)], colnames(td))
     if (length(cov_used) > 0L) {
-      cov_mat <- as.matrix(sapply(td[, cov_used, drop = FALSE], as.numeric))
+      cov_mat <- as.matrix(vapply(td[, cov_used, drop = FALSE], as.numeric, numeric(nrow(td))))
       if (!is.matrix(cov_mat)) cov_mat <- matrix(cov_mat, ncol = length(cov_used))
       colnames(cov_mat) <- cov_used
       design_no_int <- cbind(iv_dummies, cov_mat)
@@ -134,7 +134,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   storage.mode(design_no_int) <- "numeric"
 
   # 4. Response matrix: probes × samples → as integer 0/1
-  y_mat <- as.matrix(sapply(td[, probe_cols, drop = FALSE], as.integer))
+  y_mat <- as.matrix(vapply(td[, probe_cols, drop = FALSE], as.integer, integer(nrow(td))))
   if (!is.matrix(y_mat)) y_mat <- matrix(y_mat, ncol = length(probe_cols))
   colnames(y_mat) <- probe_cols
   y_mat[is.na(y_mat)] <- 0L
@@ -228,7 +228,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     return(NULL)
   }
 
-  est_mat   <- fits[, 1:ncoef,                       drop = FALSE]
+  est_mat   <- fits[, seq_len(ncoef),                drop = FALSE]
   pval_mat  <- fits[, (ncoef + 1):(2 * ncoef),       drop = FALSE]
   # AI-044 (2026-06-09): goodness-of-fit metrics block (4 columns) sits
   # after the est/pval blocks. Order MUST match the c(est, pval, metrics_vec)

@@ -1,5 +1,33 @@
-# compare inference associations of different sub samples
-intra_study_pathway_subsamples_overlaps <- function(inference_details,pathways_sql_selection="",
+#' @title Enrichment stability across random subsamples of a study
+#' @description Tests the stability of enrichment (pathway/term) results under
+#'   random subsampling of a single cohort, quantifying how robust the enriched
+#'   terms are to sample variability. The intra-study counterpart of
+#'   [inter_study_enrichment_compare()].
+#' @param inference_details Data frame describing the enrichment analyses to run
+#'   (one row per analysis).
+#' @param pathways_sql_selection Optional SQL WHERE fragment to restrict the
+#'   enriched terms considered.
+#' @param old_label_samples_sql_condition,new_label_samples_sql_condition SQL
+#'   conditions selecting the two sample sets to contrast.
+#' @param old_label_association_results_sql_condition,new_label_association_results_sql_condition
+#'   SQL conditions selecting the association results to contrast.
+#' @param run_prefix Optional prefix for the run outputs.
+#' @param pathway_package Enrichment backend to use (e.g. `"WebGestalt"`);
+#'   `""` compares all available backends.
+#' @param association_pvalue_column Name of the p-value column driving
+#'   significance.
+#' @param significance Logical; keep only significant terms when `TRUE`.
+#' @param result_folder Path to the folder holding the study results.
+#' @param ... Additional arguments forwarded to [init_env()].
+#' @return Invisibly `NULL`; stability tables and plots are written under
+#'   `result_folder`.
+#' @seealso [inter_study_enrichment_compare()]
+#' @examples
+#' # See vignette("pathway-analysis", package = "SEMseeker") for a runnable
+#' # enrichment-stability (subsampling) workflow on real result folders.
+#' invisible(NULL)
+#' @export
+intra_study_enrichment_subsamples_overlaps <- function(inference_details,pathways_sql_selection="",
   old_label_samples_sql_condition = "", new_label_samples_sql_condition = "",
   old_label_association_results_sql_condition = "", new_label_association_results_sql_condition = "",
   run_prefix = "",pathway_package="", association_pvalue_column = "", significance=TRUE,
@@ -39,7 +67,7 @@ intra_study_pathway_subsamples_overlaps <- function(inference_details,pathways_s
   if(pathway_package!="")
     key_enrichment_format <- subset(key_enrichment_format, key_enrichment_format[,"label"]==pathway_package)
 
-  for (pt in 1:nrow(key_enrichment_format))
+  for (pt in seq_len(nrow(key_enrichment_format)))
   {
     column_of_id <- key_enrichment_format[pt,"column_of_id"]
     column_of_adj_pvalue <- key_enrichment_format[pt,"column_of_adj_pvalue"]
@@ -52,10 +80,10 @@ intra_study_pathway_subsamples_overlaps <- function(inference_details,pathways_s
       for (z in seq_along(association_results_sql_conditions))
       {
         association_results_sql_condition <- name_cleaning(association_results_sql_conditions[z])
-        for (a in 1:nrow(localKeys))
+        for (a in seq_len(nrow(localKeys)))
         {
           # for each SAMPLES_SQL_CONDITION in inference_details
-          for (i in 1:nrow(inference_details))
+          for (i in seq_len(nrow(inference_details)))
           {
             inference_detail <- inference_details[i,]
             phenotype_analysis_name <- phenotype_analysis_name(inference_detail, localKeys[a,],prefix ="", suffix= signal_suffixes[s] , association_pvalue_column, ssEnv$alpha, significance)
@@ -106,7 +134,7 @@ intra_study_pathway_subsamples_overlaps <- function(inference_details,pathways_s
         log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y")," pathway files aggregated!")
 
         keys <- unique(pathway_results[, c("SUBAREA", "AREA", "MARKER", "FIGURE")])
-        for (i in 1:nrow(keys))
+        for (i in seq_len(nrow(keys)))
         {
           # i <- 1
           pathway_set <- pathway_results[

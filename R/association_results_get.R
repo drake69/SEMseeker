@@ -62,11 +62,11 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
   if(adjust_globally)
     results_inference[,pvalue_column] <-stats::p.adjust(results_inference[, pvalue_column], method = adjustment_method)
 
-  adjustment_text = "no_adjustment"
+  adjustment_text <- "no_adjustment"
   if(adjust_per_area)
-    adjustment_text= "adjusted_per_area"
+    adjustment_text <- "adjusted_per_area"
   if(adjust_globally)
-    adjustment_text= "adjusted_globally"
+    adjustment_text <- "adjusted_globally"
   # markers <- unique(keys$MARKER)
 
   areas <- unique(results_inference$AREA)

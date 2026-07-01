@@ -30,7 +30,7 @@ mediation_quantreg_model <- function(family_test,tempDataFrame, sig.formula, tra
   {
     covariates <- vars[[3]][-c(1)]
     # transform covariates in a vector of string
-    covariates <- sapply(covariates, as.character)
+    covariates <- vapply(covariates, as.character, character(1))
   } else
     covariates <- c()
 
@@ -166,7 +166,7 @@ mediation_quantreg_model <- function(family_test,tempDataFrame, sig.formula, tra
         res$direct_effect_significative <- !(boot.res$bca[4]<0 & boot.res$bca[5]>0)
 
         res$pvalue <- as.numeric(!(res$mediation_effect_significative & res$prop_effect_significative & res$total_effect_significative & res$direct_effect_significative))
-        res$tau = tau
+        res$tau <- tau
         if(res$pvalue == 1)
           break
       },

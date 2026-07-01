@@ -28,7 +28,7 @@ Built from \code{\link{dmr_annotation}} and the
   Re-generate with \code{Rscript data-raw/build_test_master_features.R}.
 }
 \usage{
-test_master_features
+data(test_master_features)
 }
 \description{
 Master probe-features fixture used by the test suite and by the

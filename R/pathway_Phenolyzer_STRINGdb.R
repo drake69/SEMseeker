@@ -27,18 +27,18 @@ pathway_Phenolyzer_STRINGdb <- function(study,
   progress <- 0
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:total_progress)
+    progress_bar <- progressr::progressor(along = seq_len(total_progress))
   else
     progress_bar <- ""
 
   string_db <- STRINGdb::STRINGdb$new(version="11.5", species=9606, # 9606 is the taxonomy ID for Homo sapiens
     score_threshold=400, input_directory="")
 
-  for(id in 1:nrow(inference_detail))
+  for(id in seq_len(nrow(inference_detail)))
   {
     inference_detail <- inference_detail[id,]
     # foreach::foreach(i = 1:nrow(keys)) %dorng%
-    for(i in 1:nrow(keys))
+    for(i in seq_len(nrow(keys)))
     {
       seq <- 0
       progress <- progress + 1
@@ -53,7 +53,7 @@ pathway_Phenolyzer_STRINGdb <- function(study,
 
       suffix <- ""
       if(statistic_parameter=="")
-        suffix = "without_signal_"
+        suffix <- "without_signal_"
 
       phenotype_analysis_name <- phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
       path <- dir_check_and_create(ssEnv$result_folderEnrichment,c("Phenolyzer_STRINGdb",name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))

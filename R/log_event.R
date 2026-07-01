@@ -51,9 +51,9 @@ log_event <- function(...)
     )
     cpu_pct <- if (.Platform$OS.type == "unix") {
       tryCatch(
-        as.numeric(trimws(system(
-          sprintf("ps -p %d -o %%cpu=", Sys.getpid()),
-          intern = TRUE)[1])),
+        as.numeric(trimws(system2(
+          "ps", args = c("-p", Sys.getpid(), "-o", "%cpu="),
+          stdout = TRUE)[1])),
         error = function(e) NA_real_
       )
     } else NA_real_

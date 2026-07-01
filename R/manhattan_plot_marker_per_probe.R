@@ -69,7 +69,7 @@ manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe
 
   localKeys <- unique(localKeys[(localKeys %in% unique(probes_stat[(is.na(probes_stat$VALUE) | probes_stat$VALUE==""),"MARKER"]))])
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:(length(localKeys)))
+    progress_bar <- progressr::progressor(along = seq_along(localKeys))
   else
     progress_bar <- ""
 
@@ -182,7 +182,7 @@ manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", probe
   ########################################################################################################################################################################
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:(length(tempKeys)*5))
+    progress_bar <- progressr::progressor(along = seq_len(length(tempKeys)*5))
   else
     progress_bar <- ""
 

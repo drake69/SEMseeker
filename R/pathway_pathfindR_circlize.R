@@ -12,14 +12,14 @@ pathway_pathfindR_circlize <- function(
   progress <- 0
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:total_progress)
+    progress_bar <- progressr::progressor(along = seq_len(total_progress))
   else
     progress_bar <- ""
 
-  for(id in 1:nrow(inference_details))
+  for(id in seq_len(nrow(inference_details)))
   {
     inference_detail <- inference_details[id,]
-    for(i in 1:nrow(keys))
+    for(i in seq_len(nrow(keys)))
     {
       progress <- progress + 1
       if(ssEnv$showprogress)
@@ -40,7 +40,7 @@ pathway_pathfindR_circlize <- function(
           pathways <- subset(pathways, ID %in% pathways_selection)
         results <- data.frame()
         pathways <- as.data.frame(pathways)
-        for ( n in 1:nrow(pathways))
+        for ( n in seq_len(nrow(pathways)))
         {
           Up_regulated <- gsub(" ","",pathways[n,]$Up_regulated)
           if(!is.na(Up_regulated))
@@ -111,8 +111,8 @@ pathway_pathfindR_circlize <- function(
         results <- results[,c("CHR","START","END","GENE","PATHWAY","PATHWAY_CHR","PATHWAY_START","PATHWAY_END")]
 
 
-        cytoband = circlize::read.cytoband()$df
-        cytoband = rbind(cytoband,
+        cytoband <- circlize::read.cytoband()$df
+        cytoband <- rbind(cytoband,
           data.frame(V1 = "pathway", V2 = 1,  V3 = 2e8, V4 = "", V5 = "")
         )
         # circos.initializeWithIdeogram(cytoband)

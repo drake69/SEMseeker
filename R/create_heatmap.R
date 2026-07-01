@@ -7,7 +7,7 @@ create_heatmap <- function() {
 
   ssEnv <- get_session_info()
   sample_group_comb <- utils::combn(ssEnv$keys_sample_groups, 2)
-  for (g in 1:sample_group_comb)
+  for (g in seq_len(sample_group_comb))
   {
     localKeys <- reshape::expand.grid.df(as.data.frame(ssEnv$keys_areas_subareas_markers_figures), sample_group_comb )
     variables_to_export <- c("markers", "annotatedData", "sample_group_comb", "chartFolder", "figures",
@@ -22,7 +22,7 @@ create_heatmap <- function() {
     i <- 0
     j <- 0
 
-    foreach::foreach(j = 1:nrow(localKeys), .export = variables_to_export_nested) %dorng%
+    foreach::foreach(j = seq_len(nrow(localKeys)), .export = variables_to_export_nested) %dorng%
     # for(j in 1:nrow(localKeys))
     {
       update_session_info(ssEnv)
@@ -54,7 +54,7 @@ create_heatmap <- function() {
           mainTitle <- paste0( paste0( sample_group_comb, collapse ="_Vs_")," ",marker, sep="")
           if(ncol(annotatedData)>1000)
           {
-            annotatedData <- annotatedData[,1:min(ncol(annotatedData),1005)]
+            annotatedData <- annotatedData[,seq_len(min(ncol(annotatedData),1005))]
             mainTitle <- paste0( mainTitle," (first 1000)",  sep="")
           }
 

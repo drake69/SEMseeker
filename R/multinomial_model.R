@@ -61,7 +61,7 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
 
   res$pvalue <- 0
   # for each degree extract the p-value
-  for (i in 1:(nrow(coefficients))) {
+  for (i in seq_len(nrow(coefficients))) {
     # i <- 1
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
@@ -96,7 +96,7 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
       covariates <- paste(covariates, collapse = "_")
     }
 
-    filename  =  file_path_build(chartFolder,
+    filename  <-  file_path_build(chartFolder,
       c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, area, subarea),
       ssEnv$plot_format)
 

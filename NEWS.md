@@ -91,9 +91,9 @@
   **stops** if `genome_build` differs across sessions (physically incomparable
   coordinates); **warns** if `tech` differs (cross-array meta-analysis is valid
   on the probe intersection but must be explicit).
-  `association_to_association()` now calls this guard internally: stops with a
-  clear message when origin results carry a different `GENOME_BUILD` than the
-  current session.
+  `intra_study_association_replication()` now calls this guard internally: stops
+  with a clear message when origin results carry a different `GENOME_BUILD` than
+  the current session.
 
 ### Breaking changes
 

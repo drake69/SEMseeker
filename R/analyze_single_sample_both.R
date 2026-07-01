@@ -11,11 +11,11 @@ analyze_single_sample_both <- function( sample_detail, marker) {
   marker <- as.character(marker)
   figures <- c("HYPER","HYPO")
 
-  for( i in 1:length(figures))
+  for( i in seq_along(figures))
   {
     figure <- figures[i]
     folder_to_save <- dir_check_and_create(ssEnv$result_folderData,c(as.character(sample_detail$Sample_Group),paste0(marker,"_", figure, sep = "")))
-    fileName = file_path_build(folder_to_save,c(sample_detail$Sample_ID,marker,figure),"bed")
+    fileName <- file_path_build(folder_to_save,c(sample_detail$Sample_ID,marker,figure),"bed")
     if(file.exists(fileName))
     {
       data_to_saveTemp <- utils::read.table(fileName, sep="\t", col.names =c("CHR", "START", "END") )

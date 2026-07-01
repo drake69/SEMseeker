@@ -83,7 +83,7 @@ diagnostic_performance <-
       nkeys <- nrow(keys)
       variables_to_export_nested <- c("variables_to_export","keys","result_folderPivot","sample_names","ssEnv","file_path_build")
       if (nrow(keys) > 0)
-        for (k in 1:nkeys)
+        for (k in seq_len(nkeys))
         {
           # k <- 3
           key <- keys [k, ]
@@ -155,7 +155,7 @@ diagnostic_performance <-
             labels <- unique(tempDataFrame[,independent_variable])
             # get all the combinations of two over all labels
             # combinations <- combinat::combn(labels, 2)
-            for ( comb in 1:ncol(combinations))
+            for ( comb in seq_len(ncol(combinations)))
             {
               control_label <- combinations[rownames(combinations)=="Control",comb]
               case_label <- combinations[rownames(combinations)=="Case",comb]
@@ -184,7 +184,7 @@ diagnostic_performance <-
               {
                 # AI-056: workers must NOT saveRDS on every iteration.
                 update_session_info(ssEnv, save_to_disk = FALSE)
-                area_of_test = names(tempDataFrameComb)[c]
+                area_of_test <- names(tempDataFrameComb)[c]
                 if(ssEnv$showprogress)
                 {
                   progress_bar(sprintf("genomic area of test: %s", stringr::str_pad( area_of_test, 20, side=c('left'), pad=' ')))

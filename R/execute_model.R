@@ -6,7 +6,7 @@ execute_model <- function(family_test, tempDataFrame, sig.formula, burdenValue, 
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  samples_sql_condition = as.character(samples_sql_condition)
+  samples_sql_condition <- as.character(samples_sql_condition)
   transformation_y <- as.character(transformation_y)
   family_test <- as.character(family_test)
   # model_result <- data.frame()

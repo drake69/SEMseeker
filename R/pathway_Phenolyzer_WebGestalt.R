@@ -23,11 +23,11 @@ pathway_Phenolyzer_WebGestalt <- function(study,
   }
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:(nrow(keys)*length(types)*length(enrich_methods)))
+    progress_bar <- progressr::progressor(along = seq_len(nrow(keys)*length(types)*length(enrich_methods)))
   else
     progress_bar <- ""
 
-  for (i in 1:nrow(keys))
+  for (i in seq_len(nrow(keys)))
   {
     for( t in seq_along(types))
     {
@@ -36,7 +36,7 @@ pathway_Phenolyzer_WebGestalt <- function(study,
       {
         projectName <- phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  ,
           pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
-        filenameResult = file_path_build(path,projectName,"csv")
+        filenameResult <- file_path_build(path,projectName,"csv")
 
         # if(file.exists(filenameResult))
         #   next
@@ -141,7 +141,7 @@ pathway_Phenolyzer_WebGestalt <- function(study,
         # # browser
         # if(min(enrichResultToPlot$FDR) < as.numeric((ssEnv$alpha)))
         # {
-        plotFileName = file_path_build(path,projectName,ssEnv$plot_format)
+        plotFileName <- file_path_build(path,projectName,ssEnv$plot_format)
         # grDevices::png(file= plotFileName, width=2048,height=2048, bg = "transparent")
         enrichResultToPlot <- as.data.frame(enrichResultToPlot)
         enrichResultToPlot <- enrichResultToPlot[order(enrichResultToPlot$expect),]
@@ -189,7 +189,7 @@ pathway_Phenolyzer_WebGestalt <- function(study,
     if(exists("enrichResultFinal"))
     {
       projectName <- phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
-      filenameResult = file_path_build(path,projectName,"csv")
+      filenameResult <- file_path_build(path,projectName,"csv")
       pathway_result_save(enrichResultFinal, pathway_report_path, "WebGestalt")
     }
   }

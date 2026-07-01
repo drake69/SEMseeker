@@ -16,7 +16,7 @@ GEO accession GSE133774, series matrix file parsed by
   \emph{et al.} (2020), NLRP5 variants associated with MLID and BWS.
 }
 \usage{
-test_signal_gse133774
+data(test_signal_gse133774)
 }
 \description{
 Real EPIC methylation beta-value matrix from GEO series GSE133774

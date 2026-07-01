@@ -72,7 +72,7 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
 
   # Extract starting values for a and b
   start_list <- lm_fit$coefficients
-  cov_letters <- letters[1:length(start_list)]
+  cov_letters <- letters[seq_along(start_list)]
   names(start_list) <- cov_letters
 
   # Build dynamic formula for nls
@@ -130,7 +130,7 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
   rownames(coefficients) <- name_cleaning(c("INTERCEPT", independent_variable, covariates))
 
   # for a and b extract the p-value
-  for (i in 1:nrow(coefficients)) {
+  for (i in seq_len(nrow(coefficients))) {
     # i <- 1
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
@@ -156,7 +156,7 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
     # train.data$fitted <- log_model_result$m$fitted
 
     chartFolder <- dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
-    filename  =  file_path_build(chartFolder,
+    filename  <-  file_path_build(chartFolder,
       c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, key$COMBINED),
       ssEnv$plot_format)
 

@@ -67,7 +67,7 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
     sample_sheet <- sample_sheet[,!(colnames(sample_sheet) %in% colun_to_remove)]
     map <- map[map$Mapping != delete_keyword,]
     # rename columns
-    for (i in 1:nrow(map))
+    for (i in seq_len(nrow(map)))
     {
       names_col <- colnames(sample_sheet)
       names_col[names_col == map$Variable[i]] <- map$Mapping[i]
@@ -130,7 +130,7 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
         removal_details <- plyr::rbind.fill(removal_details, tmp)
       }
       removal_details <- subset(removal_details, removal_details$values == delete_keyword)
-      for (r in 1:nrow(removal_details))
+      for (r in seq_len(nrow(removal_details)))
       {      # remove from sample sheet
         selector <- (sample_sheet[,variable_1] %in% removal_details[r,1]) & (sample_sheet[,variable_2] %in% removal_details[r,3])
         sample_sheet <- subset(sample_sheet, !selector)
@@ -253,15 +253,15 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
       # calculate relative frequency
       pivot_rel_freq <- round(pivot/pivot_total*100,2)
       # build  a table with the total and relative frequency as percentage in the same cell
-      for (i in 1:nrow(pivot_rel_freq)) {
-        for (j in 1:ncol(pivot_rel_freq)) {
+      for (i in seq_len(nrow(pivot_rel_freq))) {
+        for (j in seq_len(ncol(pivot_rel_freq))) {
           pivot_rel_freq[i,j] <- paste0(pivot[i,j]," (",pivot_rel_freq[i,j],"%)")
         }
       }
       pivot_rel_freq[,first_col] <- rownames(pivot_rel_freq)
       if(ncol(pivot)==1)
         colnames(pivot_rel_freq)[colnames(pivot_rel_freq)=="pivot[pivot_order, ]"] <- "stat"
-      pivot_rel_freq <- pivot_rel_freq[,c(ncol(pivot_rel_freq),1:(ncol(pivot_rel_freq)-1))]
+      pivot_rel_freq <- pivot_rel_freq[,c(ncol(pivot_rel_freq),seq_len(ncol(pivot_rel_freq)-1))]
       if(ncol(pivot)>1)
         pivot_rel_freq <- cbind(pivot_rel_freq, pivot_rowsums)
       if(ncol(pivot)>1)
@@ -379,7 +379,7 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
   signal_data <- signal_data[,n_missed_per_col <= max_missed_signal_data * nrow(signal_data)]
   signal_data$PROBE <- rownames(signal_data)
   signal_data <- as.data.frame(signal_data[, colnames(signal_data) %in% c("PROBE",sample_sheet[, sample_id_column])])
-  signal_data <- signal_data[,c("PROBE",colnames(signal_data)[1:(ncol(signal_data)-1)])]
+  signal_data <- signal_data[,c("PROBE",colnames(signal_data)[seq_len(ncol(signal_data)-1)])]
   # save cleaned signal data
   file_path <- file_path_build(folder_path, c(step,"cleaned_signal_data"),"parquet")
   polars::as_polars_df(as.data.frame(signal_data))$write_parquet(file_path)

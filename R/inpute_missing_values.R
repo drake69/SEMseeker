@@ -138,7 +138,7 @@ inpute_missing_values <- function(signal_data){
   else
     progress_bar <- ""
 
-  n_item = nrow(signal_data)*ncol(signal_data)/100
+  n_item <- nrow(signal_data)*ncol(signal_data)/100
   log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y") ," Imputing missing values using ", ssEnv$inpute , " method. Number of missing values: ", n_na, " corresponding to: ", round(n_na/n_item, 2), " % of the data.")
   log_event("JOURNAL: Imputing missing values using ", ssEnv$inpute , " method. Number of missing values: ", n_na, " corresponding to: ", round(n_na/n_item, 2), " % of the data.")
   mat <- as.matrix(signal_data)

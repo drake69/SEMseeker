@@ -49,7 +49,7 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
     }
   }
   else
-    tempDataFrame <- as.data.frame(sapply(tempDataFrame, as.numeric))
+    tempDataFrame <- as.data.frame(vapply(tempDataFrame, as.numeric, numeric(nrow(tempDataFrame))))
 
   originalDataFrame <- tempDataFrame
   if (independentVariableIsFactor)
@@ -60,7 +60,7 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
   # the bottom (`ncol(tempDataFrame) != length(df_colnames)`) fires the
   # "data are not the same size" stop. Forcing data.frame keeps the rebuild
   # symmetric regardless of how many sample-level columns there are.
-  df_head <- tempDataFrame[, 1:(g_start - 1), drop = FALSE]
+  df_head <- tempDataFrame[, seq_len(g_start - 1), drop = FALSE]
 
   burden_values <- sapply(tempDataFrame[,g_start:g_end], as.numeric)
   burden_values <- as.data.frame(burden_values)
@@ -95,7 +95,7 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
   df_values_orig <- burden_values
   try(
     {
-      burden_values = switch(
+      burden_values <- switch(
         as.character(transformation_y),
         "scale"  = scale(burden_values),
         "log"    = log(burden_values),
@@ -171,7 +171,7 @@ data_preparation <- function(family_test,transformation_y,tempDataFrame, indepen
           # (era `transformation_y` per legacy reuse) -> separazione semantica
           # Y vs X. Aggiunto case "factor" per encode l'IV come categorical
           # (utile per glm binomial: OR per livello vs reference).
-          independent_variableValues = switch(
+          independent_variableValues <- switch(
             as.character(transformation_x),
             "scale"  = scale(independent_variableValues),
             "log"    = log(independent_variableValues),

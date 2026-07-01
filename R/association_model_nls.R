@@ -74,7 +74,7 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
   # Extract starting values for a and b
   start_list <- coef(lm_fit)
 
-  names(start_list) <- letters[1:(length(c(independent_variable,covariates))+1)]
+  names(start_list) <- letters[seq_len(length(c(independent_variable,covariates))+1)]
   cov_letters <- names(start_list)[-1][-1]
 
   # Build dynamic formula for nls
@@ -95,7 +95,7 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
     )
   }, error = function(e) {
     # Handle error
-    print(paste("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "Error fitting the model: ", e$message))
+    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "Error fitting the model: ", e$message)
     stop()
   })
   # check if nls_model_model_result is a model
@@ -133,7 +133,7 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
   rownames(coefficients) <- name_cleaning(c("INTERCEPT", independent_variable, covariates))
 
   # for a and b extract the p-value
-  for (i in 1:nrow(coefficients)) {
+  for (i in seq_len(nrow(coefficients))) {
     # i <- 1
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
@@ -159,7 +159,7 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
     # train.data$fitted <- nls_model_model_result$m$fitted
 
     chartFolder <- dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
-    filename  =  file_path_build(chartFolder,
+    filename  <-  file_path_build(chartFolder,
       c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, key$COMBINED),
       ssEnv$plot_format)
 

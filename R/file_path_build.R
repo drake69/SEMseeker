@@ -24,7 +24,7 @@
 #' @keywords internal
 file_path_build <- function(baseFolder, detailsFilename, extension, add_gz = FALSE){
 
-  detailsFilename <- as.vector(sapply(detailsFilename, as.character))
+  detailsFilename <- as.vector(vapply(detailsFilename, as.character, character(1)))
 
   detailsFilename <- paste0(detailsFilename, collapse="_")
 

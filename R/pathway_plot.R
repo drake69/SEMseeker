@@ -86,7 +86,7 @@ pathway_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50,
     data_to_plot <- data_to_plot[order(data_to_plot[,column_sorting], decreasing = FALSE),]
     data_to_plot[,performance_category] <- data_to_plot[,performance_category] %>% as.factor()
 
-    unique_description <- unique(data_to_plot$Description)[1:top]
+    unique_description <- unique(data_to_plot$Description)[seq_len(top)]
     data_to_plot <- data_to_plot[data_to_plot$Description %in% unique_description,]
 
     data_to_plot <- as.data.frame(data_to_plot)

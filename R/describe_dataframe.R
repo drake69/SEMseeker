@@ -11,9 +11,9 @@ describe_dataframe <- function(df) {
   data.frame(
     Variable              = names(df),
     Class                 = sapply(df, class),
-    Missing_Values        = sapply(df, function(x) sum(is.na(x))),
-    Missing_Values_Percent = round(sapply(df, function(x) sum(is.na(x)) / length(x) * 100), 2),
-    Unique_Values         = sapply(df, function(x) length(unique(x))),
+    Missing_Values        = vapply(df, function(x) sum(is.na(x)), numeric(1)),
+    Missing_Values_Percent = round(vapply(df, function(x) sum(is.na(x)) / length(x) * 100, numeric(1)), 2),
+    Unique_Values         = vapply(df, function(x) length(unique(x)), numeric(1)),
     Mean   = round(sapply(df, function(x) if (is.numeric(x)) mean(x,   na.rm = TRUE) else NA), 2),
     Median = round(sapply(df, function(x) if (is.numeric(x)) median(x, na.rm = TRUE) else NA), 2),
     Min    = round(sapply(df, function(x) if (is.numeric(x)) min(x,    na.rm = TRUE) else NA), 2),

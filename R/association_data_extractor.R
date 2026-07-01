@@ -17,7 +17,7 @@ association_data_extractor <- function(inference_details,destination_folder="", 
   localKeys <- ssEnv$keys_markers_figures
   markers <- unique(localKeys$MARKER)
   final_results <- data.frame()
-  for(z in 1:nrow(inference_details))
+  for(z in seq_len(nrow(inference_details)))
   {
     start_time <- Sys.time()
     inference_detail <- inference_details[z,]

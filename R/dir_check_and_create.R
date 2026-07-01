@@ -14,7 +14,7 @@
 #'
 dir_check_and_create <- function(baseFolder, subFolders)
 {
-  subFolders <- as.vector(sapply(subFolders, as.character))
+  subFolders <- as.vector(vapply(subFolders, as.character, character(1)))
   path <- do.call(file.path, c(list(as.character(baseFolder)), as.list(subFolders)))
   if (!dir.exists(path))
     dir.create(path, recursive = TRUE, showWarnings = FALSE)

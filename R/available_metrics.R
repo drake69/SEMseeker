@@ -12,7 +12,7 @@ available_metrics <- function(inference_details,result_folder, ...)
   ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
   localKeys <- ssEnv$keys_markers_figures
   markers <- unique(localKeys$MARKER)
-  for(z in 1:nrow(inference_details))
+  for(z in seq_len(nrow(inference_details)))
   {
     start_time <- Sys.time()
     inference_detail <- inference_details[z,]

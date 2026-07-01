@@ -27,7 +27,7 @@ deltaX_get_legacy <- function()
   subarea_position <- "WHOLE"
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:nrow(keys))
+    progress_bar <- progressr::progressor(along = seq_len(nrow(keys)))
   else
     progress_bar <- ""
 
@@ -43,7 +43,7 @@ deltaX_get_legacy <- function()
     return()
 
   # sample_sheet_res <-  foreach::foreach(k =1:nrow(keys), .combine= cbind , .export = variables_to_export) %dorng%
-  for ( k in 1:nrow(keys))
+  for ( k in seq_len(nrow(keys)))
   {
     sample_sheet_temp <- as.data.frame(sample_sheet[,c("Sample_ID","Sample_Group")])
 
@@ -106,7 +106,7 @@ deltaX_get_legacy <- function()
     # vector_both <- as.numeric(dplyr::ntile(x=vector_shaped , n= as.numeric(key$Q)))
 
     rm(vector_shaped)
-    save_figure(colname_pivot_hyper, dim_pivot_hyper,vector_both[1:length_hyper],positions_hyper,sample_sheet_temp,area_position,subarea_position,marker,"HYPER")
+    save_figure(colname_pivot_hyper, dim_pivot_hyper,vector_both[seq_len(length_hyper)],positions_hyper,sample_sheet_temp,area_position,subarea_position,marker,"HYPER")
     save_figure(colname_pivot_hypo, dim_pivot_hypo,tail(vector_both, length_hypo), positions_hypo,sample_sheet_temp,area_position,subarea_position,marker,"HYPO")
 
     if(ssEnv$showprogress)

@@ -60,7 +60,7 @@ build_data_set_from_geo <-  function(GEOgse, downloadFiles = 0,result_folder, ..
       downloadFiles <- nrow(samplesheet)
 
     downloadedFiles <- 0
-    for(sample in 1:nrow(samplesheet))
+    for(sample in seq_len(nrow(samplesheet)))
     {
       sample <- 1
       log_event(sample)

@@ -1,4 +1,22 @@
-inter_study_pathway_compare <- function(result_folder, ...){
+#' @title Compare enrichment results across studies
+#' @description Compares enrichment (pathway/term) results across two or more
+#'   independent studies stored under `result_folder` and produces Venn diagrams
+#'   of the overlapping enriched terms. Part of the cross-study replication
+#'   workflow, alongside [inter_study_association_overlaps()].
+#' @param result_folder Path to the folder holding the per-study enrichment
+#'   results to be compared.
+#' @param ... Additional arguments forwarded to [init_env()] (e.g.
+#'   `maxResources`, `parallel_strategy`).
+#' @return Invisibly `NULL`; Venn diagrams and comparison tables are written
+#'   under `result_folder`.
+#' @seealso [inter_study_association_overlaps()],
+#'   [intra_study_enrichment_subsamples_overlaps()]
+#' @examples
+#' # See vignette("pathway-analysis", package = "SEMseeker") for a runnable
+#' # cross-study enrichment comparison workflow on real result folders.
+#' invisible(NULL)
+#' @export
+inter_study_enrichment_compare <- function(result_folder, ...){
 
   ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
   # library(VennDiagram)
@@ -10,7 +28,7 @@ inter_study_pathway_compare <- function(result_folder, ...){
     if (j==length(studies_to_comb))
       studies_comb <- data.frame("st"=studies_comb)
     log_event(studies_comb)
-    for(k in 1: ncol(studies_comb))
+    for(k in seq_len(ncol(studies_comb)))
     {
       pathway_inference_comb <- subset(pathway_inference, STUDY %in% studies_comb[,k])
       keys <- unique(pathway_inference_comb[, c("key")])

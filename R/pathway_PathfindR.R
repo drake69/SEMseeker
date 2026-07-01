@@ -27,14 +27,14 @@ pathway_pathfindR <- function(study,
   progress <- 0
 
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:total_progress)
+    progress_bar <- progressr::progressor(along = seq_len(total_progress))
   else
     progress_bar <- ""
 
-  for(id in 1:nrow(inference_detail))
+  for(id in seq_len(nrow(inference_detail)))
   {
     inference_detail <- inference_detail[id,]
-    for(i in 1:nrow(keys))
+    for(i in seq_len(nrow(keys)))
     {
       seq <- 0
       for(k in seq_along(path_dbs))
@@ -58,7 +58,7 @@ pathway_pathfindR <- function(study,
             next
         suffix <- ""
         if(statistic_parameter=="")
-          suffix = "without_signal_"
+          suffix <- "without_signal_"
 
         phenotype_analysis_name <- phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
         path <- dir_check_and_create(ssEnv$result_folderEnrichment,c("pathfindR", name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
@@ -148,7 +148,7 @@ pathway_pathfindR <- function(study,
             output_temp$seq <- seq
             output_temp$gene_count <- nrow(gene_set)
             output_temp$source <- path_dbs[k]
-            output_temp$order <- 1:nrow(output_temp)
+            output_temp$order <- seq_len(nrow(output_temp))
             if(exists("result_pathway"))
               result_pathway <- rbind(result_pathway,output_temp)
             else

@@ -13,7 +13,7 @@ association_analysis_summary <- function(inference_details,destination_folder=""
     available_metrics <- c(available_metrics, colnames(association_data)[grepl("PVALUE",colnames(association_data))])
 
   # remove not numeric columns metrics
-  metrics_to_remove <- colnames(association_data[,!sapply(association_data, is.numeric)])
+  metrics_to_remove <- colnames(association_data[,!vapply(association_data, is.numeric, logical(1))])
   available_metrics <- available_metrics[!(available_metrics %in% metrics_to_remove)]
 
   available_metrics <- available_metrics[available_metrics %in% colnames(association_data)]

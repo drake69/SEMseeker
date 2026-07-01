@@ -15,7 +15,7 @@ A data frame with 829 rows and four columns:
 }
 }
 \usage{
-cytoband_hg19
+data(cytoband_hg19)
 }
 \description{
 Cytogenetic band coordinates for the hg19 human genome assembly.

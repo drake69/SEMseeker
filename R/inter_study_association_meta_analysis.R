@@ -39,7 +39,7 @@ inter_study_association_meta_analysis <- function(inference_details,statistic_pa
   if (!requireNamespace("tidyverse", quietly = TRUE))
     stop("Package 'tidyverse' is required for cross-study meta-analysis. Install it with install.packages('tidyverse').")
   keys <- na.omit(unique(results_inference[,c("FIGURE","SUBAREA")]))
-  for (k in 1:nrow(keys))
+  for (k in seq_len(nrow(keys)))
   {
     # k <- 1
     results_inference_for <- subset(results_inference, FIGURE==keys[k,"FIGURE"] & SUBAREA==keys[k,"SUBAREA"])

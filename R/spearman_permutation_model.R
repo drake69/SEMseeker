@@ -13,7 +13,7 @@ compute_spearman_permutation <- function(sig.formula,df, shuffle = FALSE)
   indepVar <- as.character(all.vars(sig.formula)[2])
   burden <- as.character(all.vars(sig.formula)[1])
   tempDataFrame <- df
-  idx = which(colnames(tempDataFrame) == indepVar)
+  idx <- which(colnames(tempDataFrame) == indepVar)
   tempDataFrame[,idx] <- as.factor(tempDataFrame[,idx])
   if (shuffle == TRUE)
     tempDataFrame[ ,indepVar] <- sample(tempDataFrame[,indepVar])

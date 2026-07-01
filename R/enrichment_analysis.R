@@ -100,7 +100,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
   inference_details <- subset(inference_details, depth_analysis ==3)
   for (alpha in alphas)
   {
-    for (id in 1:nrow(inference_details))
+    for (id in seq_len(nrow(inference_details)))
     {
       inference_detail <- inference_details[id,]
       inference_detail_prettified <- t(inference_detail)

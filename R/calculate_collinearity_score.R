@@ -43,7 +43,7 @@ calculate_collinearity_score <- function(df) {
     # Create a temporary data frame with the current variable as 'Y'
     # and the rest as 'X' variables
     # find column with the exact values of var_col
-    var_col_index <- which(sapply(df, function(x) all(x == var_col)))
+    var_col_index <- which(vapply(df, function(x) all(x == var_col), logical(1)))
 
     temp_df <- data.frame(Y = var_col, df[,-var_col_index])
 

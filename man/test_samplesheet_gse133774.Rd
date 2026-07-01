@@ -17,7 +17,7 @@ A data frame with 16 rows and 2 columns:
 Derived from GEO accession GSE133774 metadata.
 }
 \usage{
-test_samplesheet_gse133774
+data(test_samplesheet_gse133774)
 }
 \description{
 Sample sheet for \code{\link{test_signal_gse133774}} in the canonical

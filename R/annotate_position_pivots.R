@@ -36,7 +36,7 @@ annotate_position_pivots <- function ()
 
   progress_bar <- ""
   if(ssEnv$showprogress)
-    progress_bar <- progressr::progressor(along = 1:(nrow(localKeys)))
+    progress_bar <- progressr::progressor(along = seq_len(nrow(localKeys)))
 
   variables_to_export <- c("ssEnv", "dir_check_and_create", "subarea",
     "progress_bar","progression_index", "progression", "progressor_uuid",
@@ -44,7 +44,7 @@ annotate_position_pivots <- function ()
     "file_path_build","%>%","get_session_info","log_event")
 
   # doesn't work with parallel, tests throws error
-  for(i in 1:nrow(localKeys))
+  for(i in seq_len(nrow(localKeys)))
     # foreach::foreach(i=1:nrow(localKeys), .export = variables_to_export) %dorng%
   {
     marker <- as.character(localKeys[i,"MARKER"])

@@ -2,8 +2,8 @@ area_plot_circlize <- function(areas, circle_plot_path,result_folder, maxResourc
 {
   ssEnv <- init_env(result_folder = result_folder, maxResources = maxResources, parallel_strategy = parallel_strategy, start_fresh = FALSE, ...)
 
-  cytoband = circlize::read.cytoband()$df
-  cytoband = rbind(cytoband,
+  cytoband <- circlize::read.cytoband()$df
+  cytoband <- rbind(cytoband,
     data.frame(V1 = "", V2 = 1,  V3 = 2e8, V4 = "", V5 = "")
   )
 

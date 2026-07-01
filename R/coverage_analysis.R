@@ -13,7 +13,7 @@ coverage_analysis <- function(observed_probes)
     log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No keys found for coverage analysis.")
     return()
   }
-  for ( k in 1:nrow(keys))
+  for ( k in seq_len(nrow(keys)))
   {
     # k <- 16
     subarea <- as.character(keys[k,"SUBAREA"])
@@ -83,7 +83,7 @@ coverage_analysis <- function(observed_probes)
     return()
 
   chartFolder <- dir_check_and_create(ssEnv$result_folderChart,"COVERAGE")
-  filename  =  file_path_build(chartFolder,c("EACH_AREA_COVERAGE_ANALYSIS"),ssEnv$plot_format)
+  filename  <-  file_path_build(chartFolder,c("EACH_AREA_COVERAGE_ANALYSIS"),ssEnv$plot_format)
 
   temp_cov_result <- subset(cov_result,cov_result$SUBAREA !="WHOLE")
   if(nrow(temp_cov_result)>2)
@@ -124,7 +124,7 @@ coverage_analysis <- function(observed_probes)
     total_areas <- sum(number_areas$TOTAL_AREAS)
     temp_cov_result$GENOMIC_AREA <- paste(temp_cov_result$AREA, temp_cov_result$SUBAREA, sep=" ")
     temp_cov_result$AREA_PERC <- round(100* temp_cov_result$COUNT / total_areas,2)
-    filename  =  file_path_build(chartFolder,c("WHOLE_GENOME_COVERAGE_ANALYSIS"),ssEnv$plot_format)
+    filename  <-  file_path_build(chartFolder,c("WHOLE_GENOME_COVERAGE_ANALYSIS"),ssEnv$plot_format)
     # temp_cov_result$COV_PERC <- sprintf('%02d', str_pad(temp_cov_result$COV_PERC, 3, pad = "0"))
     temp_cov_result$COV_PERC <- sprintf('%03d', temp_cov_result$COV_PERC)
     temp_cov_result$AREA_PERC <-  round(temp_cov_result$AREA_PERC,2)

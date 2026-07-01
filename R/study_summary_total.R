@@ -9,7 +9,7 @@ study_summary_total <- function()
   keys <- subset(keys, AREA=="POSITION")
   if(nrow(keys)==0)
     return()
-  for ( k in 1:nrow(keys))
+  for ( k in seq_len(nrow(keys)))
   {
     # k <- 1
     key <- keys[k,]
