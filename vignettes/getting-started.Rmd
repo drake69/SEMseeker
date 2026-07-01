@@ -232,6 +232,49 @@ semseeker(
 )
 ```
 
+### Genomic areas & subareas
+
+After per-probe markers are computed, SEMseeker annotates each probe to the
+genomic **areas** (and their **subareas**) it belongs to, so that epimutations
+can be aggregated region-by-region. The available subareas per area:
+
+| Area | Subareas |
+|---|---|
+| `GENE` | `BODY`, `TSS1500`, `TSS200`, `1STEXON`, `5UTR`, `3UTR`, `EXONBND`, `WHOLE` |
+| `ISLAND` | `ISLAND`, `N_SHORE`, `S_SHORE`, `N_SHELF`, `S_SHELF`, `OPENSEA`, `WHOLE` |
+| `CHR` | `WHOLE`, `CYTOBAND` |
+| `DMR` | `WHOLE`, `DMR` |
+| `PROBE` | `WHOLE` |
+
+#### CpG-island context mapping (`ISLAND`)
+
+The `ISLAND` subareas mirror Illumina's `Relation_to_Island`, which classifies
+every probe into one of six mutually exclusive categories. SEMseeker maps them
+as follows — and, exactly as `GENE_WHOLE` covers the **whole gene**,
+`ISLAND_WHOLE` covers the **whole island neighbourhood**:
+
+| Illumina `Relation_to_Island` | SEMseeker subarea | Region label |
+|---|---|---|
+| `Island` | `ISLAND` | island coordinate (`chr:start-end`) |
+| `N_Shore` / `S_Shore` | `N_SHORE` / `S_SHORE` | island coordinate (±2 kb flank) |
+| `N_Shelf` / `S_Shelf` | `N_SHELF` / `S_SHELF` | island coordinate (2–4 kb flank) |
+| `OpenSea` | `OPENSEA` | gap coordinate (`chr:start-end`) |
+| *(union of the above except OpenSea)* | `WHOLE` | island coordinate |
+
+Notes:
+
+- **`WHOLE` = `ISLAND` + shores + shelves** (the whole CpG-island
+  neighbourhood, island core ±4 kb). It is **not** the island core alone —
+  use `ISLAND` for the core.
+- **`OPENSEA`** are the CpGs outside every neighbourhood. Each open-sea probe
+  is grouped by the genomic **gap** between neighbourhoods that contains it,
+  labelled by that gap's coordinate `chr:start-end`. A gap never crosses a
+  chromosome boundary, so no open-sea region spans chromosomes.
+- The same definitions apply to WGBS / long-read data, where the island
+  neighbourhoods are reconstructed from UCSC CpG-island coordinates instead of
+  the Illumina manifest, so array and sequencing analyses share identical
+  region semantics.
+
 <hr>
 
 ## Step 3 — Understand the output
@@ -325,21 +368,24 @@ whether mean methylation (or intra-region spread) differs by phenotype, without
 any mutation-calling step.
 
 ```{r signal_analysis, eval=FALSE}
-library(polars)
-
-# Read mean-signal pivot at gene level
-signal_mean <- as.data.frame(
-  pl$read_parquet("~/semseeker_results/Data/SIGNAL_MEAN_GENE_WHOLE.parquet")
+# inference_details specifies the PREDICTOR and the test — not a model formula.
+# `independent_variable` is the phenotype column, `family_test` the statistical
+# test. The dependent marker (SIGNAL_MEAN, MUTATIONS, …) is NOT named here: it
+# comes from the markers you ran through semseeker(); association_analysis()
+# iterates over them and reads the matching pivot tables internally.
+inference_details <- data.frame(
+  independent_variable = "Sample_Group",
+  family_test          = "wilcoxon",   # two independent groups, non-parametric
+  transformation_y     = "none",
+  depth_analysis       = 3,            # per genomic area (region-level / EWAS-style)
+  filter_p_value       = TRUE
 )
 
-# Run a Wilcoxon test between cases and controls on mean signal
 association_analysis(
-  result_folder   = "~/semseeker_results/",
-  sample_sheet    = sample_sheet,
-  marker          = c("SIGNAL_MEAN"),
-  areas           = c("GENE"),
-  stat_model      = list(type = "wilcoxon", alt = "two.sided"),
-  output_folder   = "~/semseeker_results/Stats/"
+  inference_details = inference_details,
+  result_folder     = "~/semseeker_results/",
+  parallel_strategy = "multicore",
+  maxResources      = 90
 )
 ```
 

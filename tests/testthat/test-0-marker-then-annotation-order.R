@@ -1,0 +1,80 @@
+# Meta-test: genomic annotation must run AFTER derived-marker computation.
+#
+# Invariant (richiesto esplicitamente): le annotazioni genomiche (Body, TSS,
+# Island shores/shelves, ...) prodotte da annotate_position_pivots() devono
+# essere SEMPRE successive al calcolo dei marker derivati DELTAQ/DELTARQ/
+# DELTAP/DELTARP fatto da deltaX_get(). Inoltre, dove i POSITION pivot di base
+# vengono materializzati con create_position_pivots(), quella chiamata deve
+# precedere deltaX_get() (deltaX_get legge i pivot DELTAS/DELTAR base).
+#
+# annotate_position_pivots() NON ricalcola i marker: legge il POSITION/WHOLE
+# pivot di ciascun marker (inclusi i derivati) e lo proietta su AREA/SUBAREA.
+# Se qualcuno invertisse l'ordine, le annotazioni dei marker derivati
+# leggerebbero pivot inesistenti o stantii. Questo test blocca l'inversione.
+#
+# I corpi delle funzioni sono letti dal NAMESPACE installato (getFromNamespace +
+# body()), NON dai file R/*.R: sotto R CMD check il pacchetto e' installato e la
+# cartella sorgente R/ non e' presente, quindi leggere da disco fallirebbe.
+
+# Walk del parse-tree del corpo di una funzione: restituisce, per ciascun
+# nome-di-chiamata richiesto, l'indice di prima comparsa in ordine sorgente
+# (NA se assente). L'indice e' un contatore globale incrementato a ogni nodo,
+# quindi rispetta l'ordinamento testuale degli statement.
+.first_call_orders <- function(fun_body, call_names) {
+  counter <- 0L
+  first <- stats::setNames(rep(NA_integer_, length(call_names)), call_names)
+  walk <- function(node) {
+    counter <<- counter + 1L
+    if (is.call(node)) {
+      head <- node[[1L]]
+      if (is.symbol(head)) {
+        nm <- as.character(head)
+        if (nm %in% call_names && is.na(first[[nm]])) {
+          first[[nm]] <<- counter
+        }
+      }
+      for (i in seq_along(node)) {
+        el <- node[[i]]
+        if (!missing(el) && (is.call(el) || is.pairlist(el))) walk(el)
+      }
+    } else if (is.pairlist(node)) {
+      for (i in seq_along(node)) {
+        el <- node[[i]]
+        if (!missing(el) && (is.call(el) || is.pairlist(el))) walk(el)
+      }
+    }
+    invisible(NULL)
+  }
+  walk(fun_body)
+  first
+}
+
+test_that("deltaX_get() precedes annotate_position_pivots() in every caller", {
+  callers <- c("semseeker_core", "recover", "association_analysis")
+
+  for (fun_name in callers) {
+    fn <- tryCatch(getFromNamespace(fun_name, "SEMseeker"),
+                   error = function(e) NULL)
+    expect_false(is.null(fn),
+      info = paste("could not find function", fun_name, "in SEMseeker namespace"))
+    if (is.null(fn)) next
+
+    ord <- .first_call_orders(
+      body(fn),
+      c("create_position_pivots", "deltaX_get", "annotate_position_pivots")
+    )
+
+    # deltaX_get() and annotate_position_pivots() must BOTH appear and be ordered.
+    expect_false(is.na(ord[["deltaX_get"]]),
+      info = paste(fun_name, "must call deltaX_get()"))
+    expect_false(is.na(ord[["annotate_position_pivots"]]),
+      info = paste(fun_name, "must call annotate_position_pivots()"))
+    expect_lt(ord[["deltaX_get"]], ord[["annotate_position_pivots"]])
+
+    # Where create_position_pivots() is present, it must precede deltaX_get()
+    # (deltaX_get reads the base DELTAS/DELTAR POSITION pivots it writes).
+    if (!is.na(ord[["create_position_pivots"]])) {
+      expect_lt(ord[["create_position_pivots"]], ord[["deltaX_get"]])
+    }
+  }
+})

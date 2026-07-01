@@ -25,7 +25,7 @@
 #
 # Supported area/subarea values:
 #   GENE:    TSS200, TSS1500, 1STEXON, 5UTR, 3UTR, BODY, EXONBND, WHOLE
-#   ISLAND:  WHOLE, N_SHORE, S_SHORE, N_SHELF, S_SHELF
+#   ISLAND:  WHOLE, ISLAND, N_SHORE, S_SHORE, N_SHELF, S_SHELF, OPENSEA
 #   CHR:     WHOLE, CYTOBAND
 #   DMR:     WHOLE, DMR
 #   PROBE:   WHOLE  (coordinate-only, handled by probe_features_get())
@@ -223,8 +223,17 @@
   gr
 }
 
-.build_island_area <- function(subarea, genome_build) {
-  islands <- .get_cpg_islands(genome_build)
+.build_island_area <- function(subarea, genome_build, islands = NULL) {
+  # `islands` is injectable (a GRanges of island cores) so the WHOLE/ISLAND/
+  # OPENSEA/shore/shelf logic can be unit-tested without AnnotationHub.
+  if (is.null(islands)) islands <- .get_cpg_islands(genome_build)
+
+  # OPENSEA: inter-neighbourhood gaps, self-labelled by coordinate. Returned
+  # early because its ranges (and count) do not correspond to island cores.
+  # See island_opensea.R for the shared semantics with the Illumina backend.
+  if (subarea == "OPENSEA")
+    return(.opensea_gaps(islands,
+                         chrom_ends = as.list(GenomeInfoDb::seqlengths(islands))))
 
   # Unique island label: "seqname:start-end"
   island_labels <- paste0(
@@ -234,7 +243,10 @@
   )
 
   gr <- switch(subarea,
-    WHOLE   = islands,
+    # WHOLE = whole island neighbourhood (core + shores + shelves), mirroring
+    # GENE_WHOLE = whole gene. ISLAND = the core alone (former WHOLE).
+    WHOLE   = islands + .ISLAND_FLANK,
+    ISLAND  = islands,
     N_SHORE = GenomicRanges::flank(islands, 2000L, start = TRUE),
     S_SHORE = GenomicRanges::flank(islands, 2000L, start = FALSE),
     N_SHELF = GenomicRanges::flank(
@@ -244,7 +256,7 @@
                 GenomicRanges::flank(islands, 2000L, start = FALSE),
                 2000L, start = FALSE),
     stop("Unknown ISLAND subarea: '", subarea, "'. ",
-         "Supported: WHOLE, N_SHORE, S_SHORE, N_SHELF, S_SHELF")
+         "Supported: WHOLE, ISLAND, N_SHORE, S_SHORE, N_SHELF, S_SHELF, OPENSEA")
   )
   GenomicRanges::mcols(gr)$label <- island_labels
   gr
