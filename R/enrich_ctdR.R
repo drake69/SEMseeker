@@ -1,6 +1,6 @@
 #' @importFrom doRNG %dorng%
 #' @importFrom doFuture %dofuture%
-pathway_ctdR <- function(study,
+enrich_ctdR <- function(study,
   statistic_parameter="",
   adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
   inference_detail, significance = TRUE)
@@ -53,9 +53,9 @@ pathway_ctdR <- function(study,
       if(statistic_parameter=="")
         suffix <- "without_signal_"
 
-      phenotype_analysis_name <- phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
+      enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
       path <- dir_check_and_create(ssEnv$result_folderEnrichment,c("ctdR",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
-      pathway_report_path <- file_path_build(path,phenotype_analysis_name,"csv")
+      pathway_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
 
       # if(file.exists(pathway_report_path))
       #   next
@@ -64,7 +64,7 @@ pathway_ctdR <- function(study,
         pp <- utils::read.csv2(pathway_report_path,stringsAsFactors = FALSE)
         if(nrow(pp)==0)
           next
-        pathway_result_save(pp, pathway_report_path, "ctdR")
+        enrich_result_save(pp, pathway_report_path, "ctdR")
         next
       }
 
@@ -157,7 +157,7 @@ pathway_ctdR <- function(study,
 
       if(exists("result_pathway"))
       {
-        pathway_result_save(result_pathway, pathway_report_path, "ctdR")      }
+        enrich_result_save(result_pathway, pathway_report_path, "ctdR")      }
     }
   }
 }

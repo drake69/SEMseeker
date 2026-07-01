@@ -1,9 +1,9 @@
-pathway_result_save <- function(result_pathway, pathway_report_path, pathway_package)
+enrich_result_save <- function(result_pathway, pathway_report_path, pathway_package)
 {
   ssEnv <- get_session_info()
   if(nrow(result_pathway)!=0)
   {
-    result_pathway <- enrichment_analysy_add_category(pathway_package,result_pathway)
+    result_pathway <- enrich_analysy_add_category(pathway_package,result_pathway)
     pvalue_column_adj <- ssEnv$key_enrichment_format[ssEnv$key_enrichment_format$label==pathway_package,"column_of_pvalue"]
     description_column <- ssEnv$key_enrichment_format[ssEnv$key_enrichment_format$label==pathway_package,"column_of_description"]
     # result_pathway <- result_pathway[, !(grepl("PVALUE_ADJ_", colnames(result_pathway))]

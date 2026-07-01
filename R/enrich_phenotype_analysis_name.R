@@ -1,4 +1,4 @@
-phenotype_analysis_name <- function(inference_detail, key,prefix = "", suffix="", pvalue_column, alpha, significance)
+enrich_phenotype_analysis_name <- function(inference_detail, key,prefix = "", suffix="", pvalue_column, alpha, significance)
 {
   ssEnv <- get_session_info()
 

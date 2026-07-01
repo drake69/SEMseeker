@@ -1,4 +1,4 @@
-taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column="PVALUE_ADJ_ALL_BH",
+enrich_taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column="PVALUE_ADJ_ALL_BH",
   significance = TRUE, disease_description,keywords,stop_keywords,alphas,disease_hpo, ...)
 {
   if(length(disease_hpo)>0)
@@ -48,14 +48,14 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
         missed_keys <- data.frame()
         for (i in seq_len(nrow(keys)))
         {
-          file_name <- phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
+          file_name <- enrich_phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
             suffix=ifelse(disease=="","",paste("_",disease,sep="")),
             pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
           file_name <- file_path_build(path,file_name,"csv")
           # chech agin with disease without underscore
           if(!file.exists(file_name))
           {
-            file_name <- phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
+            file_name <- enrich_phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
               suffix=ifelse(disease=="","",paste(disease,sep="")),
               pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
             file_name <- file_path_build(path,file_name,"csv")
@@ -64,7 +64,7 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
           # check with without_signal at the end for pathfindR
           if(!file.exists(file_name))
           {
-            file_name <- phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
+            file_name <- enrich_phenotype_analysis_name(inference_detail = inference_detail,key = keys[i,], prefix="",
               suffix=ifelse(disease=="","",paste(disease,sep="")),
               pvalue_column=pvalue_column, alpha = ssEnv$alpha, significance = significance)
             file_name <- file_path_build(path,c(file_name,"without_signal"),"csv")
@@ -88,7 +88,7 @@ taxonomies_armonyser <- function(inference_details, result_folder, pvalue_column
           else
             pathway_result <- utils::read.csv2(file_name)
 
-          pathway_result <- enrichment_analysy_add_category(data =  pathway_result, source =  key_enrichment_format[pt,"label"])
+          pathway_result <- enrich_analysy_add_category(data =  pathway_result, source =  key_enrichment_format[pt,"label"])
           cols_to_check <- c(column_of_id,column_of_enrichment,column_of_description, column_of_adj_pvalue)
           # check column names contain the required columns
           if(!all(cols_to_check %in% colnames(pathway_result)))

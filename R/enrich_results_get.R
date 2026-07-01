@@ -1,10 +1,10 @@
-# Symmetric counterpart to pathway_result_save(): reads a single
+# Symmetric counterpart to enrich_result_save(): reads a single
 # pathway result CSV from disk and applies optional row filters.
 #
 # Architectural rule (see backlog AI-020): a `*_get` helper is
 # read + filter only. Transforms (p-adjust, category enrichment,
 # PHENOTYPE flag, annotation join) belong in a separate pipeline
-# step, NOT here. pathway_result_save() currently does mix transform
+# step, NOT here. enrich_result_save() currently does mix transform
 # with write — that violation is tracked for cleanup in AI-020 and
 # kept as-is for now to avoid behaviour drift.
 #
@@ -29,7 +29,7 @@
 #         an empty data.frame when the file does not exist, the
 #         required columns are missing, or every row was filtered out.
 # @keywords internal
-pathway_results_get <- function(file_name,
+enrich_results_get <- function(file_name,
                                 label = "default",
                                 significance_column = NULL,
                                 alpha = NULL,

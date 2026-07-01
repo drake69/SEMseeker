@@ -1,4 +1,4 @@
-disease_get <- function(disease, vocabulary="HPO")
+enrich_disease_get <- function(disease, vocabulary="HPO")
 {
 
   # check if exisists pehnotype.hpoa file if not exit

@@ -126,7 +126,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
         adjust_globally <- adjust_globally_s[i]
 
         if(ctdR)
-          pathway_ctdR(
+          enrich_ctdR(
             study =  study,
             statistic_parameter=statistic_parameter,
             adjust_per_area = adjust_per_area,
@@ -138,7 +138,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
           )
 
         if(phenolyzer)
-          phenotype_phenolyzer(
+          enrich_phenotype_phenolyzer(
             study =  study,
             disease = disease,
             phenolyzer_folder_bin = phenolyzer_folder_bin,
@@ -153,7 +153,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
           )
 
         if(Phenolyzer_STRINGdb)
-          pathway_Phenolyzer_STRINGdb(
+          enrich_Phenolyzer_STRINGdb(
             study =  study,
             statistic_parameter=statistic_parameter,
             adjust_per_area = adjust_per_area,
@@ -167,7 +167,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
 
 
         if (Phenolyzer_WebGestalt)
-          pathway_Phenolyzer_WebGestalt(
+          enrich_Phenolyzer_WebGestalt(
             study = study,
             types=c("BP","MF"),
             enrich_methods = c("ORA"),
@@ -182,7 +182,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
 
 
         if(STRINGdb)
-          pathway_STRINGdb(
+          enrich_STRINGdb(
             study =  study,
             statistic_parameter=statistic_parameter,
             adjust_per_area = adjust_per_area,
@@ -194,7 +194,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
           )
 
         if(pathfindr)
-          pathway_pathfindR(
+          enrich_pathfindR(
             study =  study,
             path_dbs = path_dbs,
             iterations = 20,
@@ -209,7 +209,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
 
 
         if (WebGestalt)
-          pathway_WebGestalt(
+          enrich_WebGestalt(
             study = study,
             types=c("BP","MF"),
             enrich_methods = c("ORA"),

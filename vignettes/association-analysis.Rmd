@@ -660,7 +660,7 @@ into pathway enrichment tools:
 
 ```{r pathway_next, eval=FALSE}
 # WebGestaltR — ORA or GSEA
-pathway_WebGestalt(
+enrich_WebGestalt(
   study            = "my_study",
   types            = c("BP", "MF"),
   enrich_methods   = c("ORA"),
@@ -669,14 +669,14 @@ pathway_WebGestalt(
 )
 
 # STRINGdb — protein network analysis
-pathway_STRINGdb(
+enrich_STRINGdb(
   study            = "my_study",
   inference_detail = inf,
   significance     = TRUE
 )
 
 # pathfindR — active subnetwork enrichment
-pathway_pathfindR(
+enrich_pathfindR(
   study            = "my_study",
   inference_detail = inf
 )

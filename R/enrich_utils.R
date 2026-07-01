@@ -9,7 +9,7 @@
 #' @return A named list of the same structure, containing only the gene sets
 #'   that are unique to each group.  Groups with no unique sets are dropped.
 #'
-find_unique_gene_sets <- function(split_list) {
+enrich_find_unique_gene_sets <- function(split_list) {
   unique_sets <- list()
   keys <- names(split_list)
 
@@ -38,7 +38,7 @@ find_unique_gene_sets <- function(split_list) {
 #' @return Character vector of the same length as \code{x}, with long strings
 #'   broken into multiple lines separated by \code{\\n}.
 #'
-wrap_it <- function(x, len)
+enrich_wrap_it <- function(x, len)
 {
   vapply(x, function(y) paste0(strwrap(y, len),
     collapse = "\n"),

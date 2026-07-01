@@ -2,7 +2,7 @@
 #' @description Tests the stability of enrichment (pathway/term) results under
 #'   random subsampling of a single cohort, quantifying how robust the enriched
 #'   terms are to sample variability. The intra-study counterpart of
-#'   [inter_study_enrichment_compare()].
+#'   [enrich_inter_study_enrichment_compare()].
 #' @param inference_details Data frame describing the enrichment analyses to run
 #'   (one row per analysis).
 #' @param pathways_sql_selection Optional SQL WHERE fragment to restrict the
@@ -21,13 +21,13 @@
 #' @param ... Additional arguments forwarded to [init_env()].
 #' @return Invisibly `NULL`; stability tables and plots are written under
 #'   `result_folder`.
-#' @seealso [inter_study_enrichment_compare()]
+#' @seealso [enrich_inter_study_enrichment_compare()]
 #' @examples
 #' # See vignette("pathway-analysis", package = "SEMseeker") for a runnable
 #' # enrichment-stability (subsampling) workflow on real result folders.
 #' invisible(NULL)
 #' @export
-intra_study_enrichment_subsamples_overlaps <- function(inference_details,pathways_sql_selection="",
+enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,pathways_sql_selection="",
   old_label_samples_sql_condition = "", new_label_samples_sql_condition = "",
   old_label_association_results_sql_condition = "", new_label_association_results_sql_condition = "",
   run_prefix = "",pathway_package="", association_pvalue_column = "", significance=TRUE,
@@ -86,9 +86,9 @@ intra_study_enrichment_subsamples_overlaps <- function(inference_details,pathway
           for (i in seq_len(nrow(inference_details)))
           {
             inference_detail <- inference_details[i,]
-            phenotype_analysis_name <- phenotype_analysis_name(inference_detail, localKeys[a,],prefix ="", suffix= signal_suffixes[s] , association_pvalue_column, ssEnv$alpha, significance)
+            enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, localKeys[a,],prefix ="", suffix= signal_suffixes[s] , association_pvalue_column, ssEnv$alpha, significance)
             path <- dir_check_and_create(ssEnv$result_folderEnrichment,c(enrichment_package, name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(association_results_sql_condition)))
-            pathway_report_path <- file_path_build(path,phenotype_analysis_name,"csv")
+            pathway_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
             if(file.exists(pathway_report_path))
             {
               temp_res <- utils::read.csv2(pathway_report_path)

@@ -1,4 +1,4 @@
-pathway_pathfindR_circlize <- function(
+enrich_pathfindR_circlize <- function(
     pathways_selection,
   statistic_parameter="", adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH",
   pvalue_column="PVALUE_ADJ_ALL_BH",
@@ -29,9 +29,9 @@ pathway_pathfindR_circlize <- function(
       if(statistic_parameter=="")
         suffix = "without_signal_"
 
-      phenotype_analysis_name <- phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
+      enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
       path <- dir_check_and_create(ssEnv$result_folderEnrichment,c("pathfindR",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
-      pathway_report_path <- file_path_build(path,phenotype_analysis_name,"csv")
+      pathway_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
       message("Pathway report path: ", pathway_report_path)
       if(file.exists(pathway_report_path))
       {
@@ -152,9 +152,9 @@ pathway_pathfindR_circlize <- function(
         link_start_height <- 2
         link_length <- 2
 
-        phenotype_analysis_name <- phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
+        enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
         path <- dir_check_and_create(ssEnv$result_folderChart,"pathfindR")
-        pathway_report_path <- file_path_build(path,phenotype_analysis_name,"png")
+        pathway_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"png")
         # Save the plot as a PNG file
         if(ssEnv$plot_format == "png")
           grDevices::png(file =  pathway_report_path, width = 2480,height = 2480, pointsize  =  15, res = as.numeric(ssEnv$plot_resolution_ppi))

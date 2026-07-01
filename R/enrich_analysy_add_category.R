@@ -1,4 +1,4 @@
-enrichment_analysy_add_category <- function(source, data)
+enrich_analysy_add_category <- function(source, data)
 {
 
   if(nrow(data)==0)

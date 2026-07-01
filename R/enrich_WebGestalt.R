@@ -1,5 +1,5 @@
-pathway_Phenolyzer_WebGestalt <- function(study,
-  types=c("BP","MF"),  enrich_methods = c("ORA"),disease,
+enrich_WebGestalt <- function(study,
+  types=c("BP","MF"),  enrich_methods = c("ORA"),
   adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
   inference_detail,significance)
 {
@@ -10,7 +10,7 @@ pathway_Phenolyzer_WebGestalt <- function(study,
   ssEnv <- get_session_info()
   pvalue_column <- name_cleaning(pvalue_column)
   keys <- unique(ssEnv$keys_for_pathway)
-  path <- dir_check_and_create(ssEnv$result_folderEnrichment,c("Phenolyzer_WebGestalt",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+  path <- dir_check_and_create(ssEnv$result_folderEnrichment,c("WebGestalt",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
   tmp <- tempdir()
   tempFolder <- dir_check_and_create(tmp,c("/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]")))
 
@@ -34,53 +34,80 @@ pathway_Phenolyzer_WebGestalt <- function(study,
       type <- types[t]
       for ( em in seq_along(enrich_methods))
       {
-        projectName <- phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  ,
+        projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  ,
           pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
         filenameResult <- file_path_build(path,projectName,"csv")
-
         # if(file.exists(filenameResult))
         #   next
+
         if(file.exists(filenameResult))
         {
           pp <- utils::read.csv2(filenameResult,stringsAsFactors = FALSE)
           if(nrow(pp)==0)
             next
-          pathway_result_save(pp, pathway_report_path, "WebGestalt")
+          enrich_result_save(pp, filenameResult, "WebGestalt")
           next
         }
+
+        #
 
         enrich_method <- enrich_methods[em]
         if(ssEnv$showprogress)
           progress_bar(sprintf("Searching for disease using WebGestalt: %s with %s and %s",keys[i,]$COMBINED,enrich_method,type))
-
         key <- paste(keys[i,]$FIGURE,keys[i,]$MARKER,keys[i,]$AREA,keys[i,]$SUBAREA, sep="_")
 
+        results_inference <- association_results_get(
+          inference_detail =  inference_detail,
+          marker = keys[i,"MARKER"],
+          adjust_per_area= adjust_per_area,
+          adjust_globally = adjust_globally,
+          pvalue_column=  pvalue_column,
+          adjustment_method= adjustment_method,
+          significance = TRUE)
 
-        #### START LOAD PHENOLYZER
-        # load prioritized gene by phenolyzer
-        base_path <- dir_check_and_create(ssEnv$result_folderPhenotype,c("phenolyzer",name_cleaning(inference_detail$areas_sql_condition)))
-        phenotype_analysis_name <- phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=paste("_", disease,"_report",sep=""), pvalue_column=pvalue_column, ssEnv$alpha, significance)
-        path_phenolyzer <- dir_check_and_create(baseFolder = base_path, subFolders = "summary")
-        phenotype_report_path <- file_path_build(path_phenolyzer,phenotype_analysis_name,"csv")
+        #
 
-        if(!file.exists(phenotype_report_path))
+        if (nrow(results_inference)==0)
+          next
+
+        if(keys[i,]$SUBAREA=="ALL_SUBAREAS")
+          gene_set <- results_inference[results_inference$SUBAREA!="WHOLE",]
+        else
+          gene_set <- results_inference[results_inference$SUBAREA==keys[i,]$SUBAREA,]
+
+        if(keys[i,]$FIGURE=="HYPER_HYPO")
+          gene_set <- results_inference[results_inference$FIGURE=="HYPER" | results_inference$FIGURE=="HYPO",]
+        else
+          gene_set <- results_inference[results_inference$FIGURE==keys[i,]$FIGURE,]
+
+        if(nrow(gene_set)==0)
         {
-          log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Phenotype report not found: ", phenotype_report_path)
+          log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " No genes found for the key: ", keys[i,])
           next
         }
-        gene_set <- utils::read.csv2(phenotype_report_path,stringsAsFactors = FALSE)
-        if(nrow(gene_set)==0)
-          next
+        # remove duplicates
+        gene_set <- aggregate(gene_set[,pvalue_column], by = list(gene_set$AREA_OF_TEST), max)
+
+        colnames(gene_set) <- c("AREA_OF_TEST",pvalue_column)
+        gene_set <- gene_set[!duplicated(gene_set$AREA_OF_TEST),]
+        gene_set <- gene_set[order(gene_set[,pvalue_column]),]
+        gene_set <- na.omit(gene_set)
+
         log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
+        if (nrow(gene_set)==0)
+          next
+        projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix= paste(type,enrich_method, sep="_") , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
+
+        # entrez <- AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db, keys = as.vector(gene_set$AREA_OF_TEST),column = "ENTREZID", keytype = "SYMBOL")
+        # entrez <- unique(entrez)
+        # entrez <- na.omit(entrez)
+
         # log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set (ENTREZ): ",nrow(gene_set), " key: ", keys[i,])
-        if (length(gene_set$Gene)==0)
+        if (length(gene_set$AREA_OF_TEST)==0)
           next
 
-        #### END LOAD PHENOLYZER
-
-        projectName <- phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix= paste(type,enrich_method, sep="_") , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
         geneFile <- file.path(system.file(package="WebGestaltR"),"extdata/interestingGenes.txt")
-        write.table(unique(gene_set$Gene),geneFile,row.names=FALSE,col.names = FALSE,quote =FALSE)
+        write.table(unique(gene_set$AREA_OF_TEST),geneFile,row.names=FALSE,col.names = FALSE,quote =FALSE)
 
         enrichDataBase <- switch(
           type,
@@ -88,8 +115,8 @@ pathway_Phenolyzer_WebGestalt <- function(study,
           "MF"="geneontology_Molecular_Function"
         )
 
-        # if(nrow(gene_set)<5)
-        #   next
+        if(nrow(gene_set)<2)
+          next
 
 
         enrichResult <- tryCatch({
@@ -188,11 +215,10 @@ pathway_Phenolyzer_WebGestalt <- function(study,
 
     if(exists("enrichResultFinal"))
     {
-      projectName <- phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
+      projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=""  , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
       filenameResult <- file_path_build(path,projectName,"csv")
-      pathway_result_save(enrichResultFinal, pathway_report_path, "WebGestalt")
+      enrich_result_save(enrichResultFinal, filenameResult, "WebGestalt")
+      rm(enrichResultFinal)
     }
   }
 }
-
-

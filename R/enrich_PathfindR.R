@@ -1,4 +1,4 @@
-pathway_pathfindR <- function(study,
+enrich_pathfindR <- function(study,
   path_dbs,  iterations = 20, statistic_parameter="",
   adjust_per_area = FALSE, adjust_globally = FALSE,adjustment_method = "BH", pvalue_column="PVALUE_ADJ_ALL_BH",
   inference_detail, significance = TRUE)
@@ -60,14 +60,14 @@ pathway_pathfindR <- function(study,
         if(statistic_parameter=="")
           suffix <- "without_signal_"
 
-        phenotype_analysis_name <- phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
+        enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
         path <- dir_check_and_create(ssEnv$result_folderEnrichment,c("pathfindR", name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
-        pathway_report_path <- file_path_build(path,phenotype_analysis_name,"csv")
+        pathway_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
 
         if(file.exists(pathway_report_path))
         {
           result_pathway <- utils::read.csv2(pathway_report_path)
-          pathway_result_save(result_pathway, pathway_report_path, "pathfindR")
+          enrich_result_save(result_pathway, pathway_report_path, "pathfindR")
           next
           # existing_db <-   unique(pathway_report$source)
         }
@@ -162,7 +162,7 @@ pathway_pathfindR <- function(study,
       }
       if(exists("result_pathway"))
       {
-        pathway_result_save(result_pathway, pathway_report_path, "pathfindR")
+        enrich_result_save(result_pathway, pathway_report_path, "pathfindR")
       }
     }
 

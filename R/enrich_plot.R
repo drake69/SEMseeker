@@ -1,4 +1,4 @@
-pathway_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, column_sorting="SS_RANK")
+enrich_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, column_sorting="SS_RANK")
 {
   ssEnv <- get_session_info()
 

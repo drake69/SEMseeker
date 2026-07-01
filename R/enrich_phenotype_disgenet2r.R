@@ -27,7 +27,7 @@
 #   Sys.setenv(DISGENETPLUS_API_KEY= disgenet_api_key)
 #
 #
-#   diseases <- disease_get(disease,"HPO")
+#   diseases <- enrich_disease_get(disease,"HPO")
 #
 #   if (is.null(nrow(diseases)))
 #   {
@@ -50,9 +50,9 @@
 #       progress_bar(sprintf("Searching for disease using disgsenet2r: %s",keys[i,]$COMBINED))
 #     key <- paste(keys[i,]$FIGURE,keys[i,]$MARKER,keys[i,]$AREA,keys[i,]$SUBAREA, sep="_")
 #
-#     phenotype_analysis_name <- phenotype_analysis_name( inference_detail = inference_details,key = keys[i,], prefix="",suffix=disease, pvalue_column=pvalue_column, pvalue, significance)
+#     enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name( inference_detail = inference_details,key = keys[i,], prefix="",suffix=disease, pvalue_column=pvalue_column, pvalue, significance)
 #     path <- dir_check_and_create(ssEnv$result_folderPhenotype,"disgenet")
-#     phenotype_report_path <- file_path_build(path,phenotype_analysis_name,"csv")
+#     phenotype_report_path <- file_path_build(path,enrich_phenotype_analysis_name,"csv")
 #     if(file.exists(phenotype_report_path))
 #       next
 #

@@ -10,13 +10,13 @@
 #' @return Invisibly `NULL`; Venn diagrams and comparison tables are written
 #'   under `result_folder`.
 #' @seealso [inter_study_association_overlaps()],
-#'   [intra_study_enrichment_subsamples_overlaps()]
+#'   [enrich_intra_study_enrichment_subsamples_overlaps()]
 #' @examples
 #' # See vignette("pathway-analysis", package = "SEMseeker") for a runnable
 #' # cross-study enrichment comparison workflow on real result folders.
 #' invisible(NULL)
 #' @export
-inter_study_enrichment_compare <- function(result_folder, ...){
+enrich_inter_study_enrichment_compare <- function(result_folder, ...){
 
   ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
   # library(VennDiagram)
