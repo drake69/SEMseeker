@@ -41,17 +41,3 @@ test_match_order_by_rownames <- function(x, y) {
   return(FALSE)
   # log_event('No match')
 }
-
-
-test_match_order_by_rownames <- function(x, y) {
-
-
-  if(is.null(x) | is.null(y))
-    return(FALSE)
-
-  if (all(rownames(x) == rownames(y))) {
-    return(TRUE)
-  }
-  return(FALSE)
-  # print('No match')
-}
