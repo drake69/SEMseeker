@@ -29,7 +29,7 @@
 #'
 #' @param bed_files Character vector of file paths to \code{.bed},
 #'   \code{.bedgraph}, or \code{.bedgraph.gz} files. Each file must follow the
-#'   per-sample naming convention produced by \code{\link{analyze_population}}:
+#'   per-sample naming convention produced by \code{\link{sem_analyze_population}}:
 #'   \code{<sample_id>_<marker>_<figure>.bedgraph[.gz]}.
 #' @param marker,figure Used to strip the trailing \code{_<marker>_<figure>}
 #'   from the basename when deriving the \code{sample_id} alias.

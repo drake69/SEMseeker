@@ -2,7 +2,7 @@
 #
 # Contract change: returns polars_lazy_frame (was R data.frame in the
 # legacy implementation). Caller is responsible for any materialization,
-# and most callers should NOT materialize — analyze_batch resume path
+# and most callers should NOT materialize — sem_analyze_batch resume path
 # now consumes the LazyFrame end-to-end. Prior R-side subset/sort
 # materialised 4–5 copies of the input, blowing 80+ GB peak on
 # ~367k × 4k inputs and triggering macOS jetsam OOM-kill silently.

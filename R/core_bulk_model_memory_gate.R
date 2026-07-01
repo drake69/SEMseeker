@@ -7,7 +7,7 @@
 # fast with an actionable error when even per-chr chunking would
 # exceed the budget.
 #
-# Pattern mirrors `.knn_memory_gate()` (AI-096 Phase 2): explicit
+# Pattern mirrors `.sem_knn_memory_gate()` (AI-096 Phase 2): explicit
 # estimates of every contributor, fraction-of-RAM budget tunable via
 # env var, "fail-fast with all four numbers" diagnostic on overrun.
 #
@@ -48,7 +48,7 @@
 #'   - `chunk_peak_GB`: sum of chunk_y_GB + lmFit working set
 #'   - `fit_object_GB`: GB held by the concatenated MArrayLM after fitting
 #'                     (`n_probes × n_coef × 8 × 6`, includes eBayes outputs)
-#'   - `total_RAM_GB` : detected system RAM (`.total_ram_GB()`)
+#'   - `total_RAM_GB` : detected system RAM (`.sem_total_ram_GB()`)
 #'   - `mem_frac`     : the env-var fraction in effect (default 0.6)
 #'   - `available_GB` : `total_RAM_GB × mem_frac`
 #'
@@ -94,7 +94,7 @@
   mem_frac <- suppressWarnings(as.numeric(
     Sys.getenv("SEMSEEKER_BULK_MODEL_MEM_FRACTION", "0.6")))
   if (is.na(mem_frac) || mem_frac <= 0 || mem_frac > 1) mem_frac <- 0.6
-  total_GB <- .total_ram_GB()
+  total_GB <- .sem_total_ram_GB()
   if (is.na(total_GB) || total_GB <= 0) {
     # Without RAM detection we can't decide. Conservative default:
     # assume monolithic is fine (legacy behaviour) so the gate doesn't

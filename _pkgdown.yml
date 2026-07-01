@@ -39,8 +39,8 @@ reference:
     desc: "Top-level functions for running a full SEM analysis"
     contents:
       - semseeker
-      - analyze_population
-      - analyze_single_sample
+      - sem_analyze_population
+      - sem_analyze_single_sample
   - title: "Association & statistics"
     desc: "Downstream statistical analysis on SEM results"
     contents:
@@ -49,9 +49,9 @@ reference:
   - title: "Delta metrics"
     desc: "Per-region variability summaries"
     contents:
-      - deltaX_get
-      - delta_single_sample
-      - deltar_single_sample
+      - sem_deltaX_get
+      - sem_delta_single_sample
+      - sem_deltar_single_sample
   - title: "Data & annotation"
     desc: "Pivot tables, position annotations, signal helpers"
     contents:

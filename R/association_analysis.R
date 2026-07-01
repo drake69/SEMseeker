@@ -78,7 +78,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
 
   localKeys <- ssEnv$keys_markers_figures
 
-  deltaX_get()
+  sem_deltaX_get()
   anno_annotate_position_pivots()
 
   inference_details <- validate_inference_schema(unique(inference_details))
@@ -94,8 +94,8 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     family_test <- util_split_and_clean(inference_detail$family_test)
     if (!validate_family_test(family_test)) next
 
-    study_summary <- study_summary_get(inference_detail$samples_sql_condition)
-    prep <- prepare_study_for_analysis(inference_detail, study_summary, family_test)
+    study_summary <- sem_study_summary_get(inference_detail$samples_sql_condition)
+    prep <- sem_prepare_study_for_analysis(inference_detail, study_summary, family_test)
     if (is.null(prep)) next
 
     processed_items <- 0L
@@ -119,7 +119,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
       is_batch_family <- grepl("^(limma|voom)_", family_test)
 
       if (!is_batch_family) {
-        d1 <- run_depth1_marker(prep, keys, family_test, fileNameResults,
+        d1 <- sem_run_depth1_marker(prep, keys, family_test, fileNameResults,
           filter_p_value, ssEnv, ...)
         results <- d1$results
         processed_items <- processed_items + d1$processed_items
@@ -131,7 +131,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
       }
 
       if (prep$depth_analysis > 1) {
-        dn <- run_depth_n_marker(prep, marker, family_test, fileNameResults,
+        dn <- sem_run_depth_n_marker(prep, marker, family_test, fileNameResults,
           filter_p_value, ssEnv, selected_areas = areas_selection,
           results, start_time, processed_items, ...)
         results <- dn$results

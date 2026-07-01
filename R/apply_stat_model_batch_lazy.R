@@ -2,7 +2,7 @@
 #
 # Why a separate function: apply_stat_model_batch.R receives a fully
 # materialised, transposed, sample-merged tempDataFrame that the caller
-# (run_depth_n_marker) builds with the standard
+# (sem_run_depth_n_marker) builds with the standard
 #   tempDataFrame <- as.data.frame(pivot_lazy$collect())
 #   ... t() ... merge(sample_sheet, ...)
 # pipeline. Even at GENE/WHOLE scale (~17 k genes × ~500 samples
@@ -28,7 +28,7 @@
 #'   for one (MARKER, FIGURE, AREA, SUBAREA) key, with at least an
 #'   AREA column and one column per sample.
 #' @param sample_sheet data.frame. Per-sample metadata returned by
-#'   prepare_study_for_analysis(); must contain Sample_ID, the
+#'   sem_prepare_study_for_analysis(); must contain Sample_ID, the
 #'   independent variable, and any covariates referenced.
 #' @param family_test character, of the form 'limma_<degree>' or
 #'   'voom_<degree>' (optional '_<partition>' suffix is ignored).

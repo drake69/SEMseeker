@@ -1,4 +1,4 @@
-# AI-106+ (2026-06-09): contract tests for prepare_batch_signal().
+# AI-106+ (2026-06-09): contract tests for sem_prepare_batch_signal().
 #
 # The function is the single source of truth for normalising a SIGNAL
 # matrix into a shape consistent with the probe_features used downstream.
@@ -33,7 +33,7 @@ test_that("WGBS path produces aligned signal_data + probe_features with no X/Y",
     stringsAsFactors = FALSE
   )
 
-  out <- SEMseeker:::prepare_batch_signal(
+  out <- SEMseeker:::sem_prepare_batch_signal(
     signal_data,
     tech = "WGBS",
     sex_chromosome_remove = TRUE
@@ -60,7 +60,7 @@ test_that("WGBS path retains X/Y when sex_chromosome_remove = FALSE", {
     stringsAsFactors = FALSE
   )
 
-  out <- SEMseeker:::prepare_batch_signal(
+  out <- SEMseeker:::sem_prepare_batch_signal(
     signal_data,
     tech = "WGBS",
     sex_chromosome_remove = FALSE
@@ -85,7 +85,7 @@ test_that("post-call invariants survive an adversarial coordinate set", {
     stringsAsFactors = FALSE
   )
 
-  out <- SEMseeker:::prepare_batch_signal(
+  out <- SEMseeker:::sem_prepare_batch_signal(
     signal_data, tech = "LONGREAD", sex_chromosome_remove = TRUE
   )
 
@@ -105,7 +105,7 @@ test_that("post-call invariants survive an adversarial coordinate set", {
 
 # ---- Failure modes ----------------------------------------------------
 
-test_that("prepare_batch_signal errors out when the intersection is empty", {
+test_that("sem_prepare_batch_signal errors out when the intersection is empty", {
   skip_on_cran()
 
   # All probes are on X (which we'll then strip)
@@ -117,14 +117,14 @@ test_that("prepare_batch_signal errors out when the intersection is empty", {
   )
 
   expect_error(
-    SEMseeker:::prepare_batch_signal(
+    SEMseeker:::sem_prepare_batch_signal(
       signal_data, tech = "WGBS", sex_chromosome_remove = TRUE
     ),
     "probe_features became empty"
   )
 })
 
-test_that("prepare_batch_signal errors out with no resolvable tech", {
+test_that("sem_prepare_batch_signal errors out with no resolvable tech", {
   skip_on_cran()
   tempFolder <- tempfile("ppp_prep_batch_")
   on.exit(unlink(tempFolder, recursive = TRUE), add = TRUE)
@@ -139,7 +139,7 @@ test_that("prepare_batch_signal errors out with no resolvable tech", {
   )
 
   expect_error(
-    SEMseeker:::prepare_batch_signal(
+    SEMseeker:::sem_prepare_batch_signal(
       signal_data, tech = "", sex_chromosome_remove = TRUE
     )
   )
@@ -148,8 +148,8 @@ test_that("prepare_batch_signal errors out with no resolvable tech", {
 
 # ---- Source-level guard: the function exists and exposes the contract ----
 
-test_that("prepare_batch_signal source has all 8 documented steps", {
-  src <- paste(deparse(SEMseeker:::prepare_batch_signal), collapse = "\n")
+test_that("sem_prepare_batch_signal source has all 8 documented steps", {
+  src <- paste(deparse(SEMseeker:::sem_prepare_batch_signal), collapse = "\n")
   # Tech resolution
   expect_true(grepl("core_get_meth_tech", src))
   # Tech-specific branching

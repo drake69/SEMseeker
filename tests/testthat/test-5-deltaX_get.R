@@ -1,4 +1,4 @@
-test_that("deltaX_get", {
+test_that("sem_deltaX_get", {
 
   tempFolder <- tempFolders[1]
   unlink(tempFolder, recursive = TRUE)
@@ -18,20 +18,20 @@ test_that("deltaX_get", {
 
   if (!exists("signal_thresholds"))
   {
-    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
+    signal_data <- SEMseeker:::sem_inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::sem_signal_range_values(signal_data, batch_id)
   }
   probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
   keys <- ssEnv$keys_markers_figures_default
-  sp <- SEMseeker:::analyze_population(signal_data=signal_data,
+  sp <- SEMseeker:::sem_analyze_population(signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Case",],
     probe_features = probe_features
   )
   SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Case",],keys)
 
-  sp <- SEMseeker:::analyze_population(signal_data=signal_data,
+  sp <- SEMseeker:::sem_analyze_population(signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Control",],
     probe_features = probe_features
@@ -39,14 +39,14 @@ test_that("deltaX_get", {
 
   SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
 
-  # deltaX_get() calls study_summary_get() which reads the sample sheet CSV.
-  # analyze_population is called directly here (bypassing analyze_batch which writes it),
+  # sem_deltaX_get() calls sem_study_summary_get() which reads the sample sheet CSV.
+  # sem_analyze_population is called directly here (bypassing sem_analyze_batch which writes it),
   # so we write it manually with original mixed-case Sample_IDs.
   ssEnv2 <- SEMseeker:::core_get_session_info()
   sample_sheet_csv <- SEMseeker:::io_file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
   utils::write.csv2(mySampleSheet, file=sample_sheet_csv)
 
-  ss <- SEMseeker:::deltaX_get()
+  ss <- SEMseeker:::sem_deltaX_get()
 
   # BED file names go through io_file_path_build() -> core_name_cleaning() which
   # uppercases sample IDs; pivot column names are derived from BED basenames

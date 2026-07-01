@@ -106,7 +106,7 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
 #'
 #' Discovers all \code{.bed}, \code{.bedgraph}, \code{.bedgraph.gz} files for
 #' the requested marker/figure across the \code{Data/<sample_group>/<marker>_<figure>/}
-#' directory tree produced by \code{\link{analyze_population}}.
+#' directory tree produced by \code{\link{sem_analyze_population}}.
 #'
 #' @keywords internal
 #' @noRd

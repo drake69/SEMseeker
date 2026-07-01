@@ -47,7 +47,7 @@ diagnostic_performance <-
     localKeys <- ssEnv$keys_markers_figures
     sample_groups <- c("Reference", "Control", "Case")
 
-    study_summary <-   study_summary_get()
+    study_summary <-   sem_study_summary_get()
     study_summary <- filter_sql(samples_sql_selection, study_summary)
 
     study_summary <- study_summary[, c("Sample_ID",independent_variable)]

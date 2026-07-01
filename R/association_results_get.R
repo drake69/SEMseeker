@@ -50,7 +50,7 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
   # remove rows ehere pvalue_column is inf or -inf
   results_inference <- results_inference[!is.infinite(results_inference[,pvalue_column]),]
 
-  metrics_name_collect(results_inference)
+  sem_metrics_name_collect(results_inference)
   multiple_test_adj <- core_name_cleaning(ssEnv$multiple_test_adj)
   results_inference <- subset(results_inference,DEPTH==3)
   results_inference$SIGNIFICATIVE_ADJ <- apply(results_inference[, grepl(multiple_test_adj,colnames(results_inference))], 1, function(x) all(x < as.numeric(ssEnv$alpha)))

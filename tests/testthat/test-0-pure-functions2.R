@@ -3,7 +3,7 @@
 # Covered:
 #  - pow()                        base^exponent utility (10E_model.R)
 #  - util_join_values_to_thresholds()  Polars positional inner join (join_values_to_thresholds.R)
-#  - metrics_ranking()            ranking helper using metrics_properties (metrics_ranking.R)
+#  - sem_metrics_ranking()            ranking helper using metrics_properties (metrics_ranking.R)
 #  - model_performance()          train+test path and overfitting detection (model_performance.R)
 #  - compute_quantreg_permutation() quantile regression single-permutation draw
 
@@ -200,34 +200,34 @@ test_that("util_join_values_to_thresholds: multiple chromosomes handled correctl
 })
 
 # ---------------------------------------------------------------------------
-# 3. metrics_ranking
+# 3. sem_metrics_ranking
 # ---------------------------------------------------------------------------
 
-test_that("metrics_ranking: returns data.frame with SCORE and METRIC columns", {
+test_that("sem_metrics_ranking: returns data.frame with SCORE and METRIC columns", {
   tf <- tempFolders[43]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(REBASED = c(0.01, 0.05, 0.001, 0.20), stringsAsFactors = FALSE)
-  result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
+  result <- SEMseeker:::sem_metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
   expect_s3_class(result, "data.frame")
   expect_true("SCORE"  %in% colnames(result))
   expect_true("METRIC" %in% colnames(result))
 })
 
-test_that("metrics_ranking: PVALUE is lower-is-better — lower p-value gets higher score", {
+test_that("sem_metrics_ranking: PVALUE is lower-is-better — lower p-value gets higher score", {
   tf <- tempFolders[44]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df     <- data.frame(REBASED = c(0.001, 0.05, 0.5, 0.9), stringsAsFactors = FALSE)
-  result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
+  result <- SEMseeker:::sem_metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
   best_idx  <- which.min(df$REBASED)   # p = 0.001
   worst_idx <- which.max(df$REBASED)   # p = 0.9
   expect_gt(result$SCORE[best_idx], result$SCORE[worst_idx])
 })
 
-test_that("metrics_ranking: R_SQUARED is higher-is-better — higher value gets higher score", {
+test_that("sem_metrics_ranking: R_SQUARED is higher-is-better — higher value gets higher score", {
   tf <- tempFolders[45]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -236,53 +236,53 @@ test_that("metrics_ranking: R_SQUARED is higher-is-better — higher value gets 
           "R_SQUARED not in metrics_properties")
 
   df     <- data.frame(REBASED = c(0.1, 0.5, 0.9, 0.95), stringsAsFactors = FALSE)
-  result <- SEMseeker:::metrics_ranking("R_SQUARED", df, column_to_rank = "REBASED")
+  result <- SEMseeker:::sem_metrics_ranking("R_SQUARED", df, column_to_rank = "REBASED")
   best_idx  <- which.max(df$REBASED)   # 0.95
   worst_idx <- which.min(df$REBASED)   # 0.1
   expect_gt(result$SCORE[best_idx], result$SCORE[worst_idx])
 })
 
-test_that("metrics_ranking: uniform input → all scores equal 1", {
+test_that("sem_metrics_ranking: uniform input → all scores equal 1", {
   tf <- tempFolders[46]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df     <- data.frame(REBASED = c(0.5, 0.5, 0.5), stringsAsFactors = FALSE)
-  result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
+  result <- SEMseeker:::sem_metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
   expect_true(all(result$SCORE == 1))
 })
 
-test_that("metrics_ranking: METRIC column is set to the requested metric name", {
+test_that("sem_metrics_ranking: METRIC column is set to the requested metric name", {
   tf <- tempFolders[47]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df     <- data.frame(REBASED = c(0.01, 0.05, 0.10), stringsAsFactors = FALSE)
-  result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
+  result <- SEMseeker:::sem_metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
   expect_true(all(result$METRIC == "PVALUE"))
 })
 
-test_that("metrics_ranking: PVALUE_ADJ is recognised as lower-is-better via grep", {
+test_that("sem_metrics_ranking: PVALUE_ADJ is recognised as lower-is-better via grep", {
   tf <- tempFolders[48]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(REBASED = c(0.001, 0.01, 0.05, 0.20), stringsAsFactors = FALSE)
   # Any metric containing "PVALUE" (by grep) is treated as lower-is-better
-  result_pv    <- SEMseeker:::metrics_ranking("PVALUE",     df, column_to_rank = "REBASED")
-  result_pvadj <- SEMseeker:::metrics_ranking("PVALUE_ADJ", df, column_to_rank = "REBASED")
+  result_pv    <- SEMseeker:::sem_metrics_ranking("PVALUE",     df, column_to_rank = "REBASED")
+  result_pvadj <- SEMseeker:::sem_metrics_ranking("PVALUE_ADJ", df, column_to_rank = "REBASED")
   # Both should rank the same way
   expect_equal(result_pv$SCORE, result_pvadj$SCORE)
 })
 
-test_that("metrics_ranking: Inf values are replaced before ranking (no infinite scores)", {
+test_that("sem_metrics_ranking: Inf values are replaced before ranking (no infinite scores)", {
   tf <- tempFolders[49]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(REBASED = c(0.01, Inf, 0.5), stringsAsFactors = FALSE)
   # Should not crash — Inf is replaced with 1E300 internally
-  result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
+  result <- SEMseeker:::sem_metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 3L)
   expect_false(any(is.infinite(result$SCORE)))

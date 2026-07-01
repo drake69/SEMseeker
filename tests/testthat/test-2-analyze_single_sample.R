@@ -1,4 +1,4 @@
-test_that("analyze_single_sample", {
+test_that("sem_analyze_single_sample", {
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
@@ -7,8 +7,8 @@ test_that("analyze_single_sample", {
   tt <- SEMseeker:::core_get_meth_tech(signal_data)
 
   if (!exists("signal_thresholds")) {
-    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
+    signal_data <- SEMseeker:::sem_inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::sem_signal_range_values(signal_data, batch_id)
   }
   probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
@@ -22,7 +22,7 @@ test_that("analyze_single_sample", {
   sample_detail <- mySampleSheet[1, c("Sample_ID", "Sample_Group")]
 
   # ── HYPO ──────────────────────────────────────────────────────────────────
-  SEMseeker:::analyze_single_sample(
+  SEMseeker:::sem_analyze_single_sample(
     values        = values_df,
     thresholds    = signal_thresholds,
     figure        = "HYPO",
@@ -43,7 +43,7 @@ test_that("analyze_single_sample", {
   testthat::expect_true(dir.exists(hypo_lesions_folder))
 
   # ── HYPER ──────────────────────────────────────────────────────────────────
-  SEMseeker:::analyze_single_sample(
+  SEMseeker:::sem_analyze_single_sample(
     values        = values_df,
     thresholds    = signal_thresholds,
     figure        = "HYPER",
@@ -61,12 +61,12 @@ test_that("analyze_single_sample", {
     c(sample_detail$Sample_Group, "LESIONS_HYPER"))
   testthat::expect_true(dir.exists(hyper_lesions_folder))
 
-  # ── analyze_single_sample_both runs without error ─────────────────────────
-  # Note: analyze_single_sample_both reads uncompressed .bed files while
-  # analyze_single_sample writes .bed.gz; the BOTH file is empty but the
+  # ── sem_analyze_single_sample_both runs without error ─────────────────────────
+  # Note: sem_analyze_single_sample_both reads uncompressed .bed files while
+  # sem_analyze_single_sample writes .bed.gz; the BOTH file is empty but the
   # function must not error.
   testthat::expect_no_error(
-    SEMseeker:::analyze_single_sample_both(sample_detail, "MUTATIONS")
+    SEMseeker:::sem_analyze_single_sample_both(sample_detail, "MUTATIONS")
   )
 
   SEMseeker:::core_close_env()

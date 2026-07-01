@@ -14,32 +14,32 @@ test_that("annotations", {
 
   if (!exists("signal_thresholds"))
   {
-    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
+    signal_data <- SEMseeker:::sem_inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::sem_signal_range_values(signal_data, batch_id)
   }
   probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
   keys <- ssEnv$keys_markers_figures_default
-  sp <- SEMseeker:::analyze_population(signal_data=signal_data,
+  sp <- SEMseeker:::sem_analyze_population(signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Case",],
     probe_features = probe_features
   )
   SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Case",],keys)
 
-  sp <- SEMseeker:::analyze_population(signal_data=signal_data,
+  sp <- SEMseeker:::sem_analyze_population(signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Control",],
     probe_features = probe_features
   )
   SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
 
-  # deltaX_get needs sample sheet CSV (normally written by analyze_batch)
+  # sem_deltaX_get needs sample sheet CSV (normally written by sem_analyze_batch)
   ssEnv2 <- SEMseeker:::core_get_session_info()
   sample_sheet_csv <- SEMseeker:::io_file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
   utils::write.csv2(mySampleSheet, file=sample_sheet_csv)
 
-  SEMseeker:::deltaX_get()
+  SEMseeker:::sem_deltaX_get()
 
   SEMseeker:::anno_annotate_position_pivots()
 

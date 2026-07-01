@@ -1,4 +1,4 @@
-test_that("deltar_single_sample",{
+test_that("sem_deltar_single_sample",{
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
@@ -9,8 +9,8 @@ test_that("deltar_single_sample",{
   gg <- SEMseeker:::core_get_meth_tech(signal_data)
   if (!exists("signal_thresholds"))
   {
-    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id)
+    signal_data <- SEMseeker:::sem_inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::sem_signal_range_values(signal_data, batch_id)
   }
   probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
   ####################################################################################
@@ -31,33 +31,33 @@ test_that("deltar_single_sample",{
       VALUE = as.numeric(signal_data[, sample_id])
     )
 
-    dr1 <- SEMseeker:::deltar_single_sample(
+    dr1 <- SEMseeker:::sem_deltar_single_sample(
       values = values_df,
       thresholds = signal_thresholds,
       sample_detail = sample_detail
     )
 
-    ds1 <- SEMseeker:::delta_single_sample(
+    ds1 <- SEMseeker:::sem_delta_single_sample(
       values = values_df,
       thresholds = signal_thresholds,
       sample_detail = sample_detail
     )
 
-    ass <- SEMseeker:::analyze_single_sample(
+    ass <- SEMseeker:::sem_analyze_single_sample(
       values = values_df,
       thresholds = signal_thresholds,
       figure = "HYPER",
       sample_detail = sample_detail
     )
 
-    SEMseeker:::analyze_single_sample(
+    SEMseeker:::sem_analyze_single_sample(
       values = values_df,
       thresholds = signal_thresholds,
       figure = "HYPO",
       sample_detail = sample_detail
     )
 
-    mb <- SEMseeker:::analyze_single_sample_both(sample_detail,"MUTATIONS")
+    mb <- SEMseeker:::sem_analyze_single_sample_both(sample_detail,"MUTATIONS")
 
     result_folderData  <-  SEMseeker:::io_dir_check_and_create(tempFolder, "Data")
     outputFolder <- SEMseeker:::io_dir_check_and_create(result_folderData,c(sample_detail$Sample_Group,"MUTATIONS_HYPER"))

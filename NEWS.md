@@ -100,7 +100,7 @@
 - **`semseeker()` no longer auto-converts M-values to beta.**
   The `auto_convert_mvalues` parameter has been removed and the
   `.looks_like_mvalues()` helper deleted. Input values are now passed
-  through unchanged; if you need conversion, call `mvalue_to_beta()`
+  through unchanged; if you need conversion, call `sem_mvalue_to_beta()`
   explicitly before `semseeker()`. The beta-vs-M-value flag is still
   detected and stored in `ssEnv$beta` by `core_get_meth_tech()`, so downstream
   code that consults that flag continues to work.
@@ -128,8 +128,8 @@
   Fix: `util_join_values_to_thresholds()` now strips the `chr` prefix from both sides
   before joining.
 
-- **`exists("signal_data")` scoped to local environment in `analyze_batch()` and
-  `analyze_population()`** (E-01).
+- **`exists("signal_data")` scoped to local environment in `sem_analyze_batch()` and
+  `sem_analyze_population()`** (E-01).
   The previous `exists("signal_data")` used `inherits = TRUE` (R default), which walked
   all the way up to `.GlobalEnv`. If the user had a `signal_data` object in their session
   (the normal case — they load data before calling `semseeker()`), the guard fired
@@ -139,8 +139,8 @@
   Fix: `exists("signal_data", envir = environment(), inherits = FALSE)` +
   `rm("signal_data", envir = environment())` in both files.
 
-- **Polars inner join replaces positional zip in `mutations_get()`, `delta_single_sample()`,
-  `deltar_single_sample()`; coverage banner in `analyze_population()`** (A-10).
+- **Polars inner join replaces positional zip in `sem_mutations_get()`, `sem_delta_single_sample()`,
+  `sem_deltar_single_sample()`; coverage banner in `sem_analyze_population()`** (A-10).
   The previous implementation sorted both `values` and `thresholds` by CHR/START/END and
   then compared them row-by-row (positional zip). When `signal_thresholds` came from a
   different run (cross-run analysis, e.g. Nanopore sample vs Illumina reference batch passed
@@ -151,10 +151,10 @@
     join on `(CHR, START, END)`. Shared by all three per-sample functions to ensure consistent
     intersection logic. Required for Nanopore bedmethyl files (28M+ rows where base-R
     `merge()`/`match()` is too slow).
-  - `mutations_get()`, `delta_single_sample()`, `deltar_single_sample()` now use the helper;
+  - `sem_mutations_get()`, `sem_delta_single_sample()`, `sem_deltar_single_sample()` now use the helper;
     zero-overlap guard returns an empty result rather than crashing.
-  - Coverage banner moved from per-sample (inside `mutations_get()`) to per-batch (at the
-    start of `analyze_population()` before the per-sample loop). Emitted once per batch:
+  - Coverage banner moved from per-sample (inside `sem_mutations_get()`) to per-batch (at the
+    start of `sem_analyze_population()` before the per-sample loop). Emitted once per batch:
     `input_positions | beta_range_positions | covered_by_inner_join`.
 
 ### Bug fixes (A-09: bayes_analysis rewrite)
@@ -184,7 +184,7 @@
 
 ### Statistical model changes
 
-- **`lesions_get()`: replaced hypergeometric with binomial test** (A-01).
+- **`sem_lesions_get()`: replaced hypergeometric with binomial test** (A-01).
   The sliding window advances one probe at a time, so each probe participates
   in up to `sliding_window_size` consecutive windows — sampling with
   replacement. The hypergeometric distribution assumes sampling without

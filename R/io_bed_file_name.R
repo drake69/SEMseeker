@@ -8,7 +8,7 @@ io_bed_file_name <- function(sample_id, sample_group, marker, figure,
   }
 
   # AI-075: when the caller has already ensured the destination dir exists
-  # (e.g. analyze_population creates all combos once at the top of the
+  # (e.g. sem_analyze_population creates all combos once at the top of the
   # function), skip the per-call file.exists+dir.create check. On a 4000-
   # sample population with 4 marker/figure combos this saves ~16k stat
   # syscalls per pipeline pass.

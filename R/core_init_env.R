@@ -48,11 +48,11 @@
   session_folder          = "Log"
 )
 
-.SS_FN_EXPORT <- c("analyze_single_sample","deltar_single_sample",
-                   "io_dump_sample_as_bed_file", "delta_single_sample",
+.SS_FN_EXPORT <- c("sem_analyze_single_sample","sem_deltar_single_sample",
+                   "io_dump_sample_as_bed_file", "sem_delta_single_sample",
                    "io_dir_check_and_create", "io_file_path_build",
-                   "analyze_single_sample_both", "anno_sort_by_chr_and_start",
-                   "util_test_match_order", "lesions_get", "mutations_get")
+                   "sem_analyze_single_sample_both", "anno_sort_by_chr_and_start",
+                   "util_test_match_order", "sem_lesions_get", "sem_mutations_get")
 
 .core_apply_defaults <- function(arguments, defaults) {
   for (key in names(defaults)) {

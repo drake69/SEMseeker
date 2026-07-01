@@ -3,9 +3,9 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
 {
   ssEnv <- core_get_session_info()
   # Resolve probe_features in priority order: explicit arg > attribute
-  # attached by prepare_batch_signal() > legacy anno_probe_features_get() refetch.
-  # In the normal pipeline analyze_batch() routes signal_data through
-  # prepare_batch_signal() so attr(., "probe_features") is set and the
+  # attached by sem_prepare_batch_signal() > legacy anno_probe_features_get() refetch.
+  # In the normal pipeline sem_analyze_batch() routes signal_data through
+  # sem_prepare_batch_signal() so attr(., "probe_features") is set and the
   # third branch is never taken.
   if (is.null(probe_features))
     probe_features <- attr(signal_data, "probe_features")

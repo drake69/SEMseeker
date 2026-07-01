@@ -7,22 +7,22 @@ association_analysis_summary <- function(inference_details,destination_folder=""
   association_data <- association_data_extractor(inference_details, destination_folder, result_folder, ...)
 
 
-  available_metrics <- toupper(SEMseeker::metrics_properties[,"Metric"])
+  sem_available_metrics <- toupper(SEMseeker::metrics_properties[,"Metric"])
 
   if(any(grepl("PVALUE",colnames(association_data))))
-    available_metrics <- c(available_metrics, colnames(association_data)[grepl("PVALUE",colnames(association_data))])
+    sem_available_metrics <- c(sem_available_metrics, colnames(association_data)[grepl("PVALUE",colnames(association_data))])
 
   # remove not numeric columns metrics
   metrics_to_remove <- colnames(association_data[,!vapply(association_data, is.numeric, logical(1))])
-  available_metrics <- available_metrics[!(available_metrics %in% metrics_to_remove)]
+  sem_available_metrics <- sem_available_metrics[!(sem_available_metrics %in% metrics_to_remove)]
 
-  available_metrics <- available_metrics[available_metrics %in% colnames(association_data)]
+  sem_available_metrics <- sem_available_metrics[sem_available_metrics %in% colnames(association_data)]
 
   #  create a summary table for the association analysis grouping by AREA,SUBAREA,MARKER,FIGURE and SAMPLES_SQL_CONDITION if exists
   if(any("SAMPLES_SQL_CONDITION" %in% colnames(association_data))) {
     summary_table <- association_data %>%
       dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$SAMPLES_SQL_CONDITION) %>%
-      dplyr::summarise(dplyr::across(available_metrics, list(
+      dplyr::summarise(dplyr::across(sem_available_metrics, list(
         max= ~max(., na.rm=TRUE),
         min= ~min(., na.rm=TRUE),
         mean = ~mean(., na.rm = TRUE),
@@ -31,7 +31,7 @@ association_analysis_summary <- function(inference_details,destination_folder=""
   } else {
     summary_table <- association_data %>%
       dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE) %>%
-      dplyr::summarise(dplyr::across(available_metrics, list(
+      dplyr::summarise(dplyr::across(sem_available_metrics, list(
         max= ~max(., na.rm=TRUE),
         min= ~min(., na.rm=TRUE),
         mean = ~mean(., na.rm = TRUE),

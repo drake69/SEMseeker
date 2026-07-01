@@ -1,4 +1,4 @@
-test_that("delta_single_sample",{
+test_that("sem_delta_single_sample",{
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
@@ -11,8 +11,8 @@ test_that("delta_single_sample",{
   probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
   if (!exists("signal_thresholds"))
   {
-    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <- SEMseeker:::signal_range_values(signal_data, batch_id,probe_features)
+    signal_data <- SEMseeker:::sem_inpute_missing_values(signal_data)
+    signal_thresholds <- SEMseeker:::sem_signal_range_values(signal_data, batch_id,probe_features)
   }
 
   signal_data$PROBE <- rownames(signal_data)
@@ -25,7 +25,7 @@ test_that("delta_single_sample",{
   # pattern) so we cannot use row 1 directly — it may be a Reference sample.
   sample_detail <- mySampleSheet[mySampleSheet$Sample_Group == "Control", c("Sample_ID","Sample_Group")][1, , drop = FALSE]
 
-  dss <- SEMseeker:::delta_single_sample(
+  dss <- SEMseeker:::sem_delta_single_sample(
     values = values,
     thresholds = signal_thresholds,
     sample_detail = sample_detail

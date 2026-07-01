@@ -13,6 +13,6 @@ io_coord_probe_features(probe_ids)
 data.frame with columns PROBE, CHR, START, END.
 }
 \description{
-Used inside \code{analyze_batch()} for WGBS/LONGREAD data in place of the
+Used inside \code{sem_analyze_batch()} for WGBS/LONGREAD data in place of the
 Bioconductor-annotation-based \code{anno_probe_features_get("PROBE")} call.
 }

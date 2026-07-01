@@ -14,7 +14,7 @@
 #  These tests verify correctness of the association pipeline, not parallelism.
 #
 # Note on areas:
-#  semseeker() must include "POSITION" so study_summary_total() writes
+#  semseeker() must include "POSITION" so sem_study_summary_total() writes
 #  sample_sheet_result.csv with per-sample mutation counts.  Those counts are
 #  the dependent-variable columns for depth=1 association tests.
 
@@ -135,7 +135,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
   colnames(local_sig) <- colnames(signal_data)
 
   # ── Step 1: produce semseeker output including POSITION pivots ────────────
-  # POSITION area is required so study_summary_total() writes per-sample
+  # POSITION area is required so sem_study_summary_total() writes per-sample
   # mutation counts into sample_sheet_result.csv (depth=1 reads that file).
   # "sequential" makes the test work under both devtools::load_all() and CI.
   SEMseeker::semseeker(

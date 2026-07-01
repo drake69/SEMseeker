@@ -8,7 +8,7 @@
 #'
 #' Single point of responsibility for sidecar materialisation: callers that
 #' write pivots (\code{anno_create_position_pivots}, \code{io_get_pivot_both},
-#' \code{io_read_pivot}, \code{semseeker_core}, \code{core_recover}, ...) do not need
+#' \code{io_read_pivot}, \code{sem_core}, \code{core_recover}, ...) do not need
 #' to write sidecars themselves — they simply call this function once at the
 #' end of their work and let it scan for parquets without a sidecar.
 #'

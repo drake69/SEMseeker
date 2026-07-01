@@ -3,8 +3,8 @@
 # Private helper — inner-join a per-sample values data.frame to a thresholds
 # data.frame on (CHR, START, END) using Polars.
 #
-# This is the canonical join used by mutations_get(), delta_single_sample(),
-# and deltar_single_sample() — all three need the same intersection.
+# This is the canonical join used by sem_mutations_get(), sem_delta_single_sample(),
+# and sem_deltar_single_sample() — all three need the same intersection.
 #
 # WHY POLARS:
 #   Nanopore bedmethyl files can have 28M+ rows.  Base-R merge()/match()

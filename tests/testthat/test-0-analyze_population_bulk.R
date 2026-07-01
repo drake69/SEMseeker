@@ -1,12 +1,12 @@
 # test-0-analyze_population_bulk.R
 #
-# Unit test per analyze_population_bulk (AI-042, 2026-06-08): verifica che
+# Unit test per sem_analyze_population_bulk (AI-042, 2026-06-08): verifica che
 # DELTAS, MUTATIONS, DELTAR pivots siano bit-identici alla formula attesa
 # (rank-invariante per MUTATIONS, magnitude per DELTAS/DELTAR) usando un
 # input sintetico piccolo. LESIONS pivot si verifica solo a livello shape +
 # presenza (la logica binomial è esercitata in test-0-lesions_get.R).
 
-test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
+test_that("sem_analyze_population_bulk - synthetic 10x5 produces correct pivots", {
 
   set.seed(42)
 
@@ -62,7 +62,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
   )
 
   # ---- Invoke bulk function ----------------------------------------------
-  SEMseeker:::analyze_population_bulk(
+  SEMseeker:::sem_analyze_population_bulk(
     signal_data       = NULL,
     sample_sheet      = sample_sheet,
     signal_thresholds = thresholds,
@@ -143,7 +143,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
 })
 
 
-test_that("analyze_population_bulk fails clean if SIGNAL pivot is missing", {
+test_that("sem_analyze_population_bulk fails clean if SIGNAL pivot is missing", {
 
   tempFolder <- tempfile("test_apb_nopivot_")
   dir.create(tempFolder, recursive = TRUE, showWarnings = FALSE)
@@ -170,7 +170,7 @@ test_that("analyze_population_bulk fails clean if SIGNAL pivot is missing", {
   )
 
   testthat::expect_error(
-    SEMseeker:::analyze_population_bulk(
+    SEMseeker:::sem_analyze_population_bulk(
       signal_data       = NULL,
       sample_sheet      = sample_sheet,
       signal_thresholds = thresholds,

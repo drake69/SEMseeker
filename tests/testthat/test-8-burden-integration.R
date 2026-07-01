@@ -1,6 +1,6 @@
 # AI-086: integration test for sample_sheet_result.csv burden columns.
 #
-# Canary for AI-083: study_summary_total() failed to populate per-sample
+# Canary for AI-083: sem_study_summary_total() failed to populate per-sample
 # burden in sample_sheet_result.csv on ewas_osteoporosis/GSE99624 (48 samples,
 # 450K) — all burden columns landed as NA, which then crashed every depth=1
 # inference downstream with "data are not the same size".
@@ -15,7 +15,7 @@
 #   5. PROBES_COUNT > 0 on every sample.
 #   6. Sanity: injected hypomethylated outliers surface as MUTATIONS_HYPO > 0.
 #
-# Why discrete markers only: study_summary_total() iterates AREA=="POSITION"
+# Why discrete markers only: sem_study_summary_total() iterates AREA=="POSITION"
 # keys, which is the set declared in keys_create.R via
 # keys_markers_default_discrete (MUTATIONS / LESIONS / DELTAQ / DELTARQ /
 # DELTAP / DELTARP) plus the two continuous DELTAS / DELTAR. LESIONS depends

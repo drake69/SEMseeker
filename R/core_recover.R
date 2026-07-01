@@ -13,11 +13,11 @@ core_recover <- function(result_folder, maxResources = 90,
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
   core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will try to core_recover the analysys for project \n in ", ssEnv$result_folderData)
 
-  study_summary <-   study_summary_get()
+  study_summary <-   sem_study_summary_get()
 
   anno_create_position_pivots(study_summary,ssEnv$keys_markers_figures)
-  deltaX_get()
-  study_summary_total()
+  sem_deltaX_get()
+  sem_study_summary_total()
   anno_annotate_position_pivots()
 
   # Single point of sidecar materialisation (AI-027).

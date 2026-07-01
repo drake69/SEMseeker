@@ -1,89 +1,89 @@
 ## test-0-math-stats.R
 ## Unit tests for pure mathematical / statistical utility functions:
-##   ssim, variation_of_information, io_convertTextToNumeric,
-##   util_split_and_clean, metrics_filter, normalize_minimize, normalize_maximize,
+##   sem_ssim, sem_variation_of_information, io_convertTextToNumeric,
+##   util_split_and_clean, sem_metrics_filter, sem_normalize_minimize, sem_normalize_maximize,
 ##   util_substitute_infinite, calculate_collinearity_score
 ##
 ## These functions have no file I/O or network dependencies and can be
 ## exercised directly after devtools::load_all().
 
 # -----------------------------------------------------------------------
-# ssim
+# sem_ssim
 # -----------------------------------------------------------------------
-test_that("ssim: identical vectors return value ~1", {
+test_that("sem_ssim: identical vectors return value ~1", {
   x <- c(1, 2, 3, 4, 5)
-  result <- SEMseeker:::ssim(x, x)
+  result <- SEMseeker:::sem_ssim(x, x)
   expect_true(result > 0.999)
 })
 
-test_that("ssim: identical matrices return value ~1", {
+test_that("sem_ssim: identical matrices return value ~1", {
   m <- matrix(1:9, nrow = 3)
-  result <- SEMseeker:::ssim(m, m)
+  result <- SEMseeker:::sem_ssim(m, m)
   expect_true(result > 0.999)
 })
 
-test_that("ssim: result is in a reasonable range for similar vectors", {
+test_that("sem_ssim: result is in a reasonable range for similar vectors", {
   x <- c(1, 2, 3, 4, 5)
   y <- c(1.1, 2.1, 2.9, 4.0, 5.1)
-  result <- SEMseeker:::ssim(x, y)
+  result <- SEMseeker:::sem_ssim(x, y)
   expect_true(result > 0.9)
   expect_true(result <= 1.0)
 })
 
-test_that("ssim: very different vectors return lower value than similar ones", {
+test_that("sem_ssim: very different vectors return lower value than similar ones", {
   x <- c(1, 2, 3, 4, 5)
   y_similar  <- x + 0.1
   y_different <- rev(x) * 10
-  ssim_similar  <- SEMseeker:::ssim(x, y_similar)
-  ssim_different <- SEMseeker:::ssim(x, y_different)
+  ssim_similar  <- SEMseeker:::sem_ssim(x, y_similar)
+  ssim_different <- SEMseeker:::sem_ssim(x, y_different)
   expect_true(ssim_similar > ssim_different)
 })
 
-test_that("ssim: mismatched lengths raise an error", {
-  expect_error(SEMseeker:::ssim(1:3, 1:5))
+test_that("sem_ssim: mismatched lengths raise an error", {
+  expect_error(SEMseeker:::sem_ssim(1:3, 1:5))
 })
 
-test_that("ssim: mismatched matrix dimensions raise an error", {
-  expect_error(SEMseeker:::ssim(matrix(1:4, 2), matrix(1:9, 3)))
+test_that("sem_ssim: mismatched matrix dimensions raise an error", {
+  expect_error(SEMseeker:::sem_ssim(matrix(1:4, 2), matrix(1:9, 3)))
 })
 
 # -----------------------------------------------------------------------
-# variation_of_information
+# sem_variation_of_information
 # -----------------------------------------------------------------------
-test_that("variation_of_information: identical partitions return 0", {
+test_that("sem_variation_of_information: identical partitions return 0", {
   x <- c(1, 1, 2, 2, 3, 3)
-  result <- SEMseeker:::variation_of_information(x, x)
+  result <- SEMseeker:::sem_variation_of_information(x, x)
   expect_equal(result, 0, tolerance = 1e-10)
 })
 
-test_that("variation_of_information: is non-negative", {
+test_that("sem_variation_of_information: is non-negative", {
   x <- c(1, 1, 2, 2, 3, 3)
   y <- c(1, 2, 1, 3, 2, 3)
-  result <- SEMseeker:::variation_of_information(x, y)
+  result <- SEMseeker:::sem_variation_of_information(x, y)
   expect_true(result >= 0)
 })
 
-test_that("variation_of_information: different partitions return >0", {
+test_that("sem_variation_of_information: different partitions return >0", {
   x <- c(1, 1, 2, 2)
   y <- c("a", "b", "a", "b")
-  result <- SEMseeker:::variation_of_information(x, y)
+  result <- SEMseeker:::sem_variation_of_information(x, y)
   expect_true(result > 0)
 })
 
-test_that("variation_of_information: symmetric (VI(x,y) == VI(y,x))", {
+test_that("sem_variation_of_information: symmetric (VI(x,y) == VI(y,x))", {
   x <- c(1, 1, 2, 2, 3, 3)
   y <- c(1, 2, 2, 3, 3, 1)
   expect_equal(
-    SEMseeker:::variation_of_information(x, y),
-    SEMseeker:::variation_of_information(y, x),
+    SEMseeker:::sem_variation_of_information(x, y),
+    SEMseeker:::sem_variation_of_information(y, x),
     tolerance = 1e-10
   )
 })
 
-test_that("variation_of_information: perfectly correlated partitions give 0", {
+test_that("sem_variation_of_information: perfectly correlated partitions give 0", {
   x <- c("a", "a", "b", "b")
   y <- c(1,   1,   2,   2  )
-  result <- SEMseeker:::variation_of_information(x, y)
+  result <- SEMseeker:::sem_variation_of_information(x, y)
   expect_equal(result, 0, tolerance = 1e-10)
 })
 
@@ -147,105 +147,105 @@ test_that("util_split_and_clean: empty string returns character(0) after whitesp
 })
 
 # -----------------------------------------------------------------------
-# metrics_filter
+# sem_metrics_filter
 # -----------------------------------------------------------------------
-test_that("metrics_filter: 'none' transformation returns all metrics unchanged", {
+test_that("sem_metrics_filter: 'none' transformation returns all metrics unchanged", {
   all_metrics <- c("MAE", "RMSE", "COUNT_SIGN", "R_SQUARED")
-  result <- SEMseeker:::metrics_filter(all_metrics, "none")
+  result <- SEMseeker:::sem_metrics_filter(all_metrics, "none")
   expect_equal(sort(result), sort(all_metrics))
 })
 
-test_that("metrics_filter: 'scale' transformation returns all metrics (sorted unique)", {
+test_that("sem_metrics_filter: 'scale' transformation returns all metrics (sorted unique)", {
   all_metrics <- c("MAE", "COUNT_SIGN", "R_SQUARED", "MAE")  # duplicate
-  result <- SEMseeker:::metrics_filter(all_metrics, "scale")
+  result <- SEMseeker:::sem_metrics_filter(all_metrics, "scale")
   expect_true(length(result) <= length(all_metrics))
   expect_true("MAE" %in% result)
 })
 
-test_that("metrics_filter: 'log' removes scale-affected metrics", {
+test_that("sem_metrics_filter: 'log' removes scale-affected metrics", {
   affected <- toupper(SEMseeker::metrics_properties[
     SEMseeker::metrics_properties$Affected_by_Scaling == TRUE, "Metric"])
   not_affected <- toupper(SEMseeker::metrics_properties[
     SEMseeker::metrics_properties$Affected_by_Scaling == FALSE, "Metric"])
 
   all_metrics <- c(affected[1], not_affected[1])
-  result <- SEMseeker:::metrics_filter(all_metrics, "log")
+  result <- SEMseeker:::sem_metrics_filter(all_metrics, "log")
 
   expect_false(affected[1] %in% result)
   expect_true(not_affected[1] %in% result)
 })
 
-test_that("metrics_filter: 'none' returns exactly the original vector (no reorder)", {
+test_that("sem_metrics_filter: 'none' returns exactly the original vector (no reorder)", {
   metrics <- c("RMSE", "MAE", "COUNT_SIGN")
-  result <- SEMseeker:::metrics_filter(metrics, "none")
+  result <- SEMseeker:::sem_metrics_filter(metrics, "none")
   expect_equal(result, metrics)
 })
 
-test_that("metrics_filter: non-'none' transformations return a sorted unique result", {
+test_that("sem_metrics_filter: non-'none' transformations return a sorted unique result", {
   metrics <- c("RMSE", "MAE", "COUNT_SIGN", "MAE")   # duplicate
-  result <- SEMseeker:::metrics_filter(metrics, "log")
+  result <- SEMseeker:::sem_metrics_filter(metrics, "log")
   expect_equal(result, sort(unique(result)))
 })
 
 # -----------------------------------------------------------------------
-# normalize_minimize / normalize_maximize
+# sem_normalize_minimize / sem_normalize_maximize
 # -----------------------------------------------------------------------
-test_that("normalize_minimize: min value maps to 1, max to 0", {
+test_that("sem_normalize_minimize: min value maps to 1, max to 0", {
   x <- c(1, 2, 3, 4, 5)
-  r <- SEMseeker:::normalize_minimize(x)
+  r <- SEMseeker:::sem_normalize_minimize(x)
   expect_equal(r[which.min(x)], 1)
   expect_equal(r[which.max(x)], 0)
 })
 
-test_that("normalize_minimize: all values in [0, 1]", {
+test_that("sem_normalize_minimize: all values in [0, 1]", {
   x <- c(10, 20, 15, 5, 25)
-  r <- SEMseeker:::normalize_minimize(x)
+  r <- SEMseeker:::sem_normalize_minimize(x)
   expect_true(all(r >= 0 & r <= 1))
 })
 
-test_that("normalize_minimize: range is [0, 1]", {
+test_that("sem_normalize_minimize: range is [0, 1]", {
   x <- c(3, 7, 1, 9, 5)
-  r <- SEMseeker:::normalize_minimize(x)
+  r <- SEMseeker:::sem_normalize_minimize(x)
   expect_equal(min(r), 0)
   expect_equal(max(r), 1)
 })
 
-test_that("normalize_minimize: monotonically decreasing with input", {
+test_that("sem_normalize_minimize: monotonically decreasing with input", {
   x <- 1:10
-  r <- SEMseeker:::normalize_minimize(x)
+  r <- SEMseeker:::sem_normalize_minimize(x)
   expect_true(all(diff(r) < 0))
 })
 
-test_that("normalize_maximize: min value maps to 0, max to 1", {
+test_that("sem_normalize_maximize: min value maps to 0, max to 1", {
   x <- c(1, 2, 3, 4, 5)
-  r <- SEMseeker:::normalize_maximize(x)
+  r <- SEMseeker:::sem_normalize_maximize(x)
   expect_equal(r[which.min(x)], 0)
   expect_equal(r[which.max(x)], 1)
 })
 
-test_that("normalize_maximize: all values in [0, 1]", {
+test_that("sem_normalize_maximize: all values in [0, 1]", {
   x <- c(10, 20, 15, 5, 25)
-  r <- SEMseeker:::normalize_maximize(x)
+  r <- SEMseeker:::sem_normalize_maximize(x)
   expect_true(all(r >= 0 & r <= 1))
 })
 
-test_that("normalize_maximize: range is [0, 1]", {
+test_that("sem_normalize_maximize: range is [0, 1]", {
   x <- c(3, 7, 1, 9, 5)
-  r <- SEMseeker:::normalize_maximize(x)
+  r <- SEMseeker:::sem_normalize_maximize(x)
   expect_equal(min(r), 0)
   expect_equal(max(r), 1)
 })
 
-test_that("normalize_maximize: monotonically increasing with input", {
+test_that("sem_normalize_maximize: monotonically increasing with input", {
   x <- 1:10
-  r <- SEMseeker:::normalize_maximize(x)
+  r <- SEMseeker:::sem_normalize_maximize(x)
   expect_true(all(diff(r) > 0))
 })
 
-test_that("normalize_minimize and normalize_maximize are complementary", {
+test_that("sem_normalize_minimize and sem_normalize_maximize are complementary", {
   x <- c(2, 5, 1, 8, 3)
-  r_min <- SEMseeker:::normalize_minimize(x)
-  r_max <- SEMseeker:::normalize_maximize(x)
+  r_min <- SEMseeker:::sem_normalize_minimize(x)
+  r_max <- SEMseeker:::sem_normalize_maximize(x)
   expect_equal(r_min + r_max, rep(1, length(x)))
 })
 

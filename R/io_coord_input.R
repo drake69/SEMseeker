@@ -5,7 +5,7 @@
 #   Illumina input: rownames = probe IDs (e.g. "cg00000029")
 #   WGBS/LONGREAD:  columns CHR, START, [END,] sample1, sample2, ...
 #
-#   io_normalize_signal_input() is called transparently inside analyze_batch()
+#   io_normalize_signal_input() is called transparently inside sem_analyze_batch()
 #   before core_get_meth_tech(). If the input has CHR/START columns, it converts
 #   the data frame to a probe-ID-indexed matrix using a synthetic probe ID:
 #
@@ -98,13 +98,13 @@ io_coord_to_semseeker <- function(df) {
 #' it is converted to the probe-ID-indexed format expected by SEMseeker.
 #' Illumina matrices (rownames = probe IDs) are returned unchanged.
 #'
-#' Called inside \code{analyze_batch()} before \code{core_get_meth_tech()}.
+#' Called inside \code{sem_analyze_batch()} before \code{core_get_meth_tech()}.
 #'
 #' @param signal_data A data frame (probe-indexed or coordinate-based).
 #' @return A data frame with rownames = probe IDs (real or synthetic).
 io_normalize_signal_input <- function(signal_data) {
   if (io_is_coord_format(signal_data)) {
-    # Logging is done by the caller (analyze_batch) which has an active session.
+    # Logging is done by the caller (sem_analyze_batch) which has an active session.
     signal_data <- io_coord_to_semseeker(signal_data)
   }
   signal_data
@@ -135,7 +135,7 @@ io_probe_id_to_coord <- function(probe_ids) {
 
 #' Build a minimal probe_features data frame from synthetic probe IDs.
 #'
-#' Used inside \code{analyze_batch()} for WGBS/LONGREAD data in place of the
+#' Used inside \code{sem_analyze_batch()} for WGBS/LONGREAD data in place of the
 #' Bioconductor-annotation-based \code{anno_probe_features_get("PROBE")} call.
 #'
 #' @param probe_ids Character vector of synthetic probe IDs.

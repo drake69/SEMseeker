@@ -19,19 +19,19 @@ test_that("anno_create_position_pivots", {
 
   if (!exists("signal_thresholds"))
   {
-    signal_data <- SEMseeker:::inpute_missing_values(signal_data)
-    signal_thresholds <<- SEMseeker:::signal_range_values(signal_data[,ss_reference$Sample_ID],batch_id)
+    signal_data <- SEMseeker:::sem_inpute_missing_values(signal_data)
+    signal_thresholds <<- SEMseeker:::sem_signal_range_values(signal_data[,ss_reference$Sample_ID],batch_id)
   }
   probe_features <<- probe_features[probe_features$PROBE %in% rownames(signal_data), ]
 
-  sp <- SEMseeker:::analyze_population(
+  sp <- SEMseeker:::sem_analyze_population(
     signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Case",],
     probe_features = probe_features
   )
 
-  sp <- SEMseeker:::analyze_population(
+  sp <- SEMseeker:::sem_analyze_population(
     signal_data=signal_data,
     signal_thresholds = signal_thresholds,
     sample_sheet = mySampleSheet[mySampleSheet$Sample_Group == "Control",],

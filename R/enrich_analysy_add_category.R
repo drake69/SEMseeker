@@ -52,8 +52,8 @@ enrich_analysy_add_category <- function(source, data)
 
 
   # Normalization functions
-  # normalize_minimize <- function(x) (max(x) - x) / (max(x) - min(x))
-  # normalize_maximize <- function(x) (x - min(x)) / (max(x) - min(x))
+  # sem_normalize_minimize <- function(x) (max(x) - x) / (max(x) - min(x))
+  # sem_normalize_maximize <- function(x) (x - min(x)) / (max(x) - min(x))
 
   # rank per SS_CATEGORY
   data <- data[is.na(data$SS_CATEGORY),]
@@ -71,7 +71,7 @@ enrich_analysy_add_category <- function(source, data)
       to_rank$SS_RANK_FDR <- 1
     else
     {
-      to_rank$SS_RANK_FDR <- normalize_minimize(to_rank[,column_to_rank])
+      to_rank$SS_RANK_FDR <- sem_normalize_minimize(to_rank[,column_to_rank])
       to_rank$SS_RANK_FDR <- rank(-to_rank$SS_RANK_FDR, ties.method = "min")
     }
     to_rank$SIGNIFICATIVE <- (to_rank[,column_to_rank] < as.numeric(ssEnv$alpha))
@@ -86,7 +86,7 @@ enrich_analysy_add_category <- function(source, data)
       to_rank$SS_RANK_ENRICHMENT <- 1
     else
     {
-      to_rank$SS_RANK_ENRICHMENT <- normalize_maximize(to_rank[,column_to_rank])
+      to_rank$SS_RANK_ENRICHMENT <- sem_normalize_maximize(to_rank[,column_to_rank])
       to_rank$SS_RANK_ENRICHMENT <- rank(-to_rank$SS_RANK_ENRICHMENT, ties.method = "min")
     }
 

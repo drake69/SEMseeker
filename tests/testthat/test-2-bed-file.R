@@ -8,7 +8,7 @@
 # The companion chart test (test-2-box-plot.R) already covers plot_box_plot() PNG
 # generation.  plot_manhattan_plot_per_area() depends on pivot parquet files and is
 # tested end-to-end via test-6-semseeker.R + test-7-association_analysis.R.
-# The tests here focus on the low-level I/O helper used by analyze_single_sample().
+# The tests here focus on the low-level I/O helper used by sem_analyze_single_sample().
 
 # ---------------------------------------------------------------------------
 # Helper: build a minimal BED-like data.frame

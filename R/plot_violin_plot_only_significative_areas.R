@@ -23,7 +23,7 @@ plot_violin_plot_only_significative_areas <- function(fileNameResults, inference
 
   areas <- areas[-1,]
 
-  sample_sheet <- study_summary_get()
+  sample_sheet <- sem_study_summary_get()
   metaareas_f <- foreach::foreach(s = 2: ncol(areas), .combine = rbind) %dorng%
   # for( s in 2: ncol(areas) )
   {

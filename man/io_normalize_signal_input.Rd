@@ -18,5 +18,5 @@ it is converted to the probe-ID-indexed format expected by SEMseeker.
 Illumina matrices (rownames = probe IDs) are returned unchanged.
 }
 \details{
-Called inside \code{analyze_batch()} before \code{core_get_meth_tech()}.
+Called inside \code{sem_analyze_batch()} before \code{core_get_meth_tech()}.
 }

@@ -33,7 +33,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
 
   core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will generate images for significative probes \n")
 
-  study_summary <-   study_summary_get()
+  study_summary <-   sem_study_summary_get()
   anno_annotate_position_pivots()
 
   # ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, tech = tech)
@@ -166,7 +166,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
 
   # AI-106 (2026-06-09): no more colname sanitisation. Sample_ID are
   # passed through from the upstream pivot writers (io_signal_save,
-  # analyze_population_bulk). The `colnames(signal_data) %in%
+  # sem_analyze_population_bulk). The `colnames(signal_data) %in%
   # colnames(marker_data)` match below relies on both pivots writing
   # Sample_ID in the SAME raw format.
   if(max_sample!=0)

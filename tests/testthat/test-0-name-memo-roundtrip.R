@@ -95,8 +95,8 @@ test_that("apply_stat_model_batch_lazy does NOT '-'→'_' rewrite AREA (bulk pat
   )
 })
 
-test_that("run_depth_n_marker does NOT '-'→'_' rewrite AREA before resume match", {
-  src <- paste(deparse(SEMseeker:::run_depth_n_marker), collapse = "\n")
+test_that("sem_run_depth_n_marker does NOT '-'→'_' rewrite AREA before resume match", {
+  src <- paste(deparse(SEMseeker:::sem_run_depth_n_marker), collapse = "\n")
   expect_false(
     grepl('gsub\\(\\s*"-"\\s*,\\s*"_"\\s*,\\s*tempDataFrame\\$AREA\\s*\\)', src),
     info = "AI-106 removed the AI-062 AREA rewrite — keep it removed"

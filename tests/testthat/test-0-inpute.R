@@ -18,13 +18,13 @@ test_that("inpute", {
   na_ante <- sum(is.na(local_imp))  # = 3
 
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "median")
-  imp_median <- SEMseeker:::inpute_missing_values(local_imp)
+  imp_median <- SEMseeker:::sem_inpute_missing_values(local_imp)
   testthat::expect_true(na_ante != 0)
   testthat::expect_true(sum(is.na(imp_median)) == 0)
   testthat::expect_true(nrow(imp_median) == nrow(local_imp))   # no rows removed
 
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "mean")
-  imp_mean <- SEMseeker:::inpute_missing_values(local_imp)
+  imp_mean <- SEMseeker:::sem_inpute_missing_values(local_imp)
   testthat::expect_true(sum(is.na(imp_mean)) == 0)
   testthat::expect_true(nrow(imp_mean) == nrow(local_imp))
 
@@ -37,12 +37,12 @@ test_that("inpute", {
   nrow_missed <- sum(apply(local_rm, 1, function(x) all(is.na(x))))  # = 2
 
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "median")
-  rm_median <- SEMseeker:::inpute_missing_values(local_rm)
+  rm_median <- SEMseeker:::sem_inpute_missing_values(local_rm)
   testthat::expect_true(sum(is.na(rm_median)) == 0)
   testthat::expect_true(nrow(local_rm) - nrow(rm_median) == nrow_missed)
 
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "mean")
-  rm_mean <- SEMseeker:::inpute_missing_values(local_rm)
+  rm_mean <- SEMseeker:::sem_inpute_missing_values(local_rm)
   testthat::expect_true(sum(is.na(rm_mean)) == 0)
   testthat::expect_true(nrow(local_rm) - nrow(rm_mean) == nrow_missed)
 

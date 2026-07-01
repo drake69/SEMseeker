@@ -53,7 +53,7 @@ bayes_analysis <- function(
   arguments       <- list(...)
   areas_selection <- if (!is.null(arguments[["areas_selection"]])) arguments$areas_selection else c()
 
-  study_summary <- study_summary_get()
+  study_summary <- sem_study_summary_get()
   if (independent_variable == "Sample_Group")
     study_summary <- study_summary[, c("Sample_Group", "Sample_ID")]
   else

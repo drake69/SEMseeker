@@ -1,27 +1,27 @@
-test_that("signal_range_values", {
+test_that("sem_signal_range_values", {
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
 
 
-  # test range calculation with missed values: signal_range_values must error when data has NAs
+  # test range calculation with missed values: sem_signal_range_values must error when data has NAs
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes)
   # anno_probe_features_get requires tech to be set; build equivalent manually
   probe_features_local <- probe_features[probe_features$PROBE %in% rownames(signal_data), c("CHR","START","END","PROBE")]
   probe_features_local <- probe_features_local[!is.na(probe_features_local$CHR),]
   # PROBE_WHOLE = canonical (AREA, SUBAREA) alias of PROBE — kept on probe_features
-  # so signal_range_values can drop it pre-write (and downstream association can
+  # so sem_signal_range_values can drop it pre-write (and downstream association can
   # do `probe_features[[area_subarea]]` lookup uniformly).
   probe_features_local$PROBE_WHOLE <- probe_features_local$PROBE
   signal_data_with_na <- signal_data
   signal_data_with_na[1, 1] <- NA  # inject one NA to trigger the error
-  testthat::expect_error(SEMseeker:::signal_range_values(signal_data_with_na, batch_id, probe_features_local), "^ERROR:")
+  testthat::expect_error(SEMseeker:::sem_signal_range_values(signal_data_with_na, batch_id, probe_features_local), "^ERROR:")
 
   ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "median")
-  signal_data <- SEMseeker:::inpute_missing_values(signal_data)
+  signal_data <- SEMseeker:::sem_inpute_missing_values(signal_data)
 
   ####################################################################################
-  signal_thresholds <<- SEMseeker:::signal_range_values(signal_data, batch_id, probe_features_local)
+  signal_thresholds <<- SEMseeker:::sem_signal_range_values(signal_data, batch_id, probe_features_local)
   testthat::expect_true(sum(colnames(signal_thresholds) %in% c("signal_inferior_thresholds","signal_superior_thresholds","signal_median_values","iqr","q1","q3"))==6)
 
   ####################################################################################

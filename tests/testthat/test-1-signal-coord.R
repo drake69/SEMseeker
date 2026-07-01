@@ -11,9 +11,9 @@
 #   1. io_is_coord_format()         detects CHR/START columns correctly
 #   2. io_normalize_signal_input()  converts coord df → probe-indexed matrix
 #   3. core_get_meth_tech()           sets ssEnv$tech = "LONGREAD" for coord input
-#   4. mutations_get()           HYPO / HYPER with coord-derived values + thresholds
-#   5. delta_single_sample()     continuous delta metric from coord input
-#   6. signal_single_sample()    writes bedgraph file for coord-format sample
+#   4. sem_mutations_get()           HYPO / HYPER with coord-derived values + thresholds
+#   5. sem_delta_single_sample()     continuous delta metric from coord input
+#   6. sem_signal_single_sample()    writes bedgraph file for coord-format sample
 #
 # ---------------------------------------------------------------------------
 # Helpers
@@ -129,10 +129,10 @@ test_that("core_get_meth_tech: coord-format signal sets tech to WGBS (not an Ill
 })
 
 # ---------------------------------------------------------------------------
-# 4. mutations_get with coordinate-derived values and thresholds
+# 4. sem_mutations_get with coordinate-derived values and thresholds
 # ---------------------------------------------------------------------------
 
-test_that("mutations_get: coord-derived values + coord thresholds — HYPO counts injected outliers", {
+test_that("sem_mutations_get: coord-derived values + coord thresholds — HYPO counts injected outliers", {
   tf <- tempFolders[34]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -149,7 +149,7 @@ test_that("mutations_get: coord-derived values + coord thresholds — HYPO count
     stringsAsFactors = FALSE
   )
 
-  res <- SEMseeker:::mutations_get(
+  res <- SEMseeker:::sem_mutations_get(
     values     = values_df,
     figure     = "HYPO",
     thresholds = coord_thr,
@@ -167,7 +167,7 @@ test_that("mutations_get: coord-derived values + coord thresholds — HYPO count
   expect_gte(n_mut, 1L)
 })
 
-test_that("mutations_get: coord-derived HYPER — detects injected high-beta outliers", {
+test_that("sem_mutations_get: coord-derived HYPER — detects injected high-beta outliers", {
   tf <- tempFolders[35]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -183,7 +183,7 @@ test_that("mutations_get: coord-derived HYPER — detects injected high-beta out
     stringsAsFactors = FALSE
   )
 
-  res <- SEMseeker:::mutations_get(
+  res <- SEMseeker:::sem_mutations_get(
     values     = values_df,
     figure     = "HYPER",
     thresholds = coord_thr,
@@ -195,7 +195,7 @@ test_that("mutations_get: coord-derived HYPER — detects injected high-beta out
   expect_gte(sum(res$MUTATIONS), 1L)
 })
 
-test_that("mutations_get: coord values on different chromosomes than thresholds → zero results", {
+test_that("sem_mutations_get: coord values on different chromosomes than thresholds → zero results", {
   tf <- tempFolders[36]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -212,7 +212,7 @@ test_that("mutations_get: coord values on different chromosomes than thresholds 
   coord_df  <- .build_coord_signal(n_pos = 20L, n_samples = 3L)
   coord_thr <- .build_coord_thresholds(coord_df)
 
-  res <- SEMseeker:::mutations_get(
+  res <- SEMseeker:::sem_mutations_get(
     values     = values_df,
     figure     = "HYPO",
     thresholds = coord_thr,
@@ -224,11 +224,11 @@ test_that("mutations_get: coord values on different chromosomes than thresholds 
 })
 
 # ---------------------------------------------------------------------------
-# 5. delta_single_sample with coordinate-derived input
+# 5. sem_delta_single_sample with coordinate-derived input
 # ---------------------------------------------------------------------------
 
-test_that("delta_single_sample: coord input runs without error and returns NULL", {
-  # Note: delta_single_sample() writes files only when DELTA > 0.  When thresholds
+test_that("sem_delta_single_sample: coord input runs without error and returns NULL", {
+  # Note: sem_delta_single_sample() writes files only when DELTA > 0.  When thresholds
   # are built from the same samples as the test sample, no outlier is detected and
   # no file is written (correct behaviour — this test verifies no crash).
   # For a test with expected file output, see test-2-bed-file.R and test-2-delta_single_sample.R.
@@ -253,9 +253,9 @@ test_that("delta_single_sample: coord input runs without error and returns NULL"
     stringsAsFactors = FALSE
   )
 
-  # delta_single_sample() returns invisible(NULL)
+  # sem_delta_single_sample() returns invisible(NULL)
   expect_no_error(
-    result <- SEMseeker:::delta_single_sample(
+    result <- SEMseeker:::sem_delta_single_sample(
       values        = values_df,
       thresholds    = coord_thr,
       sample_detail = sample_detail
@@ -264,7 +264,7 @@ test_that("delta_single_sample: coord input runs without error and returns NULL"
   expect_null(result)
 })
 
-test_that("delta_single_sample: detects outliers when thresholds come from separate reference", {
+test_that("sem_delta_single_sample: detects outliers when thresholds come from separate reference", {
   # Build reference from 3 background samples (all ~0.8), then test against a
   # sample that has 5 genuine HYPO outliers (values ≈ 0.02).
   tf <- tempFolders[20]
@@ -295,7 +295,7 @@ test_that("delta_single_sample: detects outliers when thresholds come from separ
   sample_detail <- data.frame(Sample_ID = "test_outlier", Sample_Group = "Control",
                                stringsAsFactors = FALSE)
 
-  SEMseeker:::delta_single_sample(
+  SEMseeker:::sem_delta_single_sample(
     values        = values_df,
     thresholds    = coord_thr,
     sample_detail = sample_detail
@@ -310,10 +310,10 @@ test_that("delta_single_sample: detects outliers when thresholds come from separ
 })
 
 # ---------------------------------------------------------------------------
-# 6. signal_single_sample: bedgraph file is created for coord-format sample
+# 6. sem_signal_single_sample: bedgraph file is created for coord-format sample
 # ---------------------------------------------------------------------------
 
-test_that("signal_single_sample: writes bedgraph file for coordinate-format sample", {
+test_that("sem_signal_single_sample: writes bedgraph file for coordinate-format sample", {
   tf <- tempFolders[32]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE, inpute = "median")
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -331,7 +331,7 @@ test_that("signal_single_sample: writes bedgraph file for coordinate-format samp
     stringsAsFactors = FALSE
   )
 
-  SEMseeker:::signal_single_sample(
+  SEMseeker:::sem_signal_single_sample(
     values        = probe_mat[, 1],
     sample_detail = sample_detail,
     probe_features = pf

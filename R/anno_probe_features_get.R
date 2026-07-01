@@ -46,15 +46,15 @@ anno_probe_features_get <- function(area_subarea) {
 
   ssEnv <- core_get_session_info()
 
-  # Contract: prepare_batch_signal() (fresh path) or core_get_meth_tech() (resume
+  # Contract: sem_prepare_batch_signal() (fresh path) or core_get_meth_tech() (resume
   # path) should set ssEnv$tech before any anno_probe_features_get() call site.
   # Fallback: read the SIGNAL PROBE pivot and re-derive — kept for tests and
-  # legacy callers that bypass prepare_batch_signal(). Loud WARNING so the
+  # legacy callers that bypass sem_prepare_batch_signal(). Loud WARNING so the
   # drift is observable.
   if (is.null(ssEnv$tech) || ssEnv$tech == "") {
     core_log_event("WARNING: anno_probe_features_get() called before ssEnv$tech is set. ",
               "Falling back to lazy detection from SIGNAL PROBE pivot. ",
-              "prepare_batch_signal() should run first in the normal pipeline.")
+              "sem_prepare_batch_signal() should run first in the normal pipeline.")
     signal_pivot_lazy <- io_read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
     if (is.null(signal_pivot_lazy))
       stop("SIGNAL_MEAN PROBE pivot not available — cannot detect technology.")

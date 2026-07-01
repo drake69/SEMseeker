@@ -17,7 +17,7 @@ io_pivot_to_long_format <- function (marker, figure, area,subarea, phenotype_col
   area_pivot <- get_pivot(marker, figure, area, subarea)
 
   area_pivot <- subset(area_pivot, area_pivot$SAMPLEID=="SAMPLE_GROUP" | area_pivot$SAMPLEID %in% areas_selection)
-  study_summary <-   study_summary_get()
+  study_summary <-   sem_study_summary_get()
   area_pivot <- area_pivot[-1,]
   for( s in 2: ncol(area_pivot))
   {

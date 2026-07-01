@@ -36,7 +36,7 @@ test_that("LESIONS_BP=500 finds 2 separate clusters at 500bp resolution", {
   muts   <- c(rep(1L, 5L), rep(1L, 5L), rep(0L, 30L))
   df <- .bp_make_mutations_df("chr1", starts, muts)
 
-  result <- SEMseeker:::lesions_get(grouping_column = "CHR",
+  result <- SEMseeker:::sem_lesions_get(grouping_column = "CHR",
                                     mutation_annotated_sorted = df)
   expect_s3_class(result, "data.frame")
   # With LESIONS_BP=500 the two clusters cannot merge (50kb apart). Each
@@ -70,7 +70,7 @@ test_that("LESIONS_BP=0 reduces every probe to singleton window (no spatial leve
   muts   <- c(rep(1L, 20L), rep(0L, 20L))
   df <- .bp_make_mutations_df("chr1", starts, muts)
 
-  result <- SEMseeker:::lesions_get(grouping_column = "CHR",
+  result <- SEMseeker:::sem_lesions_get(grouping_column = "CHR",
                                     mutation_annotated_sorted = df)
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 0L)
@@ -103,13 +103,13 @@ test_that("LESIONS_BP=100000 over-dilutes a sparse two-cluster signal — no les
   muts   <- c(rep(1L, 5L), rep(1L, 5L), rep(0L, 30L))
   df <- .bp_make_mutations_df("chr1", starts, muts)
 
-  result <- SEMseeker:::lesions_get(grouping_column = "CHR",
+  result <- SEMseeker:::sem_lesions_get(grouping_column = "CHR",
                                     mutation_annotated_sorted = df)
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 0L)
 })
 
-test_that("lesions_get errors on negative LESIONS_BP", {
+test_that("sem_lesions_get errors on negative LESIONS_BP", {
   tf <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
   SEMseeker:::core_init_env(
@@ -122,7 +122,7 @@ test_that("lesions_get errors on negative LESIONS_BP", {
   df <- .bp_make_mutations_df("chr1", seq(1e6L, by = 1000L, length.out = 10L),
                               rep(0L, 10L))
   expect_error(
-    SEMseeker:::lesions_get(grouping_column = "CHR",
+    SEMseeker:::sem_lesions_get(grouping_column = "CHR",
                             mutation_annotated_sorted = df),
     "LESIONS_BP must be a non-negative integer"
   )

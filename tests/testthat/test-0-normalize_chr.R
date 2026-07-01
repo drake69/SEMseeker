@@ -106,7 +106,7 @@ test_that("BED round-trip: bare CHR survives write+read cycle", {
   bed_out$CHR <- SEMseeker:::anno_normalize_chr(bed_out$CHR, "output")
   readr::write_tsv(bed_out, tmp, col_names = FALSE)
 
-  # Read back and normalize (as fixed analyze_population does)
+  # Read back and normalize (as fixed sem_analyze_population does)
   bed_in <- utils::read.delim(tmp, header = FALSE, sep = "\t",
                                stringsAsFactors = FALSE)
   colnames(bed_in) <- c("CHR", "START", "END", "VALUE")
