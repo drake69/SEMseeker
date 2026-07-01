@@ -58,14 +58,14 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
   parts  <- unlist(strsplit(as.character(family_test), "_"))
   engine <- parts[1]
   if (!engine %in% c("limma", "voom") || length(parts) < 2L) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch_lazy: malformed family_test='",
               family_test, "'")
     return(NULL)
   }
   degree <- suppressWarnings(as.integer(parts[2]))
   if (is.na(degree) || degree < 1L) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch_lazy: invalid degree in '",
               family_test, "'")
     return(NULL)
@@ -133,7 +133,7 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
   n_genes <- as.integer(as.data.frame(
     pivot_lazy$select(polars::pl$len()$alias("n"))$collect())$n[1])
   if (is.na(n_genes) || n_genes == 0L) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch_lazy: nothing left after resume",
               " filter for ", key$MARKER, "/", key$FIGURE, "/",
               key$AREA, "/", key$SUBAREA, ".")
@@ -151,7 +151,7 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
   keep <- !is.na(ss$Sample_ID) &
           stats::complete.cases(ss[, use_iv, drop = FALSE])
   if (sum(keep) < (degree + length(covariates) + 2L)) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch_lazy: too few complete samples (",
               sum(keep), " < ", degree + length(covariates) + 2L, ")")
     return(NULL)
@@ -161,7 +161,7 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
 
   # Design matrix: poly(IV, degree, raw=TRUE) + covariates. Name the
   # polynomial columns the same way association_model_polynomial's
-  # I(...) formula winds up after name_cleaning — 'I_<IV>_<deg>' — so
+  # I(...) formula winds up after core_name_cleaning — 'I_<IV>_<deg>' — so
   # the CSV columns landed by build_pname/build_ename match the
   # polynomial CSV schema bit-for-bit.
   iv_vec <- as.numeric(ss[, independent_variable])
@@ -183,15 +183,15 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
   # Decides if a monolithic lmFit fits in budget. Chunked path activates
   # when the monolithic y_mat would push past
   # `total_RAM × SEMSEEKER_BULK_MODEL_MEM_FRACTION` (default 0.6).
-  ssEnv_local      <- tryCatch(get_session_info(), error = function(e) NULL)
+  ssEnv_local      <- tryCatch(core_get_session_info(), error = function(e) NULL)
   tech_is_longread <- !is.null(ssEnv_local$tech) &&
                        ssEnv_local$tech %in% c("WGBS", "LONGREAD")
-  memgate <- .bulk_model_memory_gate(
+  memgate <- .core_bulk_model_memory_gate(
     n_probes  = n_genes,
     n_samples = length(sample_cols_kept),
     n_coef    = ncol(design)
   )
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " apply_stat_model_batch_lazy ", family_test,
             " [", key$MARKER, "/", key$FIGURE, "/", key$AREA, "/",
             key$SUBAREA, "] gate decision=", memgate$decision,
@@ -241,17 +241,17 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
   coef_names <- colnames(fit$coefficients)
 
   build_pname <- function(cn) {
-    pn <- name_cleaning(paste0(cn, "_pvalue"))
-    pn <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", pn))
-    pn <- name_cleaning(gsub("_RAW_EQ_TRUE", "", pn))
-    pn <- name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, pn))
+    pn <- core_name_cleaning(paste0(cn, "_pvalue"))
+    pn <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", pn))
+    pn <- core_name_cleaning(gsub("_RAW_EQ_TRUE", "", pn))
+    pn <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, pn))
     pn
   }
   build_ename <- function(cn) {
-    en <- name_cleaning(paste0(cn, "_estimate"))
-    en <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", en))
-    en <- name_cleaning(gsub("_RAW_EQ_TRUE", "", en))
-    en <- name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, en))
+    en <- core_name_cleaning(paste0(cn, "_estimate"))
+    en <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", en))
+    en <- core_name_cleaning(gsub("_RAW_EQ_TRUE", "", en))
+    en <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, en))
     en
   }
   pnames <- vapply(coef_names, build_pname, character(1))
@@ -284,7 +284,7 @@ apply_stat_model_batch_lazy <- function(pivot_lazy,
     result_temp$PVALUE <- result_temp[[first_poly_pcol]]
   }
 
-  colnames(result_temp) <- name_cleaning(colnames(result_temp))
+  colnames(result_temp) <- core_name_cleaning(colnames(result_temp))
 
   # Release the heavy locals BEFORE the function returns. The MArrayLM
   # carries several gene-sized matrices; without explicit cleanup the

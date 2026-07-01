@@ -1,6 +1,6 @@
 io_plot_file_name <- function(inference_detail, folder,file_extension="png", prefix = "", suffix="", key=c())
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   area <- as.character(key$AREA)
   subarea <- as.character(key$SUBAREA)
   marker <- as.character(key$MARKER)
@@ -62,7 +62,7 @@ io_plot_file_name <- function(inference_detail, folder,file_extension="png", pre
     file_result_prefix <- paste(file_result_prefix, subarea, sep = "_")
 
   if(length(inference_detail$samples_sql_condition)>0)
-    folder <- io_dir_check_and_create(folder,name_cleaning(inference_detail$samples_sql_condition))
+    folder <- io_dir_check_and_create(folder,core_name_cleaning(inference_detail$samples_sql_condition))
 
   fileNameResults <- io_file_path_build(folder,c(as.character(marker),as.character(figure),file_result_prefix ,file_suffix) , file_extension)
 

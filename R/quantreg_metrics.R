@@ -4,7 +4,7 @@ quantreg_metrics <- function(predicted_values, expected_values, tau, res, family
 
   ###########
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   pinball_loss <- function(expected_values, predicted_values, tau) {
     residuals <- expected_values - predicted_values

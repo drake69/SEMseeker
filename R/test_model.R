@@ -22,7 +22,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   res <- data.frame(pvalue=NA)
   if(family_test=="chisq.test")
   {
@@ -257,7 +257,7 @@ test_model <- function (family_test, tempDataFrame, sig.formula,burdenValue,inde
 
     if (plot)
     {
-      chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("CORRELATION",name_cleaning(as.character(samples_sql_condition))))
+      chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("CORRELATION",core_name_cleaning(as.character(samples_sql_condition))))
       # plot a scatter plot of the burden value vs the independent variable and a linear regression line
       filename  <-  io_file_path_build(chartFolder,toupper(c(family_test,as.character(transformation_y), independent_variable,"Vs", burdenValue,area, subarea)),ssEnv$plot_format)
       grDevices::png(filename, width = 9, height = 9, units="in", res = as.numeric(ssEnv$plot_resolution_ppi))

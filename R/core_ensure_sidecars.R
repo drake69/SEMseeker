@@ -3,12 +3,12 @@
 #' Walks the \code{Pivots/} subtree under \code{data_root} (or any directory
 #' tree containing \code{*.parquet} files) and writes a sidecar
 #' \code{<base>_meta.json} for every parquet that is missing one. The sidecar
-#' content is produced by \code{\link{pivot_sidecar_write}} from the current
+#' content is produced by \code{\link{core_pivot_sidecar_write}} from the current
 #' \code{ssEnv} (genome_build, tech, semseeker_version, timestamp).
 #'
 #' Single point of responsibility for sidecar materialisation: callers that
 #' write pivots (\code{anno_create_position_pivots}, \code{io_get_pivot_both},
-#' \code{io_read_pivot}, \code{semseeker_core}, \code{recover}, ...) do not need
+#' \code{io_read_pivot}, \code{semseeker_core}, \code{core_recover}, ...) do not need
 #' to write sidecars themselves — they simply call this function once at the
 #' end of their work and let it scan for parquets without a sidecar.
 #'
@@ -21,10 +21,10 @@
 #'
 #' @keywords internal
 #' @noRd
-ensure_sidecars <- function(data_root = NULL) {
+core_ensure_sidecars <- function(data_root = NULL) {
 
   if (is.null(data_root)) {
-    ssEnv <- get_session_info()
+    ssEnv <- core_get_session_info()
     data_root <- ssEnv$result_folderData
   }
   if (!dir.exists(data_root)) return(invisible(character(0)))
@@ -37,14 +37,14 @@ ensure_sidecars <- function(data_root = NULL) {
   for (p in parquets) {
     sidecar <- paste0(sub("\\.parquet$", "", p), "_meta.json")
     if (!file.exists(sidecar)) {
-      pivot_sidecar_write(p)
+      core_pivot_sidecar_write(p)
       written <- c(written, sidecar)
     }
   }
 
   if (length(written) > 0L)
-    log_event("INFO: ", Sys.time(),
-              " ensure_sidecars wrote ", length(written),
+    core_log_event("INFO: ", Sys.time(),
+              " core_ensure_sidecars wrote ", length(written),
               " missing sidecar(s) under ", data_root)
 
   invisible(written)

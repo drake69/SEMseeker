@@ -6,7 +6,7 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # multinomial_degree_partition-partition_percentage
   multinomial_params <- family_test
@@ -65,10 +65,10 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
     # i <- 1
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
-    pval_name <- name_cleaning(paste0("pvalue_",row_name))
-    pval_name <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ","",pval_name))
-    pval_name <- name_cleaning(gsub("_RAW_EQ_TRUE","",pval_name))
-    pval_name <- name_cleaning(gsub("INDEPENDENT_VARIABLE",independent_variable,pval_name))
+    pval_name <- core_name_cleaning(paste0("pvalue_",row_name))
+    pval_name <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ","",pval_name))
+    pval_name <- core_name_cleaning(gsub("_RAW_EQ_TRUE","",pval_name))
+    pval_name <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE",independent_variable,pval_name))
     p_value <- data.frame(p_value)
     colnames(p_value) <- pval_name
     res <- cbind(res, p_value)
@@ -80,7 +80,7 @@ multinomial_model <- function (family_test, tempDataFrame, sig.formula , transfo
   rownames(res) <- NULL
   if(plot)
   {
-    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", core_name_cleaning(samples_sql_condition)))
 
     if(is.null(covariates) || length(covariates)  ==  0)
       file_suffix <- ""

@@ -64,7 +64,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     old_results_global <- data.frame()
   }
 
-  ssEnv_local <- get_session_info()
+  ssEnv_local <- core_get_session_info()
   tech_is_longread <- !is.null(ssEnv_local$tech) &&
                        ssEnv_local$tech %in% c("WGBS", "LONGREAD")
 
@@ -91,7 +91,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # which is the case run_depth_n_marker needs to skip with a warning.
     pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
     if (is.null(pivot_lazy)) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
         " File not found:", pivot_filename, ".")
       association_analysis_log(cbind(prep$inference_detail, keys[k, ]),
         start_time, Sys.time(), processed_items)
@@ -116,7 +116,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
           old_results_global$SUBAREA == key$SUBAREA &
           old_results_global$AREA    == key$AREA, "AREA_OF_TEST"]
       }
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " Batch family '", family_test,
                 "': lazy polars path (AI-061). area_to_remove=",
                 length(area_to_remove))
@@ -160,7 +160,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
       next
     }
 
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Starting to read pivot:", pivot_filename, ".")
     tempDataFrame <- as.data.frame(pivot_lazy$collect())
 
@@ -185,7 +185,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
       tempDataFrame <- tempDataFrame[!(tempDataFrame$AREA %in% area_to_remove), ]
     }
 
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Read pivot:", pivot_filename, " with ", nrow(tempDataFrame), " rows.")
     tempDataFrame[is.na(tempDataFrame)] <- 0
 
@@ -202,7 +202,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
         tempDataFrame <- tempDataFrame[tempDataFrame$AREA %in% selected_areas_temp, ]
       }
       if (nrow(tempDataFrame) == 0) {
-        log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
           " No areas selected for the analysis! Skipped.")
       }
     }
@@ -210,7 +210,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     if (is.null(dim(tempDataFrame))) next
     if (plyr::empty(tempDataFrame) | nrow(tempDataFrame) == 0) next
 
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Starting to execute required test for:",
       key$MARKER, key$FIGURE, key$AREA, key$SUBAREA, ".")
 
@@ -221,7 +221,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     # empirical-Bayes interpretation. Force batch families to a single
     # whole-pivot pass instead of the default chunked loop.
     chunk_size <- if (grepl("^(limma|voom)_", family_test)) {
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " Batch family '", family_test,
                 "': bypassing chunking, passing whole pivot (",
                 nrow(tempDataFrame), " areas) to apply_stat_model_batch.")
@@ -236,13 +236,13 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
       batch_df <- batch_df[, -1]
       batch_df <- as.data.frame(t(batch_df))
       batch_df$Sample_ID <- rownames(batch_df)
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
         " Transposed pivot:", pivot_filename, " with ", ncol(batch_df) - 1, " columns.")
 
       if (nrow(batch_df) > 1) {
         batch_df <- merge(x = prep$sample_names, y = batch_df,
                           by.x = "Sample_ID", by.y = "Sample_ID", all.x = TRUE)
-        log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
           " Merged pivot:", pivot_filename, " with ", ncol(batch_df), " columns.")
         batch_df <- as.data.frame(batch_df)
         batch_df[is.na(batch_df)] <- 0
@@ -255,7 +255,7 @@ run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
         g_start <- 2 + length(prep$covariates)
         processed_items <- processed_items + ncol(batch_df) - g_start
         if (any(is.na(batch_df))) {
-          log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+          core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
             " Missing values in the data frame!")
         }
         result_temp_local_batch <- apply_stat_model(

@@ -88,7 +88,7 @@ backend (default \code{FALSE}).}
 \item{parallel_strategy}{character. Parallelisation backend (default
 \code{"multicore"}).}
 
-\item{...}{Additional named arguments passed to \code{init_env()}.}
+\item{...}{Additional named arguments passed to \code{core_init_env()}.}
 }
 \value{
 Invisibly \code{NULL}. Pathway enrichment results are written to the

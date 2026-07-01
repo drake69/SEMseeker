@@ -2,9 +2,9 @@ test_that("analyze_single_sample", {
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute = "mean")
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, inpute = "mean")
 
-  tt <- SEMseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::core_get_meth_tech(signal_data)
 
   if (!exists("signal_thresholds")) {
     signal_data <- SEMseeker:::inpute_missing_values(signal_data)
@@ -69,6 +69,6 @@ test_that("analyze_single_sample", {
     SEMseeker:::analyze_single_sample_both(sample_detail, "MUTATIONS")
   )
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })

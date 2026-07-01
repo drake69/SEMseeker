@@ -25,7 +25,7 @@ loaded into memory.}
 \item{parallel_strategy}{character. Parallelisation backend passed to
 \code{future} (default \code{"multicore"}).}
 
-\item{...}{Additional named arguments passed to \code{init_env()}.}
+\item{...}{Additional named arguments passed to \code{core_init_env()}.}
 }
 \value{
 Invisibly \code{NULL}. Coverage tables and charts are written to

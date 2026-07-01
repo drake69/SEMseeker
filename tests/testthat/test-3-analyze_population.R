@@ -2,11 +2,11 @@ test_that("analyze_population", {
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
 
   ####################################################################################
 
-  tt <- SEMseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::core_get_meth_tech(signal_data)
 
   ####################################################################################
 
@@ -33,7 +33,7 @@ test_that("analyze_population", {
 
   ####################################################################################
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder,recursive = TRUE)
 
 })

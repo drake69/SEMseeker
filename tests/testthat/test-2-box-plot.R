@@ -11,8 +11,8 @@ test_that("plot_box_plot: wilcoxon call creates boxplot and violin PNG files", {
   skip_if_not_installed("ggpubr")
 
   tf  <- tempFolders[30]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(1)
   df <- data.frame(
@@ -31,7 +31,7 @@ test_that("plot_box_plot: wilcoxon call creates boxplot and violin PNG files", {
     key                   = key
   )
 
-  ssEnv      <- SEMseeker:::get_session_info()
+  ssEnv      <- SEMseeker:::core_get_session_info()
   chart_root <- file.path(ssEnv$result_folderChart, "COMPARISON", "")
   png_files  <- list.files(chart_root, pattern = "\\.png$", recursive = TRUE)
   expect_gte(length(png_files), 2)  # boxplot + violin
@@ -41,8 +41,8 @@ test_that("plot_box_plot: t.test family also creates PNG files", {
   skip_if_not_installed("ggpubr")
 
   tf  <- tempFolders[31]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(2)
   df <- data.frame(
@@ -61,7 +61,7 @@ test_that("plot_box_plot: t.test family also creates PNG files", {
     key                   = key
   )
 
-  ssEnv      <- SEMseeker:::get_session_info()
+  ssEnv      <- SEMseeker:::core_get_session_info()
   chart_root <- file.path(ssEnv$result_folderChart, "COMPARISON", "")
   png_files  <- list.files(chart_root, pattern = "\\.png$", recursive = TRUE)
   expect_gte(length(png_files), 2)
@@ -71,8 +71,8 @@ test_that("plot_box_plot: non-dichotomous family (pearson) is skipped silently",
   skip_if_not_installed("ggpubr")
 
   tf  <- tempFolders[32]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df  <- data.frame(BURDEN = 1:10, GROUP = factor(rep("ctrl", 10)))
   key <- list(AREA = "GENE", SUBAREA = "TSS200", MARKER = "MUTATIONS", FIGURE = "K850")
@@ -88,7 +88,7 @@ test_that("plot_box_plot: non-dichotomous family (pearson) is skipped silently",
     key                   = key
   )
 
-  ssEnv      <- SEMseeker:::get_session_info()
+  ssEnv      <- SEMseeker:::core_get_session_info()
   chart_root <- file.path(ssEnv$result_folderChart, "COMPARISON", "")
   png_files  <- list.files(chart_root, pattern = "\\.png$", recursive = TRUE)
   expect_equal(length(png_files), 0)

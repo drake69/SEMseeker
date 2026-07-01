@@ -17,12 +17,12 @@
 #'
 #' @return ssEnv, invisibly.
 #' @keywords internal
-update_session_info <- function(ssEnv, save_to_disk = TRUE)
+core_update_session_info <- function(ssEnv, save_to_disk = TRUE)
 {
   if (is.null(ssEnv) | length(ssEnv)==0)
     stop("DEBUG: I'm STOPPING HERE! You called update session info without ssEnv!")
 
-  # save to environment (always; this is what get_session_info() reads first)
+  # save to environment (always; this is what core_get_session_info() reads first)
   assign("ssEnv", ssEnv, envir=.pkgglobalenv)
 
   if (save_to_disk) {

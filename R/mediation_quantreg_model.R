@@ -1,7 +1,7 @@
 # (family_test, tempDataFrame, sig.formula, transformation_y, plot)
 mediation_quantreg_model_1 <- function(family_test,tempDataFrame, sig.formula, transformation_y, plot) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   quantreg_params <- unlist(strsplit(as.character(family_test),"_"))
   tau <- as.numeric(quantreg_params[2])
@@ -16,7 +16,7 @@ mediation_quantreg_model_1 <- function(family_test,tempDataFrame, sig.formula, t
   outcome <- vars[[2]] # dependent variable
   treatment <- vars[[3]][1]
 
-  log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Starting mediation analysis for: ", mediator, " and ", outcome)
+  core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Starting mediation analysis for: ", mediator, " and ", outcome)
 
   res$mediator <- mediator
   res$outcome <- outcome
@@ -24,7 +24,7 @@ mediation_quantreg_model_1 <- function(family_test,tempDataFrame, sig.formula, t
 
   if(calculate_collinearity_score(df_mediator) > 0.5)
   {
-    log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Collinearity detected in the mediator model")
+    core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Collinearity detected in the mediator model")
     res$collinearity_mediator <- TRUE
     return(res)
   } else
@@ -133,7 +133,7 @@ mediation_quantreg_model_1 <- function(family_test,tempDataFrame, sig.formula, t
       next
   }
 
-  log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Mediation analysis completed for: ", mediator, " and ", outcome, " with p-value: ", res$pvalue)
+  core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Mediation analysis completed for: ", mediator, " and ", outcome, " with p-value: ", res$pvalue)
 
   # Return the summary of the mediation analysis
   return(res)

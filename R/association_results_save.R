@@ -21,7 +21,7 @@
 association_results_save <- function(results_inference, inference_detail, marker,
                                      folder = NULL) {
   if (is.null(folder)) {
-    ssEnv <- get_session_info()
+    ssEnv <- core_get_session_info()
     folder <- ssEnv$result_folderInference
   }
   file_name <- io_inference_file_name(inference_detail, marker, folder)

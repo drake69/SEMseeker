@@ -18,10 +18,10 @@ test_that("semeeker", {
     parallel_strategy = "sequential"
   )
 
-  ssEnv <- SEMseeker:::get_session_info()
+  ssEnv <- SEMseeker:::core_get_session_info()
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures)
-  # name_cleaning uppercases Sample_ID inside semseeker(); use the same for comparison
-  cleaned_sample_ids <- SEMseeker:::name_cleaning(mySampleSheet$Sample_ID)
+  # core_name_cleaning uppercases Sample_ID inside semseeker(); use the same for comparison
+  cleaned_sample_ids <- SEMseeker:::core_name_cleaning(mySampleSheet$Sample_ID)
 
   for (k in 1:nrow(keys))
   {
@@ -95,7 +95,7 @@ test_that("semeeker", {
   }
 
   ####################################################################################
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder,recursive = TRUE)
 })
 

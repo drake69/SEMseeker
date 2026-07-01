@@ -5,20 +5,20 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
   result_folder, ...)
 {
 
-  pvalue_column <- name_cleaning(pvalue_column)
+  pvalue_column <- core_name_cleaning(pvalue_column)
   if (nrow(inference_detail) >1)
     inference_detail <- subset(inference_detail, depth_analysis == 3)[1,]
 
   if (nrow(inference_detail) ==0)
   {
-    log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," No inference details found!")
+    core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," No inference details found!")
     return(NULL)
   }
 
-  ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
   cross_study_env <- ssEnv
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the cross study association analysys for projects \n ", paste0(studies$STUDY, collapse = ", "))
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the cross study association analysys for projects \n ", paste0(studies$STUDY, collapse = ", "))
 
   color_palette <- ssEnv$color_palette
   localKeys <- unique(ssEnv$keys_areas_subareas_markers_figures[,c("MARKER","AREA")])
@@ -34,7 +34,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
     {
       # get the inference details for the study
       result_folder_study <- studies[s,"RESULT_FOLDER"]
-      ssEnv <- init_env( result_folder =  result_folder_study, start_fresh = FALSE,alpha=alpha, ...)
+      ssEnv <- core_init_env( result_folder =  result_folder_study, start_fresh = FALSE,alpha=alpha, ...)
       temp_res <- association_results_get(inference_detail = inference_detail, marker = MARKER, area= AREA,
         adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
         adjustment_method = adjustment_method, significance = NULL)
@@ -46,10 +46,10 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
 
   # change STUDY column to take int account the direction of the statistic
   # aggregated_study_results$STUDY <- as.character(paste0(aggregated_study_results$STUDY,"_", ifelse((aggregated_study_results[,statistic_parameter] > 0),"INCR","DECR") ))
-  update_session_info(cross_study_env)
-  ssEnv <- get_session_info(result_folder)
+  core_update_session_info(cross_study_env)
+  ssEnv <- core_get_session_info(result_folder)
 
-  log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y")," inference files aggregated!")
+  core_log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y")," inference files aggregated!")
   # filename <- io_inference_file_name( inference_detail, "AGGREGATED",ssEnv$result_folderInference,file_extension = "csv",suffix = "", prefix = "")
   # write.csv2(aggregated_study_results, filename, row.names = F)
   # create a file with max of pvalue column for the cross study and mean of statistic parameter
@@ -95,7 +95,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
       }
       # rename pvalue_column to the original name
       colnames(tt)[colnames(tt) == "alpha"] <- pvalue_column
-      dest_folder <- io_dir_check_and_create(ssEnv$result_folderInference,name_cleaning(inference_detail$areas_sql_condition))
+      dest_folder <- io_dir_check_and_create(ssEnv$result_folderInference,core_name_cleaning(inference_detail$areas_sql_condition))
       filename <- io_inference_file_name(inference_detail, m, dest_folder ,prefix="" )
 
       if(file.exists(filename))
@@ -123,7 +123,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
       {
         # get the inference details for the study
         result_folder_study <- studies[s,"RESULT_FOLDER"]
-        ssEnv <- init_env( result_folder =  result_folder_study, start_fresh = FALSE,alpha=alpha, ...)
+        ssEnv <- core_init_env( result_folder =  result_folder_study, start_fresh = FALSE,alpha=alpha, ...)
         temp_res <- association_results_get(inference_detail = inference_detail, marker = MARKER, area= AREA,
           adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
           adjustment_method = adjustment_method, significance = signif)
@@ -135,8 +135,8 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
 
     # change STUDY column to take int account the direction of the statistic
     # aggregated_study_results$STUDY <- as.character(paste0(aggregated_study_results$STUDY,"_", ifelse((aggregated_study_results[,statistic_parameter] > 0),"INCR","DECR") ))
-    update_session_info(cross_study_env)
-    ssEnv <- get_session_info(result_folder)
+    core_update_session_info(cross_study_env)
+    ssEnv <- core_get_session_info(result_folder)
 
     if(nrow(aggregated_study_results)==0)
       next
@@ -189,7 +189,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
     # }
     filename <- io_inference_file_name(inference_detail, paste0(markers, collapse = "_") ,ssEnv$result_folderInference,file_extension = "csv",suffix = "AGGREGATED", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
     utils::write.csv2(aggregated_study_results_table, filename, row.names = FALSE)
-    log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  aggregated files saved!")
+    core_log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  aggregated files saved!")
     # for( j in 2:length(studies_to_comb))
     {
       # studies_comb <- combinat::combn(studies_to_comb, j)
@@ -314,7 +314,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
           #     width = 1024
           #   )
           # )
-          log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y"),"  venn diagram completed !")
+          core_log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y"),"  venn diagram completed !")
 
           overlaps <- Reduce(intersect, SPLIT)
           if(length(overlaps)>0)
@@ -327,7 +327,7 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
       }
     }
 
-    log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  job completed !")
+    core_log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  job completed !")
     # remove all files ending with .log
     files <- list.files(ssEnv$result_folderInference, pattern = ".log")
     for (f in seq_along(files))
@@ -336,5 +336,5 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
       file.remove(paste(ssEnv$result_folderInference, "/", file, sep = ""))
     }
   }
-  close_env()
+  core_close_env()
 }

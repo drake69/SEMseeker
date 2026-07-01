@@ -6,7 +6,7 @@
 #   WGBS/LONGREAD:  columns CHR, START, [END,] sample1, sample2, ...
 #
 #   io_normalize_signal_input() is called transparently inside analyze_batch()
-#   before get_meth_tech(). If the input has CHR/START columns, it converts
+#   before core_get_meth_tech(). If the input has CHR/START columns, it converts
 #   the data frame to a probe-ID-indexed matrix using a synthetic probe ID:
 #
 #     synthetic probe ID = "{CHR_no_prefix}_{START}"
@@ -98,7 +98,7 @@ io_coord_to_semseeker <- function(df) {
 #' it is converted to the probe-ID-indexed format expected by SEMseeker.
 #' Illumina matrices (rownames = probe IDs) are returned unchanged.
 #'
-#' Called inside \code{analyze_batch()} before \code{get_meth_tech()}.
+#' Called inside \code{analyze_batch()} before \code{core_get_meth_tech()}.
 #'
 #' @param signal_data A data frame (probe-indexed or coordinate-based).
 #' @return A data frame with rownames = probe IDs (real or synthetic).

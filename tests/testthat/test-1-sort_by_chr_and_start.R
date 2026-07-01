@@ -12,6 +12,6 @@ test_that("anno_sort_by_chr_and_start", {
 
   ####################################################################################
 
-  # SEMseeker:::close_env()
+  # SEMseeker:::core_close_env()
 }
 )

@@ -128,10 +128,10 @@ test_that("prepare_batch_signal errors out with no resolvable tech", {
   skip_on_cran()
   tempFolder <- tempfile("ppp_prep_batch_")
   on.exit(unlink(tempFolder, recursive = TRUE), add = TRUE)
-  SEMseeker:::init_env(result_folder = tempFolder)
+  SEMseeker:::core_init_env(result_folder = tempFolder)
 
   # WGBS detection requires probes, but we pass an empty data.frame.
-  # get_meth_tech() should fall through and return tech = "" -> error.
+  # core_get_meth_tech() should fall through and return tech = "" -> error.
   signal_data <- data.frame(
     S = numeric(0),
     row.names = character(0),
@@ -151,7 +151,7 @@ test_that("prepare_batch_signal errors out with no resolvable tech", {
 test_that("prepare_batch_signal source has all 8 documented steps", {
   src <- paste(deparse(SEMseeker:::prepare_batch_signal), collapse = "\n")
   # Tech resolution
-  expect_true(grepl("get_meth_tech", src))
+  expect_true(grepl("core_get_meth_tech", src))
   # Tech-specific branching
   expect_true(grepl('WGBS.*LONGREAD|tech %in%', src))
   # Duplicate collapse

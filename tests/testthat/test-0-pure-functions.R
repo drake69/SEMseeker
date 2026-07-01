@@ -1,7 +1,7 @@
 # Tests for pure (side-effect-free) helper functions
 #
 # Covered:
-#  - name_cleaning()                      string sanitiser
+#  - core_name_cleaning()                      string sanitiser
 #  - is.family_dicotomic()                family-test classifier
 #  - sig.formula_vars()                   formula parser
 #  - apply_stat_model_sig_formula()       formula builder
@@ -15,41 +15,41 @@
 #  - polynomial_formula_build()           polynomial regression formula builder
 
 # ---------------------------------------------------------------------------
-# 1. name_cleaning
+# 1. core_name_cleaning
 # ---------------------------------------------------------------------------
 
-test_that("name_cleaning uppercases and replaces spaces/dots/dashes with underscores", {
-  expect_equal(SEMseeker:::name_cleaning("hello world"), "HELLO_WORLD")
-  expect_equal(SEMseeker:::name_cleaning("a.b.c"),       "A_B_C")
-  expect_equal(SEMseeker:::name_cleaning("a-b-c"),       "A_B_C")
-  expect_equal(SEMseeker:::name_cleaning("abc"),         "ABC")
+test_that("core_name_cleaning uppercases and replaces spaces/dots/dashes with underscores", {
+  expect_equal(SEMseeker:::core_name_cleaning("hello world"), "HELLO_WORLD")
+  expect_equal(SEMseeker:::core_name_cleaning("a.b.c"),       "A_B_C")
+  expect_equal(SEMseeker:::core_name_cleaning("a-b-c"),       "A_B_C")
+  expect_equal(SEMseeker:::core_name_cleaning("abc"),         "ABC")
 })
 
-test_that("name_cleaning replaces comparison operators", {
-  expect_equal(SEMseeker:::name_cleaning("x>=1"),  "X_GTE_1")
-  expect_equal(SEMseeker:::name_cleaning("x<=1"),  "X_LTE_1")
-  expect_equal(SEMseeker:::name_cleaning("x==1"),  "X_EQ_1")
-  expect_equal(SEMseeker:::name_cleaning("x!=1"),  "X_DISEQ_1")
-  expect_equal(SEMseeker:::name_cleaning("x>1"),   "X_GT_1")
-  expect_equal(SEMseeker:::name_cleaning("x<1"),   "X_LT_1")
+test_that("core_name_cleaning replaces comparison operators", {
+  expect_equal(SEMseeker:::core_name_cleaning("x>=1"),  "X_GTE_1")
+  expect_equal(SEMseeker:::core_name_cleaning("x<=1"),  "X_LTE_1")
+  expect_equal(SEMseeker:::core_name_cleaning("x==1"),  "X_EQ_1")
+  expect_equal(SEMseeker:::core_name_cleaning("x!=1"),  "X_DISEQ_1")
+  expect_equal(SEMseeker:::core_name_cleaning("x>1"),   "X_GT_1")
+  expect_equal(SEMseeker:::core_name_cleaning("x<1"),   "X_LT_1")
 })
 
-test_that("name_cleaning strips leading and trailing underscores", {
-  expect_false(startsWith(SEMseeker:::name_cleaning("_abc"), "_"))
-  expect_false(endsWith(SEMseeker:::name_cleaning("abc_"),   "_"))
+test_that("core_name_cleaning strips leading and trailing underscores", {
+  expect_false(startsWith(SEMseeker:::core_name_cleaning("_abc"), "_"))
+  expect_false(endsWith(SEMseeker:::core_name_cleaning("abc_"),   "_"))
 })
 
-test_that("name_cleaning collapses double underscores", {
-  result <- SEMseeker:::name_cleaning("a__b")
+test_that("core_name_cleaning collapses double underscores", {
+  result <- SEMseeker:::core_name_cleaning("a__b")
   expect_false(grepl("__", result))
 })
 
-test_that("name_cleaning handles empty strings with placeholder", {
-  expect_equal(SEMseeker:::name_cleaning("", empty_place_holder = "EMPTY"), "EMPTY")
+test_that("core_name_cleaning handles empty strings with placeholder", {
+  expect_equal(SEMseeker:::core_name_cleaning("", empty_place_holder = "EMPTY"), "EMPTY")
 })
 
-test_that("name_cleaning handles vectors", {
-  result <- SEMseeker:::name_cleaning(c("hello world", "foo.bar"))
+test_that("core_name_cleaning handles vectors", {
+  result <- SEMseeker:::core_name_cleaning(c("hello world", "foo.bar"))
   expect_equal(result, c("HELLO_WORLD", "FOO_BAR"))
 })
 

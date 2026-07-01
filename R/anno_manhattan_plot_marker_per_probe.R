@@ -28,15 +28,15 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
   result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, ...)
 {
 
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE,
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE,
     figures=c("HYPER","HYPO"), areas="PROBE", ...)
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will generate images for significative probes \n")
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will generate images for significative probes \n")
 
   study_summary <-   study_summary_get()
   anno_annotate_position_pivots()
 
-  # ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, tech = tech)
+  # ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, tech = tech)
   chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart, "MARKER_PER_PROBE")
 
   sample_sheet <- utils::read.csv2(io_file_path_build(ssEnv$result_folderData, "1_sample_sheet_original","csv"), sep=";", header = TRUE, stringsAsFactors = FALSE)
@@ -85,7 +85,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
         else
         {
 
-          log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Collecting probe stat for marker: ", marker, " \n")
+          core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Collecting probe stat for marker: ", marker, " \n")
           areas_name <- count_m$AREA
           count_m <- count_m[, -1]
           probes_stat[probes_stat$MARKER == marker  & probes_stat$METRIC== "COUNT","VALUE"] <- nrow(count_m) * ncol(count_m)
@@ -215,7 +215,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
     for ( selection in c("min","max","median","q1","q3"))
     {
       # selection <- "max"
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), "Generating plot for ", marker, " and ", selection, " probe")
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), "Generating plot for ", marker, " and ", selection, " probe")
       probe_name <- probes_stat[probes_stat$METRIC==toupper(selection) & max(probes_stat[probes_stat$METRIC==toupper(selection),"VALUE"])==probes_stat[probes_stat$METRIC==toupper(selection),"VALUE"],"POSITION"]
       if(length(probe_name)>1)
         probe_name <- probe_name[1]
@@ -347,7 +347,7 @@ anno_manhattan_plot_marker_per_probe <- function(probe_name_max = "cg11680158", 
     }
   }
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Generation of plot completed!")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Generation of plot completed!")
 
 }
 

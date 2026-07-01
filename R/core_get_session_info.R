@@ -1,4 +1,4 @@
-get_session_info <- function(result_folder=NULL)
+core_get_session_info <- function(result_folder=NULL)
 {
 
   # try from environment
@@ -17,7 +17,7 @@ get_session_info <- function(result_folder=NULL)
   if (is.null(ssEnv) | length(ssEnv)==0) {
     if (!is.null(result_folder))
       return(list())
-    stop("ERROR: get_session_info called without result folder!")
+    stop("ERROR: core_get_session_info called without result folder!")
   }
 
   return(ssEnv)

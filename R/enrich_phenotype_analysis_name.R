@@ -1,6 +1,6 @@
 enrich_phenotype_analysis_name <- function(inference_detail, key,prefix = "", suffix="", pvalue_column, alpha, significance)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   covariates <- inference_detail$covariates
   covariates <- if(length(covariates) !=  0 && !is.null(covariates)) unlist(t(strsplit( gsub(" ","",covariates),split  =  "+", fixed  =  TRUE)))
@@ -33,7 +33,7 @@ enrich_phenotype_analysis_name <- function(inference_detail, key,prefix = "", su
 
   analysis_name <- paste(as.character(key$MARKER),as.character(key$FIGURE),as.character(key$AREA),as.character(key$SUBAREA), pvalue_column, significance_label, alpha, prefix , as.character(transformation_y), as.character(family_test), file_suffix, sep="_")
 
-  analysis_name <- name_cleaning(analysis_name)
+  analysis_name <- core_name_cleaning(analysis_name)
 
   return(analysis_name)
 }

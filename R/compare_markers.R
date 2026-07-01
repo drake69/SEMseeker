@@ -1,6 +1,6 @@
 compare_markers <- function(inference_detail, result_folder, studies, adjust_per_area = FALSE, adjust_globally = FALSE, pvalue_column = "PVALUE_ADJ_ALL_BH", adjustment_method = "BH", ...){
 
-  ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
   color_palette <- ssEnv$color_palette
   localKeys <- ssEnv$keys_areas_subareas_markers_figures
 

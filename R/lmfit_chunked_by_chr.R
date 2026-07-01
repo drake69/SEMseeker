@@ -71,7 +71,7 @@ lmfit_chunked_by_chr <- function(pivot_lazy,
                                   tech_is_longread = FALSE) {
 
   if (engine == "voom") {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " lmfit_chunked_by_chr: voom chunking requires a global ",
               "mean-variance trend pass (not implemented yet, AI-099). ",
               "Falling back to monolithic — caller must ensure the y_mat ",
@@ -111,7 +111,7 @@ lmfit_chunked_by_chr <- function(pivot_lazy,
     chrs <- names(probes_by_chr)
   }
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " lmfit_chunked_by_chr [", key$MARKER, "/", key$FIGURE, "/",
             key$AREA, "/", key$SUBAREA, "] engine=", engine,
             " chunks=", length(chrs), " (tech_is_longread=",
@@ -140,7 +140,7 @@ lmfit_chunked_by_chr <- function(pivot_lazy,
     elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     n_rows  <- if (!is.null(fit_list[[i]]))
       nrow(fit_list[[i]]$coefficients) else 0L
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
               " lmfit_chunked_by_chr chunk ", ch, " (",
               i, "/", length(chrs), ") rows=", n_rows,
               " elapsed=", round(elapsed, 1), "s")
@@ -149,13 +149,13 @@ lmfit_chunked_by_chr <- function(pivot_lazy,
   # ---- concat ---------------------------------------------------------
   fit <- concat_lmfit_objects(fit_list)
   if (is.null(fit)) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " lmfit_chunked_by_chr: every chunk produced an empty fit ",
               "for [", key$MARKER, "/", key$FIGURE, "/", key$AREA, "/",
               key$SUBAREA, "].")
     return(NULL)
   }
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " lmfit_chunked_by_chr [", key$MARKER, "/", key$FIGURE, "/",
             key$AREA, "/", key$SUBAREA, "] concat done, total rows=",
             nrow(fit$coefficients))

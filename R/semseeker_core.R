@@ -18,9 +18,9 @@ semseeker_core <- function(sample_sheet,
   signal_data,
   result_folder) {
 
-  # init_env() is called by semseeker() before we get here.
-  ssEnv <- get_session_info()
-  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will search MARKERS for project \n in ", ssEnv$result_folderData)
+  # core_init_env() is called by semseeker() before we get here.
+  ssEnv <- core_get_session_info()
+  core_log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will search MARKERS for project \n in ", ssEnv$result_folderData)
 
   # check if the input is a list of data frames
   if(!is.list(sample_sheet) | is.data.frame(sample_sheet))
@@ -31,23 +31,23 @@ semseeker_core <- function(sample_sheet,
 
   batch_id <- 1
   ssEnv$batch_count <- length(sample_sheet)
-  ssEnv <- update_session_info(ssEnv)
+  ssEnv <- core_update_session_info(ssEnv)
 
   # C-06: write session provenance metadata (genome_build, tech, version, …)
   total_sample_n <- sum(vapply(sample_sheet, nrow, integer(1)))
-  session_metadata_write(result_folder, sample_n = total_sample_n)
+  core_session_metadata_write(result_folder, sample_n = total_sample_n)
 
   for(batch_id in seq_along(sample_sheet))
   {
     start_time <- Sys.time()
     ssEnv$running_batch_id <- batch_id
-    ssEnv <- update_session_info(ssEnv)
+    ssEnv <- core_update_session_info(ssEnv)
     sample_sheet_local <- io_source_data_get(sample_sheet[[batch_id]])
-    sample_sheet_local$Sample_ID <- name_cleaning(sample_sheet_local$Sample_ID)
+    sample_sheet_local$Sample_ID <- core_name_cleaning(sample_sheet_local$Sample_ID)
     utils::write.csv2(sample_sheet_local, file = io_file_path_build(ssEnv$result_folderData, paste0(batch_id,"_sample_sheet_original"),"csv",FALSE))
     analyze_batch(io_source_data_get(signal_data[[batch_id]]), sample_sheet_local)
     anno_create_position_pivots(sample_sheet_local,ssEnv$keys_markers_figures)
-    log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), "Batch Executed in:", difftime(time1 = Sys.time(), time2= start_time,units = "mins") , " minutes.")
+    core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), "Batch Executed in:", difftime(time1 = Sys.time(), time2= start_time,units = "mins") , " minutes.")
   }
 
   deltaX_get()
@@ -55,9 +55,9 @@ semseeker_core <- function(sample_sheet,
   anno_annotate_position_pivots()
 
   # Single point of sidecar materialisation (AI-027).
-  ensure_sidecars(ssEnv$result_folderData)
+  core_ensure_sidecars(ssEnv$result_folderData)
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " Saving Sample Sheet with Results! ")
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " Saving Sample Sheet with Results! ")
 
-  close_env()
+  core_close_env()
 }

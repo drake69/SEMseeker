@@ -36,11 +36,11 @@ test_that("sample columns extracted from raw POSITION pivot match the PROBE pivo
 
   tempFolder <- tempfile("ppp_schema_pattern_")
   dir.create(file.path(tempFolder, "Data"), recursive = TRUE)
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
                                 parallel_strategy = "sequential",
                                 tech = "K850",
                                 iqrTimes = 3, verbosity = 1)
-  on.exit({ SEMseeker:::close_env(); unlink(tempFolder, recursive = TRUE) },
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
           add = TRUE)
 
   anno <- data.frame(
@@ -97,11 +97,11 @@ test_that("schema extraction from raw POSITION pivot does NOT depend on anno_pos
 
   tempFolder <- tempfile("ppp_schema_independence_")
   dir.create(file.path(tempFolder, "Data"), recursive = TRUE)
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
                                 parallel_strategy = "sequential",
                                 tech = "K850",
                                 iqrTimes = 3, verbosity = 1)
-  on.exit({ SEMseeker:::close_env(); unlink(tempFolder, recursive = TRUE) },
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
           add = TRUE)
 
   anno <- data.frame(

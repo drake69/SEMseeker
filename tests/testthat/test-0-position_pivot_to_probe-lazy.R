@@ -13,11 +13,11 @@ test_that("anno_position_pivot_to_probe accepts a polars LazyFrame and returns a
 
   tempFolder <- tempfile("ppp_lazy_")
   dir.create(file.path(tempFolder, "Data"), recursive = TRUE)
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
                                 parallel_strategy = "sequential",
                                 tech = "K850",
                                 iqrTimes = 3, verbosity = 1)
-  on.exit({ SEMseeker:::close_env(); unlink(tempFolder, recursive = TRUE) },
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
           add = TRUE)
 
   # Tiny synthetic annotation: 5 probes on chr1, two samples worth of values.
@@ -78,11 +78,11 @@ test_that("anno_position_pivot_to_probe still accepts an R data.frame input", {
 
   tempFolder <- tempfile("ppp_df_")
   dir.create(file.path(tempFolder, "Data"), recursive = TRUE)
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
                                 parallel_strategy = "sequential",
                                 tech = "K850",
                                 iqrTimes = 3, verbosity = 1)
-  on.exit({ SEMseeker:::close_env(); unlink(tempFolder, recursive = TRUE) },
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
           add = TRUE)
 
   anno <- data.frame(
@@ -117,11 +117,11 @@ test_that("anno_position_pivot_to_probe drops probes flagged FALSE for the tech"
 
   tempFolder <- tempfile("ppp_filter_")
   dir.create(file.path(tempFolder, "Data"), recursive = TRUE)
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
                                 parallel_strategy = "sequential",
                                 tech = "K850",
                                 iqrTimes = 3, verbosity = 1)
-  on.exit({ SEMseeker:::close_env(); unlink(tempFolder, recursive = TRUE) },
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
           add = TRUE)
 
   # Two probes ok for K850, one NOT on K850 (should be dropped).

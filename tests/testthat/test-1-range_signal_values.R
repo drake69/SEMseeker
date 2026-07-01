@@ -5,7 +5,7 @@ test_that("signal_range_values", {
 
 
   # test range calculation with missed values: signal_range_values must error when data has NAs
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes)
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes)
   # anno_probe_features_get requires tech to be set; build equivalent manually
   probe_features_local <- probe_features[probe_features$PROBE %in% rownames(signal_data), c("CHR","START","END","PROBE")]
   probe_features_local <- probe_features_local[!is.na(probe_features_local$CHR),]
@@ -17,7 +17,7 @@ test_that("signal_range_values", {
   signal_data_with_na[1, 1] <- NA  # inject one NA to trigger the error
   testthat::expect_error(SEMseeker:::signal_range_values(signal_data_with_na, batch_id, probe_features_local), "^ERROR:")
 
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "median")
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute = "median")
   signal_data <- SEMseeker:::inpute_missing_values(signal_data)
 
   ####################################################################################
@@ -62,7 +62,7 @@ test_that("signal_range_values", {
   # test median is higher than Q1
   testthat::expect_true(sum(signal_thresholds$signal_median_values>signal_thresholds$q1)/nrow(signal_thresholds)>0.9)
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder,recursive = TRUE)
 })
 

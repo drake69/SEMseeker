@@ -2,7 +2,7 @@
 
 export(association_analysis)
 export(bayes_analysis)
-export(check_session_compatibility)
+export(core_check_session_compatibility)
 export(coverage_analysis_report)
 export(diagnostic_performance)
 export(enrich_inter_study_enrichment_compare)

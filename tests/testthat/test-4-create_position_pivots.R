@@ -4,10 +4,10 @@ test_that("anno_create_position_pivots", {
   unlink(tempFolder, recursive = TRUE, force = TRUE)
   # message(tempFolder)
   tempFolders <<- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median", start_fresh =TRUE)
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median", start_fresh =TRUE)
 
   ####################################################################################
-  tt <- SEMseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::core_get_meth_tech(signal_data)
   ####################################################################################
 
   ss_reference <- subset(mySampleSheet,Sample_Group=="Reference")
@@ -38,7 +38,7 @@ test_that("anno_create_position_pivots", {
     probe_features = probe_features
   )
 
-  ssEnv <- SEMseeker:::get_session_info()
+  ssEnv <- SEMseeker:::core_get_session_info()
 
   keys <- expand.grid(
     MARKER = c("DELTAS","DELTAR","LESIONS","MUTATIONS"),
@@ -100,6 +100,6 @@ test_that("anno_create_position_pivots", {
 
   ####################################################################################
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })

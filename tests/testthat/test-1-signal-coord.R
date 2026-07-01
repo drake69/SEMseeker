@@ -10,7 +10,7 @@
 # Covered:
 #   1. io_is_coord_format()         detects CHR/START columns correctly
 #   2. io_normalize_signal_input()  converts coord df → probe-indexed matrix
-#   3. get_meth_tech()           sets ssEnv$tech = "LONGREAD" for coord input
+#   3. core_get_meth_tech()           sets ssEnv$tech = "LONGREAD" for coord input
 #   4. mutations_get()           HYPO / HYPER with coord-derived values + thresholds
 #   5. delta_single_sample()     continuous delta metric from coord input
 #   6. signal_single_sample()    writes bedgraph file for coord-format sample
@@ -111,19 +111,19 @@ test_that("io_normalize_signal_input: preserves beta values after conversion", {
 })
 
 # ---------------------------------------------------------------------------
-# 3. get_meth_tech with coord format
+# 3. core_get_meth_tech with coord format
 # ---------------------------------------------------------------------------
 
-test_that("get_meth_tech: coord-format signal sets tech to WGBS (not an Illumina array)", {
+test_that("core_get_meth_tech: coord-format signal sets tech to WGBS (not an Illumina array)", {
   tf <- tempFolders[50]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   coord_df  <- .build_coord_signal(n_pos = 30L, n_samples = 3L)
   probe_mat <- SEMseeker:::io_normalize_signal_input(coord_df)
-  env       <- SEMseeker:::get_meth_tech(probe_mat)
+  env       <- SEMseeker:::core_get_meth_tech(probe_mat)
   # Coordinate-format data has synthetic "CHR_POS" probe IDs that don't match
-  # any Illumina array manifest → get_meth_tech classifies them as WGBS
+  # any Illumina array manifest → core_get_meth_tech classifies them as WGBS
   expect_equal(env$tech, "WGBS")
   expect_false(env$tech %in% c("K27", "K450", "K850"))
 })
@@ -134,8 +134,8 @@ test_that("get_meth_tech: coord-format signal sets tech to WGBS (not an Illumina
 
 test_that("mutations_get: coord-derived values + coord thresholds — HYPO counts injected outliers", {
   tf <- tempFolders[34]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   coord_df  <- .build_coord_signal(n_pos = 50L, n_samples = 5L, seed = 42L)
   coord_thr <- .build_coord_thresholds(coord_df)
@@ -169,8 +169,8 @@ test_that("mutations_get: coord-derived values + coord thresholds — HYPO count
 
 test_that("mutations_get: coord-derived HYPER — detects injected high-beta outliers", {
   tf <- tempFolders[35]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   coord_df  <- .build_coord_signal(n_pos = 50L, n_samples = 5L, seed = 99L)
   coord_thr <- .build_coord_thresholds(coord_df)
@@ -197,8 +197,8 @@ test_that("mutations_get: coord-derived HYPER — detects injected high-beta out
 
 test_that("mutations_get: coord values on different chromosomes than thresholds → zero results", {
   tf <- tempFolders[36]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # Values on chr3, thresholds on chr1/chr2 → inner join = empty
   n <- 10L
@@ -233,8 +233,8 @@ test_that("delta_single_sample: coord input runs without error and returns NULL"
   # no file is written (correct behaviour — this test verifies no crash).
   # For a test with expected file output, see test-2-bed-file.R and test-2-delta_single_sample.R.
   tf <- tempFolders[33]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   coord_df  <- .build_coord_signal(n_pos = 30L, n_samples = 4L, seed = 123L)
   coord_thr <- .build_coord_thresholds(coord_df)
@@ -268,8 +268,8 @@ test_that("delta_single_sample: detects outliers when thresholds come from separ
   # Build reference from 3 background samples (all ~0.8), then test against a
   # sample that has 5 genuine HYPO outliers (values ≈ 0.02).
   tf <- tempFolders[20]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   n_pos <- 20L
   set.seed(55)
@@ -301,7 +301,7 @@ test_that("delta_single_sample: detects outliers when thresholds come from separ
     sample_detail = sample_detail
   )
 
-  ssEnv     <- SEMseeker:::get_session_info()
+  ssEnv     <- SEMseeker:::core_get_session_info()
   data_root <- ssEnv$result_folderData
   # At least one DELTAS_HYPO file should have been written
   hypo_files <- list.files(data_root, pattern = "HYPO.*\\.bedgraph",
@@ -315,8 +315,8 @@ test_that("delta_single_sample: detects outliers when thresholds come from separ
 
 test_that("signal_single_sample: writes bedgraph file for coordinate-format sample", {
   tf <- tempFolders[32]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE, inpute = "median")
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE, inpute = "median")
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   coord_df  <- .build_coord_signal(n_pos = 20L, n_samples = 2L)
   probe_mat <- SEMseeker:::io_normalize_signal_input(coord_df)
@@ -337,7 +337,7 @@ test_that("signal_single_sample: writes bedgraph file for coordinate-format samp
     probe_features = pf
   )
 
-  ssEnv       <- SEMseeker:::get_session_info()
+  ssEnv       <- SEMseeker:::core_get_session_info()
   folder      <- file.path(ssEnv$result_folderData, "Control", "SIGNAL_MEAN")
   bed_files   <- list.files(folder, pattern = "\\.bedgraph(\\.gz)?$", recursive = TRUE)
   expect_gte(length(bed_files), 1L)

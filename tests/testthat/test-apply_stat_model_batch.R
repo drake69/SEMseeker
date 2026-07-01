@@ -210,7 +210,7 @@ test_that("apply_stat_model intercepts limma_<N> / voom_<N> and routes to batch 
   key <- .fake_key()
 
   # Apply through the outer entry point — uses an in-memory ssEnv we
-  # don't need since the batch path bypasses get_session_info().
+  # don't need since the batch path bypasses core_get_session_info().
   res <- tryCatch(
     .with_passthrough_data_prep(
       SEMseeker:::apply_stat_model(
@@ -224,9 +224,9 @@ test_that("apply_stat_model intercepts limma_<N> / voom_<N> and routes to batch 
         samples_sql_condition = "")
     ),
     error = function(e) {
-      # apply_stat_model still calls get_session_info() at the top, which
+      # apply_stat_model still calls core_get_session_info() at the top, which
       # fails without an initialised session. Tolerate that — if the error
-      # comes from get_session_info() the dispatch is fine; if it comes
+      # comes from core_get_session_info() the dispatch is fine; if it comes
       # from elsewhere (e.g. the foreach path) the routing is broken.
       if (grepl("session_info|ssEnv", conditionMessage(e), ignore.case = TRUE))
         return(structure(list(.session_skip = TRUE),

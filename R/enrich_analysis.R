@@ -45,7 +45,7 @@
 #'   (default 90).
 #' @param parallel_strategy character. Parallelisation backend (default
 #'   \code{"multicore"}).
-#' @param ... Additional named arguments passed to \code{init_env()}.
+#' @param ... Additional named arguments passed to \code{core_init_env()}.
 #' @return Invisibly \code{NULL}. Pathway enrichment results are written to the
 #'   pathway sub-folder of \code{result_folder}.
 #' @examples
@@ -69,7 +69,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
   result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
 {
   start_fresh <- FALSE
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy,
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy,
     start_fresh = start_fresh, ...)
 
   arguments <- list(...)
@@ -92,7 +92,7 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
              "Fix this in the inference setup file (typically `02_setup_<study>.R`)."),
       paste(sprintf("%s (length=%d)", names(lens), lens), collapse = "\n  ")
     )
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " ", msg)
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " ", msg)
     stop(msg, call. = FALSE)
   }
 
@@ -111,15 +111,15 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
         row.names = TRUE) # Suppress row names
 
       inference_detail_prettified <- paste(inference_detail_prettified, collapse = "\n")
-      log_event("JOURNAL: ##############################################################################################################")
-      log_event("JOURNAL: ", format(Sys.time(), "%a %b %d %X %Y"), " \nStarting pathway for inference detail:\n", inference_detail_prettified)
-      log_event("JOURNAL: Gene are selected by the sql_area_selection in the inference details above, also filtered using ", pvalue_columns, "columns. \nWith an alpha limit having value: ", alpha)
+      core_log_event("JOURNAL: ##############################################################################################################")
+      core_log_event("JOURNAL: ", format(Sys.time(), "%a %b %d %X %Y"), " \nStarting pathway for inference detail:\n", inference_detail_prettified)
+      core_log_event("JOURNAL: Gene are selected by the sql_area_selection in the inference details above, also filtered using ", pvalue_columns, "columns. \nWith an alpha limit having value: ", alpha)
 
       for (i in seq_along(pvalue_columns)){
 
         pvalue_column <- pvalue_columns[i]
         ssEnv$alpha <- alpha
-        update_session_info(ssEnv)
+        core_update_session_info(ssEnv)
 
         adjustment_method <- adjustment_methods[i]
         adjust_per_area <- adjust_per_area_s[i]
@@ -225,5 +225,5 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
     }
   }
 
-  close_env()
+  core_close_env()
 }

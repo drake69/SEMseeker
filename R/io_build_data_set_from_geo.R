@@ -20,7 +20,7 @@
 io_build_data_set_from_geo <-  function(GEOgse, downloadFiles = 0,result_folder, ...) {
 
 
-  ssEnv <- init_env( result_folder= result_folder, ...)
+  ssEnv <- core_init_env( result_folder= result_folder, ...)
   # check if GEOQuery package is installed
   if(!requireNamespace("GEOquery", quietly = TRUE))
   {
@@ -63,7 +63,7 @@ io_build_data_set_from_geo <-  function(GEOgse, downloadFiles = 0,result_folder,
     for(sample in seq_len(nrow(samplesheet)))
     {
       sample <- 1
-      log_event(sample)
+      core_log_event(sample)
       fileName <- samplesheet [sample,"supplementary_file"]
       if(fileName=="" || fileName=="NONE")
         next

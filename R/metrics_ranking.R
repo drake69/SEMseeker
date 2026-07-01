@@ -21,7 +21,7 @@ metrics_ranking <- function (metric,data_frame, column_to_rank ="REBASED"){
   # }else if(metric %in% the_higher_the_better_markers){
   #   data_frame <- data_frame[order(data_frame[,column_to_rank], decreasing = F),]
   # }else{
-  #   log_event("ERROR: Metric not found")
+  #   core_log_event("ERROR: Metric not found")
   #   stop()
   # }
   #
@@ -48,7 +48,7 @@ metrics_ranking <- function (metric,data_frame, column_to_rank ="REBASED"){
   }else if(metric %in% the_higher_the_better_markers){
     data_frame$SCORE <- normalize_maximize(data_frame[,column_to_rank])
   }else{
-    log_event("ERROR: Metric not found")
+    core_log_event("ERROR: Metric not found")
     stop()
   }
 

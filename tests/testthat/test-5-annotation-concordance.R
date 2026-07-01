@@ -25,18 +25,18 @@
 
 # -------------------------------------------------------------------------
 # Per-test setup/teardown: anno_probe_annotation_build() requires an initialised
-# session (ssEnv). Wrap each call in a temp init_env()/close_env() scope.
+# session (ssEnv). Wrap each call in a temp core_init_env()/core_close_env() scope.
 # -------------------------------------------------------------------------
 .with_session <- function(expr, envir = parent.frame()) {
   tempFolder <- tempfile(pattern = "semseeker_concordance_")
-  SEMseeker:::init_env(
+  SEMseeker:::core_init_env(
     result_folder     = tempFolder,
     parallel_strategy = "sequential",
     showprogress      = FALSE,
     verbosity         = 0
   )
   withr::defer({
-    try(SEMseeker:::close_env(), silent = TRUE)
+    try(SEMseeker:::core_close_env(), silent = TRUE)
     unlink(tempFolder, recursive = TRUE)
   }, envir = envir)
   force(expr)

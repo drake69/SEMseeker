@@ -4,13 +4,13 @@ test_that("deltaX_get", {
   unlink(tempFolder, recursive = TRUE)
   # message(tempFolder)
   tempFolders <<- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
     bonferroni_threshold = bonferroni_threshold,
     inpute="median", start_fresh=TRUE)
 
   ####################################################################################
 
-  tt <- SEMseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::core_get_meth_tech(signal_data)
 
   ####################################################################################
   LESIONS_BP <- 2000L  # AI-092
@@ -42,17 +42,17 @@ test_that("deltaX_get", {
   # deltaX_get() calls study_summary_get() which reads the sample sheet CSV.
   # analyze_population is called directly here (bypassing analyze_batch which writes it),
   # so we write it manually with original mixed-case Sample_IDs.
-  ssEnv2 <- SEMseeker:::get_session_info()
+  ssEnv2 <- SEMseeker:::core_get_session_info()
   sample_sheet_csv <- SEMseeker:::io_file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
   utils::write.csv2(mySampleSheet, file=sample_sheet_csv)
 
   ss <- SEMseeker:::deltaX_get()
 
-  # BED file names go through io_file_path_build() -> name_cleaning() which
+  # BED file names go through io_file_path_build() -> core_name_cleaning() which
   # uppercases sample IDs; pivot column names are derived from BED basenames
   # via io_stream_merge_bed(). So pivot colnames are uppercase regardless of
   # whether the pipeline went through analyze_batch.
-  cleaned_sample_ids <- SEMseeker:::name_cleaning(mySampleSheet$Sample_ID)
+  cleaned_sample_ids <- SEMseeker:::core_name_cleaning(mySampleSheet$Sample_ID)
 
   # verify all DELTAX (except DELTAS and DELTAR ) are coherent with MUTATIONS
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures, AREA == "POSITION")
@@ -122,7 +122,7 @@ test_that("deltaX_get", {
 
   }
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 

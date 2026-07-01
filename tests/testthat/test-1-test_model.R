@@ -9,7 +9,7 @@
 ##                  the value had been stored in res$statistic_parameter)
 ##
 ## Each test below exercises one branch end-to-end.
-## All require an active session (test_model calls get_session_info()).
+## All require an active session (test_model calls core_get_session_info()).
 
 # ---------------------------------------------------------------------------
 # Helpers shared across tests in this file
@@ -34,8 +34,8 @@
 
 test_that("test_model t.test returns a data.frame with pvalue", {
   tf <- tempFolders[1]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df  <- .two_group_df()
   key <- .make_key()
@@ -56,8 +56,8 @@ test_that("test_model t.test returns a data.frame with pvalue", {
 
 test_that("test_model t.test: clearly separated groups give small p-value", {
   tf <- tempFolders[2]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(99)
   df <- data.frame(
@@ -79,8 +79,8 @@ test_that("test_model t.test: clearly separated groups give small p-value", {
 
 test_that("test_model chisq.test returns a data.frame with pvalue", {
   tf <- tempFolders[3]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # Discrete burden values so the contingency table is meaningful
   df <- data.frame(
@@ -107,8 +107,8 @@ test_that("test_model chisq.test returns a data.frame with pvalue", {
 
 test_that("test_model bartlett.test returns a data.frame with pvalue", {
   tf <- tempFolders[4]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df  <- .two_group_df(seed = 7L)
   f   <- stats::as.formula("BURDEN ~ GROUP")
@@ -126,8 +126,8 @@ test_that("test_model bartlett.test returns a data.frame with pvalue", {
 
 test_that("test_model bartlett.test: equal-variance groups give large p-value", {
   tf <- tempFolders[5]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(42)
   df <- data.frame(
@@ -149,8 +149,8 @@ test_that("test_model bartlett.test: equal-variance groups give large p-value", 
 
 test_that("test_model wilcoxon returns pvalue and effect_size columns", {
   tf <- tempFolders[6]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df  <- .two_group_df(seed = 3L)
   f   <- stats::as.formula("BURDEN ~ GROUP")
@@ -171,8 +171,8 @@ test_that("test_model wilcoxon returns pvalue and effect_size columns", {
 
 test_that("test_model kruskal.test with 3 groups returns pvalue", {
   tf <- tempFolders[7]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   set.seed(11)
   df <- data.frame(
@@ -193,8 +193,8 @@ test_that("test_model kruskal.test with 3 groups returns pvalue", {
 
 test_that("test_model kruskal.test with single group returns NA pvalue", {
   tf <- tempFolders[8]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(
     BURDEN = stats::rnorm(10),

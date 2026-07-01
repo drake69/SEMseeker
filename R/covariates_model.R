@@ -1,6 +1,6 @@
 covariates_model <- function(inference_detail, study_summary)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   collinearity_check <- util_boolean_check(inference_detail$collinearity_check)
   covariates_dummy <- util_split_and_clean(inference_detail$covariates_dummy)
   covariates_pca <- util_boolean_check(inference_detail$covariates_pca)
@@ -27,9 +27,9 @@ covariates_model <- function(inference_detail, study_summary)
       # replace convariate name
       covariates[cc] <- paste0(cname,"_SCALED")
     }
-    log_event("JOURNAL: Scaling and centering applied on covariate: ", scaled_cov)
+    core_log_event("JOURNAL: Scaling and centering applied on covariate: ", scaled_cov)
     study_summary[,paste0(independent_variable,"_SCALED")] <- scale(study_summary[,independent_variable], center = TRUE, scale = TRUE)
-    log_event("JOURNAL: Scaling and centering applied on independent variable: ", independent_variable)
+    core_log_event("JOURNAL: Scaling and centering applied on independent variable: ", independent_variable)
     inference_detail$independent_variable <- paste0(inference_detail$independent_variable,"_SCALED")
   }
 
@@ -49,7 +49,7 @@ covariates_model <- function(inference_detail, study_summary)
       n_enc <- if (is.null(dim(encoded_covariate))) length(encoded_covariate) else ncol(encoded_covariate)
       if (is.null(n_enc) || n_enc == 0L)
       {
-        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " dummy expansion of '", covariate_dummy,
                   "' produced 0 columns (covariate constant within sample subset?) — skipping.")
         next
@@ -62,7 +62,7 @@ covariates_model <- function(inference_detail, study_summary)
       else
       {
         encoded_covariate <- encoded_covariate[,!(colnames(encoded_covariate) %in% c("X"))]
-        encoded_columns <- name_cleaning(colnames(encoded_covariate))
+        encoded_columns <- core_name_cleaning(colnames(encoded_covariate))
         colnames(encoded_covariate) <- encoded_columns
       }
       for (cc in seq_along(colnames(encoded_covariate)))
@@ -83,7 +83,7 @@ covariates_model <- function(inference_detail, study_summary)
     {
       # check if all covariates are numeric
       if(!all(vapply(study_summary[,covariates], is.numeric, logical(1))))
-        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), " Not all covariates are numeric! Skipped.")
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), " Not all covariates are numeric! Skipped.")
 
 
       zero_var_cols <- vapply(study_summary[, covariates], function(x) sd(x, na.rm = TRUE) == 0, logical(1))
@@ -96,7 +96,7 @@ covariates_model <- function(inference_detail, study_summary)
       # (non-constant) covariates directly. This also subsumes the AI-069
       # Kaiser-Guttman edge case (sdev^2 == 1 on single scaled dummy).
       if (length(filtered_covariates) < 3L) {
-        log_event("JOURNAL: PCA skipped — only ", length(filtered_covariates),
+        core_log_event("JOURNAL: PCA skipped — only ", length(filtered_covariates),
                   " non-constant covariate(s), using raw: ",
                   paste(filtered_covariates, collapse = ", "))
         covariates <- filtered_covariates
@@ -104,7 +104,7 @@ covariates_model <- function(inference_detail, study_summary)
       # Then run PCA
       pca_result <- prcomp(study_summary[, filtered_covariates], center = TRUE, scale. = TRUE)
 
-      log_event("JOURNAL: PCA,scaling and centering, applied on covariates: ", paste(covariates, collapse = ", "))
+      core_log_event("JOURNAL: PCA,scaling and centering, applied on covariates: ", paste(covariates, collapse = ", "))
       # preserve components with eigenvalue (sdev^2) above 1 — Kaiser-Guttman
       # criterion. If NO PC passes this filter (e.g. when only a single dummy
       # is left after subset filtering: scale=TRUE forces sdev^2 == 1 exactly,
@@ -112,7 +112,7 @@ covariates_model <- function(inference_detail, study_summary)
       # first PC so the design matrix has at least one degree of freedom.
       keep <- which(pca_result$sdev^2 > 1)
       if (length(keep) == 0L) {
-        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " No PC passed Kaiser-Guttman (sdev^2 > 1) filter — keeping PC1 as fallback.")
         keep <- 1L
       }
@@ -139,13 +139,13 @@ covariates_model <- function(inference_detail, study_summary)
 
   if(length(covariates_to_remove) > 0)
   {
-    log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " The following covariates are collinear and will be removed: ", paste(covariates_to_remove, collapse = ", "))
-    log_event("JOURNAL: The following covariates are collinear and will be removed: ", paste(covariates_to_remove, collapse = ", "))
+    core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " The following covariates are collinear and will be removed: ", paste(covariates_to_remove, collapse = ", "))
+    core_log_event("JOURNAL: The following covariates are collinear and will be removed: ", paste(covariates_to_remove, collapse = ", "))
     covariates <- setdiff(covariates, covariates_to_remove)
     if(length(covariates) == 0)
     {
       inference_detail <- t(as.data.frame(inference_detail))
-      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No covariates left after collinearity check. Please check your data. ",
+      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No covariates left after collinearity check. Please check your data. ",
         "Inference detail: ", paste(inference_detail, collapse = ", "))
       stop("No covariates left after collinearity check. Please check your data.")
     }

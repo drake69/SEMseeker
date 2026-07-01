@@ -13,7 +13,7 @@
 #'   \code{"sequential"} (default \code{"multicore"}).
 #' @param start_fresh logical. If \code{TRUE}, delete previous results before
 #'   running (default \code{FALSE}).
-#' @param ... Additional named arguments passed to \code{init_env()}.
+#' @param ... Additional named arguments passed to \code{core_init_env()}.
 #' @return Invisibly \code{NULL}. Results are written to the inference
 #'   sub-folder of \code{result_folder}.
 #' @examples
@@ -30,7 +30,7 @@ intra_study_association_replication <- function(inference_details_origin, infere
   maxResources = 90, parallel_strategy  = "multicore",start_fresh = FALSE, ...)
 {
 
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
   localKeys <- ssEnv$keys_markers_figures
   markers <- unique(localKeys$MARKER)
   for (a in seq_along(markers))
@@ -62,7 +62,7 @@ intra_study_association_replication <- function(inference_details_origin, infere
           "  Run liftover (C-07) before combining sessions from different assemblies."
         )
     } else if (nrow(inference_source) > 0L) {
-      log_event("WARNING: [cross_study_association] Origin inference results",
+      core_log_event("WARNING: [cross_study_association] Origin inference results",
                 " have no GENOME_BUILD column — legacy run without provenance.",
                 " Proceeding but cross-build safety cannot be guaranteed.")
     }

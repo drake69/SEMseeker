@@ -8,9 +8,9 @@
 
 io_dump_sample_as_bed_file <- function(data_to_dump, fileName) {
 
-  ssEnv <- get_session_info()
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " io_dump_sample_as_bed_file ssEnv:", length(ssEnv))
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " io_dump_sample_as_bed_file:", ssEnv$result_folderData)
+  ssEnv <- core_get_session_info()
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " io_dump_sample_as_bed_file ssEnv:", length(ssEnv))
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " io_dump_sample_as_bed_file:", ssEnv$result_folderData)
 
   if (!plyr::empty(data_to_dump)) {
     data_to_dump[, "CHR"] <- anno_normalize_chr(data_to_dump[, "CHR"], "output")
@@ -27,7 +27,7 @@ io_dump_sample_as_bed_file <- function(data_to_dump, fileName) {
 
   if (!plyr::empty(data_to_dump)) {
 
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " trying to save: ", fileName)
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " trying to save: ", fileName)
 
     # save file bed per sample
     # utils::write.table(data_to_dump, file = gzfile(fileName), quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
@@ -41,7 +41,7 @@ io_dump_sample_as_bed_file <- function(data_to_dump, fileName) {
     #
     # utils::write.table(data_to_dump, file = filePath, quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
   }
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " io_dump_sample_as_bed_file: ", fileName)
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " io_dump_sample_as_bed_file: ", fileName)
 }
 
 

@@ -105,7 +105,7 @@ io_data_preparation_lazy <- function(pivot_lazy,
       "the AI-061 lazy batch path. Continuing with transformation_y='none'.",
       "%s"),
       trans_y, explain_alt), call. = FALSE)
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_data_preparation_lazy", fam_str, key_str,
               ": unsupported transformation_y='", trans_y,
               "' on lazy batch path — continuing as 'none'.")
@@ -123,7 +123,7 @@ io_data_preparation_lazy <- function(pivot_lazy,
   # the caller should choose `transformation_y = "none"` there.
   EPS <- 1e-9
   if (trans_y != "none") {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_data_preparation_lazy", fam_str, key_str,
               ": applying transformation_y='", trans_y,
               "' to ", length(sample_cols), " sample columns.")

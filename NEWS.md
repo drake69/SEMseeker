@@ -9,7 +9,7 @@
   has been REMOVED. It is replaced by `LESIONS_BP` (default 2000), the
   maximum bp distance for two probes to be considered part of the same
   enrichment window. Same registration pattern as `DELTAQ_Q` / `DELTAP_B`:
-  registered in `init_env()`, surfaces through the `Q` column of
+  registered in `core_init_env()`, surfaces through the `Q` column of
   `keys_markers_default_discrete`, exposed via `semseeker(LESIONS_BP = ...)`.
   Rationale: probe-density varies dramatically across the genome and across
   array platforms (450K ~485k probes, EPIC ~865k, LONGREAD bedmethyl
@@ -87,7 +87,7 @@
   as belt-and-suspenders provenance.
   Inference CSV outputs gain two constant columns — `GENOME_BUILD` and `TECH`
   — that survive any downstream merge or stack operation.
-  New exported function `check_session_compatibility(session_list)`:
+  New exported function `core_check_session_compatibility(session_list)`:
   **stops** if `genome_build` differs across sessions (physically incomparable
   coordinates); **warns** if `tech` differs (cross-array meta-analysis is valid
   on the probe intersection but must be explicit).
@@ -102,11 +102,11 @@
   `.looks_like_mvalues()` helper deleted. Input values are now passed
   through unchanged; if you need conversion, call `mvalue_to_beta()`
   explicitly before `semseeker()`. The beta-vs-M-value flag is still
-  detected and stored in `ssEnv$beta` by `get_meth_tech()`, so downstream
+  detected and stored in `ssEnv$beta` by `core_get_meth_tech()`, so downstream
   code that consults that flag continues to work.
 
 - **`start_fresh` defaults to `FALSE`.**
-  `init_env()` no longer deletes the result folder before starting. Existing
+  `core_init_env()` no longer deletes the result folder before starting. Existing
   results are preserved unless the caller explicitly passes `start_fresh = TRUE`.
   The Shiny UI exposes this as a checkbox ("Delete result folder before running",
   unchecked by default).
@@ -117,7 +117,7 @@
   `multicore` (fork) is unsafe on macOS with Polars' C++ thread pool — forked
   children can be killed by Mach exceptions. `setup.R` now selects `multisession`
   on Darwin, `multicore` on Linux. All `%dorng%` foreach bodies now call
-  `update_session_info(ssEnv)` as their first statement to populate the worker's
+  `core_update_session_info(ssEnv)` as their first statement to populate the worker's
   `.pkgglobalenv` — required because `multisession` workers are fresh R processes
   where the session singleton is empty.
 

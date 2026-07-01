@@ -15,7 +15,7 @@ through `io_normalize_signal_input()`.}
 
 \item{tech}{Character scalar. One of `"K27"`, `"K450"`, `"K850"`,
 `"WGBS"`, `"LONGREAD"`. If `NULL` (default) the function calls
-`get_meth_tech()` to detect it.}
+`core_get_meth_tech()` to detect it.}
 
 \item{sex_chromosome_remove}{Logical. If `TRUE` (default), drop probes
 on `CHR == "X"` or `CHR == "Y"` from both `probe_features` and

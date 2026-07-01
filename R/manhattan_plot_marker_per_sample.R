@@ -16,7 +16,7 @@
 #'   (default 90).
 #' @param parallel_strategy character. Parallelisation backend
 #'   (default \code{"multicore"}).
-#' @param ... Additional arguments passed to \code{init_env()}.
+#' @param ... Additional arguments passed to \code{core_init_env()}.
 #'
 #' @return Invisibly \code{NULL}. A PNG plot is saved under
 #'   \code{Charts/MARKER_PER_SAMPLE/} in \code{result_folder}.
@@ -41,9 +41,9 @@ manhattan_plot_marker_per_sample <- function( sample_name = "NAME", probes_range
   limit_line_color_q <- "cyan"
   limit_line_color_median <- "black"
 
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE,
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE,
     figures=c("BOTH","HYPER","HYPO"), areas="PROBE", ...)
-  # ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE,
+  # ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE,
   #   figures=c("BOTH","HYPER","HYPO"), areas="PROBE", markers = "DELTAQ")
   chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart, "MARKER_PER_SAMPLE")
 

@@ -1,10 +1,10 @@
 study_summary_total <- function()
 {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   study_summary <- study_summary_get()
 
-  # ssEnv <- get_session_info()
+  # ssEnv <- core_get_session_info()
   keys <- ssEnv$keys_areas_subareas_markers_figures
   keys <- subset(keys, AREA=="POSITION")
   if(nrow(keys)==0)
@@ -52,7 +52,7 @@ study_summary_total <- function()
   study_summary <- study_summary[, !(colnames(study_summary) %in% col_temp)]
   study_summary <- merge(study_summary, temp_result, by="Sample_ID", all.x=TRUE)
   study_summary$PROBES_COUNT <- ssEnv$probes_count
-  # io_file_path_build() uppercases via name_cleaning() — on-disk name is
+  # io_file_path_build() uppercases via core_name_cleaning() — on-disk name is
   # SAMPLE_SHEET_RESULT.csv. Linux ext4 is case-sensitive; readers that
   # hard-code the path must use the uppercase form. See io_file_path_build().
   summary_file <- io_file_path_build( ssEnv$result_folderData, "sample_sheet_result","csv")

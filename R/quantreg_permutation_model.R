@@ -42,7 +42,7 @@ compute_quantreg_permutation <- function(sig.formula,df, tau, lqm_control)
 quantreg_permutation_model <- function(family_test, sig.formula, tempDataFrame, independent_variable, transformation_y, plot, samples_sql_condition=samples_sql_condition, key)
 {
   #
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   area <- as.character(key$AREA)
   subarea <- as.character(key$SUBAREA)
   marker <- as.character(key$MARKER)
@@ -54,7 +54,7 @@ quantreg_permutation_model <- function(family_test, sig.formula, tempDataFrame, 
   # do permutations
   if(length(quantreg_params)!=5)
   {
-    log_event("ERROR: number of parameter incorrect for quantreg-permutation expected:
+    core_log_event("ERROR: number of parameter incorrect for quantreg-permutation expected:
       quantreg-permutation + quantile + first_round_of_permutations + second_round_of_permutations + confidence_interval_of_regression_coefficient")
     stop()
   }

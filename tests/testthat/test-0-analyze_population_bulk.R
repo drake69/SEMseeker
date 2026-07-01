@@ -14,7 +14,7 @@ test_that("analyze_population_bulk - synthetic 10x5 produces correct pivots", {
   dir.create(tempFolder, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(tempFolder, recursive = TRUE, force = TRUE), add = TRUE)
 
-  ssEnv <- SEMseeker:::init_env(
+  ssEnv <- SEMseeker:::core_init_env(
     tempFolder,
     parallel_strategy = "sequential",
     inpute            = "median",
@@ -149,7 +149,7 @@ test_that("analyze_population_bulk fails clean if SIGNAL pivot is missing", {
   dir.create(tempFolder, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(tempFolder, recursive = TRUE, force = TRUE), add = TRUE)
 
-  ssEnv <- SEMseeker:::init_env(
+  ssEnv <- SEMseeker:::core_init_env(
     tempFolder,
     parallel_strategy = "sequential",
     inpute            = "median",

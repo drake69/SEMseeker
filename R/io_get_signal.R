@@ -43,7 +43,7 @@ io_source_data_get <- function(source_data, check_is_numeric=FALSE){
 
   if (!is.data.frame(source))
   {
-    log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") , " source_data ", source_data, " is missed !")
+    core_log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") , " source_data ", source_data, " is missed !")
     stop()
   }
 
@@ -54,7 +54,7 @@ io_source_data_get <- function(source_data, check_is_numeric=FALSE){
   # check all values are numeric
   if (check_is_numeric & !all(vapply(source, is.numeric, logical(1))))
   {
-    log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") , " source_data ", source_data, " contains non-numeric values !")
+    core_log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") , " source_data ", source_data, " contains non-numeric values !")
     stop()
   }
 

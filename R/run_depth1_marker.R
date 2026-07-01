@@ -11,7 +11,7 @@
 #' @param family_test character.
 #' @param fileNameResults character. Path of the output CSV.
 #' @param filter_p_value logical.
-#' @param ssEnv list. Session environment from get_session_info().
+#' @param ssEnv list. Session environment from core_get_session_info().
 #' @param ... forwarded to apply_stat_model().
 #' @return list(results = data.frame, processed_items = integer).
 #'   Side effect: writes the CSV via association_analysis_save_results().
@@ -60,7 +60,7 @@ run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
       column_selectors <- column_selectors[column_selectors != ""]
       processed_items <- processed_items + ncol(study_summary_local) - g_start
       if (any(is.na(study_summary_local[, column_selectors]))) {
-        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
           " Missing values in the data frame!")
         study_summary_local <- study_summary_local[
           complete.cases(study_summary_local[, column_selectors]), ]

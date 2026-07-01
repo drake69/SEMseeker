@@ -6,11 +6,11 @@ enrich_WebGestalt <- function(study,
 
   #
   # start_fresh <- FALSE
-  # ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
-  ssEnv <- get_session_info()
-  pvalue_column <- name_cleaning(pvalue_column)
+  # ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
+  ssEnv <- core_get_session_info()
+  pvalue_column <- core_name_cleaning(pvalue_column)
   keys <- unique(ssEnv$keys_for_pathway)
-  path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("WebGestalt",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+  path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("WebGestalt",core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
   tmp <- tempdir()
   tempFolder <- io_dir_check_and_create(tmp,c("/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]")))
 
@@ -18,7 +18,7 @@ enrich_WebGestalt <- function(study,
   #check if optional package is installed
   if(!requireNamespace("WebGestaltR", quietly = TRUE))
   {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " WebGestaltR package is not installed. Please install WebGestaltR package to use this function")
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " WebGestaltR package is not installed. Please install WebGestaltR package to use this function")
     return()
   }
 
@@ -82,7 +82,7 @@ enrich_WebGestalt <- function(study,
 
         if(nrow(gene_set)==0)
         {
-          log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " No genes found for the key: ", keys[i,])
+          core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " No genes found for the key: ", keys[i,])
           next
         }
         # remove duplicates
@@ -93,7 +93,7 @@ enrich_WebGestalt <- function(study,
         gene_set <- gene_set[order(gene_set[,pvalue_column]),]
         gene_set <- na.omit(gene_set)
 
-        log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
+        core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
         if (nrow(gene_set)==0)
           next
         projectName <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix= paste(type,enrich_method, sep="_") , pvalue_column=pvalue_column, as.numeric(ssEnv$alpha), significance)
@@ -102,7 +102,7 @@ enrich_WebGestalt <- function(study,
         # entrez <- unique(entrez)
         # entrez <- na.omit(entrez)
 
-        # log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set (ENTREZ): ",nrow(gene_set), " key: ", keys[i,])
+        # core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set (ENTREZ): ",nrow(gene_set), " key: ", keys[i,])
         if (length(gene_set$AREA_OF_TEST)==0)
           next
 
@@ -139,11 +139,11 @@ enrich_WebGestalt <- function(study,
           )
         },
           catch = function(e) {
-            log_event(paste("Error in WebGestaltR: ",e))
+            core_log_event(paste("Error in WebGestaltR: ",e))
             NULL
           },
           finally = {
-            # log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " WebGestaltR done for key: ", keys[i,])
+            # core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " WebGestaltR done for key: ", keys[i,])
           }
         )
 

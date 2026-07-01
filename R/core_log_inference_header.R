@@ -7,13 +7,13 @@
 #' @param inference_detail single-row data.frame.
 #' @return Invisibly NULL.
 #' @keywords internal
-log_inference_header <- function(inference_detail) {
+core_log_inference_header <- function(inference_detail) {
   prettified <- t(inference_detail)
   prettified <- knitr::kable(prettified, format = "simple",
     align = "l", digits = 2, row.names = TRUE)
   prettified <- paste(prettified, collapse = "\n")
-  log_event("JOURNAL: ##############################################################################################################")
-  log_event("JOURNAL: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("JOURNAL: ##############################################################################################################")
+  core_log_event("JOURNAL: ", format(Sys.time(), "%a %b %d %X %Y"),
     " \nStarting association analysis for inference detail:\n", prettified)
   invisible(NULL)
 }

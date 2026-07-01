@@ -29,7 +29,7 @@
 #'   inferred from the object class / file extension.
 #' @param tech Optional technology label (\code{"K850"}, \code{"K450"},
 #'   \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}). If \code{NULL} (default)
-#'   it is auto-detected downstream by \code{get_meth_tech()}.
+#'   it is auto-detected downstream by \code{core_get_meth_tech()}.
 #' @param genome_build Reference genome build. One of \code{"hg19"} (default),
 #'   \code{"hg38"}, \code{"mm10"}, \code{"legacy"}.
 #' @param strict_build_check If \code{TRUE} (default), impossible tech /
@@ -37,7 +37,7 @@
 #'   \code{genome_build="hg19"}) raise an error. If \code{FALSE}, a warning is
 #'   emitted and the pipeline proceeds.
 #' @param ... Additional arguments forwarded to \code{\link{semseeker_core}}
-#'   and \code{init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
+#'   and \code{core_init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
 #'   \code{LESIONS_BP}, \code{marker}, \code{areas}). \code{LESIONS_BP}
 #'   (default 2000) is the maximum bp distance between two probes for them to
 #'   be in the same LESIONS enrichment window — replaces the legacy
@@ -87,10 +87,10 @@ semseeker <- function(input,
 
   input_type <- match.arg(input_type)
 
-  # ---- Step 1: init_env FIRST — cleans folder (start_fresh), sets up
+  # ---- Step 1: core_init_env FIRST — cleans folder (start_fresh), sets up
   #      parallel plan, configures session. Must happen before any
   #      data processing or file I/O. -----------------------------------
-  init_env(
+  core_init_env(
     result_folder = result_folder,
     tech          = if (is.null(tech)) "" else tech,
     genome_build  = genome_build,
@@ -102,7 +102,7 @@ semseeker <- function(input,
 
   # ---- Step 3: normalise input to SEMseeker signal_data ----------------
   # Values are passed through unchanged. The beta-vs-M-value flag is
-  # detected and stored downstream by get_meth_tech() (ssEnv$beta).
+  # detected and stored downstream by core_get_meth_tech() (ssEnv$beta).
   signal_data <- .dispatch_one(input, input_type)
 
   # ---- Step 4: delegate to core pipeline -------------------------------
@@ -170,7 +170,7 @@ semseeker <- function(input,
     msg <- paste0(
       "tech = 'LONGREAD' with genome_build = 'hg19' is almost certainly wrong: ",
       "long-read methylation pipelines (Nanopore / PacBio) align to GRCh38. ",
-      "Set genome_build = 'hg38' in init_env() / semseeker()."
+      "Set genome_build = 'hg38' in core_init_env() / semseeker()."
     )
     if (isTRUE(strict)) stop(msg) else warning(msg)
   }

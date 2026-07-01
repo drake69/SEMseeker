@@ -41,7 +41,7 @@ combination of genomic area, marker type and sample group that was analysed:
 All functions are **session-aware**: they read the active semseeker session
 (initialised by `association_analysis()`) and therefore do **not** require
 passing `result_folder` again — they pick it up automatically via
-`get_session_info()`.
+`core_get_session_info()`.
 
 <hr>
 

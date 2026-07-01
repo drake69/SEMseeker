@@ -1,4 +1,4 @@
-recover <- function(result_folder, maxResources = 90,
+core_recover <- function(result_folder, maxResources = 90,
   parallel_strategy  = "multicore",start_fresh = FALSE, ...)
 {
 
@@ -10,8 +10,8 @@ recover <- function(result_folder, maxResources = 90,
     arguments[["areas_selection"]] <- NULL
   }
 
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will try to recover the analysys for project \n in ", ssEnv$result_folderData)
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will try to core_recover the analysys for project \n in ", ssEnv$result_folderData)
 
   study_summary <-   study_summary_get()
 
@@ -21,5 +21,5 @@ recover <- function(result_folder, maxResources = 90,
   anno_annotate_position_pivots()
 
   # Single point of sidecar materialisation (AI-027).
-  ensure_sidecars(ssEnv$result_folderData)
+  core_ensure_sidecars(ssEnv$result_folderData)
 }

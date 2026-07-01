@@ -45,7 +45,7 @@ lesions_get_bulk <- function(mut_df, sample_cols,
   if (length(sample_cols) == 0L) return(matrix(0L, nrow = nrow(mut_df), ncol = 0L))
 
   if (is.null(LESIONS_BP)) {
-    ssEnv <- tryCatch(get_session_info(), error = function(e) NULL)
+    ssEnv <- tryCatch(core_get_session_info(), error = function(e) NULL)
     LESIONS_BP <- if (!is.null(ssEnv) && !is.null(ssEnv$LESIONS_BP))
       as.integer(ssEnv$LESIONS_BP) else 5000L
   }

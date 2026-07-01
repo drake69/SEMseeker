@@ -24,7 +24,7 @@
 anno_position_pivot_to_probe <- function(signal_data)
 {
  
-  ssEnv          <- get_session_info()
+  ssEnv          <- core_get_session_info()
   tech_col       <- ssEnv$tech
   probe_features <- anno_probe_annotation_build(ssEnv$tech)[, c("PROBE", "CHR", "START", "END", tech_col)]
   probe_features_lf <- polars::as_polars_df(probe_features)$lazy()

@@ -55,13 +55,13 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   parts  <- unlist(strsplit(as.character(family_test), "_"))
   engine <- parts[1]
   if (!engine %in% c("limma", "voom") || length(parts) < 2L) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch: malformed family_test='", family_test, "'")
     return(NULL)
   }
   degree <- suppressWarnings(as.integer(parts[2]))
   if (is.na(degree) || degree < 1L) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch: family_test='", family_test,
               "' has invalid degree.")
     return(NULL)
@@ -90,7 +90,7 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   }, logical(1))
   area_cols <- area_cols[area_keep]
   if (length(area_cols) == 0L) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch: no informative areas after constant-burden filter.")
     return(NULL)
   }
@@ -102,7 +102,7 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   td <- tempDataFrame[keep_rows, , drop = FALSE]
   min_n <- degree + length(covariates) + 2L
   if (nrow(td) < min_n) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " apply_stat_model_batch: too few complete samples (",
               nrow(td), " < ", min_n, ") — skip.")
     return(NULL)
@@ -138,7 +138,7 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   if (engine == "voom") {
     voom_obj <- tryCatch(limma::voom(y_mat, design),
                           error = function(e) {
-                            log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+                            core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
                                       " voom failed: ", conditionMessage(e))
                             NULL
                           })
@@ -148,7 +148,7 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   } else {
     fit <- tryCatch(limma::lmFit(y_mat, design),
                      error = function(e) {
-                       log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+                       core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
                                  " lmFit failed: ", conditionMessage(e))
                        NULL
                      })
@@ -170,17 +170,17 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   coef_names <- colnames(fit$coefficients)
 
   build_pname <- function(cn) {
-    pn <- name_cleaning(paste0(cn, "_pvalue"))
-    pn <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", pn))
-    pn <- name_cleaning(gsub("_RAW_EQ_TRUE", "", pn))
-    pn <- name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, pn))
+    pn <- core_name_cleaning(paste0(cn, "_pvalue"))
+    pn <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", pn))
+    pn <- core_name_cleaning(gsub("_RAW_EQ_TRUE", "", pn))
+    pn <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, pn))
     pn
   }
   build_ename <- function(cn) {
-    en <- name_cleaning(paste0(cn, "_estimate"))
-    en <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", en))
-    en <- name_cleaning(gsub("_RAW_EQ_TRUE", "", en))
-    en <- name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, en))
+    en <- core_name_cleaning(paste0(cn, "_estimate"))
+    en <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", en))
+    en <- core_name_cleaning(gsub("_RAW_EQ_TRUE", "", en))
+    en <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, en))
     en
   }
   pnames <- vapply(coef_names, build_pname, character(1))
@@ -252,6 +252,6 @@ apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
     result_temp$PVALUE <- result_temp[[first_poly_pcol]]
   }
 
-  colnames(result_temp) <- name_cleaning(colnames(result_temp))
+  colnames(result_temp) <- core_name_cleaning(colnames(result_temp))
   result_temp
 }

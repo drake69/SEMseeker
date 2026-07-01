@@ -10,7 +10,7 @@ enrich_inter_study_enrichment_compare(result_folder, ...)
 \item{result_folder}{Path to the folder holding the per-study enrichment
 results to be compared.}
 
-\item{...}{Additional arguments forwarded to [init_env()] (e.g.
+\item{...}{Additional arguments forwarded to [core_init_env()] (e.g.
 `maxResources`, `parallel_strategy`).}
 }
 \value{

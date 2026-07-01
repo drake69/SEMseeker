@@ -8,10 +8,10 @@ test_that("io_read_pivot() returns NULL when no storage exists", {
 
   tempFolder <- tempfile("read_pivot_test_")
   dir.create(file.path(tempFolder, "Data"), recursive = TRUE)
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
                                 parallel_strategy = "sequential",
                                 iqrTimes = 3, verbosity = 1)
-  on.exit({ SEMseeker:::close_env(); unlink(tempFolder, recursive = TRUE) },
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
           add = TRUE)
 
   testthat::expect_null(
@@ -25,10 +25,10 @@ test_that("io_read_pivot() prefers cached parquet over bed files", {
 
   tempFolder <- tempfile("read_pivot_test_")
   dir.create(file.path(tempFolder, "Data"), recursive = TRUE)
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
                                 parallel_strategy = "sequential",
                                 iqrTimes = 3, verbosity = 1)
-  on.exit({ SEMseeker:::close_env(); unlink(tempFolder, recursive = TRUE) },
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
           add = TRUE)
 
   # Write a 1-row stub parquet at the expected pivot location

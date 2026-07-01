@@ -57,12 +57,12 @@
 io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
                        cache = TRUE) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # --- Branch 1: cached parquet pivot ----------------------------------------
   pivot_filename <- io_pivot_file_name_parquet(marker, figure, area, subarea)
   if (file.exists(pivot_filename)) {
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_read_pivot[", marker, "_", figure,
               "] hit cached parquet: ", basename(pivot_filename))
     return(polars::pl$scan_parquet(pivot_filename))
@@ -80,7 +80,7 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
   }
   bed_files <- io_list_bed_files_for_marker_figure(marker, figure)
   if (length(bed_files) > 0) {
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_read_pivot[", marker, "_", figure,
               "] streaming merge over ", length(bed_files), " bed/bedgraph files",
               if (cache) " (will persist via sink_parquet)" else " (one-shot, no cache)")
@@ -89,14 +89,14 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
     if (isTRUE(cache)) {
       dir.create(dirname(pivot_filename), recursive = TRUE, showWarnings = FALSE)
       lazy$sink_parquet(pivot_filename)
-      # Sidecar JSON is materialised by ensure_sidecars() at pipeline end.
+      # Sidecar JSON is materialised by core_ensure_sidecars() at pipeline end.
       return(polars::pl$scan_parquet(pivot_filename))
     }
     return(lazy)
   }
 
   # --- Branch 3: nothing to read ---------------------------------------------
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
             " io_read_pivot[", marker, "_", figure,
             "] no pivot parquet and no bed/bedgraph files found; returning NULL")
   return(NULL)
@@ -111,7 +111,7 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
 #' @keywords internal
 #' @noRd
 io_list_bed_files_for_marker_figure <- function(marker, figure) {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   data_root <- ssEnv$result_folderData
   if (is.null(data_root) || !dir.exists(data_root)) return(character(0))
 

@@ -122,23 +122,23 @@ test_that("synthetic long-read POSITION pivot can be lazily summarised by AREA p
       collect()
   )$CHR)
 
-  # Should recover the original 5 chromosomes (order-independent)
+  # Should core_recover the original 5 chromosomes (order-independent)
   expect_setequal(chr_extracted, chrs)
 })
 
-# ---- get_meth_tech: WGBS pre-declaration is honoured ------------------
+# ---- core_get_meth_tech: WGBS pre-declaration is honoured ------------------
 
-test_that("get_meth_tech respects ssEnv$tech pre-declaration for WGBS", {
+test_that("core_get_meth_tech respects ssEnv$tech pre-declaration for WGBS", {
   skip_on_cran()
 
   tempFolder <- tempfile("ai109_wgbs_")
   dir.create(file.path(tempFolder, "Data"), recursive = TRUE)
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
                                 parallel_strategy = "sequential",
                                 tech              = "WGBS",
                                 iqrTimes          = 3,
                                 verbosity         = 1)
-  on.exit({ SEMseeker:::close_env(); unlink(tempFolder, recursive = TRUE) },
+  on.exit({ SEMseeker:::core_close_env(); unlink(tempFolder, recursive = TRUE) },
           add = TRUE)
 
   # Pre-declaration must be honoured even with an empty signal stub
@@ -150,12 +150,12 @@ test_that("get_meth_tech respects ssEnv$tech pre-declaration for WGBS", {
   rownames(signal_data) <- signal_data$PROBE
   signal_data$PROBE <- NULL
 
-  out <- tryCatch(SEMseeker:::get_meth_tech(signal_data),
+  out <- tryCatch(SEMseeker:::core_get_meth_tech(signal_data),
                   error = function(e) e)
   if (inherits(out, "error")) {
-    testthat::skip(paste("get_meth_tech failed (likely missing optional setup):",
+    testthat::skip(paste("core_get_meth_tech failed (likely missing optional setup):",
                           conditionMessage(out)))
   }
   expect_equal(out$tech, "WGBS",
-               info = "Pre-declared tech = WGBS must survive get_meth_tech")
+               info = "Pre-declared tech = WGBS must survive core_get_meth_tech")
 })

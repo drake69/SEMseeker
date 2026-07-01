@@ -11,7 +11,7 @@
 #'
 delta_single_sample <- function(values, thresholds, sample_detail) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # Polars inner join on (CHR, START, END) — replaces sort-then-positional-zip.
   # util_join_values_to_thresholds() handles type coercion and is shared with
@@ -19,7 +19,7 @@ delta_single_sample <- function(values, thresholds, sample_detail) {
   joined <- util_join_values_to_thresholds(values, thresholds)
 
   if (nrow(joined) == 0L) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
       " [delta_single_sample] No overlapping positions — skipping delta",
       " for sample=", sample_detail$Sample_ID)
     return(invisible(NULL))

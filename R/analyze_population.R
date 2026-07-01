@@ -14,16 +14,16 @@
 #'
 analyze_population <- function(signal_data, sample_sheet,signal_thresholds, probe_features) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   # #
   start_time <- Sys.time()
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " AnalyzePopulation warmingUP ")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " AnalyzePopulation warmingUP ")
 
   nrow_before <- nrow(signal_data)
   signal_data <- stats::na.omit(signal_data)
   nrow_after <- nrow(signal_data)
   if (nrow_before != nrow_after) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Removed ", nrow_before - nrow_after, " rows with NA values")
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Removed ", nrow_before - nrow_after, " rows with NA values")
     stop()
   }
 
@@ -34,11 +34,11 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   missed_samples <- setdiff(setdiff(sample_names, existent_samples), "PROBE")
 
   if (length(missed_samples) != 0) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " These samples data are missed: ", paste0(missed_samples, sep = " "))
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " These samples data are missed: ", paste0(missed_samples, sep = " "))
   }
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " WarmedUP AnalyzePopulation")
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Start population analysis")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " WarmedUP AnalyzePopulation")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Start population analysis")
 
   # progress_bar <- progress::progress_bar$new(
   #   format = paste("INFO: Performing population analysis [:bar] :percent eta: :eta"),
@@ -85,7 +85,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
     "signal_superior_thresholds","deltar_single_sample","signal_inferior_thresholds","iqr","signal_median_values",
     "bt","bonferroni_threshold", "probe_features", "analyze_single_sample_both", "delta_single_sample", "progress_bar",
     "progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_single_sample",
-    "get_session_info","io_bed_file_name","signal_thresholds","update_session_info","anno_normalize_chr",
+    "core_get_session_info","io_bed_file_name","signal_thresholds","core_update_session_info","anno_normalize_chr",
     "existing_signal_mean","existing_mut_hyper","existing_mut_hypo","existing_deltas_hypo","existing_deltar_hypo",
     "dir_known_signal_mean","dir_known_mut_hyper","dir_known_mut_hypo","dir_known_deltas_hypo","dir_known_deltar_hypo")
   i <- 1
@@ -93,7 +93,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   for(i in seq_len(nrow(sample_sheet))) {
   # foreach::foreach(i =1:nrow(sample_sheet), .export = variables_to_export) %dorng% {
     local_sample_detail <- sample_sheet[i,]
-    ssEnv <- get_session_info()
+    ssEnv <- core_get_session_info()
     bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN", skip_dir_create = dir_known_signal_mean)
     if(!(bed_filename %in% existing_signal_mean)) {
       signal_values <- signal_data[,local_sample_detail$Sample_ID]
@@ -130,7 +130,7 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
       coverage_n_covered <- coverage_sig_lf$join(
         coverage_thr_lf, on = c("CHR", "START", "END"), how = "inner"
       )$collect()$height
-      log_event(
+      core_log_event(
         "BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
         " [analyze_population] Coverage —",
         " input_positions=", coverage_n_input,
@@ -160,13 +160,13 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   ) %dorng% {
     # CRITICAL (E-14): multisession workers are fresh R processes where
     # .pkgglobalenv$ssEnv is empty. All internal helpers (io_bed_file_name,
-    # analyze_single_sample, etc.) call get_session_info() which reads from
+    # analyze_single_sample, etc.) call core_get_session_info() which reads from
     # .pkgglobalenv — NOT from the exported `ssEnv` variable. Without this
-    # call, multisession workers fail with "get_session_info called without
+    # call, multisession workers fail with "core_get_session_info called without
     # result folder". See engineering-decisions.md §1.3.
     # AI-041: in-memory only; saveRDS would happen N_samples × N_workers
     # times per SEM step otherwise (15 MB per write → catastrophic I/O).
-    SEMseeker:::update_session_info(ssEnv, save_to_disk = FALSE)
+    SEMseeker:::core_update_session_info(ssEnv, save_to_disk = FALSE)
 
     local_sample_detail <- sample_sheet[i,]
 
@@ -205,18 +205,18 @@ analyze_population <- function(signal_data, sample_sheet,signal_thresholds, prob
   }
 
   gc()
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Row count result:", nrow(sample_sheet))
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Row count result:", nrow(sample_sheet))
   if (exists("signal_data", envir = environment(), inherits = FALSE))
     rm("signal_data", envir = environment())
 
   # AI-041: end-of-batch disk snapshot (workers used save_to_disk=FALSE
   # inside the foreach; here we persist the session exactly once).
-  update_session_info(ssEnv, save_to_disk = TRUE)
+  core_update_session_info(ssEnv, save_to_disk = TRUE)
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Completed population analysis ")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Completed population analysis ")
   end_time <- Sys.time()
   time_taken <- difftime(end_time,start_time, units = "mins")
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Completed population with summary - Time taken: ", time_taken, " minutes.")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Completed population with summary - Time taken: ", time_taken, " minutes.")
 
 }
 

@@ -10,7 +10,7 @@
 #'
 #'   `{MARKER}_DEPTH_{depth}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
 #'
-#' (passed through `name_cleaning()` which uppercases + replaces
+#' (passed through `core_name_cleaning()` which uppercases + replaces
 #' comparison operators with `_GT_` / `_LT_` / `_EQ_` etc.)
 #'
 #' @param inference_detail A single row of `inference_details` (data.frame
@@ -65,7 +65,7 @@ volcano_plot_inference <- function(inference_detail,
   }
   use_ggrepel <- requireNamespace("ggrepel", quietly = TRUE)
 
-  ssEnv <- tryCatch(get_session_info(), error = function(e) NULL)
+  ssEnv <- tryCatch(core_get_session_info(), error = function(e) NULL)
   if (is.null(dpi)) {
     dpi <- if (!is.null(ssEnv$plot_resolution_ppi))
       as.numeric(ssEnv$plot_resolution_ppi) else 600
@@ -123,14 +123,14 @@ volcano_plot_inference <- function(inference_detail,
   if (is.null(markers) || length(markers) == 0L) {
     candidate_csvs <- list.files(inference_folder, pattern = "\\.csv$",
                                   full.names = FALSE)
-    iv_token       <- name_cleaning(iv)
-    fam_token      <- name_cleaning(family_test)
+    iv_token       <- core_name_cleaning(iv)
+    fam_token      <- core_name_cleaning(family_test)
     matches        <- candidate_csvs[
       grepl(iv_token, candidate_csvs, fixed = TRUE) &
       grepl(fam_token, candidate_csvs, fixed = TRUE)
     ]
     if (length(matches) == 0L) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " volcano_plot_inference: no inference CSV matches IV=", iv,
                 " family=", family_test, " in ", inference_folder)
       return(invisible(character(0)))
@@ -150,7 +150,7 @@ volcano_plot_inference <- function(inference_detail,
       io_inference_file_name(inference_detail, marker, inference_folder,
                           file_extension = "csv"),
       error = function(e) {
-        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " volcano_plot_inference: io_inference_file_name failed for ",
                   marker, ": ", conditionMessage(e),
                   " — falling back to manual list.files() scan.")
@@ -162,18 +162,18 @@ volcano_plot_inference <- function(inference_detail,
     csv_basename <- if (!is.null(csv_path))
       tools::file_path_sans_ext(basename(csv_path)) else
       paste(c(marker, "DEPTH", depth_analysis,
-              name_cleaning(iv),
-              name_cleaning(transformation_y),
-              name_cleaning(family_test)), collapse = "_")
+              core_name_cleaning(iv),
+              core_name_cleaning(transformation_y),
+              core_name_cleaning(family_test)), collapse = "_")
 
     if (is.null(csv_path) || !file.exists(csv_path)) {
       # Permissive fallback: scan Inference/ for a file starting with
       # `{MARKER}_DEPTH_{depth}_{IV}_` and matching family. Useful when
       # the inference_detail row has changed slightly since the CSV was
       # written (e.g. additional dummy covariates added downstream).
-      prefix <- name_cleaning(paste(c(marker, "DEPTH", depth_analysis,
+      prefix <- core_name_cleaning(paste(c(marker, "DEPTH", depth_analysis,
                                       iv), collapse = "_"))
-      fam_tok <- name_cleaning(family_test)
+      fam_tok <- core_name_cleaning(family_test)
       candidates <- list.files(inference_folder, pattern = "\\.csv$",
                                 full.names = TRUE)
       candidates <- candidates[startsWith(basename(candidates), prefix) &
@@ -181,17 +181,17 @@ volcano_plot_inference <- function(inference_detail,
       if (length(candidates) == 1L) {
         csv_path     <- candidates[1]
         csv_basename <- tools::file_path_sans_ext(basename(csv_path))
-        log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " volcano_plot_inference: matched ", basename(csv_path),
                   " for marker '", marker, "' via prefix scan.")
       } else if (length(candidates) > 1L) {
-        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " volcano_plot_inference: ambiguous match for marker '",
                   marker, "' — ", length(candidates),
                   " CSVs share the prefix. Skipping.")
         next
       } else {
-        log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " volcano_plot_inference: no CSV for marker '", marker,
                   "' in ", inference_folder, " — skipping.")
         next
@@ -202,7 +202,7 @@ volcano_plot_inference <- function(inference_detail,
       utils::read.csv2(csv_path, header = TRUE, stringsAsFactors = FALSE,
                         check.names = FALSE),
       error = function(e) {
-        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " volcano_plot_inference: failed to read ", csv_path, ": ",
                   conditionMessage(e))
         NULL
@@ -213,7 +213,7 @@ volcano_plot_inference <- function(inference_detail,
     needed_cols <- c("AREA", "SUBAREA", "AREA_OF_TEST", pvalue_column)
     missed <- setdiff(needed_cols, colnames(df))
     if (length(missed) > 0L) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " volcano_plot_inference: ", csv_path,
                 " missing columns: ", paste(missed, collapse = ", "),
                 " (pvalue_column='", pvalue_column, "') — skipping.")
@@ -227,7 +227,7 @@ volcano_plot_inference <- function(inference_detail,
     # PVALUE is the right X.
     estimate_col <- .volcano_pick_estimate_col(df)
     if (is.null(estimate_col)) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " volcano_plot_inference: ", csv_path,
                 " — could not identify primary ESTIMATE column. Skipping.")
       next
@@ -247,7 +247,7 @@ volcano_plot_inference <- function(inference_detail,
                           drop = FALSE]
         if (nrow(sub_df) == 0L) next
 
-        png_basename <- name_cleaning(paste(
+        png_basename <- core_name_cleaning(paste(
           c(csv_basename, area, subarea), collapse = "_"
         ))
         png_path <- file.path(chart_folder, paste0(png_basename, ".png"))
@@ -308,7 +308,7 @@ volcano_plot_inference <- function(inference_detail,
                           width = width, height = height,
                           units = units, dpi = dpi),
           error = function(e) {
-            log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+            core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                       " volcano_plot_inference: ggsave failed for ", png_path,
                       ": ", conditionMessage(e))
           }
@@ -318,7 +318,7 @@ volcano_plot_inference <- function(inference_detail,
     }
   }
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " volcano_plot_inference: wrote ", length(written),
             " PNG(s) under ", chart_folder)
   invisible(written)

@@ -1,13 +1,13 @@
 enrich_result_save <- function(result_pathway, pathway_report_path, pathway_package)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   if(nrow(result_pathway)!=0)
   {
     result_pathway <- enrich_analysy_add_category(pathway_package,result_pathway)
     pvalue_column_adj <- ssEnv$key_enrichment_format[ssEnv$key_enrichment_format$label==pathway_package,"column_of_pvalue"]
     description_column <- ssEnv$key_enrichment_format[ssEnv$key_enrichment_format$label==pathway_package,"column_of_description"]
     # result_pathway <- result_pathway[, !(grepl("PVALUE_ADJ_", colnames(result_pathway))]
-    col_p <- name_cleaning(paste0("PVALUE_ADJ_", ssEnv$multiple_test_adj))
+    col_p <- core_name_cleaning(paste0("PVALUE_ADJ_", ssEnv$multiple_test_adj))
     tryCatch({
       if(ssEnv$multiple_test_adj=="q")
         result_pathway[,col_p] <- qvalue::qvalue(result_pathway[,pvalue_column_adj], fdr.level = ssEnv$alpha, pi0.method="bootstrap", na.rm=TRUE)$qvalues

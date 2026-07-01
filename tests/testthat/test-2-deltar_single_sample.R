@@ -2,11 +2,11 @@ test_that("deltar_single_sample",{
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(result_folder= tempFolder, bonferroni_threshold = 0.05, showprogress=showprogress, start_fresh = TRUE, inpute="median")
+  ssEnv <- SEMseeker:::core_init_env(result_folder= tempFolder, bonferroni_threshold = 0.05, showprogress=showprogress, start_fresh = TRUE, inpute="median")
 
   ####################################################################################
 
-  gg <- SEMseeker:::get_meth_tech(signal_data)
+  gg <- SEMseeker:::core_get_meth_tech(signal_data)
   if (!exists("signal_thresholds"))
   {
     signal_data <- SEMseeker:::inpute_missing_values(signal_data)
@@ -101,7 +101,7 @@ test_that("deltar_single_sample",{
   }
 
   ####################################################################################
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 
 })

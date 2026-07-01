@@ -20,7 +20,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
 {
 
   #
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   transformation_y <- as.character(transformation_y)
   transformation_x <- as.character(transformation_x)
@@ -140,7 +140,7 @@ io_data_preparation <- function(family_test,transformation_y,tempDataFrame, inde
       length(u) < 2L
     }, logical(1))
     if (any(is_degenerate)) {
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " io_data_preparation [", family_test, " / ", key$MARKER, " ",
                 key$FIGURE, " ", key$AREA, " ", key$SUBAREA,
                 "]: dropping ", sum(is_degenerate), "/", length(is_degenerate),

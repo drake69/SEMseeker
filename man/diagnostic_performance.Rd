@@ -33,7 +33,7 @@ grouping variable (default \code{"Sample_Group"}).}
 values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
 \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).}
 
-\item{...}{Additional arguments passed to \code{init_env()}.}
+\item{...}{Additional arguments passed to \code{core_init_env()}.}
 }
 \value{
 Invisibly \code{NULL}. Sensitivity / specificity tables are written

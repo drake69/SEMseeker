@@ -43,7 +43,7 @@ sample sheet (default \code{"NAME"}).}
 \item{parallel_strategy}{character. Parallelisation backend
 (default \code{"multicore"}).}
 
-\item{...}{Additional arguments passed to \code{init_env()}.}
+\item{...}{Additional arguments passed to \code{core_init_env()}.}
 }
 \value{
 Invisibly \code{NULL}. A PNG plot is saved under

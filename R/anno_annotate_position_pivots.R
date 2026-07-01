@@ -5,7 +5,7 @@
 anno_annotate_position_pivots <- function ()
 {
   start_time <- Sys.time()
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   # area and subarea are defined using the filename
   localKeys <-ssEnv$keys_areas_subareas_markers_figures
 
@@ -27,12 +27,12 @@ anno_annotate_position_pivots <- function ()
       localKeys[i, "AREA"],   localKeys[i, "SUBAREA"]))
   }, logical(1)))
   if (all_dest_exist) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Annotation skipped: all destination pivots already exist.")
     return()
   }
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotating genomic area.")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotating genomic area.")
 
   progress_bar <- ""
   if(ssEnv$showprogress)
@@ -41,7 +41,7 @@ anno_annotate_position_pivots <- function ()
   variables_to_export <- c("ssEnv", "io_dir_check_and_create", "subarea",
     "progress_bar","progression_index", "progression", "progressor_uuid",
     "owner_session_uuid", "trace","anno_probe_features_get", "localKeys",
-    "io_file_path_build","%>%","get_session_info","log_event")
+    "io_file_path_build","%>%","core_get_session_info","core_log_event")
 
   # doesn't work with parallel, tests throws error
   for(i in seq_len(nrow(localKeys)))
@@ -58,7 +58,7 @@ anno_annotate_position_pivots <- function ()
     # i <- 1
     if (!file.exists(dest_pivot_filename))
     {
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " File does not exists: ", dest_pivot_filename)
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " File does not exists: ", dest_pivot_filename)
       probe_features <- anno_probe_features_get(area_subarea)
       # NB (AI-027/AI-030): anno_create_position_pivots + io_stream_merge_bed strip the
       # "chr" prefix from CHR for internal consistency, so the source pivot's
@@ -71,7 +71,7 @@ anno_annotate_position_pivots <- function ()
       if(file.exists(source_pivot_filename))
       {
         probe_features$CHR <- as.character(probe_features$CHR)
-        log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotating, reading pivot.")
+        core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotating, reading pivot.")
         probe_features <- polars::as_polars_df(probe_features)$lazy()
         probe_features <- probe_features$with_columns(polars::pl$col(area_subarea)$alias("AREA"))$drop(area_subarea)
         # colnames(probe_features)
@@ -179,7 +179,7 @@ anno_annotate_position_pivots <- function ()
 
         pivot$write_parquet(dest_pivot_filename)
 
-        log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotating, annotaion executed.")
+        core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotating, annotaion executed.")
 
         if(nrow(pivot)==0)
           ssEnv$key_missed_areas_subareas <- unique(rbind(ssEnv$key_missed_areas_subareas, localKeys[i,c("AREA","SUBAREA")]))
@@ -195,9 +195,9 @@ anno_annotate_position_pivots <- function ()
   selector <- !((ssEnv$keys_areas_subareas_markers_figures$AREA %in% ssEnv$key_missed_areas_subareas$AREA) & (ssEnv$keys_areas_subareas_markers_figures$SUBAREA %in% ssEnv$key_missed_areas_subareas$SUBAREA))
   ssEnv$keys_areas_subareas_markers_figures  <- ssEnv$keys_areas_subareas_markers_figures[selector,]
 
-  update_session_info(ssEnv)
+  core_update_session_info(ssEnv)
   end_time <- Sys.time()
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotation genomic areas file finished in ", difftime(end_time,start_time,units = "mins")," minutes.")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Annotation genomic areas file finished in ", difftime(end_time,start_time,units = "mins")," minutes.")
   gc()
   #
 }

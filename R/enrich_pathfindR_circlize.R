@@ -6,7 +6,7 @@ enrich_pathfindR_circlize <- function(
   result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
 {
 
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
   keys <- unique(ssEnv$keys_for_pathway)
   total_progress <- nrow(keys)*nrow(inference_details)
   progress <- 0
@@ -30,7 +30,7 @@ enrich_pathfindR_circlize <- function(
         suffix = "without_signal_"
 
       enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
-      path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("pathfindR",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+      path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("pathfindR",core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
       pathway_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
       message("Pathway report path: ", pathway_report_path)
       if(file.exists(pathway_report_path))
@@ -83,7 +83,7 @@ enrich_pathfindR_circlize <- function(
         results$GENE <- official_symbols
 
         results$PATHWAY_CHR <- "pathway"
-        ssEnv_local <- get_session_info()
+        ssEnv_local <- core_get_session_info()
         probe_anno  <- anno_probe_annotation_build(ssEnv_local$tech)
         genes_impacted_cytoband <- unique(
           probe_anno[probe_anno$GENE_WHOLE %in% results$GENE,

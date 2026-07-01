@@ -1,7 +1,7 @@
 io_signal_save <- function(signal_data, sample_sheet, batch_id,
                         probe_features = NULL)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   # Resolve probe_features in priority order: explicit arg > attribute
   # attached by prepare_batch_signal() > legacy anno_probe_features_get() refetch.
   # In the normal pipeline analyze_batch() routes signal_data through
@@ -9,10 +9,10 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   # third branch is never taken.
   if (is.null(probe_features))
     probe_features <- attr(signal_data, "probe_features")
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saving signal data.")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saving signal data.")
   pivot_file_name_pos <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
   if (file.exists(pivot_file_name_pos)) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data already saved.")
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data already saved.")
     return()
   }
 
@@ -23,7 +23,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   # No Bioconductor annotation join is needed.
   # ------------------------------------------------------------------
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               "Saving signal data for ", ssEnv$tech,
               " (extracting coordinates from synthetic probe IDs).")
 
@@ -55,7 +55,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     )
     signal_pos   <- signal_pos[chr_order, ]
     polars::as_polars_df(signal_pos)$write_parquet(pivot_file_name_pos)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data (", ssEnv$tech, ").")
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data (", ssEnv$tech, ").")
     gc()
     return()
   }
@@ -68,11 +68,11 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
 
   pivot_file_name_probe <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE", "WHOLE")
   polars::as_polars_df(signal_data)$write_parquet(pivot_file_name_probe)
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data saved with probe.")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data saved with probe.")
 
   rm(signal_data)
   gc()
-  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-probe-write+gc  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-probe-write+gc  mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
   # AI-027: read via unified dispatcher. The PROBE pivot was just
   # written above (line 62), so CASE 1 (cached parquet) is always taken.
@@ -102,7 +102,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   }
   chrs <- unique(chrs_all)
   chrs <- chrs[order(chr_order_key(chrs))]
-  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"),
             " pre-chunked-sort mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
             " (chromosomes: ", length(chrs), ")")
 
@@ -134,7 +134,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     # accumulo di stato Polars (mmap, cache, plan) fra iterazioni su big matrix.
     rm(sd_chr); invisible(gc(verbose = FALSE))
   }
-  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"),
             " post-chunked-sort mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
             " (wrote ", length(chrs), " chunks)")
 
@@ -149,9 +149,9 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   do.call(polars::pl$concat,
           lapply(chunk_paths, polars::pl$scan_parquet))$
     sink_parquet(pivot_file_name_pos)
-  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-sink-position mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-sink-position mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 
   gc()
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data.")
-  log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-rm-lazyframes   mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saved signal data.")
+  core_log_event("DEBUG_MEM_SS: ", format(Sys.time(), "%a %b %d %X %Y"), " post-rm-lazyframes   mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
 }

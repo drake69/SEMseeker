@@ -6,14 +6,14 @@ association_model_polynomial <- function (family_test, tempDataFrame, sig.formul
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # polynomial_degree_partition-partition_percentage
   polynomial_params <- unlist(strsplit(as.character(family_test),"_"))
 
   if(length(polynomial_params)!=3)
   {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " The polynomial model must have 3 parameters: polynomial followed by degree and partition percentage eg: polynomial_2_1 " )
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " The polynomial model must have 3 parameters: polynomial followed by degree and partition percentage eg: polynomial_2_1 " )
   }
 
   degree <- as.numeric(polynomial_params[2])
@@ -87,17 +87,17 @@ association_model_polynomial <- function (family_test, tempDataFrame, sig.formul
     p_value <- coefficients[i,4]
 
     row_name <- rownames(coefficients)[i]
-    pval_name <- name_cleaning(paste0(row_name,"_pvalue"))
-    pval_name <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ","",pval_name))
-    pval_name <- name_cleaning(gsub("_RAW_EQ_TRUE","",pval_name))
-    pval_name <- name_cleaning(gsub("INDEPENDENT_VARIABLE",independent_variable,pval_name))
+    pval_name <- core_name_cleaning(paste0(row_name,"_pvalue"))
+    pval_name <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ","",pval_name))
+    pval_name <- core_name_cleaning(gsub("_RAW_EQ_TRUE","",pval_name))
+    pval_name <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE",independent_variable,pval_name))
     p_value <- data.frame(p_value)
     colnames(p_value) <- pval_name
     res <- cbind(res, p_value)
 
-    estimate_name <- name_cleaning(paste0(row_name,"_estimate"))
+    estimate_name <- core_name_cleaning(paste0(row_name,"_estimate"))
     estimate <- data.frame(estimate = coefficients[i,1])
-    colnames(estimate) <- name_cleaning(estimate_name)
+    colnames(estimate) <- core_name_cleaning(estimate_name)
     res <- cbind(res, estimate)
 
   }
@@ -107,7 +107,7 @@ association_model_polynomial <- function (family_test, tempDataFrame, sig.formul
   rownames(res) <- NULL
   if(plot)
   {
-    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", core_name_cleaning(samples_sql_condition)))
 
     if(is.null(covariates) || length(covariates)  ==  0)
       file_suffix <- ""

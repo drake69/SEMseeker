@@ -28,7 +28,7 @@
 #' @noRd
 anno_create_position_pivots <- function(population, keys) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # Restrict to base markers — derived markers (DELTAP/DELTARP/DELTAQ/DELTARQ)
   # are built by deltaX_get() post-SEM, not here. LESIONS is treated as a
@@ -75,7 +75,7 @@ anno_create_position_pivots <- function(population, keys) {
     bed_paths <- bed_paths[file.exists(bed_paths)]
     if (length(bed_paths) == 0L) next
 
-    log_event("INFO: ", Sys.time(),
+    core_log_event("INFO: ", Sys.time(),
               " anno_create_position_pivots[", marker, "_", figure,
               "] stream-merging ", length(bed_paths), " bed file(s)")
 
@@ -119,7 +119,7 @@ anno_create_position_pivots <- function(population, keys) {
     }
 
     file.rename(tmp_filename, pivot_filename)
-    # Sidecar JSON is now materialised by ensure_sidecars() at the end of the
+    # Sidecar JSON is now materialised by core_ensure_sidecars() at the end of the
     # pipeline (single point of responsibility, AI-027).
     gc(verbose = FALSE)
   }

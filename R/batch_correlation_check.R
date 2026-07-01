@@ -22,7 +22,7 @@
 
 # batch_correlation_check <- function() {
 # 
-#   ssEnv <- get_session_info()
+#   ssEnv <- core_get_session_info()
 #   y <- g <- 1
 #   i <- 1
 #   sample_sheet <- study_summary_get()
@@ -35,7 +35,7 @@
 #     "batch_analysis_folder", "iter", "RNGseed", "checkRNGversion", "getRNG", "%||%", ".getDoParName", "getDoParName",
 #     "getDoBackend", "setDoBackend", "RNGtype", "showRNG", "doRNGversion", ".getRNG", ".getRNGattribute", "hasRNG",
 #     "isNumber", "isReal", "isInteger", "nextRNG", ".foreachGlobals", "RNGkind", "setRNG", "RNGprovider",
-#     ".RNGkind_length", "tail", "RNGstr","log_event")
+#     ".RNGkind_length", "tail", "RNGstr","core_log_event")
 # 
 #   # summary_cor <- foreach::foreach(i = 1:nrow(localKeys), .combine = rbind ) %dorng%
 #   for(i in 1:nrow(localKeys))
@@ -46,7 +46,7 @@
 #     total_data_for <- foreach::foreach(g = seq_along(sample_groups), .combine = rbind, .export = sub_export ) %dorng%
 #       # for(g in seq_along(sample_groups))
 #       {
-#         update_session_info(ssEnv)
+#         core_update_session_info(ssEnv)
 #         pop <- sample_groups[g]
 #         tempresult_folderData <- io_dir_check_and_create(ssEnv$result_folderData,c(as.character(pop) ,paste(as.character(key$MARKER),"_",as.character(key$FIGURE),sep="")))
 #         file_to_read <- io_file_path_build(tempresult_folderData, c("MULTIPLE", as.character(key$MARKER), as.character(key$FIGURE)), "fst")
@@ -139,7 +139,7 @@
 #     pca_contrib_to_plot$Batch_ID <- as.factor(paste("Batch",pca_contrib$Batch_ID, sep=""))
 # 
 #     filename = paste0( chartFolder ,"/","scatterplot_",key$MARKER,"_",key$FIGURE, ".",ssEnv$plot_format,sep="")
-#     # log_event(filename)
+#     # core_log_event(filename)
 #     # grDevices::png(file= filename, width=2480, height = 2480, pointsize = 15, res = ssEnv$plot_resolution)
 #     ggplot2::qplot("Dim.1", "Dim.2", data= as.data.frame(pca_contrib_to_plot),
 #       col = "Batch_ID", xlab="Dimension 1", ylab="Dimension 2",

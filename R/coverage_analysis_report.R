@@ -11,7 +11,7 @@
 #'   (default 90).
 #' @param parallel_strategy character. Parallelisation backend passed to
 #'   \code{future} (default \code{"multicore"}).
-#' @param ... Additional named arguments passed to \code{init_env()}.
+#' @param ... Additional named arguments passed to \code{core_init_env()}.
 #' @return Invisibly \code{NULL}. Coverage tables and charts are written to
 #'   the result folder.
 #' @examples
@@ -26,23 +26,23 @@
 coverage_analysis_report <- function (signal_data, result_folder, maxResources = 90, parallel_strategy  = "multicore", ...)
 {
 
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, ...)
   # signal_data_path <- io_pivot_file_name_parquet("SIGNAL","MEAN","PROBE","WHOLE")
   # if (!file.exists(signal_data_path))
   # {
-  #   log_event("ERROR:  ", format(Sys.time(), "%a %b %d %X %Y"), " Signal data is missing")
-  #   close_env()
+  #   core_log_event("ERROR:  ", format(Sys.time(), "%a %b %d %X %Y"), " Signal data is missing")
+  #   core_close_env()
   #   stop()
   # }
   # signal_data <- polars::pl$read_parquet(signal_data_path)$to_data_frame()
   signal_data <- io_source_data_get(signal_data)
-  ssEnv <- get_meth_tech(signal_data)
+  ssEnv <- core_get_meth_tech(signal_data)
   if (ssEnv$tech=="WGBS")
   {
-    log_event("ERROR:  ", format(Sys.time(), "%a %b %d %X %Y"), " WGBS data is not supported for coverage analysis")
-    close_env()
+    core_log_event("ERROR:  ", format(Sys.time(), "%a %b %d %X %Y"), " WGBS data is not supported for coverage analysis")
+    core_close_env()
     stop()
   }
   coverage_analysis(signal_data$AREA)
-  close_env()
+  core_close_env()
 }

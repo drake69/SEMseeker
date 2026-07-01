@@ -54,12 +54,12 @@
 #'
 #' Internal session environment object persisted between SEMseeker analysis
 #' steps. Stores runtime parameters (result folder paths, technology flag,
-#' alpha threshold, etc.) set by \code{\link{init_env}} and retrieved by
-#' \code{get_session_info()}.
+#' alpha threshold, etc.) set by \code{\link{core_init_env}} and retrieved by
+#' \code{core_get_session_info()}.
 #'
 #' @format An \code{environment} containing named slots for session-level
 #'   analysis parameters. Users should not modify this object directly;
-#'   use \code{\link{init_env}} and \code{set_env_variable()} instead.
+#'   use \code{\link{core_init_env}} and \code{core_set_env_variable()} instead.
 "ssEnv"
 
 

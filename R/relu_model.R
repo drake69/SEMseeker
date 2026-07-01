@@ -2,9 +2,9 @@ relu_model <- function (family_test, tempDataFrame, sig.formula, transformation_
 {
 
   #
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   relu_params <- unlist(strsplit(as.character(family_test),"_"))
-  # log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " exp model fitting executing: ", as.character(sig.formula))
+  # core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " exp model fitting executing: ", as.character(sig.formula))
   partition_percentage <- as.numeric(relu_params[2])
 
   res<- data.frame("PARTITION_PERC" = as.numeric(partition_percentage))
@@ -90,7 +90,7 @@ relu_model <- function (family_test, tempDataFrame, sig.formula, transformation_
 
   if(plot & !any(is.na(predictions)))
   {
-    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", core_name_cleaning(samples_sql_condition)))
     filename  <-  io_file_path_build(chartFolder,c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable),ssEnv$plot_format)
 
     ggp <- ggplot2::ggplot(train.data, ggplot2::aes_string(x = independent_variable, y = dependent_variable)) +

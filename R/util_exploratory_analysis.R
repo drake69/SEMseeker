@@ -46,10 +46,10 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   removal_rules=c(),
   result_folder,  ... ) {
 
-  init_env( result_folder= result_folder, ...)
+  core_init_env( result_folder= result_folder, ...)
 
-  ssEnv <- get_session_info()
-  log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will explore your data for project \n in ", ssEnv$result_folderData)
+  ssEnv <- core_get_session_info()
+  core_log_event("BANNER:", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will explore your data for project \n in ", ssEnv$result_folderData)
   folder_path <- io_dir_check_and_create(ssEnv$result_folderData,paste0("Exploratory_", exploration_phase))
 
   # remove Sample_Group and unique
@@ -88,7 +88,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
       to <- colnames(map)[2]
       if (from==to)
       {
-        log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y"),"The source and target columns are the same")
+        core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y"),"The source and target columns are the same")
         stop("The source and target columns are the same")
       }
       # random_string <- stringi::stri_rand_strings(1,10)
@@ -139,14 +139,14 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
 
   if(ncol(sample_sheet) < 2)
   {
-    log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," Not enough columns found in the sample sheet")
+    core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," Not enough columns found in the sample sheet")
     stop("Not enough column found in the sample sheet")
   }
 
   tryCatch({
     sample_sheet <- sample_sheet[!is.na(sample_sheet[,sample_id_column]),]
   }, error = function(e) {
-    log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," Sample ID column not found in the sample sheet")
+    core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," Sample ID column not found in the sample sheet")
     stop("Sample ID column not found in the sample sheet")
   })
   signal_data_original <- signal_data
@@ -178,7 +178,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
         variable <- strsplit(variable,split="\\+")[[1]]
       if (length(variable)>2)
       {
-        log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," max two variables managed!")
+        core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," max two variables managed!")
         next
       }
       if(length(variable)==2)
@@ -193,7 +193,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
         }
         else
         {
-          log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," variable ",variable[1]," or ",variable[2]," not found in the sample sheet")
+          core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," variable ",variable[1]," or ",variable[2]," not found in the sample sheet")
           next
         }
       }
@@ -220,7 +220,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
         }
         else
         {
-          log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," variable ",variable," not found in the sample sheet")
+          core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," variable ",variable," not found in the sample sheet")
           next
         }
       }
@@ -290,7 +290,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
     for (variable in numerical_variables) {
       if (variable %in% colnames(sample_sheet) == FALSE)
       {
-        log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," variable ",variable," not found in the sample sheet")
+        core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," variable ",variable," not found in the sample sheet")
         next
       }
       # calculate mean and standard deviation
@@ -322,12 +322,12 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   }
 
   signal_data <- io_source_data_get(signal_data, TRUE)
-  colnames(signal_data) <- name_cleaning(colnames(signal_data))
+  colnames(signal_data) <- core_name_cleaning(colnames(signal_data))
 
   # signal_data <- signal_data[1:1000,]
   gc()
 
-  ssEnv <- get_meth_tech(signal_data)
+  ssEnv <- core_get_meth_tech(signal_data)
   signal_data <- is.na(signal_data)
   # rm(signal_data)
   nrow_ex_ante <- nrow(signal_data)
@@ -370,7 +370,7 @@ util_exploratory_analysis <- function(categorical_variables,numerical_variables,
   rm(signal_data)
   gc()
   signal_data <- io_source_data_get(signal_data_original)
-  colnames(signal_data) <- name_cleaning(colnames(signal_data))
+  colnames(signal_data) <- core_name_cleaning(colnames(signal_data))
   # signal_data <- signal_data[1:1000,]
 
   # remove rows with too many missing values

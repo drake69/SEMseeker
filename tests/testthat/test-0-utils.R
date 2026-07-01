@@ -147,8 +147,8 @@ test_that("util_data_frame_add_column preserves existing columns", {
 # ---------------------------------------------------------------------------
 # 5. filter_sql
 # ---------------------------------------------------------------------------
-# filter_sql uses sqldf internally and calls log_event (requires a session).
-# Tests that exercise the sqldf path are wrapped with init_env / close_env.
+# filter_sql uses sqldf internally and calls core_log_event (requires a session).
+# Tests that exercise the sqldf path are wrapped with core_init_env / close_env.
 # sqldf resolves table names from the calling frame; we therefore call
 # filter_sql via a thin wrapper so that the local variable name matches
 # what the function expects.
@@ -162,7 +162,7 @@ test_that("filter_sql returns data unchanged for empty conditions", {
 test_that("filter_sql filters rows by numeric condition", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   df <- data.frame(x = 1:10)
@@ -170,14 +170,14 @@ test_that("filter_sql filters rows by numeric condition", {
   expect_true(all(result$x > 5))
   expect_equal(nrow(result), 5)
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("filter_sql filters rows by character condition", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   df <- data.frame(
@@ -189,14 +189,14 @@ test_that("filter_sql filters rows by character condition", {
   expect_equal(nrow(result), 2)
   expect_true(all(result$grp == "case"))
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("filter_sql applies multiple conditions sequentially", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   df <- data.frame(x = 1:10, y = c(rep("A",5), rep("B",5)),
@@ -204,20 +204,20 @@ test_that("filter_sql applies multiple conditions sequentially", {
   result <- SEMseeker:::filter_sql(c("x > 3", "x < 8"), df)
   expect_true(all(result$x > 3 & result$x < 8))
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("filter_sql returns empty data.frame when no rows match", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   df <- data.frame(x = 1:5)
   result <- SEMseeker:::filter_sql("x > 100", df)
   expect_equal(nrow(result), 0)
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })

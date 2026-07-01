@@ -10,7 +10,7 @@
 #' @param family_test character. Already util_split_and_clean'd.
 #' @return list(study_summary, covariates, sample_names, independent_variable,
 #'   depth_analysis, transformation_y, inference_detail, file_result_prefix)
-#'   OR NULL if the job must be skipped (logged via log_event).
+#'   OR NULL if the job must be skipped (logged via core_log_event).
 #' @keywords internal
 prepare_study_for_analysis <- function(inference_detail, study_summary, family_test) {
   transformation_y <- inference_detail$transformation_y
@@ -25,13 +25,13 @@ prepare_study_for_analysis <- function(inference_detail, study_summary, family_t
   independent_variable <- gsub(" ", "", inference_detail$independent_variable)
 
   if (independent_variable %in% covariates) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
       " The independent variable is also present as covariate!")
     return(NULL)
   }
 
   if (is.null(independent_variable) || length(independent_variable) == 0) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
       " One indipendent variable is missed! Skipped.")
     return(NULL)
   }
@@ -39,7 +39,7 @@ prepare_study_for_analysis <- function(inference_detail, study_summary, family_t
   depth_analysis <- inference_detail$depth_analysis
   if (is.null(depth_analysis) || length(depth_analysis) == 0) {
     depth_analysis <- 1
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
       " Missed DEPTH analysis inference forced to 1.")
   }
 
@@ -50,7 +50,7 @@ prepare_study_for_analysis <- function(inference_detail, study_summary, family_t
   file_result_prefix <- paste(depth_analysis, as.character(independent_variable), sep = "_")
 
   if (!(independent_variable %in% colnames(study_summary))) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
       " This indipendent variabile:", independent_variable, " is missed! Skipping")
     return(NULL)
   }
@@ -70,7 +70,7 @@ prepare_study_for_analysis <- function(inference_detail, study_summary, family_t
   # remove samples with missing values
   sample_names <- sample_names[complete.cases(sample_names), ]
   if (nrow(sample_names) == 0) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
       " No samples with complete data for the analysis! Skipped.")
     return(NULL)
   }

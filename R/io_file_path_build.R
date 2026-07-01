@@ -1,7 +1,7 @@
 #' Build a canonical output file path
 #'
 #' All SEMseeker output files have their filename UPPERCASED via
-#' [name_cleaning()] (which calls `toupper()`). This is intentional and
+#' [core_name_cleaning()] (which calls `toupper()`). This is intentional and
 #' load-bearing: it guarantees that semantic identifiers (AREA / MARKER /
 #' FIGURE / Sample_ID) collapse to a stable case regardless of how the
 #' caller spelled them, so pivot / per-sample-bed / summary files always
@@ -17,7 +17,7 @@
 #'
 #' @param baseFolder Directory the file lives in.
 #' @param detailsFilename Character vector concatenated with "_" and
-#'   passed to [name_cleaning()] (uppercased + non-alnum → "_").
+#'   passed to [core_name_cleaning()] (uppercased + non-alnum → "_").
 #' @param extension File extension (no leading dot). Empty string skips.
 #' @param add_gz If TRUE, append ".gz".
 #' @return Full path as a character scalar.
@@ -28,8 +28,8 @@ io_file_path_build <- function(baseFolder, detailsFilename, extension, add_gz = 
 
   detailsFilename <- paste0(detailsFilename, collapse="_")
 
-  # name_cleaning() uppercases — see contract in this function's roxygen.
-  detailsFilename <- name_cleaning(detailsFilename)
+  # core_name_cleaning() uppercases — see contract in this function's roxygen.
+  detailsFilename <- core_name_cleaning(detailsFilename)
 
   if(extension!="")
     fileName <- paste0( detailsFilename,".",extension, sep="")

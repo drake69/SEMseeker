@@ -34,7 +34,7 @@
 #'   \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).
 #' @param start_fresh logical. If \code{TRUE}, delete previous inference
 #'   results before running (default \code{FALSE}).
-#' @param ... Additional arguments passed to \code{init_env()}.
+#' @param ... Additional arguments passed to \code{core_init_env()}.
 #'
 #' @return Invisibly \code{NULL}. Inference result CSV files are written to
 #'   the \code{Inference/} sub-folder of \code{result_folder}, one file per
@@ -66,10 +66,10 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     arguments[["areas_selection"]] <- NULL
   }
 
-  ssEnv <- init_env(result_folder = result_folder, maxResources = maxResources,
+  ssEnv <- core_init_env(result_folder = result_folder, maxResources = maxResources,
     parallel_strategy = parallel_strategy, start_fresh = FALSE, ...)
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"),
     " SEMseeker will perform the association analysys for project \n in ",
     ssEnv$result_folderData)
 
@@ -89,7 +89,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     filter_p_value <- if (!is.null(inference_detail$filter_p_value))
       inference_detail$filter_p_value else TRUE
 
-    log_inference_header(inference_detail)
+    core_log_inference_header(inference_detail)
 
     family_test <- util_split_and_clean(inference_detail$family_test)
     if (!validate_family_test(family_test)) next
@@ -108,7 +108,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
         ssEnv$result_folderInference,
         prefix = ifelse(length(areas_selection) == 0, "",
           paste(areas_selection, "_", sep = "")))
-      log_event("JOURNAL:", "Result saved into file:", fileNameResults, ".")
+      core_log_event("JOURNAL:", "Result saved into file:", fileNameResults, ".")
 
       # AI-040: skip sample-level (depth=1) and chr-level (depth=2) for
       # limma/voom families. They expect a per-area distribution to run
@@ -125,7 +125,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
         processed_items <- processed_items + d1$processed_items
       } else {
         results <- data.frame()
-        log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                   " family_test='", family_test,
                   "': skipping DEPTH=1 (sample-level) — not meaningful for batch eBayes.")
       }
@@ -154,7 +154,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
           markers          = marker
         ),
         error = function(e) {
-          log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+          core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                     " volcano_plot_inference failed for marker '", marker,
                     "': ", conditionMessage(e))
         }
@@ -165,5 +165,5 @@ association_analysis <- function(inference_details, result_folder, maxResources 
       filter_p_value, last_filename, start_time, processed_items)
   }
 
-  close_env()
+  core_close_env()
 }

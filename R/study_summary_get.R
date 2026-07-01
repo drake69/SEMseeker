@@ -1,7 +1,7 @@
 study_summary_get <- function(sql_sample_selection="")
 {
-  ssEnv <- get_session_info()
-  # io_file_path_build() uppercases via name_cleaning() — the on-disk file is
+  ssEnv <- core_get_session_info()
+  # io_file_path_build() uppercases via core_name_cleaning() — the on-disk file is
   # SAMPLE_SHEET_RESULT.csv, written by study_summary_total(). Going through
   # io_file_path_build() here guarantees the same path is resolved on every OS
   # regardless of file-system case sensitivity.
@@ -11,7 +11,7 @@ study_summary_get <- function(sql_sample_selection="")
 
   if(!file.exists(summary_file))
   {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No sample sheet found in ", ssEnv$result_folderData)
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No sample sheet found in ", ssEnv$result_folderData)
     return()
   }
 

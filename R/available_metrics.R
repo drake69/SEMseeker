@@ -9,7 +9,7 @@ available_metrics <- function(inference_details,result_folder, ...)
     arguments[["areas_selection"]] <- NULL
   }
 
-  ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
   localKeys <- ssEnv$keys_markers_figures
   markers <- unique(localKeys$MARKER)
   for(z in seq_len(nrow(inference_details)))

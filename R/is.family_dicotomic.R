@@ -12,6 +12,6 @@ is.family_dicotomic <- function(family_test) {
     | family_test=="kruskal.test" | family_test=="chisq.test" | family_test=="fisher.test" | family_test=="binomial" | family_test=="binomial_bulk" | family_test=="multinomial")
     return(TRUE)
 
-  log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " family_test not recognized ")
+  core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " family_test not recognized ")
   stop()
 }

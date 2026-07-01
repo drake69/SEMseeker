@@ -33,7 +33,7 @@ to report a hit (default 0.9).}
 \item{bayes_control_threshold}{numeric. Maximum P(control | epimutated)
 allowed to report a hit (default 0.1).}
 
-\item{...}{Additional arguments passed to \code{init_env()}.}
+\item{...}{Additional arguments passed to \code{core_init_env()}.}
 }
 \value{
 Invisibly \code{NULL}. Bayesian posterior probability tables

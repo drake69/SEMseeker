@@ -1,7 +1,7 @@
 io_bed_file_name <- function(sample_id, sample_group, marker, figure,
                           skip_dir_create = FALSE)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   if (is.na(sample_group) || sample_group=="")
   {
     stop("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " io_bed_file_name: sample_group is empty")

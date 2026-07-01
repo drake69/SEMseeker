@@ -10,9 +10,9 @@ association_data_extractor <- function(inference_details,destination_folder="", 
   }
 
   if(result_folder!="")
-    ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
+    ssEnv <- core_init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
   else
-    ssEnv <- get_session_info()
+    ssEnv <- core_get_session_info()
 
   localKeys <- ssEnv$keys_markers_figures
   markers <- unique(localKeys$MARKER)
@@ -43,7 +43,7 @@ association_data_extractor <- function(inference_details,destination_folder="", 
           results_inference$SAMPLES_SQL_CONDITION <- inference_detail$samples_sql_condition
 
         final_results <- plyr::rbind.fill(final_results, results_inference)
-        # log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y")," sql executed:", areas_sql_condition)
+        # core_log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y")," sql executed:", areas_sql_condition)
         filePathResults <- file.path(destination_folder, paste0(inference_detail$family_test, "_", markers[a], ".csv"))
         if(destination_folder != "")
           utils::write.csv2(results_inference, filePathResults, row.names = FALSE)

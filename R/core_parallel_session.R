@@ -1,7 +1,7 @@
-parallel_session <- function()
+core_parallel_session <- function()
 {
   #
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   parallel_strategy <- ssEnv$parallel_strategy
 
   # NOTE: `multicore` on macOS uses fork() and is known to be unsafe in
@@ -12,25 +12,25 @@ parallel_session <- function()
   #
   # E-14: `multisession` workers are fresh R processes — .pkgglobalenv$ssEnv
   # starts empty. Every %dorng% foreach body must call
-  # update_session_info(ssEnv) as its first statement to populate the
+  # core_update_session_info(ssEnv) as its first statement to populate the
   # worker's namespace. See engineering-decisions.md §1.3.
 
   # macOS: OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES is recommended for any
   # non-sequential strategy (some packages still attempt fork internally).
   # Bioconductor disallows Sys.setenv() in package code; users on macOS
   # using a non-sequential strategy must set the env var themselves before
-  # calling init_env(), e.g. in ~/.Renviron or Sys.setenv() at the top of
+  # calling core_init_env(), e.g. in ~/.Renviron or Sys.setenv() at the top of
   # their script. We log a warning when the env var is missing so the
   # cause of any subsequent fork crash is obvious.
   if (Sys.info()["sysname"] == "Darwin" && parallel_strategy != "sequential") {
     env_var <- Sys.getenv("OBJC_DISABLE_INITIALIZE_FORK_SAFETY")
     if (env_var != "YES") {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " OBJC_DISABLE_INITIALIZE_FORK_SAFETY is not set to YES.",
                 " On macOS with a non-sequential parallel strategy this can",
                 " cause fork-related crashes. Set it in ~/.Renviron or call",
                 " Sys.setenv(OBJC_DISABLE_INITIALIZE_FORK_SAFETY = 'YES')",
-                " before init_env().")
+                " before core_init_env().")
     }
   }
 
@@ -38,7 +38,7 @@ parallel_session <- function()
   # forked children are killed by Mach exceptions with no R-visible error.
   # Force multisession (separate R processes) instead.
   if (Sys.info()["sysname"] == "Darwin" && parallel_strategy == "multicore") {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " multicore (fork) is unsafe on macOS with Polars. Switching to multisession.")
     parallel_strategy <- "multisession"
     ssEnv$parallel_strategy <- parallel_strategy
@@ -82,16 +82,16 @@ parallel_session <- function()
   # check if future is registered
   # backend_name <- foreach::getDoParName()
   # if (!is.null(backend_name)) {
-  #   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " doFuture is registered as the %dopar% backend.")
+  #   core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " doFuture is registered as the %dopar% backend.")
   # } else {
-  #   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " doFuture is not registered as the %dopar% backend.")
+  #   core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " doFuture is not registered as the %dopar% backend.")
   #   doFuture::registerDoFuture()
   # }
   doFuture::registerDoFuture()
 
   # get the future plan
   future_plan <- future::plan()
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Future Plan: ", future_plan)
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Future Plan: ", future_plan)
 
   # AI-184: multisession/cluster workers are fresh R processes spawned via
   # parallelly::makeClusterPSOCK. When the parent runs under `renv`, those
@@ -111,24 +111,24 @@ parallel_session <- function()
   if(parallel_strategy=="multisession")
   {
     future::plan( future::multisession, workers = nCore, rscript_libs = parent_libs)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work in multisession with:", nCore, " Cores")
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work in multisession with:", nCore, " Cores")
   }
   if(parallel_strategy=="multicore")
   {
     future::plan( future::multicore, workers = nCore)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work in multicore with:", nCore," Cores")
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work in multicore with:", nCore," Cores")
   }
   if(parallel_strategy=="cluster")
   {
     if (!is.null(ssEnv$cluster_workers))
     {
       future::plan( future::cluster, workers = ssEnv$cluster_workers, rscript_libs = parent_libs)
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work with a cluster with:",ssEnv$cluster_workers)
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work with a cluster with:",ssEnv$cluster_workers)
     }
     else
     {
       future::plan( future::cluster, workers = nCore, rscript_libs = parent_libs)
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work with a cluster with:", nCore," Cores")
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work with a cluster with:", nCore," Cores")
     }
   }
 
@@ -137,9 +137,9 @@ parallel_session <- function()
   {
     options(parallelly.fork.enable= FALSE)
     future::plan(strategy = future::sequential)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work in sequential mode")
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " I will work in sequential mode")
   }
 
-  update_session_info(ssEnv)
+  core_update_session_info(ssEnv)
 
 }

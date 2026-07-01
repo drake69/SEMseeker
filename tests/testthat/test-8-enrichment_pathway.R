@@ -19,20 +19,20 @@
 test_that("enrich_analysy_add_category returns data unchanged for empty input", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   result <- SEMseeker:::enrich_analysy_add_category("ctdR", data.frame())
   testthat::expect_equal(nrow(result), 0)
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("enrich_analysy_add_category adds SS_CATEGORY='CHEMICAL' for ctdR source", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   # Column names must match key_enrichment_format for "ctdR":
@@ -56,14 +56,14 @@ test_that("enrich_analysy_add_category adds SS_CATEGORY='CHEMICAL' for ctdR sour
   testthat::expect_true("SS_CATEGORY" %in% colnames(result))
   testthat::expect_true(all(result$SS_CATEGORY == "CHEMICAL"))
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("enrich_analysy_add_category maps GO types for WebGestalt source", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   # Column names must match key_enrichment_format for "WebGestalt":
@@ -87,7 +87,7 @@ test_that("enrich_analysy_add_category maps GO types for WebGestalt source", {
   cats <- result$SS_CATEGORY[!is.na(result$SS_CATEGORY)]
   testthat::expect_true(all(cats %in% c("GO-BP", "GO-CC", "GO-MF")))
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
@@ -101,7 +101,7 @@ test_that("enrich_analysy_add_category maps GO types for WebGestalt source", {
 test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not installed", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   # WebGestaltR is typically not installed in the test environment.
@@ -130,14 +130,14 @@ test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not instal
     testthat::skip("WebGestaltR is installed; skipping guard test")
   }
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   if (!requireNamespace("STRINGdb", quietly = TRUE)) {
@@ -160,14 +160,14 @@ test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed",
     testthat::skip("STRINGdb is installed; skipping guard test")
   }
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("enrich_pathfindR returns NULL gracefully when pathfindR not installed", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   if (!requireNamespace("pathfindR", quietly = TRUE)) {
@@ -192,7 +192,7 @@ test_that("enrich_pathfindR returns NULL gracefully when pathfindR not installed
     testthat::skip("pathfindR is installed; skipping guard test")
   }
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
@@ -261,7 +261,7 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
 
   # ── enrich_ctdR ──────────────────────────────────────────────────────────
   # Re-open environment so pathway functions can read ssEnv
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                         markers = c("MUTATIONS"), figures = c("HYPO"),
                         areas = c("GENE"), multiple_test_adj = "BH",
                         showprogress = showprogress, verbosity = verbosity)
@@ -283,6 +283,6 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
   }
   testthat::expect_true(dir.exists(pathway_dir))
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })

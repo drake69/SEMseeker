@@ -126,7 +126,7 @@ util_keys_create <- function(ssEnv, arguments)
   {
     # paste0(x[x!=""], collapse = "_")
     # remove spaces
-    name_cleaning(gsub(" ","",paste0(x[x!=""], collapse = "_")))
+    core_name_cleaning(gsub(" ","",paste0(x[x!=""], collapse = "_")))
   }
 
   ssEnv$keys_areas_subareas_markers_figures$COMBINED <- apply(ssEnv$keys_areas_subareas_markers_figures[,c("MARKER","FIGURE","AREA","SUBAREA")], 1, combine_not_empty )
@@ -176,7 +176,7 @@ util_keys_create <- function(ssEnv, arguments)
 
   ssEnv$key_missed_areas_subareas <- ssEnv$keys_areas_subareas[0,]
 
-  update_session_info(ssEnv)
+  core_update_session_info(ssEnv)
 
   return(arguments)
 }

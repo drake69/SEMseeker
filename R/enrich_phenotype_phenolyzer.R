@@ -5,14 +5,14 @@ enrich_phenotype_phenolyzer <- function(study,
 {
 
   # start_fresh <- FALSE
-  # ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
-  ssEnv <- get_session_info()
-  pvalue_column <- name_cleaning(pvalue_column)
+  # ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
+  ssEnv <- core_get_session_info()
+  pvalue_column <- core_name_cleaning(pvalue_column)
 
   # check existence of phenolyzer
   if (!file.exists(phenolyzer_folder_bin))
   {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Phenolyzer not found in ",phenolyzer_folder_bin)
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Phenolyzer not found in ",phenolyzer_folder_bin)
     return()
   }
 
@@ -24,7 +24,7 @@ enrich_phenotype_phenolyzer <- function(study,
 
   if (is.null(nrow(diseases)))
   {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No disease found for ",disease_label)
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No disease found for ",disease_label)
     return()
   }
 
@@ -46,7 +46,7 @@ enrich_phenotype_phenolyzer <- function(study,
       progress_bar(sprintf("Searching for disease using phenolyzer: %s",keys[i,]$COMBINED))
     key <- paste(keys[i,]$FIGURE,keys[i,]$MARKER,keys[i,]$AREA,keys[i,]$SUBAREA, sep="_")
 
-    base_path <- io_dir_check_and_create(ssEnv$result_folderPhenotype,c("phenolyzer",name_cleaning(inference_detail$areas_sql_condition)))
+    base_path <- io_dir_check_and_create(ssEnv$result_folderPhenotype,c("phenolyzer",core_name_cleaning(inference_detail$areas_sql_condition)))
     path <- io_dir_check_and_create(baseFolder = base_path, subFolders = "scores")
     annotated_gene_file <- file.path(tempFolder,"ex8.annotated_gene_scores")
     enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=paste("_",disease_label,"_gene_scores",sep=""), pvalue_column=pvalue_column, ssEnv$alpha, significance)
@@ -101,7 +101,7 @@ enrich_phenotype_phenolyzer <- function(study,
     gene_set <- gene_set[order(gene_set[,pvalue_column],decreasing = FALSE),]
     gene_set <- gene_set[!duplicated(gene_set$AREA_OF_TEST),]
 
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
 
     file_term <- file.path(tempFolder, paste0("term_",random_string,".txt"))
     file_genes <- file.path(tempFolder, paste0("genes_",random_string,".txt"))
@@ -153,7 +153,7 @@ enrich_phenotype_phenolyzer <- function(study,
     annotated_gene_file <- file.path(tempFolder,"ex8.annotated_gene_list")
     if(!file.exists(annotated_gene_file))
     {
-      log_event("INFO:" , format(Sys.time(), "%a %b %d %X %Y"), "No annotated gene file found !")
+      core_log_event("INFO:" , format(Sys.time(), "%a %b %d %X %Y"), "No annotated gene file found !")
       next
     }
 

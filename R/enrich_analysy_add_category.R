@@ -4,7 +4,7 @@ enrich_analysy_add_category <- function(source, data)
   if(nrow(data)==0)
     return(data)
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   #TO DO: normalize naming of differente data sources
   if(source=="phenolyzer")
     return(data)

@@ -35,11 +35,11 @@
 analyze_population_bulk <- function(signal_data, sample_sheet,
                                     signal_thresholds, probe_features) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   start_time <- Sys.time()
-  log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [apb] FRAME ENTERED mem_MB=", round(sum(gc()[, "(Mb)"]), 1))
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [analyze_population_bulk] start (AI-042 vectorized)")
 
   # ---- Step 1: prepare paths and inputs ------------------------------------
@@ -67,7 +67,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
     }
   }
   if (length(all_destinations) > 0L && all(file.exists(all_destinations))) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [analyze_population_bulk] ALL ", length(all_destinations),
               " destination pivots already exist — skipping bulk pass entirely.")
     return(invisible(NULL))
@@ -111,7 +111,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   # NOTE: the CALLER's binding (analyze_batch.R: populationControlRange-
   # BetaValues) is still alive in the parent frame — full release
   # requires the caller to also rm() after this function returns.
-  n_thr_positions <- nrow(signal_thresholds)   # cache before rm() (used in log_event below)
+  n_thr_positions <- nrow(signal_thresholds)   # cache before rm() (used in core_log_event below)
   rm(signal_thresholds)
   invisible(gc(verbose = FALSE))
 
@@ -137,7 +137,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
     with_columns(polars::pl$col("CHR")$cast(polars::pl$String))$
     join(thr_lazy, on = c("CHR", "START", "END"), how = "inner")
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [analyze_population_bulk] joined SIGNAL with thresholds: ",
             length(sample_cols), " sample columns, ",
             n_thr_positions, " positions")
@@ -148,7 +148,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   for (figure in c("HYPER", "HYPO")) {
     deltas_path <- io_pivot_file_name_parquet("DELTAS", figure, "POSITION", "WHOLE")
     if (file.exists(deltas_path)) {
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " [bulk] DELTAS_", figure, " pivot already exists, skip")
       next
     }
@@ -164,7 +164,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
     out_lazy <- do.call(signal_lazy$with_columns, deltas_exprs)$
       drop(c(".HIGH", ".LOW"))
     out_lazy$sink_parquet(deltas_path)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [bulk] DELTAS_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1), " sec")
   }
@@ -173,7 +173,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   for (figure in c("HYPER", "HYPO")) {
     mut_path <- io_pivot_file_name_parquet("MUTATIONS", figure, "POSITION", "WHOLE")
     if (file.exists(mut_path)) {
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " [bulk] MUTATIONS_", figure, " pivot already exists, skip")
       next
     }
@@ -185,7 +185,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
     })
     out_lazy <- do.call(deltas_lazy$with_columns, mut_exprs)
     out_lazy$sink_parquet(mut_path)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [bulk] MUTATIONS_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1), " sec")
   }
@@ -194,7 +194,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   for (figure in c("HYPER", "HYPO")) {
     deltar_path <- io_pivot_file_name_parquet("DELTAR", figure, "POSITION", "WHOLE")
     if (file.exists(deltar_path)) {
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " [bulk] DELTAR_", figure, " pivot already exists, skip")
       next
     }
@@ -213,7 +213,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
     out_lazy <- do.call(deltas_lazy$with_columns, deltar_exprs)$
       drop(c(".HIGH", ".LOW"))
     out_lazy$sink_parquet(deltar_path)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [bulk] DELTAR_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1), " sec")
   }
@@ -232,7 +232,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
   for (figure in c("HYPER", "HYPO")) {
     lesions_path <- io_pivot_file_name_parquet("LESIONS", figure, "POSITION", "WHOLE")
     if (file.exists(lesions_path)) {
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " [bulk] LESIONS_", figure, " pivot already exists, skip")
       next
     }
@@ -290,7 +290,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
       les_combined$sink_parquet(lesions_path)
     }
 
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " [bulk] LESIONS_", figure, " written in ",
               round(as.numeric(difftime(Sys.time(), t0, units = "mins")), 2),
               " min (",  length(sample_chunks), " chunks of ",
@@ -315,7 +315,7 @@ analyze_population_bulk <- function(signal_data, sample_sheet,
 
   end_time <- Sys.time()
   total_min <- round(as.numeric(difftime(end_time, start_time, units = "mins")), 2)
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [analyze_population_bulk] completed in ", total_min, " min")
   invisible(NULL)
 }

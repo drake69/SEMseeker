@@ -1,7 +1,7 @@
 mediation_quantreg_model <- function(family_test,tempDataFrame, sig.formula, transformation_y, plot, samples_sql_condition=samples_sql_condition, key)
 {
   # mediation_lqm_model
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   area <- as.character(key$AREA)
   subarea <- as.character(key$SUBAREA)
   marker <- as.character(key$MARKER)
@@ -20,7 +20,7 @@ mediation_quantreg_model <- function(family_test,tempDataFrame, sig.formula, tra
   outcome <- vars[[2]] # dependent variable
   treatment <- vars[[3]][1]
 
-  # log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Starting mediation analysis for: ", mediator, " and ", outcome)
+  # core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Starting mediation analysis for: ", mediator, " and ", outcome)
 
   res$mediator <- mediator
   res$outcome <- outcome
@@ -67,7 +67,7 @@ mediation_quantreg_model <- function(family_test,tempDataFrame, sig.formula, tra
 
   if(calculate_collinearity_score(df_outcome[, -which(colnames(df_outcome) == "outcome")]) > 0.5)
   {
-    log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Collinearity detected in the mediator model")
+    core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Collinearity detected in the mediator model")
     res$collinearity_mediator <- TRUE
     return(res)
   } else

@@ -17,13 +17,13 @@
 test_that("LESIONS_BP=500 finds 2 separate clusters at 500bp resolution", {
   tf <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(
+  SEMseeker:::core_init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
     LESIONS_BP           = 500L,
     bonferroni_threshold = 5     # loose so the tight clusters always fire
   )
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # Two tight clusters of mutated probes, 50kb apart (well outside LESIONS_BP=500):
   #   Cluster A: 5 probes at 100bp spacing → span 400bp ≤ 500bp window
@@ -53,13 +53,13 @@ test_that("LESIONS_BP=500 finds 2 separate clusters at 500bp resolution", {
 test_that("LESIONS_BP=0 reduces every probe to singleton window (no spatial leverage)", {
   tf <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(
+  SEMseeker:::core_init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
     LESIONS_BP           = 0L,
     bonferroni_threshold = 5
   )
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # 20 mutated + 20 unmutated probes, p0=0.5. With LESIONS_BP=0 every probe
   # is its own window (WINDOW_SIZE=1), so ENRICHMENT is either 0 or 1, and
@@ -79,13 +79,13 @@ test_that("LESIONS_BP=0 reduces every probe to singleton window (no spatial leve
 test_that("LESIONS_BP=100000 over-dilutes a sparse two-cluster signal — no lesions", {
   tf <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(
+  SEMseeker:::core_init_env(
     result_folder        = tf,
     start_fresh          = TRUE,
     LESIONS_BP           = 100000L,
     bonferroni_threshold = 5
   )
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   # Same two-cluster + background layout as the LESIONS_BP=500 test.
   # With LESIONS_BP=100000 every probe's window catches ALL 40 probes
@@ -112,12 +112,12 @@ test_that("LESIONS_BP=100000 over-dilutes a sparse two-cluster signal — no les
 test_that("lesions_get errors on negative LESIONS_BP", {
   tf <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(
+  SEMseeker:::core_init_env(
     result_folder = tf,
     start_fresh   = TRUE,
     LESIONS_BP    = -100L
   )
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- .bp_make_mutations_df("chr1", seq(1e6L, by = 1000L, length.out = 10L),
                               rep(0L, 10L))

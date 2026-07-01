@@ -1,6 +1,6 @@
 io_pivot_file_name <- function(marker,figure,area,subarea,add_gz=TRUE)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   reportFolder <- io_dir_check_and_create(ssEnv$result_folderData,"Pivots")
   pivot_subfolder <- io_dir_check_and_create(reportFolder, marker)
   # C-06: append genome_build suffix (e.g. "_hg19") for belt-and-suspenders provenance
@@ -13,7 +13,7 @@ io_pivot_file_name <- function(marker,figure,area,subarea,add_gz=TRUE)
 
 io_pivot_file_name_parquet <- function(marker,figure,area,subarea)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   reportFolder <- io_dir_check_and_create(ssEnv$result_folderData,"Pivots")
   pivot_subfolder <- io_dir_check_and_create(reportFolder, marker)
   # C-06: append genome_build suffix (e.g. "_hg19") for belt-and-suspenders provenance

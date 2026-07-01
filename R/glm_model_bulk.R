@@ -63,7 +63,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   }
 
   if (family_test != "binomial_bulk") {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
               " glm_model_bulk: unexpected family_test='", family_test,
               "' (only 'binomial_bulk' supported).")
     return(NULL)
@@ -85,7 +85,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   cols <- colnames(tempDataFrame)
   g_end <- length(cols)
   if (g_start > g_end) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " glm_model_bulk: no probes survived io_data_preparation — returning NULL.")
     return(NULL)
   }
@@ -98,7 +98,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   keep_rows <- stats::complete.cases(tempDataFrame[, use_iv, drop = FALSE])
   td <- tempDataFrame[keep_rows, , drop = FALSE]
   if (nrow(td) < 5L) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " glm_model_bulk: too few complete samples (", nrow(td), " < 5) — skip.")
     return(NULL)
   }
@@ -109,7 +109,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   iv_factor <- as.factor(td[, independent_variable])
   iv_factor <- droplevels(iv_factor)
   if (nlevels(iv_factor) < 2L) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " glm_model_bulk: IV has < 2 levels after droplevels — skip.")
     return(NULL)
   }
@@ -143,7 +143,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   ncoef <- ncol(design_no_int) + 1L  # +1 = (Intercept)
   coef_names_full <- c("(Intercept)", colnames(design_no_int))
 
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
             " glm_model_bulk: fitting ", n_probes, " probes × ",
             ncoef, " coefs via Rfast::glm_logistic (parallel foreach).")
 
@@ -223,7 +223,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   }
 
   if (is.null(fits) || nrow(fits) == 0L) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " glm_model_bulk: all fits failed — returning NULL.")
     return(NULL)
   }
@@ -242,7 +242,7 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
 
   # 6. Build result data.frame in the legacy schema. Coefficient column
   # names are sanitised the same way the per-probe path does it (toupper
-  # + name_cleaning), so any downstream selector / FDR machinery sees
+  # + core_name_cleaning), so any downstream selector / FDR machinery sees
   # the same column shape it would have seen with stats::glm.
   cov_label <- if (length(cov_used) > 0L) paste(cov_used, collapse = " ") else NA
 
@@ -262,8 +262,8 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
 
   for (i in seq_along(coef_names_full)) {
     cn <- coef_names_full[i]
-    pname <- name_cleaning(paste0(cn, "_PVALUE"))
-    ename <- name_cleaning(paste0(cn, "_ESTIMATE"))
+    pname <- core_name_cleaning(paste0(cn, "_PVALUE"))
+    ename <- core_name_cleaning(paste0(cn, "_ESTIMATE"))
     result[[pname]] <- pval_mat[, i]
     result[[ename]] <- est_mat[, i]
   }
@@ -282,14 +282,14 @@ glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   }
 
   colnames(result) <- toupper(colnames(result))
-  colnames(result) <- name_cleaning(colnames(result))
+  colnames(result) <- core_name_cleaning(colnames(result))
 
   # BH adjustment (mirrors apply_stat_model.R lines 213-219 logic).
   if ("PVALUE" %in% colnames(result)) {
     result$PVALUE_ADJ <- stats::p.adjust(result$PVALUE, method = "BH")
   }
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " glm_model_bulk: produced ", nrow(result), " probe-level rows.")
   result
 }

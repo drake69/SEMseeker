@@ -19,7 +19,7 @@ skip_if_no_rfast <- function() {
 .init_test_session <- function() {
   tf <- tempfile("test_glm_bulk_")
   dir.create(tf, recursive = TRUE, showWarnings = FALSE)
-  SEMseeker:::init_env(
+  SEMseeker:::core_init_env(
     tf,
     parallel_strategy = "sequential",
     inpute            = "median",

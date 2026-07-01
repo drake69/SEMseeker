@@ -5,7 +5,7 @@
 #' @importFrom doRNG %dorng%
 plot_create_heatmap <- function() {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   sample_group_comb <- utils::combn(ssEnv$keys_sample_groups, 2)
   for (g in seq_len(sample_group_comb))
   {
@@ -25,7 +25,7 @@ plot_create_heatmap <- function() {
     foreach::foreach(j = seq_len(nrow(localKeys)), .export = variables_to_export_nested) %dorng%
     # for(j in 1:nrow(localKeys))
     {
-      update_session_info(ssEnv)
+      core_update_session_info(ssEnv)
       area <- localKeys[j,"AREA"]
       subarea <- localKeys[j,"SUBAREA"]
       marker <- localKeys[j,"MARKER"]
@@ -97,7 +97,7 @@ plot_create_heatmap <- function() {
 
       }
   }
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Heatmap created." )
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Heatmap created." )
 
   }
 }

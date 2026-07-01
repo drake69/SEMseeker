@@ -11,8 +11,8 @@
 signal_range_values <- function(populationMatrix, batch_id, probe_features) {
 
 
-  ssEnv <- get_session_info()
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Starting signal thresholds calculation.")
+  ssEnv <- core_get_session_info()
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Starting signal thresholds calculation.")
   thresholds_file_name <- io_file_path_build(ssEnv$result_folderData ,c(batch_id, "signal_thresholds"),"parquet")
   if(file.exists(thresholds_file_name))
   {
@@ -22,7 +22,7 @@ signal_range_values <- function(populationMatrix, batch_id, probe_features) {
   if (sum(is.na(populationMatrix)) > 0)
   {
     msg <- paste0("ERROR:", format(Sys.time(), "%a %b %d %X %Y"), " There are missing values in the population matrix, apply the parameter inpute or remove the missing values.")
-    log_event(msg)
+    core_log_event(msg)
     stop(msg)
   }
 
@@ -34,7 +34,7 @@ signal_range_values <- function(populationMatrix, batch_id, probe_features) {
   mat <- if (is.matrix(populationMatrix)) populationMatrix else as.matrix(populationMatrix)
   iqr_times <- as.numeric(ssEnv$iqrTimes)
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " Computing thresholds for ", nrow(mat), " positions x ",
             ncol(mat), " samples (vectorized).")
 
@@ -85,7 +85,7 @@ signal_range_values <- function(populationMatrix, batch_id, probe_features) {
   result <- result$collect()
   result$write_parquet(thresholds_file_name)
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Thresholds defined for: ", nrow(result), " probe_features.")
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Thresholds defined for: ", nrow(result), " probe_features.")
   gc()
   return(as.data.frame(result))
 }

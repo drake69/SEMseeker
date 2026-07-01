@@ -19,7 +19,7 @@ filter_sql <- function(sql_conditions, data_frame)
           {
             if (!grepl("FROM TABLE", sql_condition))
             {
-              log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," the only allowed table placeholder with sub statement is TABLE!")
+              core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," the only allowed table placeholder with sub statement is TABLE!")
               stop()
             }
             else
@@ -35,7 +35,7 @@ filter_sql <- function(sql_conditions, data_frame)
           sql <- paste("select * from ssdf_tmp where ", sql_condition)
           data_frame <- sqldf::sqldf(sql, envir = .GlobalEnv)
           rm("ssdf_tmp", envir = .GlobalEnv)
-          log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Executed sql: " , sql_condition)
+          core_log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Executed sql: " , sql_condition)
         }
   }
   return(data_frame)

@@ -68,7 +68,7 @@ analytic output:
 \details{
 `{MARKER}_DEPTH_{depth}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
 
-(passed through `name_cleaning()` which uppercases + replaces
+(passed through `core_name_cleaning()` which uppercases + replaces
 comparison operators with `_GT_` / `_LT_` / `_EQ_` etc.)
 }
 \examples{

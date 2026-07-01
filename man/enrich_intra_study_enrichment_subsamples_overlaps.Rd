@@ -44,7 +44,7 @@ significance.}
 
 \item{result_folder}{Path to the folder holding the study results.}
 
-\item{...}{Additional arguments forwarded to [init_env()].}
+\item{...}{Additional arguments forwarded to [core_init_env()].}
 }
 \value{
 Invisibly `NULL`; stability tables and plots are written under

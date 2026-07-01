@@ -47,7 +47,7 @@ values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
 \item{start_fresh}{logical. If \code{TRUE}, delete previous inference
 results before running (default \code{FALSE}).}
 
-\item{...}{Additional arguments passed to \code{init_env()}.}
+\item{...}{Additional arguments passed to \code{core_init_env()}.}
 }
 \value{
 Invisibly \code{NULL}. Inference result CSV files are written to

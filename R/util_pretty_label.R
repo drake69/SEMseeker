@@ -1,6 +1,6 @@
 #' Convert a snake_case / SCREAMING_SNAKE token into a display-friendly label.
 #'
-#' SEMseeker uses `name_cleaning()` on disk artifacts (file names, CSV
+#' SEMseeker uses `core_name_cleaning()` on disk artifacts (file names, CSV
 #' column names, AREA / MARKER / FIGURE identifiers): UPPERCASE with
 #' `_` as the only legal separator. That is the right convention for
 #' stable IDs but it reads poorly inside plot titles, axes, and legend

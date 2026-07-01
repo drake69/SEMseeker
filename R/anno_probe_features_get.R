@@ -44,15 +44,15 @@
 #'
 anno_probe_features_get <- function(area_subarea) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
-  # Contract: prepare_batch_signal() (fresh path) or get_meth_tech() (resume
+  # Contract: prepare_batch_signal() (fresh path) or core_get_meth_tech() (resume
   # path) should set ssEnv$tech before any anno_probe_features_get() call site.
   # Fallback: read the SIGNAL PROBE pivot and re-derive — kept for tests and
   # legacy callers that bypass prepare_batch_signal(). Loud WARNING so the
   # drift is observable.
   if (is.null(ssEnv$tech) || ssEnv$tech == "") {
-    log_event("WARNING: anno_probe_features_get() called before ssEnv$tech is set. ",
+    core_log_event("WARNING: anno_probe_features_get() called before ssEnv$tech is set. ",
               "Falling back to lazy detection from SIGNAL PROBE pivot. ",
               "prepare_batch_signal() should run first in the normal pipeline.")
     signal_pivot_lazy <- io_read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")
@@ -63,7 +63,7 @@ anno_probe_features_get <- function(area_subarea) {
       rownames(signal_data_r) <- signal_data_r$AREA
       signal_data_r$AREA <- NULL
     }
-    ssEnv <- get_meth_tech(signal_data_r)
+    ssEnv <- core_get_meth_tech(signal_data_r)
     if (is.null(ssEnv$tech) || ssEnv$tech == "")
       stop("anno_probe_features_get: could not determine array technology.")
   }
@@ -143,7 +143,7 @@ anno_probe_features_get <- function(area_subarea) {
       as.character(GenomicRanges::mcols(area_gr)$label[s_hits])
 
     if (nrow(probe_features) == 0)
-      log_event("WARNING: no CpG positions overlap area '", area_subarea,
+      core_log_event("WARNING: no CpG positions overlap area '", area_subarea,
                 "' for genome_build = '", ssEnv$genome_build, "'.")
 
     if (isTRUE(ssEnv$sex_chromosome_remove))

@@ -8,8 +8,8 @@ plot_box_plot <- function (dataFrameToPlot, independent_variable,dependent_varia
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  ssEnv <- get_session_info()
-  chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("COMPARISON",name_cleaning(as.character(samples_sql_condition))))
+  ssEnv <- core_get_session_info()
+  chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("COMPARISON",core_name_cleaning(as.character(samples_sql_condition))))
   filename  <-  io_file_path_build(chartFolder,toupper(c("BOX_PLOT",family_test,as.character(transformation_y), independent_variable,"Vs", dependent_variable,area, subarea, marker, figure)),ssEnv$plot_format)
   if(!file.exists(filename))
   {

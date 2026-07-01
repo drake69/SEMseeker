@@ -1,6 +1,6 @@
 test_model_paired <- function (family_test, tempDataFrame, sig.formula,burdenValue,independent_variable , transformation_y, plot , samples_sql_condition="", key)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   res <- data.frame(pvalue=NA)
 
   tempDataFrameOriginal <- tempDataFrame
@@ -12,7 +12,7 @@ test_model_paired <- function (family_test, tempDataFrame, sig.formula,burdenVal
   pairing_category <- unique(tempDataFrame[,independent_variable])
   if(length(pairing_category)!=2)
   {
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because the pairing variable has more than 2 levels." )
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because the pairing variable has more than 2 levels." )
     return(res)
   }
   first_category <- as.character(pairing_category[1])
@@ -32,7 +32,7 @@ test_model_paired <- function (family_test, tempDataFrame, sig.formula,burdenVal
   # check ifthere are enough pairs
   if(nrow(tempDataFrame)<2)
   {
-    log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because there are not enough pairs." )
+    core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because there are not enough pairs." )
     return(res)
   }
 

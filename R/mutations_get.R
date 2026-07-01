@@ -18,13 +18,13 @@ mutations_get <- function(values, figure, thresholds, sampleName) {
   # the per-sample loop — not repeated here to avoid log noise.
   joined <- util_join_values_to_thresholds(values, thresholds)
 
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
     " [mutations_get] sample=", sampleName, " figure=", figure,
     " covered=", nrow(joined), "/", nrow(values))
 
   # ── Empty-result guard ──────────────────────────────────────────────────────
   if (nrow(joined) == 0L) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
       " [mutations_get] No overlapping positions — returning empty result",
       " for sample=", sampleName)
     return(data.frame(CHR = character(), START = integer(),

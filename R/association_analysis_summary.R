@@ -1,9 +1,9 @@
 association_analysis_summary <- function(inference_details,destination_folder="", result_folder="", ...)
 {
   if(result_folder!="")
-    ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
+    ssEnv <- core_init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
   else
-    ssEnv <- get_session_info()
+    ssEnv <- core_get_session_info()
   association_data <- association_data_extractor(inference_details, destination_folder, result_folder, ...)
 
 

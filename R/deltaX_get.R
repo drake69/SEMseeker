@@ -46,7 +46,7 @@
 #' @noRd
 deltaX_get <- function(markers = NULL) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   keys  <- ssEnv$keys_markers_figures
   keys  <- keys[, !(colnames(keys) %in% c("FIGURE", "COMBINED")), drop = FALSE]
   keys  <- unique(keys)
@@ -92,18 +92,18 @@ deltaX_get <- function(markers = NULL) {
     src_o  <- io_pivot_file_name_parquet(src, "HYPO",  area, subarea)
 
     if (file.exists(dest_h) && file.exists(dest_o)) {
-      log_event("INFO: ", Sys.time(),
+      core_log_event("INFO: ", Sys.time(),
                 " [deltaX_get_polars] skip ", mar, " (both pivots already exist)")
       next
     }
     if (!file.exists(src_h) || !file.exists(src_o)) {
-      log_event("WARNING: ", Sys.time(),
+      core_log_event("WARNING: ", Sys.time(),
                 " [deltaX_get_polars] source pivot(s) missing for marker=", mar)
       next
     }
 
     t_start <- Sys.time()
-    log_event("INFO: ", t_start,
+    core_log_event("INFO: ", t_start,
               " [deltaX_get_polars] computing ", mar,
               " (Q=", Q_val, ", suffix=",
               if (endsWith(mar, "P")) "P/equal-width" else "Q/quantile",
@@ -126,7 +126,7 @@ deltaX_get <- function(markers = NULL) {
       mn <- min(mm_h$min, mm_o$min, na.rm = TRUE)
       mx <- max(mm_h$max, mm_o$max, na.rm = TRUE)
       if (!is.finite(mn) || !is.finite(mx) || mn == mx) {
-        log_event("WARNING: ", Sys.time(),
+        core_log_event("WARNING: ", Sys.time(),
                   " [deltaX_get_polars] degenerate range for ", mar,
                   ": min=", mn, " max=", mx, " — skip")
         next
@@ -148,20 +148,20 @@ deltaX_get <- function(markers = NULL) {
       rm(vals); gc(verbose = FALSE)
 
     } else {
-      log_event("WARNING: ", Sys.time(),
+      core_log_event("WARNING: ", Sys.time(),
                 " [deltaX_get_polars] marker ", mar,
                 " doesn't end in P or Q — skipping")
       next
     }
 
-    log_event("INFO: ", Sys.time(),
+    core_log_event("INFO: ", Sys.time(),
               " [deltaX_get_polars] ", mar,
               " breaks=[", paste(signif(breaks_full, 4), collapse = ", "), "]")
 
     # Inner breakpoints (polars cut takes cut points, not endpoints).
     inner_breaks <- breaks_full[-c(1L, length(breaks_full))]
     if (length(inner_breaks) == 0L) {
-      log_event("WARNING: ", Sys.time(),
+      core_log_event("WARNING: ", Sys.time(),
                 " [deltaX_get_polars] no inner breakpoints for ", mar,
                 " — skip")
       next
@@ -191,7 +191,7 @@ deltaX_get <- function(markers = NULL) {
     write_one(lf_o, cols_o, dest_o)
 
     dt <- as.numeric(difftime(Sys.time(), t_start, units = "secs"))
-    log_event("INFO: ", Sys.time(),
+    core_log_event("INFO: ", Sys.time(),
               " [deltaX_get_polars] wrote ", mar,
               " HYPER+HYPO in ", round(dt, 1), " sec")
   }

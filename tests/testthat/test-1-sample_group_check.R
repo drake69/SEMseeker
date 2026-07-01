@@ -3,11 +3,11 @@ test_that(" SEMseeker:::sample_group_check", {
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute="median")
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, iqrTimes = iqrTimes, inpute="median")
 
   ####################################################################################
 
-  SEMseeker:::get_meth_tech(signal_data)
+  SEMseeker:::core_get_meth_tech(signal_data)
 
   ####################################################################################
 
@@ -48,7 +48,7 @@ test_that(" SEMseeker:::sample_group_check", {
 
   # doParallel::stopImplicitCluster()
   # parallel::stopCluster(computationCluster)
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder,recursive = TRUE)
 })
 

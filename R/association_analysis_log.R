@@ -1,6 +1,6 @@
 association_analysis_log <- function(inference_detail, start_time, end_time, processed_items)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   log_folder <- ssEnv$session_folder
   association_file <- paste0(log_folder, "/association_analysis.csv")
   inference_detail$node_name <- as.character(Sys.info()["nodename"])

@@ -109,7 +109,7 @@
 #' @keywords internal
 anno_probe_annotation_build <- function(tech, force = FALSE) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
  
   # Return cached version unless forced
   if (!force &&
@@ -127,7 +127,7 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
     stop("Annotation package '", pkg, "' is required but not installed.\n",
          "Install with: BiocManager::install('", pkg, "')")
 
-  log_event("INFO: building probe annotation from '", pkg, "'...")
+  core_log_event("INFO: building probe annotation from '", pkg, "'...")
 
   # ---- Read raw data from annotation package S4 slots ----
   anno_df <- .anno_pkg_to_df(pkg)
@@ -179,8 +179,8 @@ anno_probe_annotation_build <- function(tech, force = FALSE) {
   # ---- Cache and return ----
   ssEnv$probe_annotation      <- anno_df
   ssEnv$probe_annotation_tech <- tech
-  update_session_info(ssEnv)
+  core_update_session_info(ssEnv)
 
-  log_event("INFO: probe annotation built — ", nrow(anno_df), " probes, tech = ", tech)
+  core_log_event("INFO: probe annotation built — ", nrow(anno_df), " probes, tech = ", tech)
   return(anno_df)
 }

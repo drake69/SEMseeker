@@ -5,7 +5,7 @@
 # using TxDb annotation packages and AnnotationHub, so that WGBS / long-read
 # analyses use exactly the same region semantics as Illumina array analyses.
 #
-# Reference genome is taken from ssEnv$genome_build (set in init_env()) or
+# Reference genome is taken from ssEnv$genome_build (set in core_init_env()) or
 # passed explicitly; default "hg19" matches the Illumina annotation packages.
 #
 # NOTE — PROBE_WHOLE vs POSITION_WHOLE (technology semantics)
@@ -95,12 +95,12 @@
                           paste0("cpg_islands_", genome_build, ".rds"))
 
   if (file.exists(cache_file)) {
-    log_event("INFO: loading cached CpG islands for ", genome_build,
+    core_log_event("INFO: loading cached CpG islands for ", genome_build,
               " from ", cache_file)
     return(readRDS(cache_file))
   }
 
-  log_event("INFO: downloading CpG islands for ", genome_build,
+  core_log_event("INFO: downloading CpG islands for ", genome_build,
             " from AnnotationHub (cached for future use).")
   ah <- AnnotationHub::AnnotationHub()
   # Search for UCSC cpgIslandExt track for the requested assembly
@@ -115,7 +115,7 @@
 
   dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
   saveRDS(islands, cache_file)
-  log_event("INFO: CpG islands cached at ", cache_file)
+  core_log_event("INFO: CpG islands cached at ", cache_file)
   islands
 }
 
@@ -376,7 +376,7 @@
 #' @param area_subarea Character scalar: area and subarea joined by \code{"_"}
 #'   (e.g. \code{"GENE_BODY"}, \code{"ISLAND_N_SHORE"}, \code{"CHR_CYTOBAND"}).
 #' @param genome_build Character scalar: reference assembly.  Defaults to
-#'   \code{ssEnv$genome_build} (set by \code{\link{init_env}}), or
+#'   \code{ssEnv$genome_build} (set by \code{\link{core_init_env}}), or
 #'   \code{"hg19"} if the session is not initialised.
 #'
 #' @return A \code{GRanges} object.  \code{mcols(gr)$label} contains the
@@ -411,7 +411,7 @@
 anno_area_granges_build <- function(area_subarea, genome_build = NULL) {
 
   if (is.null(genome_build)) {
-    ssEnv        <- tryCatch(get_session_info(), error = function(e) list())
+    ssEnv        <- tryCatch(core_get_session_info(), error = function(e) list())
     genome_build <- ssEnv$genome_build %||% "hg19"
   }
 

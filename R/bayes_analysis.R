@@ -16,7 +16,7 @@
 #'   to report a hit (default 0.9).
 #' @param bayes_control_threshold numeric. Maximum P(control | epimutated)
 #'   allowed to report a hit (default 0.1).
-#' @param ... Additional arguments passed to \code{init_env()}.
+#' @param ... Additional arguments passed to \code{core_init_env()}.
 #'
 #' @return Invisibly \code{NULL}. Bayesian posterior probability tables
 #'   (\code{bayes_analysis_*.csv}) are written to the \code{Euristic/}
@@ -41,7 +41,7 @@ bayes_analysis <- function(
     ...)
 {
   markers <- c("MUTATIONS", "LESIONS")
-  ssEnv <- init_env(
+  ssEnv <- core_init_env(
     result_folder     = result_folder,
     maxResources      = maxResources,
     parallel_strategy = parallel_strategy,
@@ -96,7 +96,7 @@ bayes_analysis <- function(
 
       if (!file.exists(pivot_filename)) next
 
-      log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
         " [bayes_analysis] Reading pivot: ", pivot_filename)
 
       # A-09 fix 2: use pivot_filename (variable), not io_pivot_file_name (function)
@@ -150,7 +150,7 @@ bayes_analysis <- function(
       n_control <- sum(!phenotype, na.rm = TRUE)
 
       if (n_case == 0 || n_control == 0) {
-        log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+        core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
           " [bayes_analysis] Skipping ", key$MARKER, "/", key$FIGURE,
           "/", key$AREA, "/", key$SUBAREA,
           " — n_case=", n_case, " n_control=", n_control)
@@ -180,7 +180,7 @@ bayes_analysis <- function(
         # AI-056: workers must NOT saveRDS on every iteration (the worker-copy
         # of ssEnv can't propagate to master anyway, and the per-iter disk
         # write is the AI-041 performance trap).
-        update_session_info(ssEnv, save_to_disk = FALSE)
+        core_update_session_info(ssEnv, save_to_disk = FALSE)
 
         area <- names(tempDataFrame)[col_idx]
         if (ssEnv$showprogress)
@@ -216,7 +216,7 @@ bayes_analysis <- function(
       }
 
       # AI-056: post-foreach end-of-batch snapshot (matches AI-041 pattern).
-      update_session_info(ssEnv, save_to_disk = TRUE)
+      core_update_session_info(ssEnv, save_to_disk = TRUE)
 
       if (is.null(dim(results_temp))) next
       results_temp <- as.data.frame(results_temp)
@@ -264,6 +264,6 @@ bayes_analysis <- function(
     rm("results", envir = environment())   # A-09 fix 5: scoped rm
   }
 
-  close_env()
+  core_close_env()
   invisible(NULL)
 }

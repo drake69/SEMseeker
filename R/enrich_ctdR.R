@@ -9,17 +9,17 @@ enrich_ctdR <- function(study,
   #
   tmp <- tempdir()
   tempFolder <- paste(tmp,"/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]"),sep="")
-  pvalue_column <- name_cleaning(pvalue_column)
+  pvalue_column <- core_name_cleaning(pvalue_column)
 
   # start_fresh <- FALSE
-  # ssEnv <- init_env(result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
-  ssEnv <- get_session_info()
+  # ssEnv <- core_init_env(result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
+  ssEnv <- core_get_session_info()
   keys <- unique(ssEnv$keys_for_pathway)
 
   #check if optional package is installed
   if(!requireNamespace("ctdR", quietly = TRUE))
   {
-    log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y"),"ctdR package is not installed. Please install ctdR package to use this function.")
+    core_log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y"),"ctdR package is not installed. Please install ctdR package to use this function.")
     return()
   }
 
@@ -54,7 +54,7 @@ enrich_ctdR <- function(study,
         suffix <- "without_signal_"
 
       enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
-      path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("ctdR",name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+      path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("ctdR",core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
       pathway_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
 
       # if(file.exists(pathway_report_path))
@@ -108,7 +108,7 @@ enrich_ctdR <- function(study,
       else
       {
         if(!(statistic_parameter %in% colnames(gene_set)))
-          log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y"),  "this column", statistic_parameter, " doesn't exists.")
+          core_log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y"),  "this column", statistic_parameter, " doesn't exists.")
         #
         if(nrow(gene_set)<2)
           next
@@ -129,7 +129,7 @@ enrich_ctdR <- function(study,
       gene_set <- gene_set[order(gene_set[,pvalue_column],decreasing = FALSE),]
       key <- paste(keys[i,]$AREA,keys[i,]$SUBAREA,keys[i,]$MARKER,keys[i,]$FIGURE, sep="_")
 
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
 
       if(nrow(gene_set)<5)
         next
@@ -142,7 +142,7 @@ enrich_ctdR <- function(study,
       # remove leadingEdge
       result_pathway$leadingEdge <- NULL
 
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Started ctdR analysis")
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Started ctdR analysis")
 
 
       if(nrow(result_pathway)==0)
@@ -152,7 +152,7 @@ enrich_ctdR <- function(study,
       result_pathway$key <- key
       result_pathway$source <- "ctdR"
 
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Done ctdR analysis")
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Done ctdR analysis")
 
 
       if(exists("result_pathway"))

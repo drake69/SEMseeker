@@ -41,12 +41,12 @@ glm_model <- function(family_test, tempDataFrame, sig.formula, transformation_y,
     # i <- 1
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
-    pval_name <- name_cleaning(paste0(row_name,"_PVALUE",sep=""))
+    pval_name <- core_name_cleaning(paste0(row_name,"_PVALUE",sep=""))
     p_value <- data.frame(p_value)
     colnames(p_value) <- pval_name
 
     coef_estimate <- data.frame(coef_estimate = coefficients[i,1])
-    colnames(coef_estimate) <- name_cleaning(paste0(row_name,"_ESTIMATE",sep=""))
+    colnames(coef_estimate) <- core_name_cleaning(paste0(row_name,"_ESTIMATE",sep=""))
 
     res <- cbind(res, p_value, coef_estimate)
   }
@@ -105,7 +105,7 @@ glm_model <- function(family_test, tempDataFrame, sig.formula, transformation_y,
 
   if (!is.null(ggp) & plot==TRUE){
 
-    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", core_name_cleaning(samples_sql_condition)))
     filename  <-  io_file_path_build(chartFolder,
       c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, key$COMBINED),
       ssEnv$plot_format)

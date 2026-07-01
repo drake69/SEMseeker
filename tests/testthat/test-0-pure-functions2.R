@@ -205,8 +205,8 @@ test_that("util_join_values_to_thresholds: multiple chromosomes handled correctl
 
 test_that("metrics_ranking: returns data.frame with SCORE and METRIC columns", {
   tf <- tempFolders[43]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(REBASED = c(0.01, 0.05, 0.001, 0.20), stringsAsFactors = FALSE)
   result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
@@ -217,8 +217,8 @@ test_that("metrics_ranking: returns data.frame with SCORE and METRIC columns", {
 
 test_that("metrics_ranking: PVALUE is lower-is-better — lower p-value gets higher score", {
   tf <- tempFolders[44]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df     <- data.frame(REBASED = c(0.001, 0.05, 0.5, 0.9), stringsAsFactors = FALSE)
   result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
@@ -229,8 +229,8 @@ test_that("metrics_ranking: PVALUE is lower-is-better — lower p-value gets hig
 
 test_that("metrics_ranking: R_SQUARED is higher-is-better — higher value gets higher score", {
   tf <- tempFolders[45]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   skip_if(!("R_SQUARED" %in% toupper(SEMseeker::metrics_properties$Metric)),
           "R_SQUARED not in metrics_properties")
@@ -244,8 +244,8 @@ test_that("metrics_ranking: R_SQUARED is higher-is-better — higher value gets 
 
 test_that("metrics_ranking: uniform input → all scores equal 1", {
   tf <- tempFolders[46]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df     <- data.frame(REBASED = c(0.5, 0.5, 0.5), stringsAsFactors = FALSE)
   result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
@@ -254,8 +254,8 @@ test_that("metrics_ranking: uniform input → all scores equal 1", {
 
 test_that("metrics_ranking: METRIC column is set to the requested metric name", {
   tf <- tempFolders[47]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df     <- data.frame(REBASED = c(0.01, 0.05, 0.10), stringsAsFactors = FALSE)
   result <- SEMseeker:::metrics_ranking("PVALUE", df, column_to_rank = "REBASED")
@@ -264,8 +264,8 @@ test_that("metrics_ranking: METRIC column is set to the requested metric name", 
 
 test_that("metrics_ranking: PVALUE_ADJ is recognised as lower-is-better via grep", {
   tf <- tempFolders[48]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(REBASED = c(0.001, 0.01, 0.05, 0.20), stringsAsFactors = FALSE)
   # Any metric containing "PVALUE" (by grep) is treated as lower-is-better
@@ -277,8 +277,8 @@ test_that("metrics_ranking: PVALUE_ADJ is recognised as lower-is-better via grep
 
 test_that("metrics_ranking: Inf values are replaced before ranking (no infinite scores)", {
   tf <- tempFolders[49]
-  SEMseeker:::init_env(result_folder = tf, start_fresh = TRUE)
-  on.exit({ SEMseeker:::close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
+  SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
+  on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
 
   df <- data.frame(REBASED = c(0.01, Inf, 0.5), stringsAsFactors = FALSE)
   # Should not crash — Inf is replaced with 1E300 internally

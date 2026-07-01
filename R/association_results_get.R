@@ -8,26 +8,26 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
 {
 
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   resultFolder <- ssEnv$result_folderInference
 
   inferenceFile <- io_inference_file_name(inference_detail, marker, ssEnv$result_folderInference)
   if(adjust_per_area && adjust_globally)
   {
-    log_event("ERROR: Can adjust per area or globbaly not both!", format(Sys.time(), "%a %b %d %X %Y"))
+    core_log_event("ERROR: Can adjust per area or globbaly not both!", format(Sys.time(), "%a %b %d %X %Y"))
     stop()
   }
 
   if(!file.exists(inferenceFile))
   {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),  " Inference file does not exist: ", inferenceFile)
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),  " Inference file does not exist: ", inferenceFile)
     return(data.frame())
   }
 
 
   results_inference <- utils::read.csv2(inferenceFile, row.names = NULL, header = TRUE, stringsAsFactors = FALSE)
-  colnames(results_inference) <- name_cleaning(colnames(results_inference))
-  pvalue_column <- name_cleaning(pvalue_column)
+  colnames(results_inference) <- core_name_cleaning(colnames(results_inference))
+  pvalue_column <- core_name_cleaning(pvalue_column)
 
   # AI-063: pvalue_columns in the user setup is a single vector applied to
   # every (inference_detail × marker) combination, but inference CSVs are
@@ -40,7 +40,7 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
   # enrichment_analysis() just skips this combination and keeps going.
   if((!pvalue_column %in% colnames(results_inference)))
   {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " ", pvalue_column,
               " column does not exist in inference file (skipping): ",
               inferenceFile)
@@ -51,7 +51,7 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
   results_inference <- results_inference[!is.infinite(results_inference[,pvalue_column]),]
 
   metrics_name_collect(results_inference)
-  multiple_test_adj <- name_cleaning(ssEnv$multiple_test_adj)
+  multiple_test_adj <- core_name_cleaning(ssEnv$multiple_test_adj)
   results_inference <- subset(results_inference,DEPTH==3)
   results_inference$SIGNIFICATIVE_ADJ <- apply(results_inference[, grepl(multiple_test_adj,colnames(results_inference))], 1, function(x) all(x < as.numeric(ssEnv$alpha)))
   results_inference$SIGNIFICATIVE <- apply(results_inference[, grepl("PVALUE", colnames(results_inference)) & !grepl(multiple_test_adj,colnames(results_inference))], 1, function(x) all(x < as.numeric(ssEnv$alpha)))
@@ -123,6 +123,6 @@ association_results_get <- function (inference_detail, marker, adjust_per_area =
 
   results_inference <- filter_sql(inference_details$association_results_sql_condition, results_inference)
 
-  log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y")," inference file loaded:", inferenceFile)
+  core_log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y")," inference file loaded:", inferenceFile)
   return(results_inference)
 }

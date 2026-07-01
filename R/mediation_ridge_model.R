@@ -9,7 +9,7 @@ mediation_ridge_model <-  function(family_test,tempDataFrame, sig.formula, trans
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   ridge_params <- unlist(strsplit(as.character(family_test),"_"))
   lambda <- as.numeric(ridge_params[2])
@@ -24,7 +24,7 @@ mediation_ridge_model <-  function(family_test,tempDataFrame, sig.formula, trans
   outcome <- vars[[2]] # dependent variable
   treatment <- vars[[3]][1]
 
-  # log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Starting mediation analysis for: ", mediator, " and ", outcome)
+  # core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Starting mediation analysis for: ", mediator, " and ", outcome)
 
   res$mediator <- mediator
   res$outcome <- outcome
@@ -90,8 +90,8 @@ mediation_ridge_model <-  function(family_test,tempDataFrame, sig.formula, trans
       total_effect <- direct_effect + indirect_effect
     },
     error = function(e) {
-      log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Error in mediation analysis for: ", mediator, " and ", outcome)
-      log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Error message: ", e$message)
+      core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Error in mediation analysis for: ", mediator, " and ", outcome)
+      core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Error message: ", e$message)
     },
     finally = {
       if (!exists("mediator_on_outcome_effect") | !exists("treatment_on_mediator_effect") |
@@ -131,8 +131,8 @@ mediation_ridge_model <-  function(family_test,tempDataFrame, sig.formula, trans
         total_effect <- direct_effect + indirect_effect
       },
       error = function(e) {
-        log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Error in bootstrapping for: ", mediator, " and ", outcome)
-        log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Error message: ", e$message)
+        core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Error in bootstrapping for: ", mediator, " and ", outcome)
+        core_log_event("DEBUG: ",  format(Sys.time(), "%a %b %d %X %Y"), " - Error message: ", e$message)
         return(c(NA, NA, NA, NA, NA))
       }, finally = {
         if (!exists("mediator_on_outcome_effect") | !exists("treatment_on_mediator_effect") |

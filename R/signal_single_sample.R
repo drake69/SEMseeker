@@ -8,7 +8,7 @@
 #'
 signal_single_sample <- function(values,sample_detail,probe_features)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData, c(sample_detail$Sample_Group ,paste0("SIGNAL","_", "MEAN", sep = "")))
   # DEBUG (2026-06-09): right before the data.frame() that has

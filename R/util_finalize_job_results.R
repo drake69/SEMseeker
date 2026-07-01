@@ -21,10 +21,10 @@ util_finalize_job_results <- function(results, inference_detail, family_test,
     association_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
   }
   total_time <- difftime(Sys.time(), start_time, units = "mins")
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
     " Finished processing association analysis for ", processed_items,
     " items in ", total_time, " minutes.")
-  log_event("JOURNAL:", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("JOURNAL:", format(Sys.time(), "%a %b %d %X %Y"),
     " Association Analysis finished in ", total_time,
     " minutes. \n ####################################################")
   invisible(NULL)

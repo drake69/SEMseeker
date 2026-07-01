@@ -54,7 +54,7 @@
 #'
 #' @keywords internal
 #' @noRd
-.bulk_model_memory_gate <- function(n_probes,
+.core_bulk_model_memory_gate <- function(n_probes,
                                      n_samples,
                                      n_coef,
                                      max_chunk_probes = NULL) {

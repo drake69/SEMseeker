@@ -82,7 +82,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
     verbosity         = verbosity
   )
 
-  # SEMseeker writes via io_file_path_build() → name_cleaning() → toupper(),
+  # SEMseeker writes via io_file_path_build() → core_name_cleaning() → toupper(),
   # so the on-disk file is SAMPLE_SHEET_RESULT.csv (not the lowercase form
   # used in the API contract). macOS/Windows file systems are case-insensitive
   # by default so either spelling works; Linux ext4 is case-sensitive and

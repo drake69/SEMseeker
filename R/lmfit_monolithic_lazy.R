@@ -47,7 +47,7 @@ lmfit_monolithic_lazy <- function(pivot_lazy,
   pivot_df   <- pivot_lazy$collect()
   n_genes    <- pivot_df$height
   if (n_genes == 0L) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " lmfit_monolithic_lazy: empty pivot after filter [",
               key$MARKER, "/", key$FIGURE, "/", key$AREA, "/",
               key$SUBAREA, "].")
@@ -68,7 +68,7 @@ lmfit_monolithic_lazy <- function(pivot_lazy,
   gc(verbose = FALSE)
   y_mat[is.na(y_mat)] <- 0
 
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
             " lmfit_monolithic_lazy [", key$MARKER, "/", key$FIGURE, "/",
             key$AREA, "/", key$SUBAREA, "] y_mat=", n_genes, "x",
             ncol(y_mat), " engine=", engine)
@@ -76,7 +76,7 @@ lmfit_monolithic_lazy <- function(pivot_lazy,
   fit <- if (engine == "voom") {
     voom_obj <- tryCatch(limma::voom(y_mat, design),
                           error = function(e) {
-                            log_event("ERROR: ",
+                            core_log_event("ERROR: ",
                                       format(Sys.time(), "%a %b %d %X %Y"),
                                       " lmfit_monolithic_lazy voom failed: ",
                                       conditionMessage(e))
@@ -89,7 +89,7 @@ lmfit_monolithic_lazy <- function(pivot_lazy,
   } else {
     tryCatch(limma::lmFit(y_mat, design),
               error = function(e) {
-                log_event("ERROR: ",
+                core_log_event("ERROR: ",
                           format(Sys.time(), "%a %b %d %X %Y"),
                           " lmfit_monolithic_lazy lmFit failed: ",
                           conditionMessage(e))

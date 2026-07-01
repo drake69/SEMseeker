@@ -5,7 +5,7 @@
 #'   workflow, alongside [inter_study_association_overlaps()].
 #' @param result_folder Path to the folder holding the per-study enrichment
 #'   results to be compared.
-#' @param ... Additional arguments forwarded to [init_env()] (e.g.
+#' @param ... Additional arguments forwarded to [core_init_env()] (e.g.
 #'   `maxResources`, `parallel_strategy`).
 #' @return Invisibly `NULL`; Venn diagrams and comparison tables are written
 #'   under `result_folder`.
@@ -18,7 +18,7 @@
 #' @export
 enrich_inter_study_enrichment_compare <- function(result_folder, ...){
 
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
   # library(VennDiagram)
   pathway_inference <- pathway_inference[pathway_inference$occurrence >= occurrence_threshold,]
   studies_to_comb <- na.omit(unique(pathway_inference$STUDY))
@@ -27,7 +27,7 @@ enrich_inter_study_enrichment_compare <- function(result_folder, ...){
     studies_comb <- combinat::combn(studies_to_comb, j)
     if (j==length(studies_to_comb))
       studies_comb <- data.frame("st"=studies_comb)
-    log_event(studies_comb)
+    core_log_event(studies_comb)
     for(k in seq_len(ncol(studies_comb)))
     {
       pathway_inference_comb <- subset(pathway_inference, STUDY %in% studies_comb[,k])

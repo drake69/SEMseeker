@@ -77,14 +77,14 @@ calculate_collinearity_score <- function(df) {
   total_score <- (vif_score * 0.33) + (condition_index_score * 0.33) + (pca_score * 0.33)
 
   if(length(removal_values)!=0) {
-    log_event("WARNING: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " - Collinearity check failed. VIF: ", vif_score, ", Condition Index: ", condition_index_score, ", PCA: ", pca_score)
-    log_event("WARNING: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " - Variables should be removed: ", paste(removal_values, collapse = ", "))
+    core_log_event("WARNING: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " - Collinearity check failed. VIF: ", vif_score, ", Condition Index: ", condition_index_score, ", PCA: ", pca_score)
+    core_log_event("WARNING: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " - Variables should be removed: ", paste(removal_values, collapse = ", "))
     return(removal_values)
   }
   else
   {
-    log_event("DEBUG: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " - Collinearity check passed. \nVIF: ", vif_score, "\nCondition Index: ", condition_index_score, "\nPCA: ", pca_score)
-    log_event("JOURNAL: - Collinearity check passed. \nVIF: ", vif_score, "\nCondition Index: ", condition_index_score, "\nPCA: ", pca_score)
+    core_log_event("DEBUG: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " - Collinearity check passed. \nVIF: ", vif_score, "\nCondition Index: ", condition_index_score, "\nPCA: ", pca_score)
+    core_log_event("JOURNAL: - Collinearity check passed. \nVIF: ", vif_score, "\nCondition Index: ", condition_index_score, "\nPCA: ", pca_score)
   }
   return(c())
 }

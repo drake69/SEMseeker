@@ -29,7 +29,7 @@ inferred from the object class / file extension.}
 
 \item{tech}{Optional technology label (\code{"K850"}, \code{"K450"},
 \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}). If \code{NULL} (default)
-it is auto-detected downstream by \code{get_meth_tech()}.}
+it is auto-detected downstream by \code{core_get_meth_tech()}.}
 
 \item{genome_build}{Reference genome build. One of \code{"hg19"} (default),
 \code{"hg38"}, \code{"mm10"}, \code{"legacy"}.}
@@ -40,7 +40,7 @@ genome_build combinations (e.g. \code{tech="LONGREAD"} with
 emitted and the pipeline proceeds.}
 
 \item{...}{Additional arguments forwarded to \code{\link{semseeker_core}}
-and \code{init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
+and \code{core_init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
 \code{LESIONS_BP}, \code{marker}, \code{areas}). \code{LESIONS_BP}
 (default 2000) is the maximum bp distance between two probes for them to
 be in the same LESIONS enrichment window — replaces the legacy

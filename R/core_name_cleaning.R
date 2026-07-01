@@ -1,4 +1,4 @@
-name_cleaning <- function(name, empty_place_holder="")
+core_name_cleaning <- function(name, empty_place_holder="")
 {
 
   name <- toupper(name)

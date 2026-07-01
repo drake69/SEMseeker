@@ -13,7 +13,7 @@
 io_pivot_to_long_format <- function (marker, figure, area,subarea, phenotype_column,sample_sheet, areas_selection=NULL)
 {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   area_pivot <- get_pivot(marker, figure, area, subarea)
 
   area_pivot <- subset(area_pivot, area_pivot$SAMPLEID=="SAMPLE_GROUP" | area_pivot$SAMPLEID %in% areas_selection)

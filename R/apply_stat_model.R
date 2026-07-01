@@ -82,7 +82,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
   # Session info is only needed for the per-area (foreach) path —
   # the batch path above is intentionally session-independent so it
   # can be exercised in unit tests without a materialised session.
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   g_end <- ncol(tempDataFrame)
   transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
@@ -128,14 +128,14 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
     "io_data_preparation","apply_stat_model_sig.formula","quantreg_permutation_model",
     "apply_stat_model_sig_formula", "data_distribution_info", "glm_model", "test_model", "test_model_paired", "Breusch_Pagan_pvalue",
     "progress_bar","progression_index", "progression", "progressor_uuid", "owner_session_uuid", "trace","signal_values","ssEnv","g_start",
-    "execute_model", "is.family_dicotomic", "log_event","mediate","mediation","get_session_info", "samples_sql_condition",
+    "execute_model", "is.family_dicotomic", "core_log_event","mediate","mediation","core_get_session_info", "samples_sql_condition",
     # AI-106 (2026-06-09): safe_to_real mapping must reach each foreach worker
     "safe_to_real")
 
   result_columns <- c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST", "CI.LOWER", "CI.UPPER", "PVALUE", "STATISTIC_PARAMETER", "AIC_VALUE", "RESIDUALS", "SHAPIRO_PVALUE", "R_MODEL", "STD.ERROR", "N_PERMUTATIONS", "N_PERMUTATIONS_TEST")
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " Starting foreach with: ", g_end - g_start, " items")
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  " Starting foreach with: ", g_end - g_start, " items")
 
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I'll perform:",g_end - g_start," tests." )
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I'll perform:",g_end - g_start," tests." )
   result_temp <- data.frame()
   # .packages loads SEMseeker in each worker so SEMseeker::: lookups resolve.
   # Internal helpers are prefixed with SEMseeker::: because they live in the
@@ -157,8 +157,8 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
     # plyr::rbind.fill silently ignores NULL results.
     # AI-041: in-memory only; saveRDS happens at end-of-batch in the caller,
     # not per-gene (was the hot-path culprit causing ~5-7x slowdown).
-    SEMseeker:::update_session_info(ssEnv, save_to_disk = FALSE)
-    ssEnv <- SEMseeker:::get_session_info()
+    SEMseeker:::core_update_session_info(ssEnv, save_to_disk = FALSE)
+    ssEnv <- SEMseeker:::core_get_session_info()
 
     burdenValue <- cols[g]
     if(ssEnv$showprogress)
@@ -201,7 +201,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
         if(length(stats::na.omit(independent_variableData2ndLevel))==0 | length(stats::na.omit(independent_variableData1stLevel))==0)
         {
-          SEMseeker:::log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because one of the two groups is empty." )
+          SEMseeker:::core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " I skip this test because one of the two groups is empty." )
           colnames(local_result) <- toupper(colnames(local_result))
           local_result$PVALUE <- NA
         }
@@ -214,7 +214,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
 
         if(sum(is.na(dependentVariableData)>0) | sum(is.na(independent_variableData)))
         {
-          SEMseeker:::log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "The submitted data are not factorial or numeric.")
+          SEMseeker:::core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "The submitted data are not factorial or numeric.")
           stop()
         }
       }
@@ -229,7 +229,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
       local_result
     }
   }, error = function(e) {
-    SEMseeker:::log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    SEMseeker:::core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " Skipping area '", if(exists("burdenValue")) burdenValue else "?",
               "': ", conditionMessage(e))
     NULL
@@ -242,17 +242,17 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
   # which was confusing during resume runs that legitimately had 0 work left.
   n_done <- if (is.null(result_temp)) 0L else nrow(result_temp)
   if (n_done > 0L) {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " I performed:", n_done, " tests." )
   } else {
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " No new tests to perform in this chunk (already cached)." )
   }
 
   # AI-041: end-of-foreach disk snapshot (workers used save_to_disk=FALSE
   # inside the per-gene loop; here we persist the session exactly once after
   # the parallel section closes).
-  update_session_info(ssEnv, save_to_disk = TRUE)
+  core_update_session_info(ssEnv, save_to_disk = TRUE)
 
   # & !is.null(result_temp)
   if(exists("result_temp") & !is.null(result_temp))
@@ -271,7 +271,7 @@ apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = N
         result_temp[selector,"PVALUE_ADJ"]  <- (stats::p.adjust(result_temp[selector,"PVALUE"]  ,method = "BH"))
       }
     }
-    colnames(result_temp) <- name_cleaning(colnames(result_temp))
+    colnames(result_temp) <- core_name_cleaning(colnames(result_temp))
     return(result_temp)
   }
   return(NULL)

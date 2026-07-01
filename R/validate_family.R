@@ -2,11 +2,11 @@ validate_family_test <- function(family_test){
 
   if( is.null(family_test) || length(family_test)  ==  0 || is.na(family_test))
   {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), " One test family_test is missed! Skipped.", family_test)
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), " One test family_test is missed! Skipped.", family_test)
     return(FALSE)
   }
 
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " family_test: " , as.character(family_test))
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " family_test: " , as.character(family_test))
 
 
   if(family_test=="multinomial" | family_test=="binomial" | family_test=="binomial_bulk" | family_test=="wilcoxon" | family_test=="jsd" | family_test=="t.test" | family_test=="poisson" |
@@ -18,7 +18,7 @@ validate_family_test <- function(family_test){
   {
     mean_params <- unlist(strsplit(as.character(family_test),"_"))
     if (length(mean_params) != 4)
-      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "mean-permutation family_test must have been with the follwing syntax mean-permutation_n.permutations.test_n.permutations_conf.level")
+      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "mean-permutation family_test must have been with the follwing syntax mean-permutation_n.permutations.test_n.permutations_conf.level")
     else
       return(TRUE)
   }
@@ -27,7 +27,7 @@ validate_family_test <- function(family_test){
   {
     mean_params <- unlist(strsplit(as.character(family_test),"@"))
     if (length(mean_params) != 2)
-      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "wilcoxon.paired family_test must have been with the following syntax wilcoxon.paired@pairing_variable")
+      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "wilcoxon.paired family_test must have been with the following syntax wilcoxon.paired@pairing_variable")
     else
       return(TRUE)
   }
@@ -36,7 +36,7 @@ validate_family_test <- function(family_test){
   {
     mean_params <- unlist(strsplit(as.character(family_test),"@"))
     if (length(mean_params) != 2)
-      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "t.test.paired family_test must have been with the following syntax t.test.paired@pairing_variable")
+      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "t.test.paired family_test must have been with the following syntax t.test.paired@pairing_variable")
     else
       return(TRUE)
   }
@@ -46,7 +46,7 @@ validate_family_test <- function(family_test){
     quantile_params <- unlist(strsplit(as.character(family_test),"_"))
     if (length(quantile_params) == 5)
       return(TRUE)
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "quantile-permutation family_test must have been with the follwing syntax quantile-permutation_quantile_n.permutations.test_n.permutations_conf.level")
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "quantile-permutation family_test must have been with the follwing syntax quantile-permutation_quantile_n.permutations.test_n.permutations_conf.level")
     return(FALSE)
   }
 
@@ -54,7 +54,7 @@ validate_family_test <- function(family_test){
   {
     quantile_params <- unlist(strsplit(as.character(family_test),"_"))
     if (length(quantile_params) != 5)
-      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "quantreg-permutation family_test must have been with the follwing syntax quantile-permutation_tau_n.permutations.test_n.permutations_conf.level")
+      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "quantreg-permutation family_test must have been with the follwing syntax quantile-permutation_tau_n.permutations.test_n.permutations_conf.level")
     else
       return(TRUE)
   }
@@ -94,6 +94,6 @@ validate_family_test <- function(family_test){
   if (grepl("pow10_",family_test))
     return(TRUE)
 
-  log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "family_test is not recognized: ", family_test)
+  core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "family_test is not recognized: ", family_test)
   return(FALSE)
 }

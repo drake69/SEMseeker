@@ -9,17 +9,17 @@ enrich_Phenolyzer_STRINGdb <- function(study,
   #
   tmp <- tempdir()
   tempFolder <- paste(tmp,"/semseeker/",stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]"),sep="")
-  pvalue_column <- name_cleaning(pvalue_column)
+  pvalue_column <- core_name_cleaning(pvalue_column)
 
   # start_fresh <- FALSE
-  # ssEnv <- init_env(result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
-  ssEnv <- get_session_info()
+  # ssEnv <- core_init_env(result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
+  ssEnv <- core_get_session_info()
   keys <- unique(ssEnv$keys_for_pathway)
 
   #check if optional package is installed
   if(!requireNamespace("STRINGdb", quietly = TRUE))
   {
-    log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y"),"STRINGdb package is not installed. Please install STRINGdb package to use this function.")
+    core_log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y"),"STRINGdb package is not installed. Please install STRINGdb package to use this function.")
     return()
   }
 
@@ -56,7 +56,7 @@ enrich_Phenolyzer_STRINGdb <- function(study,
         suffix <- "without_signal_"
 
       enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, keys[i,],prefix ="", suffix= suffix , pvalue_column, ssEnv$alpha, significance)
-      path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("Phenolyzer_STRINGdb",name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+      path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("Phenolyzer_STRINGdb",core_name_cleaning(inference_detail$areas_sql_condition), core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
       pathway_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
 
       if(file.exists(pathway_report_path))
@@ -69,21 +69,21 @@ enrich_Phenolyzer_STRINGdb <- function(study,
       }
       #### START LOAD PHENOLYZER
       # load prioritized gene by phenolyzer
-      base_path <- io_dir_check_and_create(ssEnv$result_folderPhenotype,c("phenolyzer",name_cleaning(inference_detail$areas_sql_condition)))
+      base_path <- io_dir_check_and_create(ssEnv$result_folderPhenotype,c("phenolyzer",core_name_cleaning(inference_detail$areas_sql_condition)))
       enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name( inference_detail = inference_detail,key = keys[i,], prefix="",suffix=paste("_", disease,"_report",sep=""), pvalue_column=pvalue_column, ssEnv$alpha, significance)
       path_phenolyzer <- io_dir_check_and_create(baseFolder = base_path, subFolders = "summary")
       phenotype_report_path <- io_file_path_build(path_phenolyzer,enrich_phenotype_analysis_name,"csv")
 
       if(!file.exists(phenotype_report_path))
       {
-        log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Phenotype report not found: ", phenotype_report_path)
+        core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " Phenotype report not found: ", phenotype_report_path)
         next
       }
       gene_set <- utils::read.csv2(phenotype_report_path,stringsAsFactors = FALSE)
       if(nrow(gene_set)==0)
         next
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
-      # log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set (ENTREZ): ",nrow(gene_set), " key: ", keys[i,])
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
+      # core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set (ENTREZ): ",nrow(gene_set), " key: ", keys[i,])
       if (length(gene_set$Gene)==0)
         next
 
@@ -93,12 +93,12 @@ enrich_Phenolyzer_STRINGdb <- function(study,
       gene_set <- gene_set[order(gene_set[,"Rank"],decreasing = FALSE),]
       key <- paste(keys[i,]$AREA,keys[i,]$SUBAREA,keys[i,]$MARKER,keys[i,]$FIGURE, sep="_")
 
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Number of genes in the gene set: ",nrow(gene_set), " key: ", keys[i,])
 
       if(nrow(gene_set)<2)
         next
 
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Started STRINGdb analysis")
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Started STRINGdb analysis")
 
       gene_set <- gene_set[,c("Gene")]
       gene_set <- data.frame(pvalue=NA,logfc=NA,gene=gene_set,stringsAsFactors = FALSE)
@@ -121,7 +121,7 @@ enrich_Phenolyzer_STRINGdb <- function(study,
       result_pathway$fold_enrichment <- result_pathway$number_of_genes / result_pathway$expected_count
 
 
-      log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Done STRINGdb analysis")
+      core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Done STRINGdb analysis")
 
 
       if(exists("result_pathway"))

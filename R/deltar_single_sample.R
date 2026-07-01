@@ -11,7 +11,7 @@
 #'
 deltar_single_sample <- function(values, thresholds, sample_detail) {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # Polars inner join on (CHR, START, END) — replaces sort-then-positional-zip.
   # util_join_values_to_thresholds() handles type coercion and is shared with
@@ -19,7 +19,7 @@ deltar_single_sample <- function(values, thresholds, sample_detail) {
   joined <- util_join_values_to_thresholds(values, thresholds)
 
   if (nrow(joined) == 0L) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
       " [deltar_single_sample] No overlapping positions — skipping deltar",
       " for sample=", sample_detail$Sample_ID)
     return(invisible(NULL))
@@ -83,8 +83,8 @@ deltar_single_sample <- function(values, thresholds, sample_detail) {
   deltar_to_check <- c(deltar_hypo$DELTA, deltar_hyper$DELTA)
   if (length(deltar_to_check) > 0)
     if (min(deltar_to_check) < 0) {
-      log_event(min(deltar_hypo$DELTA))
-      log_event(min(deltar_hyper$DELTA))
+      core_log_event(min(deltar_hypo$DELTA))
+      core_log_event(min(deltar_hyper$DELTA))
       stop("ERROR: I'm stopping here — deltar have negative values!")
     }
 }

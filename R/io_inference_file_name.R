@@ -1,6 +1,6 @@
 io_inference_file_name <- function(inference_detail, marker, folder,file_extension="csv", prefix = "", suffix="")
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   covariates <- util_split_and_clean(inference_detail$covariates, "\\+")
   covariates_dummy <- util_split_and_clean(inference_detail$covariates_dummy, "\\+")
@@ -34,7 +34,7 @@ io_inference_file_name <- function(inference_detail, marker, folder,file_extensi
   file_suffix <- paste(file_suffix, suffix, sep = "_")
 
   if(length(inference_detail$samples_sql_condition)>0)
-    folder <- io_dir_check_and_create(folder,name_cleaning(inference_detail$samples_sql_condition))
+    folder <- io_dir_check_and_create(folder,core_name_cleaning(inference_detail$samples_sql_condition))
 
 
   fileNameResults <- io_file_path_build(folder,c(as.character(marker),file_result_prefix ,file_suffix) , file_extension)

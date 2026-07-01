@@ -26,7 +26,7 @@ ssEnv$keys_markers_figures).}
 
 \item{filter_p_value}{logical.}
 
-\item{ssEnv}{list. Session environment from get_session_info().}
+\item{ssEnv}{list. Session environment from core_get_session_info().}
 
 \item{...}{forwarded to apply_stat_model().}
 }

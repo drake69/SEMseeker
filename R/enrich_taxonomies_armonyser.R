@@ -6,17 +6,17 @@ enrich_taxonomies_armonyser <- function(inference_details, result_folder, pvalue
   else
     disease_original <- ""
 
-  ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
   keys <- unique(ssEnv$keys_for_pathway)
   inference_details <- as.data.frame(inference_details)
-  pvalue_column <- name_cleaning(pvalue_column)
+  pvalue_column <- core_name_cleaning(pvalue_column)
   key_enrichment_format <- ssEnv$key_enrichment_format
   aggregated_patwhay_result_total <- data.frame()
 
   for (a in alphas)
   {
     ssEnv$alpha <- a
-    update_session_info(ssEnv)
+    core_update_session_info(ssEnv)
     for (pt in seq_len(nrow(key_enrichment_format)))
     {
       if(key_enrichment_format[pt,"label"]=="phenolyzer")
@@ -35,9 +35,9 @@ enrich_taxonomies_armonyser <- function(inference_details, result_folder, pvalue
         # id <- 2
         inference_detail <- inference_details[id,]
         if(key_enrichment_format[pt,"type"]=="Pathway")
-          path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+          path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c(key_enrichment_format[pt,"label"],core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
         else
-          path <- io_dir_check_and_create(ssEnv$result_folderPhenotype,c(key_enrichment_format[pt,"label"],name_cleaning(inference_detail$areas_sql_condition),name_cleaning(inference_detail$samples_sql_condition), name_cleaning(inference_detail$association_results_sql_condition)))
+          path <- io_dir_check_and_create(ssEnv$result_folderPhenotype,c(key_enrichment_format[pt,"label"],core_name_cleaning(inference_detail$areas_sql_condition),core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(inference_detail$association_results_sql_condition)))
         family_test <- inference_detail$family_test
         transformation_y <- as.character(inference_detail$transformation_y)
         independent_variable <- inference_detail$independent_variable
@@ -76,7 +76,7 @@ enrich_taxonomies_armonyser <- function(inference_details, result_folder, pvalue
           {
             # add a row if the file is missed it means non pathway was found !
             missed_keys <- plyr::rbind.fill(missed_keys, keys[i,])
-            log_event("WARNING:", format(Sys.time(), "%a %b %d %X %Y") , " pathway_result ", file_name, " is missed !")
+            core_log_event("WARNING:", format(Sys.time(), "%a %b %d %X %Y") , " pathway_result ", file_name, " is missed !")
             next
           }
 
@@ -94,7 +94,7 @@ enrich_taxonomies_armonyser <- function(inference_details, result_folder, pvalue
           if(!all(cols_to_check %in% colnames(pathway_result)))
           {
 
-            log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") , " column_of_id ", column_of_id, " is missed in ", file_name)
+            core_log_event("ERROR:", format(Sys.time(), "%a %b %d %X %Y") , " column_of_id ", column_of_id, " is missed in ", file_name)
             next
           }
 

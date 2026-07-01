@@ -5,7 +5,7 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   nls_mdl_params <- unlist(strsplit(as.character(family_test),"_"))
   partition_percentage <- as.numeric(nls_mdl_params[2])
 
@@ -95,7 +95,7 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
     )
   }, error = function(e) {
     # Handle error
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "Error fitting the model: ", e$message)
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), "Error fitting the model: ", e$message)
     stop()
   })
   # check if nls_model_model_result is a model
@@ -130,19 +130,19 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
     warning("P-values could not be computed due to singular matrix or failed model summary.")
   }
 
-  rownames(coefficients) <- name_cleaning(c("INTERCEPT", independent_variable, covariates))
+  rownames(coefficients) <- core_name_cleaning(c("INTERCEPT", independent_variable, covariates))
 
   # for a and b extract the p-value
   for (i in seq_len(nrow(coefficients))) {
     # i <- 1
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
-    pval_name <- name_cleaning(paste0(row_name,"_PVALUE",sep=""))
+    pval_name <- core_name_cleaning(paste0(row_name,"_PVALUE",sep=""))
     p_value <- data.frame(p_value)
     colnames(p_value) <- pval_name
 
     nls_mdl_coef_estimate <- data.frame(nls_mdl_a_estimate = coefficients[i,1])
-    colnames(nls_mdl_coef_estimate) <- name_cleaning(paste0(row_name,"_ESTIMATE",sep=""))
+    colnames(nls_mdl_coef_estimate) <- core_name_cleaning(paste0(row_name,"_ESTIMATE",sep=""))
 
     res <- cbind(res, p_value, nls_mdl_coef_estimate)
   }
@@ -158,7 +158,7 @@ association_model_nls <- function (family_test, tempDataFrame, sig.formula, tran
     # train.data$predicted <- predicted
     # train.data$fitted <- nls_model_model_result$m$fitted
 
-    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", core_name_cleaning(samples_sql_condition)))
     filename  <-  io_file_path_build(chartFolder,
       c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, key$COMBINED),
       ssEnv$plot_format)

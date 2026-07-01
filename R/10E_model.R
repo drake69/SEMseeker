@@ -6,7 +6,7 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   pow10_params <- unlist(strsplit(as.character(family_test),"_"))
   partition_percentage <- as.numeric(pow10_params[2])
 
@@ -114,7 +114,7 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
     summary_result <- summary(log_model_result)
     coefficients <- summary_result$coefficients
   }, error = function(e) {
-    log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), "Error extracting coefficients from the model: ", e$message)
+    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"), "Error extracting coefficients from the model: ", e$message)
     return(res)
   })
 
@@ -127,19 +127,19 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
     warning("P-values could not be computed due to singular matrix or failed model summary.")
   }
 
-  rownames(coefficients) <- name_cleaning(c("INTERCEPT", independent_variable, covariates))
+  rownames(coefficients) <- core_name_cleaning(c("INTERCEPT", independent_variable, covariates))
 
   # for a and b extract the p-value
   for (i in seq_len(nrow(coefficients))) {
     # i <- 1
     p_value <- coefficients[i,4]
     row_name <- rownames(coefficients)[i]
-    pval_name <- name_cleaning(paste0(row_name,"_PVALUE",sep=""))
+    pval_name <- core_name_cleaning(paste0(row_name,"_PVALUE",sep=""))
     p_value <- data.frame(p_value)
     colnames(p_value) <- pval_name
 
     pow10_coef_estimate <- data.frame(pow10_a_estimate = coefficients[i,1])
-    colnames(pow10_coef_estimate) <- name_cleaning(paste0(row_name,"_ESTIMATE",sep=""))
+    colnames(pow10_coef_estimate) <- core_name_cleaning(paste0(row_name,"_ESTIMATE",sep=""))
 
     res <- cbind(res, p_value, pow10_coef_estimate)
   }
@@ -155,7 +155,7 @@ pow10_model <- function (family_test, tempDataFrame, sig.formula, transformation
     # train.data$predicted <- predicted
     # train.data$fitted <- log_model_result$m$fitted
 
-    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", name_cleaning(samples_sql_condition)))
+    chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,c("FITTED_MODEL", core_name_cleaning(samples_sql_condition)))
     filename  <-  io_file_path_build(chartFolder,
       c(as.character(family_test), independent_variable,"Vs",as.character(transformation_y), dependent_variable, covariates, key$COMBINED),
       ssEnv$plot_format)

@@ -23,8 +23,8 @@
 #'
 #' @return Invisibly returns the metadata list that was serialised to JSON.
 #' @keywords internal
-session_metadata_write <- function(result_folder, sample_n = 0L) {
-  ssEnv <- get_session_info()
+core_session_metadata_write <- function(result_folder, sample_n = 0L) {
+  ssEnv <- core_get_session_info()
 
   genome_build <- if (!is.null(ssEnv$genome_build) && nzchar(ssEnv$genome_build))
     as.character(ssEnv$genome_build) else "hg19"
@@ -41,7 +41,7 @@ session_metadata_write <- function(result_folder, sample_n = 0L) {
 
   out_path <- file.path(result_folder, "session_metadata.json")
   writeLines(jsonlite::toJSON(meta, auto_unbox = TRUE, pretty = TRUE), out_path)
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " [session_metadata] Written: ", out_path)
   invisible(meta)
 }
@@ -59,8 +59,8 @@ session_metadata_write <- function(result_folder, sample_n = 0L) {
 #'
 #' @return Invisibly \code{NULL}.
 #' @keywords internal
-pivot_sidecar_write <- function(pivot_path) {
-  ssEnv <- get_session_info()
+core_pivot_sidecar_write <- function(pivot_path) {
+  ssEnv <- core_get_session_info()
 
   genome_build <- if (!is.null(ssEnv$genome_build) && nzchar(ssEnv$genome_build))
     as.character(ssEnv$genome_build) else "hg19"
@@ -116,18 +116,18 @@ pivot_sidecar_write <- function(pivot_path) {
 #' writeLines(jsonlite::toJSON(list(genome_build = "hg19", tech = "K450"),
 #'                             auto_unbox = TRUE),
 #'            file.path(d2, "session_metadata.json"))
-#' check_session_compatibility(c(d1, d2))
+#' core_check_session_compatibility(c(d1, d2))
 #' @export
-check_session_compatibility <- function(session_list) {
+core_check_session_compatibility <- function(session_list) {
   if (length(session_list) < 2L) {
-    log_event("INFO: [check_session_compatibility] Only one session — nothing to compare.")
+    core_log_event("INFO: [core_check_session_compatibility] Only one session — nothing to compare.")
     return(invisible(NULL))
   }
 
   meta_list <- lapply(session_list, function(folder) {
     json_path <- file.path(folder, "session_metadata.json")
     if (!file.exists(json_path)) {
-      log_event("WARNING: [check_session_compatibility]",
+      core_log_event("WARNING: [core_check_session_compatibility]",
                 " No session_metadata.json in: ", folder,
                 " — provenance cannot be verified.")
       return(data.frame(folder        = folder,
@@ -152,7 +152,7 @@ check_session_compatibility <- function(session_list) {
   builds_known <- meta_df$genome_build[!is.na(meta_df$genome_build)]
   if (length(unique(builds_known)) > 1L) {
     stop(
-      "[check_session_compatibility] INCOMPATIBLE sessions: genome_build differs.\n",
+      "[core_check_session_compatibility] INCOMPATIBLE sessions: genome_build differs.\n",
       "  Combining coordinates from different genome assemblies produces wrong results.\n",
       "  Found: ", paste(unique(builds_known), collapse = ", "), "\n",
       "  Sessions:\n",
@@ -165,7 +165,7 @@ check_session_compatibility <- function(session_list) {
   techs_known <- meta_df$tech[!is.na(meta_df$tech) & nzchar(meta_df$tech)]
   if (length(unique(techs_known)) > 1L) {
     warning(
-      "[check_session_compatibility] Technologies differ across sessions: ",
+      "[core_check_session_compatibility] Technologies differ across sessions: ",
       paste(unique(techs_known), collapse = ", "), ".\n",
       "  Cross-array meta-analysis is valid on the probe intersection ",
       "but must be intentional.\n",
@@ -174,8 +174,8 @@ check_session_compatibility <- function(session_list) {
   }
 
   if (length(builds_known) > 0L)
-    log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " [check_session_compatibility] All sessions compatible.",
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " [core_check_session_compatibility] All sessions compatible.",
               " genome_build=", unique(builds_known)[1L],
               " tech=", paste(unique(techs_known), collapse = "+"))
 

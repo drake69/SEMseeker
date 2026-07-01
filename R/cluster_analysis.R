@@ -1,16 +1,16 @@
 cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selection="", result_folder, maxResources = 90,
   parallel_strategy  = "multicore",start_fresh = FALSE, ...)
 {
-  # AI-061+ (2026-06-09): propagate start_fresh to init_env (was previously
+  # AI-061+ (2026-06-09): propagate start_fresh to core_init_env (was previously
   # hardcoded to FALSE). Same name → same semantics: TRUE wipes the whole
   # result_folder (Chart, Enrichment, Phenotype, Pivots, Data, Log, Inference);
   # FALSE preserves everything. The redundant unlink of result_folderInference
-  # below is kept as a no-op when start_fresh=TRUE (init_env already wiped)
+  # below is kept as a no-op when start_fresh=TRUE (core_init_env already wiped)
   # and as the SOLE reset when start_fresh=FALSE-but-caller-wants-inference-only
   # — but that latter case never happens with this signature.
-  ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the cluster analysys for project \n in ", ssEnv$result_folderData)
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the cluster analysys for project \n in ", ssEnv$result_folderData)
 
   if(start_fresh)
     unlink(ssEnv$result_folderInference, recursive = TRUE)
@@ -30,21 +30,21 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
     cluster_variable_name <- cluster_variables[i]
     if (is.na(cluster_variable_name) || cluster_variable_name=="")
     {
-      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " cluster_analysis: cluster_variable is empty")
+      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " cluster_analysis: cluster_variable is empty")
       stop()
     }
 
     study_summary <-   study_summary_get(sql_sample_selection)
     if (!(cluster_variable_name %in% colnames(study_summary)))
     {
-      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " cluster_analysis: cluster_variable is not in study_summary")
+      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " cluster_analysis: cluster_variable is not in study_summary")
       stop()
     }
 
     for ( k in seq_len(nrow(localKeys)))
     {
       key <- localKeys[k,]
-      chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart, c("CLUSTER_ANALYSIS", name_cleaning(sql_sample_selection)))
+      chart_folder <- io_dir_check_and_create(ssEnv$result_folderChart, c("CLUSTER_ANALYSIS", core_name_cleaning(sql_sample_selection)))
       plot_filename <- io_file_path_build(baseFolder = chart_folder,
         detailsFilename = c(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA, cluster_variable_name), extension = ssEnv$plot_format )
 
@@ -88,6 +88,6 @@ cluster_analysis <- function(cluster_variables,ellipsis=TRUE, sql_sample_selecti
         progress_bar(sprintf("Cluster analysis of area: %s, subarea: %s, marker: %s and figure: %s",key$AREA, key$SUBAREA, key$MARKER, key$FIGURE ))
     }
   }
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker finished the cluster analysis for project \n in ", ssEnv$result_folderData)
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker finished the cluster analysis for project \n in ", ssEnv$result_folderData)
   return(invisible())
 }

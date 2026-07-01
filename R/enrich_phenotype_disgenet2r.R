@@ -5,12 +5,12 @@
 # {
 #
 #   start_fresh <- FALSE
-#   ssEnv <- init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
+#   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = start_fresh, ...)
 #
 #   #check if optional package is installed
 #   if(!requireNamespace("disgenetplus2r", quietly = TRUE))
 #   {
-#     log_event("disgenetplus2r package is not installed. Please install disgenetplus2r package to use this function with instruction: devtools::install_bitbucket('ibi_group/disgenetplus2r')")
+#     core_log_event("disgenetplus2r package is not installed. Please install disgenetplus2r package to use this function with instruction: devtools::install_bitbucket('ibi_group/disgenetplus2r')")
 #     return()
 #   }
 #
@@ -18,7 +18,7 @@
 #   tryCatch({
 #     disgenet_api_key <- disgenetplus2r::get_disgenetplus_api_key(user = disgenetplus2r_user, password = disgenetplus2r_password,verbose = TRUE, warnings = TRUE)
 #   }, error = function(e) {
-#     log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " disgenetplus2r not working, internet problem or wrong credentials.")
+#     core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " disgenetplus2r not working, internet problem or wrong credentials.")
 #   })
 #
 #   if (is.null(disgenet_api_key))
@@ -31,7 +31,7 @@
 #
 #   if (is.null(nrow(diseases)))
 #   {
-#     log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No disease found for ",disease)
+#     core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No disease found for ",disease)
 #     return()
 #   }
 #

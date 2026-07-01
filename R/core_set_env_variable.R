@@ -1,8 +1,8 @@
-set_env_variable <- function(arguments, var_name, var_default_value, check_values=NULL)
+core_set_env_variable <- function(arguments, var_name, var_default_value, check_values=NULL)
 {
 
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   if(is.null(ssEnv[[var_name]]))
     ssEnv[[var_name]]  <- var_default_value
 
@@ -13,8 +13,8 @@ set_env_variable <- function(arguments, var_name, var_default_value, check_value
     else
       ssEnv[[var_name]]  <- arguments[[var_name]]
   }
-  update_session_info(ssEnv)
-  log_event("INFO:",format(Sys.time(), "%a %b %d %X %Y"), " " , var_name ," ",  ssEnv[[var_name]])
+  core_update_session_info(ssEnv)
+  core_log_event("INFO:",format(Sys.time(), "%a %b %d %X %Y"), " " , var_name ," ",  ssEnv[[var_name]])
 
   if(!is.null(check_values))
   {

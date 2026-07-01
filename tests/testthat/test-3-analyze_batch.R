@@ -2,7 +2,7 @@ test_that("analize_batch", {
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder,
     parallel_strategy = parallel_strategy,
     bonferroni_threshold =  bonferroni_threshold,
     iqrTimes =  iqrTimes,
@@ -10,7 +10,7 @@ test_that("analize_batch", {
   )
 
   ####################################################################################
-  tt <- SEMseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::core_get_meth_tech(signal_data)
   ####################################################################################
 
   batch_id <- 2
@@ -34,7 +34,7 @@ test_that("analize_batch", {
   testthat::expect_true(length(list.files(data_dir, recursive = TRUE)) > 0)
 
   ####################################################################################
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder,recursive = TRUE)
 })
 

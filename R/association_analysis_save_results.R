@@ -3,7 +3,7 @@ association_analysis_save_results <- function(results=NULL,fileNameResults, fami
   if(nrow(results)==0)
     return()
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # C-06: stamp provenance columns so any downstream CSV stack retains build+tech
   genome_build_val <- if (!is.null(ssEnv$genome_build) && nzchar(ssEnv$genome_build))
@@ -14,11 +14,11 @@ association_analysis_save_results <- function(results=NULL,fileNameResults, fami
   results$TECH         <- tech_val
 
   utils::write.csv2(results,fileNameResults , row.names  =  FALSE)
-  multiple_test_adj <- name_cleaning(ssEnv$multiple_test_adj)
+  multiple_test_adj <- core_name_cleaning(ssEnv$multiple_test_adj)
   # there is a bug which mantain more family test in the same results file
   # so we need to filter the results
   #
-  colnames(results) <- name_cleaning(colnames(results))
+  colnames(results) <- core_name_cleaning(colnames(results))
   results <- subset(results, FAMILY_TEST==as.character(family_test))
 
   # check if results is empty
@@ -42,12 +42,12 @@ association_analysis_save_results <- function(results=NULL,fileNameResults, fami
     {
       for (p in seq_along(pvalue_columns))
       {
-        col_p <- name_cleaning(paste0(pvalue_columns[p], "_ADJ_ALL_", multiple_test_adj))
+        col_p <- core_name_cleaning(paste0(pvalue_columns[p], "_ADJ_ALL_", multiple_test_adj))
         if(ssEnv$multiple_test_adj=="q")
           results[,col_p] <- qvalue::qvalue(results[,pvalue_columns[p]], fdr.level = ssEnv$alpha, pi0.method="bootstrap", na.rm=TRUE)$qvalues
         else
           results[,col_p] <- stats::p.adjust(results[,pvalue_columns[p]],method  =  ssEnv$multiple_test_adj)
-        colnames(results) <- name_cleaning(colnames(results))
+        colnames(results) <- core_name_cleaning(colnames(results))
       }
 
       pvalue_adj_colname <- colnames(results)[grepl(multiple_test_adj,colnames(results))][1]

@@ -12,7 +12,7 @@
 #' @param parallel_strategy character. Parallelisation backend; possible
 #'   values: \code{"none"}, \code{"multisession"}, \code{"sequential"},
 #'   \code{"multicore"}, \code{"cluster"} (default \code{"multicore"}).
-#' @param ... Additional arguments passed to \code{init_env()}.
+#' @param ... Additional arguments passed to \code{core_init_env()}.
 #'
 #' @return Invisibly \code{NULL}. Sensitivity / specificity tables are written
 #'   to the \code{Euristic/} sub-folder of \code{result_folder}.
@@ -34,7 +34,7 @@ diagnostic_performance <-
     k <- 0
     z <- 0
     arguments <- list(...)
-    ssEnv <- init_env(result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
+    ssEnv <- core_init_env(result_folder =  result_folder, maxResources =  maxResources, parallel_strategy  =  parallel_strategy, start_fresh = FALSE, ...)
 
 
     arguments <- list(...)
@@ -90,7 +90,7 @@ diagnostic_performance <-
           fname <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
           if (file.exists(fname))
           {
-            log_event("INFO: ",
+            core_log_event("INFO: ",
               format(Sys.time(), "%a %b %d %X %Y"),
               " Starting to read pivot:",
               fname,
@@ -118,7 +118,7 @@ diagnostic_performance <-
             tempDataFrame <- t(tempDataFrame)
             tempDataFrame <- as.data.frame(tempDataFrame)
 
-            log_event(
+            core_log_event(
               "INFO: ",
               format(Sys.time(), "%a %b %d %X %Y"),
               " Read pivot:",
@@ -183,7 +183,7 @@ diagnostic_performance <-
               results_temp <- foreach::foreach(c  =  2:ncol(tempDataFrameComb), .combine  =  rbind, .export  =  var_to_export) %dorng%
               {
                 # AI-056: workers must NOT saveRDS on every iteration.
-                update_session_info(ssEnv, save_to_disk = FALSE)
+                core_update_session_info(ssEnv, save_to_disk = FALSE)
                 area_of_test <- names(tempDataFrameComb)[c]
                 if(ssEnv$showprogress)
                 {
@@ -273,7 +273,7 @@ diagnostic_performance <-
               }
 
               # AI-056: post-foreach end-of-batch snapshot (matches AI-041 pattern).
-              update_session_info(ssEnv, save_to_disk = TRUE)
+              core_update_session_info(ssEnv, save_to_disk = TRUE)
 
               results_temp <- as.data.frame(results_temp)
               colnames(results_temp) <- result_colnames
@@ -326,5 +326,5 @@ diagnostic_performance <-
         file.remove(fileNameResultsTemp)
 
     }
-    close_env()
+    core_close_env()
   }

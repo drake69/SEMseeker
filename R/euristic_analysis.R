@@ -3,7 +3,7 @@ euristic_analysis_phenolizer <- function(result_folder, rule, cutoff)
 
   # cutoff mean
   # cases mutated control not mutated
-  ssEnv <- init_env(result_folder)
+  ssEnv <- core_init_env(result_folder)
 
   geneAnnotatedFile <- utils::read.csv2(file.path(ssEnv$result_folder_data , "GENE_ANNOTATED.csv"))
   # geneAnnotatedFile <-subset(geneAnnotatedFile,geneAnnotatedFile$POPULATION != "Reference")

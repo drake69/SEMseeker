@@ -28,7 +28,7 @@
 #'   through `io_normalize_signal_input()`.
 #' @param tech Character scalar. One of `"K27"`, `"K450"`, `"K850"`,
 #'   `"WGBS"`, `"LONGREAD"`. If `NULL` (default) the function calls
-#'   `get_meth_tech()` to detect it.
+#'   `core_get_meth_tech()` to detect it.
 #' @param sex_chromosome_remove Logical. If `TRUE` (default), drop probes
 #'   on `CHR == "X"` or `CHR == "Y"` from both `probe_features` and
 #'   `signal_data`. Applied uniformly across all techs.
@@ -61,7 +61,7 @@ prepare_batch_signal <- function(signal_data,
 
   # ---- 1. Resolve tech --------------------------------------------------
   if (is.null(tech) || !nzchar(tech)) {
-    ssEnv <- get_meth_tech(signal_data)
+    ssEnv <- core_get_meth_tech(signal_data)
     tech  <- ssEnv$tech
   }
   if (is.null(tech) || !nzchar(tech))

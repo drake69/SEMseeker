@@ -44,13 +44,13 @@ test_that("util_split_and_clean respects a custom split delimiter", {
 })
 
 # ---------------------------------------------------------------------------
-# 2. validate_family_test — needs a live session for log_event()
+# 2. validate_family_test — needs a live session for core_log_event()
 # ---------------------------------------------------------------------------
 
 test_that("validate_family_test accepts standard parametric families", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   expect_true(SEMseeker:::validate_family_test("gaussian"))
@@ -62,14 +62,14 @@ test_that("validate_family_test accepts standard parametric families", {
   expect_true(SEMseeker:::validate_family_test("spearman"))
   expect_true(SEMseeker:::validate_family_test("kendall"))
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("validate_family_test accepts parametric family variants", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   # quantreg family (grepl match)
@@ -81,21 +81,21 @@ test_that("validate_family_test accepts parametric family variants", {
   expect_true(SEMseeker:::validate_family_test("exp_1"))
   expect_true(SEMseeker:::validate_family_test("log_1"))
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
 test_that("validate_family_test rejects NULL, NA, and unknown strings", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
                        showprogress = showprogress, verbosity = verbosity)
 
   expect_false(SEMseeker:::validate_family_test(NULL))
   expect_false(SEMseeker:::validate_family_test(NA))
   expect_false(SEMseeker:::validate_family_test("not_a_valid_test"))
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })
 
@@ -183,7 +183,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
   )
 
   # ── Step 4: inference folder was created ─────────────────────────────────
-  # Compute path directly — avoids re-opening the env (init_env would mkdir again,
+  # Compute path directly — avoids re-opening the env (core_init_env would mkdir again,
   # and normalizePath differences can cause dir.exists() false negatives).
   inference_dir <- file.path(tempFolder, "Inference")
   testthat::expect_true(dir.exists(inference_dir))

@@ -15,17 +15,17 @@ util_test_match_order <- function(x, y) {
   if (all(x == y)) {
     return(TRUE)
   }
-  # log_event('Perfect match in same order')
+  # core_log_event('Perfect match in same order')
 
   if (!all(x == y) && all(sort(x) == sort(y))) {
     return(FALSE)
   }
-  # log_event('Perfect match in wrong order')
+  # core_log_event('Perfect match in wrong order')
 
   if (!all(x == y) && !all(sort(x) == sort(y))) {
     return(FALSE)
   }
-  # log_event('No match')
+  # core_log_event('No match')
 }
 
 
@@ -39,5 +39,5 @@ util_test_match_order_by_rownames <- function(x, y) {
     return(TRUE)
   }
   return(FALSE)
-  # log_event('No match')
+  # core_log_event('No match')
 }

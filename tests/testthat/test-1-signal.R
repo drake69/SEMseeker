@@ -2,7 +2,7 @@ test_that("signal",{
 
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, inpute="median")
 
   sample_detail <- mySampleSheet[1,]
 

@@ -1,6 +1,6 @@
 io_get_pivot_both <- function(marker)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   is_discrete <- unique(ssEnv$keys_markers_figures_default[ssEnv$keys_markers_figures_default$MARKER==marker,"DISCRETE"])
 
   # Migrated 2026-06-01 / 2026-06-03 to use the new io_read_pivot() dispatcher (AI-027).
@@ -32,7 +32,7 @@ io_get_pivot_both <- function(marker)
   pivot_both <- pivot_both$group_by("AREA", .maintain_order=FALSE)$sum()
 
   pivot_both$write_parquet(pivot_file_name_both)
-  # Sidecar JSON is materialised by ensure_sidecars() at pipeline end.
+  # Sidecar JSON is materialised by core_ensure_sidecars() at pipeline end.
 
   # pivot_both <- pivot_both$group_by("AREA", maintain_order=FALSE)$agg(
   #   pl$all()$exclude("AREA")$sum()

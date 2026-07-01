@@ -3,7 +3,7 @@
 #' Superseded by \code{\link{deltaX_get}} (polars-native, ~14x faster on
 #' ewas_data_hub). Kept for reference and possible A/B testing — call sites
 #' have been migrated to the new \code{deltaX_get()} (semseeker_core,
-#' recover). This legacy function still writes per-sample bedgraph dumps
+#' core_recover). This legacy function still writes per-sample bedgraph dumps
 #' which the new path avoids.
 #'
 #' @return Invisible \code{NULL}. Side effect: writes derived pivot parquets
@@ -15,7 +15,7 @@
 #' @noRd
 deltaX_get_legacy <- function()
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   sample_sheet <- study_summary_get()
   keys <- ssEnv$keys_markers_figures
   # remove figure colunn
@@ -34,7 +34,7 @@ deltaX_get_legacy <- function()
   variables_to_export <- c("ssEnv", "io_dir_check_and_create", "subarea",
     "progress_bar","progression_index", "progression", "progressor_uuid",
     "owner_session_uuid", "trace","anno_probe_features_get", "localKeys",
-    "io_file_path_build","%>%","get_session_info","log_event")
+    "io_file_path_build","%>%","core_get_session_info","core_log_event")
   sample_sheet_res <- data.frame()
   keys <- subset(keys,!is.na(SOURCE))
   keys <- subset(keys,!is.na(Q))
@@ -58,7 +58,7 @@ deltaX_get_legacy <- function()
 
     pivot_file_nameparquet <- io_pivot_file_name_parquet(source_marker,"HYPER",area_position,subarea_position)
     if (!file.exists(pivot_file_nameparquet)) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
         " [deltaX_get] Source parquet not found, skipping marker=", marker,
         " source=", source_marker, " file=", pivot_file_nameparquet)
       next
@@ -75,7 +75,7 @@ deltaX_get_legacy <- function()
 
     pivot_file_nameparquet <- io_pivot_file_name_parquet(source_marker,"HYPO",area_position,subarea_position)
     if (!file.exists(pivot_file_nameparquet)) {
-      log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
         " [deltaX_get] Source parquet not found, skipping marker=", marker,
         " source=", source_marker, " figure=HYPO file=", pivot_file_nameparquet)
       next
@@ -119,7 +119,7 @@ deltaX_get_legacy <- function()
 save_figure <- function(colname_pivot,dim_pivot,vector_figure,positions,sample_sheet,area, subarea,marker,figure)
 {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   vector_figure <- matrix(vector_figure, nrow=dim_pivot[1], ncol=dim_pivot[2])
   vector_figure <- as.data.frame(vector_figure)
   colnames(vector_figure) <- colname_pivot

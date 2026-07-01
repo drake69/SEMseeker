@@ -1,6 +1,6 @@
 enrich_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, column_sorting="SS_RANK")
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   column_of_id <- rules["column_of_id"]
   column_of_adj_pvalue <- rules["column_of_adj_pvalue"]
@@ -199,7 +199,7 @@ enrich_lollipop_plot <- function(data, rules, file_prfx,path, disease,  top=50, 
     #     plot.title = element_text(size = 14, face = 'bold')
     #   )
 
-    fname <- name_cleaning(paste(file_prfx,"_lollipop_plot_",c,"_",rules["label"],ifelse(disease=="","", paste("_", disease, sep="")), sep="_"))
+    fname <- core_name_cleaning(paste(file_prfx,"_lollipop_plot_",c,"_",rules["label"],ifelse(disease=="","", paste("_", disease, sep="")), sep="_"))
     filename <- paste(path, "/",fname, ".",ssEnv$plot_format,sep = "")
     ggplot2::ggsave(filename,  width = 16, height = 9, dpi = as.numeric(ssEnv$plot_resolution_ppi))
   }

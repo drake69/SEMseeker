@@ -7,7 +7,7 @@ io_convertTextToNumeric <- function(text) {
   decimal_separator <- paste("[",locale_settings["decimal_point"],"]", sep="")
 
   # Example usage:
-  # log_event(paste("Decimal separator:", decimal_separator))
+  # core_log_event(paste("Decimal separator:", decimal_separator))
 
   if(length(gregexpr("\\.", text)[[1]])>1 | length(gregexpr("\\,", text)[[1]])>1)
   {

@@ -2,7 +2,7 @@
 sample_group_check <- function(sample_sheet, signal_data)
 {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # count rows of sample sheet and column of methylation
   # n_sample <- nrow(sample_sheet)
@@ -13,7 +13,7 @@ sample_group_check <- function(sample_sheet, signal_data)
   # check Sample_Group==Case has different Sample_ID of  Sample_Group==Reference
 
   sample_sheet <- as.data.frame(sample_sheet)
-  sample_sheet <- sample_sheet[,!(colnames(sample_sheet) %in% name_cleaning(c("Probes_Count", ssEnv$keys$pasted)))]
+  sample_sheet <- sample_sheet[,!(colnames(sample_sheet) %in% core_name_cleaning(c("Probes_Count", ssEnv$keys$pasted)))]
 
   result <- NULL
 

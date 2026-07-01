@@ -26,12 +26,12 @@ association_model_limma <- function(family_test, tempDataFrame, sig.formula,
 
   # Note: unlike association_model_polynomial() this function does not
   # need ssEnv — there's no plotting branch yet and no folder lookup.
-  # Adding get_session_info() here breaks unit tests that call the
+  # Adding core_get_session_info() here breaks unit tests that call the
   # model in isolation without a materialised session.
 
   limma_params <- unlist(strsplit(as.character(family_test), "_"))
   if (length(limma_params) < 2 || length(limma_params) > 3) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
               " family_test='", family_test,
               "' is malformed. Use limma_<degree> or limma_<degree>_<partition>,",
               " e.g. limma_2 or limma_2_1.")
@@ -40,7 +40,7 @@ association_model_limma <- function(family_test, tempDataFrame, sig.formula,
 
   degree <- suppressWarnings(as.numeric(limma_params[2]))
   if (is.na(degree) || degree < 1 || degree != as.integer(degree)) {
-    log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
               " family_test='", family_test,
               "': degree must be a positive integer.")
     return(data.frame())
@@ -102,17 +102,17 @@ association_model_limma <- function(family_test, tempDataFrame, sig.formula,
   coef_names <- colnames(fit$coefficients)
   for (i in seq_along(coef_names)) {
     row_name <- coef_names[i]
-    pval_name <- name_cleaning(paste0(row_name, "_pvalue"))
-    pval_name <- name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", pval_name))
-    pval_name <- name_cleaning(gsub("_RAW_EQ_TRUE", "", pval_name))
-    pval_name <- name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, pval_name))
+    pval_name <- core_name_cleaning(paste0(row_name, "_pvalue"))
+    pval_name <- core_name_cleaning(gsub("_STATS_POLY_EVAL_PARSE_TEXT_EQ", "", pval_name))
+    pval_name <- core_name_cleaning(gsub("_RAW_EQ_TRUE", "", pval_name))
+    pval_name <- core_name_cleaning(gsub("INDEPENDENT_VARIABLE", independent_variable, pval_name))
     p_value <- data.frame(p_value = fit$p.value[1L, i])
     colnames(p_value) <- pval_name
     res <- cbind(res, p_value)
 
-    estimate_name <- name_cleaning(paste0(row_name, "_estimate"))
+    estimate_name <- core_name_cleaning(paste0(row_name, "_estimate"))
     estimate <- data.frame(estimate = fit$coefficients[1L, i])
-    colnames(estimate) <- name_cleaning(estimate_name)
+    colnames(estimate) <- core_name_cleaning(estimate_name)
     res <- cbind(res, estimate)
   }
 

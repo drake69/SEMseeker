@@ -1,4 +1,4 @@
-# AI-060: BLAS detection + one-line WARNING at init_env() time.
+# AI-060: BLAS detection + one-line WARNING at core_init_env() time.
 #
 # R ships with the single-thread reference BLAS by default. AI-040
 # limma/voom families spend most of their wall-clock in BLAS calls
@@ -12,7 +12,7 @@
 # mutation. The fix command is printed in the warning itself,
 # OS-specific.
 
-.blas_info <- function() {
+.core_blas_info <- function() {
   blas_path <- tryCatch(unname(extSoftVersion()["BLAS"]),
                          error = function(e) "")
   if (!is.character(blas_path) || length(blas_path) == 0L) blas_path <- ""
@@ -35,8 +35,8 @@
        is_reference   = is_reference)
 }
 
-.warn_blas_single_thread <- function() {
-  info <- .blas_info()
+.core_warn_blas_single_thread <- function() {
+  info <- .core_blas_info()
   if (info$multi_threaded) return(invisible(info))
 
   sysname <- Sys.info()[["sysname"]]
@@ -55,7 +55,7 @@
       "Prebuilt DLLs: https://github.com/xianyi/OpenBLAS/wiki"),
     paste0("Consult your R/BLAS docs for ", sysname, ".")
   )
-  log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
             " BLAS is ", info$flavor, " (", info$path,
             "). limma/voom will run single-thread (~5-10x slower than",
             " multi-threaded BLAS). One-time fix: ", fix_cmd)

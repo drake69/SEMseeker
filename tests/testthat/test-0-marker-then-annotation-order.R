@@ -50,7 +50,7 @@
 }
 
 test_that("deltaX_get() precedes anno_annotate_position_pivots() in every caller", {
-  callers <- c("semseeker_core", "recover", "association_analysis")
+  callers <- c("semseeker_core", "core_recover", "association_analysis")
 
   for (fun_name in callers) {
     fn <- tryCatch(getFromNamespace(fun_name, "SEMseeker"),

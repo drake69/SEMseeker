@@ -20,20 +20,20 @@
 #'   \code{cg00000029}) unless a \code{PROBE} column is present.
 #'
 #' @return The updated session environment (\code{ssEnv}), invisibly.  The
-#'   detected technology is accessible via \code{get_session_info()$tech}.
+#'   detected technology is accessible via \code{core_get_session_info()$tech}.
 #'
-get_meth_tech <- function(signal_data) {
+core_get_meth_tech <- function(signal_data) {
 
  
-  ssEnv    <- get_session_info()
+  ssEnv    <- core_get_session_info()
   n_probes <- nrow(signal_data)
 
-  # If technology was explicitly declared by the user in init_env(), respect it.
+  # If technology was explicitly declared by the user in core_init_env(), respect it.
   # This is required for LONGREAD (indistinguishable from WGBS by probe-ID pattern)
   # and useful when the user wants to override heuristics.
   .declared_techs <- c("K850", "K450", "K27", "WGBS", "LONGREAD")
   if (!is.null(ssEnv$tech) && ssEnv$tech %in% .declared_techs) {
-    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
               "technology pre-declared as '", ssEnv$tech,
               "'; skipping auto-detection.")
     # Still detect beta vs M-values
@@ -42,22 +42,22 @@ get_meth_tech <- function(signal_data) {
     max_data   <- max(abs(c(max(signal_cols, na.rm = TRUE),min(signal_cols, na.rm = TRUE))))
     ssEnv$beta <- max_data <= 1
     ssEnv$probes_count <- n_probes
-    update_session_info(ssEnv)
+    core_update_session_info(ssEnv)
     return(ssEnv)
   }
 
   # Informational row-count hints
   if (n_probes == 485512)
-    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
               "probe count matches 450k dataset.")
   if (n_probes == 27578)
-    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
               "probe count matches 27k dataset.")
   if (n_probes == 866562)
-    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
               "probe count matches EPIC 850k dataset.")
   if (n_probes > 866562)
-    log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
+    core_log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"),
               "probe count exceeds EPIC 850k — treating as WGBS.")
 
   # Resolve probe identifiers
@@ -102,11 +102,11 @@ get_meth_tech <- function(signal_data) {
   if (tech == "") {
     msg <- paste("ERROR:", format(Sys.time(), "%a %b %d %X %Y"),
                  "could not determine array technology.")
-    log_event(msg)
+    core_log_event(msg)
     stop(msg)
   }
 
-  log_event(msg)
+  core_log_event(msg)
   ssEnv$tech <- tech
 
   # ---- Detect beta vs M-values ----
@@ -120,13 +120,13 @@ get_meth_tech <- function(signal_data) {
                           min(signal_cols, na.rm = TRUE))))
   ssEnv$beta <- max_data <= 1
 
-  log_event(if (ssEnv$beta)
+  core_log_event(if (ssEnv$beta)
     paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "values are beta (0-1).")
   else
     paste("INFO:", format(Sys.time(), "%a %b %d %X %Y"), "values appear to be M-values."))
 
   ssEnv$probes_count <- n_probes
-  update_session_info(ssEnv)
-  log_event("JOURNAL: array technology set to:", ssEnv$tech)
+  core_update_session_info(ssEnv)
+  core_log_event("JOURNAL: array technology set to:", ssEnv$tech)
   return(ssEnv)
 }

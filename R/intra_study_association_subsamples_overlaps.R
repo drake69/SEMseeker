@@ -5,25 +5,25 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
   old_label = NULL, new_label = NULL, run_prefix = "",
   result_folder, ...)
 {
-  pvalue_column <- name_cleaning(pvalue_column)
+  pvalue_column <- core_name_cleaning(pvalue_column)
   if (nrow(inference_details) ==0)
   {
-    log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," No inference details found!")
+    core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," No inference details found!")
     return(NULL)
   }
-  ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
 
   count_family <- length(unique(inference_details$family_test))
   if(count_family>1)
   {
-    log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," Inference details have different family tests !")
+    core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," Inference details have different family tests !")
     return(NULL)
   }
 
   family_test <- as.character(inference_details[1,"family_test"])
   independent_variable <- as.character(inference_details[1,"independent_variable"])
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the inference detail association analysys for sub samples overlaps.")
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the inference detail association analysys for sub samples overlaps.")
 
   color_palette <- ssEnv$color_palette
   localKeys <- unique(ssEnv$keys_areas_subareas_markers_figures[,c("MARKER","AREA")])
@@ -42,7 +42,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
         adjustment_method = adjustment_method, significance = NULL)
       if(nrow(temp_res) != 0)
       {
-        temp_res$SAMPLES_SQL_CONDITION <- name_cleaning(inference_details[i,"samples_sql_condition"])
+        temp_res$SAMPLES_SQL_CONDITION <- core_name_cleaning(inference_details[i,"samples_sql_condition"])
         aggregated_results <- plyr::rbind.fill(aggregated_results, temp_res)
       }
     }
@@ -53,7 +53,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
 
   aggregated_results <- filter_sql(inference_details$association_results_sql_condition, aggregated_results)
 
-  log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y")," inference files aggregated!")
+  core_log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y")," inference files aggregated!")
 
   # create a file with max of pvalue column for the inference detail and mean of statistic parameter
   if(nrow(aggregated_results)>0)
@@ -99,7 +99,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
       # rename pvalue_column to the original name
       colnames(tt)[colnames(tt) == "alpha"] <- pvalue_column
 
-      dest_folder <- io_dir_check_and_create(ssEnv$result_folderInference,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), name_cleaning(paste(family_test, pvalue_column, run_prefix))))
+      dest_folder <- io_dir_check_and_create(ssEnv$result_folderInference,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",core_name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), core_name_cleaning(paste(family_test, pvalue_column, run_prefix))))
       inference_detail <- inference_details[1,]
       inference_detail$samples_sql_condition <- ""
       filename <- io_inference_file_name(inference_detail, marker, dest_folder ,prefix="" )
@@ -122,7 +122,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
           adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
           adjustment_method = adjustment_method, significance = signif)
         if(nrow(temp_res) != 0)
-          temp_res$SAMPLES_SQL_CONDITION <- name_cleaning(inference_details[i,"samples_sql_condition"])
+          temp_res$SAMPLES_SQL_CONDITION <- core_name_cleaning(inference_details[i,"samples_sql_condition"])
         aggregated_results <- plyr::rbind.fill(aggregated_results, temp_res)
       }
     }
@@ -177,7 +177,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
     filename <- io_inference_file_name(inference_detail, paste0(markers, collapse = "_") ,dest_folder,file_extension = "csv",
       suffix = "AGGREGATED", prefix = ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"))
     write.csv2(aggregated_results_table, filename, row.names = FALSE)
-    log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  aggregated files saved!")
+    core_log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  aggregated files saved!")
     # for( j in 2:length(studies_to_comb))
     {
       # studies_comb <- combinat::combn(studies_to_comb, j)
@@ -207,26 +207,26 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
             next
           # replace samples_sql_condition with alternative names
           area_set$SAMPLES_SQL_CONDITION <- as.character(area_set$SAMPLES_SQL_CONDITION)
-          area_set$SAMPLES_SQL_CONDITION <- name_cleaning(area_set$SAMPLES_SQL_CONDITION)
+          area_set$SAMPLES_SQL_CONDITION <- core_name_cleaning(area_set$SAMPLES_SQL_CONDITION)
           inference_details$samples_sql_condition <- as.character(inference_details$samples_sql_condition)
           area_set$SAMPLES_SQL_CONDITION <- as.character(area_set$SAMPLES_SQL_CONDITION)
           for (j in seq_along(new_label))
           {
-            area_set[name_cleaning(area_set$SAMPLES_SQL_CONDITION)==name_cleaning(old_label[j]),"SAMPLES_SQL_CONDITION"] <- name_cleaning(new_label[j])
-            inference_details[name_cleaning(inference_details$samples_sql_condition)==name_cleaning(old_label[j]),"samples_sql_condition"] <- name_cleaning(new_label[j])
+            area_set[core_name_cleaning(area_set$SAMPLES_SQL_CONDITION)==core_name_cleaning(old_label[j]),"SAMPLES_SQL_CONDITION"] <- core_name_cleaning(new_label[j])
+            inference_details[core_name_cleaning(inference_details$samples_sql_condition)==core_name_cleaning(old_label[j]),"samples_sql_condition"] <- core_name_cleaning(new_label[j])
           }
           # table(is.na(results_inference_comb))
           area_set <- na.omit(area_set)
           SPLIT <- split(area_set$AREA_OF_TEST, area_set$SAMPLES_SQL_CONDITION)
 
-          categories <- name_cleaning(unique(inference_details$samples_sql_condition))
+          categories <- core_name_cleaning(unique(inference_details$samples_sql_condition))
           # put ALL where categories==""
           categories <- ifelse(categories == "", "ALL", categories)
           if(length(categories)<2)
             next
           # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
           categories <- util_pretty_label(categories)
-          dest_folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), name_cleaning(paste(family_test, pvalue_column, run_prefix))))
+          dest_folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",core_name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), core_name_cleaning(paste(family_test, pvalue_column, run_prefix))))
           filename <-
             paste(
               dest_folder,  "/",
@@ -240,13 +240,13 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
               "_",
               independent_variable,
               "_",
-              name_cleaning(pvalue_column),
+              core_name_cleaning(pvalue_column),
               "_",
               ifelse(signif,"SIGNIFICANT","NOT_SIGNIFICANT"),
               "_",
               alpha,
               "_",
-              name_cleaning(family_test),
+              core_name_cleaning(family_test),
               "_UPSET_PLOT.",
               ssEnv$plot_format,
               sep = ""
@@ -349,7 +349,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
           #   )
           # )
 
-          log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y"),"  venn diagram completed !")
+          core_log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y"),"  venn diagram completed !")
 
           overlaps <- Reduce(intersect, SPLIT)
           if(length(overlaps)>0)
@@ -362,7 +362,7 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
       }
     }
 
-    log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  job completed !")
+    core_log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  job completed !")
     # unlink(dest_folder, recursive = TRUE)
     # remove all files ending with .log
     # files <- list.files(ssEnv$result_folderInference, pattern = ".log")
@@ -372,5 +372,5 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
     #   file.remove(paste(ssEnv$result_folderInference, "/", file, sep = ""))
     # }
   }
-  close_env()
+  core_close_env()
 }

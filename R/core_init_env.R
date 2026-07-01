@@ -1,9 +1,9 @@
 # ---------------------------------------------------------------------------
-# Module-private helpers and tables used by init_env()
+# Module-private helpers and tables used by core_init_env()
 #
 # Refactor history:
 # - 2026-05-31 phase 1: collapsed 5 repeated patterns (defaults table,
-#   folders table, .log_info, Filter, .pop_arg). 223 -> 159 LOC.
+#   folders table, .core_log_info, Filter, .core_pop_arg). 223 -> 159 LOC.
 # - 2026-05-31 phase 2: extracted 7 setup phases as .init_env_*() helpers.
 #   159 -> ~40 LOC orchestrator; every helper is under the 50-LOC threshold.
 #
@@ -12,7 +12,7 @@
 # pass without modification.
 # ---------------------------------------------------------------------------
 
-# Per-option defaults applied by .apply_defaults().
+# Per-option defaults applied by .core_apply_defaults().
 .SS_DEFAULTS <- list(
   verbosity              = list(value = 1),
   q_b_param              = list(value = data.frame("DELTAP_B"=4,"DELTARP_B"=4,"DELTAQ_Q"=4,"DELTARQ_Q"=4)),
@@ -35,7 +35,7 @@
   showprogress           = list(value = FALSE),
   openai_api_key         = list(value = ""),
   multiple_test_adj      = list(value = "q", choices = c("BY","fdr","BH","bonferroni","q")),
-  bulk_population        = list(value = TRUE)    # AI-042: vectorized population is the default (no per-sample bed dump). Set FALSE only to recover the legacy per-sample loop.
+  bulk_population        = list(value = TRUE)    # AI-042: vectorized population is the default (no per-sample bed dump). Set FALSE only to core_recover the legacy per-sample loop.
 )
 
 .SS_FOLDERS <- c(
@@ -54,28 +54,28 @@
                    "analyze_single_sample_both", "anno_sort_by_chr_and_start",
                    "util_test_match_order", "lesions_get", "mutations_get")
 
-.apply_defaults <- function(arguments, defaults) {
+.core_apply_defaults <- function(arguments, defaults) {
   for (key in names(defaults)) {
     d <- defaults[[key]]
     if (is.null(d$choices))
-      arguments <- set_env_variable(arguments, key, d$value)
+      arguments <- core_set_env_variable(arguments, key, d$value)
     else
-      arguments <- set_env_variable(arguments, key, d$value, d$choices)
+      arguments <- core_set_env_variable(arguments, key, d$value, d$choices)
   }
   arguments
 }
 
-.log_info <- function(...) {
-  log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"), ...)
+.core_log_info <- function(...) {
+  core_log_event("INFO:", format(Sys.time(), "%a %b %d %X %Y"), ...)
 }
 
-.pop_arg <- function(args, name, default) {
+.core_pop_arg <- function(args, name, default) {
   val <- if (!is.null(args[[name]])) args[[name]] else default
   args[[name]] <- NULL
   list(value = val, args = args)
 }
 
-.init_env_silence_warnings <- function() {
+.core_init_env_silence_warnings <- function() {
   PKGs <- c("future","doRNG","doParallel","progressr","data.table","ggplot2","dplyr",
             "readr","readxl","stringr","tidyr","tibble","purrr","ggpubr","ggrepel","ggsci",
             "foreach","VennDiagram")
@@ -83,7 +83,7 @@
   invisible(lapply(PKGs, suppressPackageStartupMessages))
 }
 
-.init_env_clean_args <- function(arguments) {
+.core_init_env_clean_args <- function(arguments) {
   if (length(arguments) > 0) {
     arguments <- lapply(arguments, function(x) if (is.character(x)) gsub(" ", "", x) else x)
     arguments <- lapply(arguments, function(x) if (is.character(x)) x[x != ""] else x)
@@ -94,36 +94,36 @@
   arguments
 }
 
-.init_env_bootstrap_session <- function(result_folder, start_fresh) {
+.core_init_env_bootstrap_session <- function(result_folder, start_fresh) {
   if (start_fresh) {
     unlink(result_folder, recursive = TRUE, force = TRUE)
     ssEnv <- list()
   } else if (dir.exists(result_folder)) {
-    ssEnv <- get_session_info(result_folder)
+    ssEnv <- core_get_session_info(result_folder)
   } else {
     ssEnv <- list()
   }
   ssEnv$session_id <- if (is.null(ssEnv$session_id)) 0 else ssEnv$session_id + 1
   ssEnv$session_folder <- io_dir_check_and_create(result_folder, c("Log"))
   ssEnv$seed <- 7658776
-  update_session_info(ssEnv)
+  core_update_session_info(ssEnv)
   ssEnv
 }
 
-.init_env_apply_computed_defaults <- function(arguments) {
+.core_init_env_apply_computed_defaults <- function(arguments) {
   original_colors <- c('#b9e192', '#b3c7f7', '#f8b8d0','#f194b8', '#ffefb6', '#cfebb6','#b9ef92')
   original_colors <- rep(original_colors, 2)
-  arguments <- set_env_variable(arguments, "color_palette", original_colors)
+  arguments <- core_set_env_variable(arguments, "color_palette", original_colors)
   darker_colors <- grDevices::adjustcolor(original_colors, alpha.f = 0.5)
   darker_colors <- c("blue","red","purple","green","yellow","orange","brown")
-  arguments <- set_env_variable(arguments, "color_palette_darker", darker_colors)
-  arguments <- set_env_variable(arguments, "cluster_workers", NULL)
+  arguments <- core_set_env_variable(arguments, "color_palette_darker", darker_colors)
+  arguments <- core_set_env_variable(arguments, "cluster_workers", NULL)
   model_metrics <- toupper(as.vector(SEMseeker::metrics_properties$Metric))
-  arguments <- set_env_variable(arguments, "model_metrics", model_metrics)
+  arguments <- core_set_env_variable(arguments, "model_metrics", model_metrics)
   arguments
 }
 
-.init_env_setup_paths <- function(ssEnv, result_folder) {
+.core_init_env_setup_paths <- function(ssEnv, result_folder) {
   tmp <- tempdir()
   ssEnv$temp_folder   <- paste(tmp, "/semseeker/",
                                stringi::stri_rand_strings(1, 7, pattern = "[A-Za-z0-9]"),
@@ -134,7 +134,7 @@
   ssEnv
 }
 
-.init_env_setup_log_sink <- function(session_folder) {
+.core_init_env_setup_log_sink <- function(session_folder) {
   if (identical(Sys.getenv("SEMSEEKER_CHILD"), "1")) return(invisible())
   if (sink.number() != 0) sink(NULL)
   file_name <- paste(as.character(Sys.info()["nodename"]), "_session_output.log", sep = "")
@@ -142,7 +142,7 @@
   invisible()
 }
 
-.init_env_setup_progress <- function(showprogress) {
+.core_init_env_setup_progress <- function(showprogress) {
   if (!showprogress) return(invisible())
   if (exists("cli", mode = "function", inherits = TRUE)) return(invisible())
   if (testthat::is_testing()) return(invisible())
@@ -154,7 +154,7 @@
   invisible()
 }
 
-.init_env_validate_args <- function(arguments) {
+.core_init_env_validate_args <- function(arguments) {
   arguments <- Filter(function(x) !is.null(x) && !identical(x, character(0)), arguments)
   if (length(arguments) == 0) {
     return(invisible())
@@ -183,7 +183,7 @@
     parent <- tryCatch(sys.call(-depth), error = function(e) NULL)
     if (is.null(parent)) break
     fn <- tryCatch(deparse(parent[[1]])[1], error = function(e) "")
-    if (!grepl("^(\\.init_env|init_env|eval|tryCatch|do\\.call|withCallingHandlers|sys\\.call|local|source|withVisible)", fn)) {
+    if (!grepl("^(\\.init_env|core_init_env|eval|tryCatch|do\\.call|withCallingHandlers|sys\\.call|local|source|withVisible)", fn)) {
       caller <- fn
       break
     }
@@ -197,31 +197,31 @@
            "newer SEMseeker version."),
     caller, paste(pairs, collapse = "\n  ")
   )
-  .log_info(msg)
+  .core_log_info(msg)
   stop(msg, call. = FALSE)
 }
 
-.init_env_handle_dry_run <- function(ssEnv) {
+.core_init_env_handle_dry_run <- function(ssEnv) {
   knitr::kable(as.data.frame(ssEnv$keys_areas_subareas_markers_figures),
                format = "pipe", caption = "Selection:")
   message(ssEnv$keys_areas_subareas_markers_figures)
   stop("INFO: Dry run is requested. Exiting now.")
 }
 
-.init_env_check_kwargs <- function(args) {
+.core_init_env_check_kwargs <- function(args) {
   tryCatch(
     { test_it <- args },
     error = function(cond) {
-      log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
+      core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " Function's arguments must be passed explicitily !")
-      log_event(cond)
+      core_log_event(cond)
       stop("Function's arguments must be passed explicitily !")
     }
   )
 }
 
-.init_env_log_focus <- function(ssEnv) {
-  .log_info(" I will focus on:",
+.core_init_env_log_focus <- function(ssEnv) {
+  .core_log_info(" I will focus on:",
             paste(unique(ssEnv$keys_markers_figures$MARKER), collapse = " ", sep = " "),
             " due to ",
             paste(unique(ssEnv$keys_markers_figures$FIGURE), collapse = " ", sep = " "),
@@ -249,56 +249,56 @@
 #'       \code{"K450"}, \code{"K27"}, \code{"WGBS"}, \code{"LONGREAD"}.
 #'       Required for long-read data because LONGREAD cannot be distinguished from
 #'       WGBS by probe-ID pattern alone.  Example:
-#'       \code{init_env(folder, tech = "LONGREAD", genome_build = "hg38")}}
+#'       \code{core_init_env(folder, tech = "LONGREAD", genome_build = "hg38")}}
 #'   }
 #'
 #' @return the working ssEnvonment
-init_env <- function(result_folder, maxResources = 90, ...) {
+core_init_env <- function(result_folder, maxResources = 90, ...) {
  
   gc()
-  .init_env_check_kwargs(list(...))
+  .core_init_env_check_kwargs(list(...))
   withr::local_options(list(digits = 22))
-  .init_env_silence_warnings()
+  .core_init_env_silence_warnings()
 
-  arguments <- .init_env_clean_args(list(...))
-  popped       <- .pop_arg(arguments, "start_fresh", FALSE)
+  arguments <- .core_init_env_clean_args(list(...))
+  popped       <- .core_pop_arg(arguments, "start_fresh", FALSE)
   start_fresh  <- popped$value
   arguments    <- popped$args
-  ssEnv        <- .init_env_bootstrap_session(result_folder, start_fresh)
+  ssEnv        <- .core_init_env_bootstrap_session(result_folder, start_fresh)
 
-  arguments <- .apply_defaults(arguments, .SS_DEFAULTS)
+  arguments <- .core_apply_defaults(arguments, .SS_DEFAULTS)
   if (!is.null(ssEnv$openai_api_key) && nzchar(ssEnv$openai_api_key))
     message("SEMseeker: set OPENAI_API_KEY in your environment to enable OpenAI features.")
-  arguments <- .init_env_apply_computed_defaults(arguments)
+  arguments <- .core_init_env_apply_computed_defaults(arguments)
 
-  ssEnv     <- get_session_info()
-  popped    <- .pop_arg(arguments, "dry_run", FALSE)
+  ssEnv     <- core_get_session_info()
+  popped    <- .core_pop_arg(arguments, "dry_run", FALSE)
   dry_run   <- popped$value
   arguments <- popped$args
   if (dry_run) ssEnv$verbosity <- 4
 
-  .log_info(" data will saved in this folder:", result_folder)
-  ssEnv <- .init_env_setup_paths(ssEnv, result_folder)
-  .init_env_setup_log_sink(ssEnv$session_folder)
+  .core_log_info(" data will saved in this folder:", result_folder)
+  ssEnv <- .core_init_env_setup_paths(ssEnv, result_folder)
+  .core_init_env_setup_log_sink(ssEnv$session_folder)
 
   arguments <- util_keys_create(ssEnv, arguments)
-  ssEnv     <- get_session_info()
+  ssEnv     <- core_get_session_info()
   ssEnv$functionToExport <- .SS_FN_EXPORT
-  .init_env_setup_progress(ssEnv$showprogress)
+  .core_init_env_setup_progress(ssEnv$showprogress)
 
-  arguments <- set_env_variable(arguments, "maxResources", maxResources)
-  arguments <- set_env_variable(arguments, "parallel_strategy", "sequential")
-  parallel_session()
-  ssEnv <- get_session_info()
+  arguments <- core_set_env_variable(arguments, "maxResources", maxResources)
+  arguments <- core_set_env_variable(arguments, "parallel_strategy", "sequential")
+  core_parallel_session()
+  ssEnv <- core_get_session_info()
 
-  .init_env_log_focus(ssEnv)
-  .init_env_validate_args(arguments)
+  .core_init_env_log_focus(ssEnv)
+  .core_init_env_validate_args(arguments)
   # AI-060: one-line WARNING when R is linked against a single-thread BLAS.
   # Hot for the AI-040 batch families (limma_/voom_) — solve()/crossprod()
   # inside lmFit scale ~linearly with cores on Accelerate/OpenBLAS/MKL.
-  .warn_blas_single_thread()
-  if (dry_run) .init_env_handle_dry_run(ssEnv)
+  .core_warn_blas_single_thread()
+  if (dry_run) .core_init_env_handle_dry_run(ssEnv)
 
-  update_session_info(ssEnv)
+  core_update_session_info(ssEnv)
   return(ssEnv)
 }

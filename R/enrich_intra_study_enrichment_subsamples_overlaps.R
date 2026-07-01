@@ -18,7 +18,7 @@
 #'   significance.
 #' @param significance Logical; keep only significant terms when `TRUE`.
 #' @param result_folder Path to the folder holding the study results.
-#' @param ... Additional arguments forwarded to [init_env()].
+#' @param ... Additional arguments forwarded to [core_init_env()].
 #' @return Invisibly `NULL`; stability tables and plots are written under
 #'   `result_folder`.
 #' @seealso [enrich_inter_study_enrichment_compare()]
@@ -35,27 +35,27 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
 {
 
   # join all samples_sql_condition
-  samples_sql_folder <- name_cleaning(paste0(unique(strsplit(paste0(name_cleaning(sort(inference_details$samples_sql_condition)), collapse = "_"),"_")[[1]]),collapse = "_"))
+  samples_sql_folder <- core_name_cleaning(paste0(unique(strsplit(paste0(core_name_cleaning(sort(inference_details$samples_sql_condition)), collapse = "_"),"_")[[1]]),collapse = "_"))
 
-  association_pvalue_column <- name_cleaning(association_pvalue_column)
+  association_pvalue_column <- core_name_cleaning(association_pvalue_column)
   if (nrow(inference_details) ==0)
   {
-    log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," No inference details found!")
+    core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," No inference details found!")
     return(NULL)
   }
-  ssEnv <- init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
+  ssEnv <- core_init_env( result_folder =  result_folder, start_fresh = FALSE, ...)
 
   count_family <- length(unique(inference_details$family_test))
   if(count_family>1)
   {
-    log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," Inference details have different family tests !")
+    core_log_event("ERROR: ",format(Sys.time(), "%a %b %d %X %Y")," Inference details have different family tests !")
     return(NULL)
   }
 
   family_test <- as.character(inference_details[1,"family_test"])
   independent_variable <- as.character(inference_details[1,"independent_variable"])
 
-  log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the pathway analysys for sub samples overlaps.")
+  core_log_event("BANNER: ", format(Sys.time(), "%a %b %d %X %Y"), " SEMseeker will perform the pathway analysys for sub samples overlaps.")
 
   color_palette <- ssEnv$color_palette
   localKeys <- unique(ssEnv$keys_for_pathway)
@@ -79,7 +79,7 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
     {
       for (z in seq_along(association_results_sql_conditions))
       {
-        association_results_sql_condition <- name_cleaning(association_results_sql_conditions[z])
+        association_results_sql_condition <- core_name_cleaning(association_results_sql_conditions[z])
         for (a in seq_len(nrow(localKeys)))
         {
           # for each SAMPLES_SQL_CONDITION in inference_details
@@ -87,7 +87,7 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
           {
             inference_detail <- inference_details[i,]
             enrich_phenotype_analysis_name <- enrich_phenotype_analysis_name(inference_detail, localKeys[a,],prefix ="", suffix= signal_suffixes[s] , association_pvalue_column, ssEnv$alpha, significance)
-            path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c(enrichment_package, name_cleaning(inference_detail$areas_sql_condition), name_cleaning(inference_detail$samples_sql_condition), name_cleaning(association_results_sql_condition)))
+            path <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c(enrichment_package, core_name_cleaning(inference_detail$areas_sql_condition), core_name_cleaning(inference_detail$samples_sql_condition), core_name_cleaning(association_results_sql_condition)))
             pathway_report_path <- io_file_path_build(path,enrich_phenotype_analysis_name,"csv")
             if(file.exists(pathway_report_path))
             {
@@ -101,19 +101,19 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
                 temp_res$FIGURE <- localKeys[a, "FIGURE"]
                 temp_res$AREA <- localKeys[a, "AREA"]
                 temp_res$SUBAREA <- localKeys[a, "SUBAREA"]
-                temp_res$SAMPLES_SQL_CONDITION <- name_cleaning(inference_details[i,"samples_sql_condition"])
-                temp_res$association_results_sql_condition <- name_cleaning(inference_details[i,"association_results_sql_condition"])
+                temp_res$SAMPLES_SQL_CONDITION <- core_name_cleaning(inference_details[i,"samples_sql_condition"])
+                temp_res$association_results_sql_condition <- core_name_cleaning(inference_details[i,"association_results_sql_condition"])
                 ff <- new_label_samples_sql_condition
                 gg <- old_label_samples_sql_condition
                 for (j in seq_along(ff))
                 {
-                  temp_res[name_cleaning(temp_res$SAMPLES_SQL_CONDITION)==name_cleaning(gg[j]),"SAMPLES_SQL_CONDITION"] <- name_cleaning(ff[j])
+                  temp_res[core_name_cleaning(temp_res$SAMPLES_SQL_CONDITION)==core_name_cleaning(gg[j]),"SAMPLES_SQL_CONDITION"] <- core_name_cleaning(ff[j])
                 }
                 ff <- new_label_association_results_sql_condition
                 gg <- old_label_association_results_sql_condition
                 for (j in seq_along(ff))
                 {
-                  temp_res[name_cleaning(temp_res$association_results_sql_condition)==name_cleaning(gg[j]),"association_results_sql_condition"] <- name_cleaning(ff[j])
+                  temp_res[core_name_cleaning(temp_res$association_results_sql_condition)==core_name_cleaning(gg[j]),"association_results_sql_condition"] <- core_name_cleaning(ff[j])
                 }
                 temp_res$SAMPLES_SQL_CONDITION[temp_res$SAMPLES_SQL_CONDITION == ""] <- "ALL"
                 temp_res$association_results_sql_condition[temp_res$association_results_sql_condition == ""] <- "ALL"
@@ -131,7 +131,7 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
         pathway_results$KEY_SELECTOR <- with(pathway_results,
           as.factor(paste0(SAMPLES_SQL_CONDITION,"_",association_results_sql_condition))
         )
-        log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y")," pathway files aggregated!")
+        core_log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y")," pathway files aggregated!")
 
         keys <- unique(pathway_results[, c("SUBAREA", "AREA", "MARKER", "FIGURE")])
         for (i in seq_len(nrow(keys)))
@@ -158,7 +158,7 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
             next
 
           dest_folder <- io_dir_check_and_create(ssEnv$result_folderChart,c("PATHWAYS_CROSS_SAMPLE_ANALYSIS",association_results_sql_condition,
-            name_cleaning(enrichment_package),name_cleaning(pathways_sql_selection),name_cleaning(samples_sql_folder)))
+            core_name_cleaning(enrichment_package),core_name_cleaning(pathways_sql_selection),core_name_cleaning(samples_sql_folder)))
           filename <-
             paste(
               dest_folder,  "/",
@@ -172,11 +172,11 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
               "_",
               independent_variable,
               "_",
-              name_cleaning(column_of_adj_pvalue),
+              core_name_cleaning(column_of_adj_pvalue),
               "_",
-              name_cleaning(ssEnv$alpha),
+              core_name_cleaning(ssEnv$alpha),
               "_",
-              name_cleaning(family_test),
+              core_name_cleaning(family_test),
               "_UPSET_PLOT.",
               ssEnv$plot_format,
               sep = ""
@@ -209,10 +209,10 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
           # Close the file device to save the plot
           grDevices::dev.off()
 
-          log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y"),"  venn diagram completed !")
+          core_log_event("DEBUG: ",format(Sys.time(), "%a %b %d %X %Y"),"  venn diagram completed !")
 
           dest_folder <- io_dir_check_and_create(ssEnv$result_folderEnrichment,c("PATHWAYS_CROSS_SAMPLE_ANALYSIS",association_results_sql_condition,
-            name_cleaning(enrichment_package),name_cleaning(pathways_sql_selection),name_cleaning(samples_sql_folder)))
+            core_name_cleaning(enrichment_package),core_name_cleaning(pathways_sql_selection),core_name_cleaning(samples_sql_folder)))
           inference_detail$samples_sql_condition <- ""
           overlaps <- Reduce(intersect, SPLIT)
           if(length(overlaps)>0)
@@ -241,10 +241,10 @@ enrich_intra_study_enrichment_subsamples_overlaps <- function(inference_details,
             utils::write.csv2(pivot_table, filename)
           }
 
-          log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  job completed !")
+          core_log_event("INFO: ",format(Sys.time(), "%a %b %d %X %Y"),"  job completed !")
         }
       }
     }
   }
-  close_env()
+  core_close_env()
 }

@@ -3,11 +3,11 @@ test_that("annotations", {
   tempFolder <- tempFolders[1]
   # message(tempFolder)
   tempFolders <<- tempFolders[-1]
-  ssEnv <- SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy,
+  ssEnv <- SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy,
     bonferroni_threshold = bonferroni_threshold,
     inpute="median", start_fresh=TRUE)
 
-  tt <- SEMseeker:::get_meth_tech(signal_data)
+  tt <- SEMseeker:::core_get_meth_tech(signal_data)
 
   LESIONS_BP <- 2000L  # AI-092
   bonferroni_threshold <- 0.05
@@ -35,7 +35,7 @@ test_that("annotations", {
   SEMseeker:::anno_create_position_pivots(mySampleSheet[mySampleSheet$Sample_Group == "Control",],keys)
 
   # deltaX_get needs sample sheet CSV (normally written by analyze_batch)
-  ssEnv2 <- SEMseeker:::get_session_info()
+  ssEnv2 <- SEMseeker:::core_get_session_info()
   sample_sheet_csv <- SEMseeker:::io_file_path_build(ssEnv2$result_folderData, "1_sample_sheet_original", "csv", FALSE)
   utils::write.csv2(mySampleSheet, file=sample_sheet_csv)
 
@@ -102,6 +102,6 @@ test_that("annotations", {
     testthat::expect_true(all(as.data.frame(pivot) == as.data.frame(mutations_pivot)))
   }
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder, recursive = TRUE)
 })

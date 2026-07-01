@@ -30,7 +30,7 @@ compute_mean_delta_permutation_cpu <- function(sig.formula,df, shuffle = FALSE)
 
 compute_mean_delta_permutation_gpu_single <- function(sig.formula,df, n_permutations, shuffle=FALSE)
 {
-    ssEnv <- get_session_info()
+    ssEnv <- core_get_session_info()
 
 
     burden_var <- as.character(all.vars(sig.formula)[1])
@@ -50,10 +50,10 @@ compute_mean_delta_permutation_gpu_single <- function(sig.formula,df, n_permutat
     {
       independent_var_permutated <- ssEnv$independent_var_permutated
     }
-    # log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Permuted independent_var!")
+    # core_log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Permuted independent_var!")
 
     context <- OpenCL::oclContext(precision = "single", device="gpu")
-    # log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " OpenCL Context Created")
+    # core_log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " OpenCL Context Created")
 
     compute_permutation_diff_kernel_ok <- c("
       __kernel void compute_row_means_diff(
@@ -112,7 +112,7 @@ compute_mean_delta_permutation_gpu_single <- function(sig.formula,df, n_permutat
     # system.time(res <- ocl_run(compute_permutation_diff_kernel_obj_ok, n_permutations,burden_permutated_buf, phenotype,n_samples))
     output_diffs_buf <- OpenCL::as.clBuffer(as.single(rep(0,n_permutations)), context, mode = "single")
     res <- ocl_run(compute_permutation_diff_kernel_obj_ok, n_permutations,burden, independent_var_permutated,n_samples)
-    # log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Execution OPENCL done !")
+    # core_log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Execution OPENCL done !")
     # system.time(res_ok <- apply(burden_permutated, 1, function(x) mean(x[phenotype == 0]) - mean(x[phenotype == 1])))
     # all.equal(res, res_ok)
     #
@@ -121,7 +121,7 @@ compute_mean_delta_permutation_gpu_single <- function(sig.formula,df, n_permutat
 
 compute_mean_delta_permutation_gpu <- function(sig.formula,df, n_permutations, shuffle=FALSE)
 {
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   # burden_var <- as.character(all.vars(sig.formula)[1])
   independent_var <- as.character(all.vars(sig.formula)[2])
@@ -141,10 +141,10 @@ compute_mean_delta_permutation_gpu <- function(sig.formula,df, n_permutations, s
   {
     independent_var_permutated <- ssEnv$independent_var_permutated
   }
-  # log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Permuted independent_var!")
+  # core_log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Permuted independent_var!")
 
   context <- OpenCL::oclContext(precision = "single", device="gpu")
-  # log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " OpenCL Context Created")
+  # core_log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " OpenCL Context Created")
 
   compute_permutation_diff_kernel_obj <- OpenCL::oclSimpleKernel(context, "compute_row_means_diff", compute_permutation_diff_kernel, "single")
 
@@ -164,7 +164,7 @@ compute_mean_delta_permutation_gpu <- function(sig.formula,df, n_permutations, s
   # system.time(res <- ocl_run(compute_permutation_diff_kernel_obj_ok, n_permutations,burden_permutated_buf, phenotype,n_samples))
   output_diffs_buf <- OpenCL::as.clBuffer(as.single(rep(0,n_permutations)), context, mode = "single")
   res <- ocl_run(compute_permutation_diff_kernel_obj, n_permutations,burden, independent_var_permutated,n_samples)
-  # log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Execution OPENCL done !")
+  # core_log_event("DEBUG:", format(Sys.time(), "%a %b %d %X %Y"), " Execution OPENCL done !")
   # system.time(res_ok <- apply(burden_permutated, 1, function(x) mean(x[phenotype == 0]) - mean(x[phenotype == 1])))
   # all.equal(res, res_ok)
   #
@@ -191,7 +191,7 @@ mean_permutation <- function(family_test, sig.formula, tempDataFrame, independen
   marker <- as.character(key$MARKER)
   figure <- as.character(key$FIGURE)
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
   n_permutations <- NA
   n_permutations_test <- NA
   ci.lower <- NA

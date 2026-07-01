@@ -32,7 +32,7 @@ study on which the focused association analysis is performed.}
 \item{start_fresh}{logical. If \code{TRUE}, delete previous results before
 running (default \code{FALSE}).}
 
-\item{...}{Additional named arguments passed to \code{init_env()}.}
+\item{...}{Additional named arguments passed to \code{core_init_env()}.}
 }
 \value{
 Invisibly \code{NULL}. Results are written to the inference

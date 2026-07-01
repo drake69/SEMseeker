@@ -9,8 +9,8 @@
 #' @importFrom doRNG %dorng%
 analyze_single_sample <- function(values, thresholds, figure, sample_detail) {
 
-  ssEnv <- get_session_info()
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  "analyze_single_sample:", ssEnv$result_folderData)
+  ssEnv <- core_get_session_info()
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  "analyze_single_sample:", ssEnv$result_folderData)
 
   mutation_annotated_sorted <- mutations_get(values, figure,thresholds, sample_detail$Sample_ID)
   mutation_annotated_sorted_to_save <- subset(mutation_annotated_sorted, mutation_annotated_sorted$MUTATIONS == 1)[, c("CHR", "START", "END")]
@@ -18,7 +18,7 @@ analyze_single_sample <- function(values, thresholds, figure, sample_detail) {
     mutation_annotated_sorted_to_save$VALUE <- 1
 
   folder_to_save <- io_dir_check_and_create(ssEnv$result_folderData,c(as.character(sample_detail$Sample_Group),paste0("MUTATIONS","_", figure, sep = "")))
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  "analyze_single_sample:",folder_to_save)
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),  "analyze_single_sample:",folder_to_save)
   io_dump_sample_as_bed_file(
     data_to_dump = mutation_annotated_sorted_to_save,
     fileName = io_file_path_build(folder_to_save,c(sample_detail$Sample_ID,"MUTATIONS",figure),"bed", add_gz=TRUE)

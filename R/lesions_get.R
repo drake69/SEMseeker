@@ -1,6 +1,6 @@
 # AI-092: LESIONS clustering by GENOMIC distance (bp) rather than matrix
 # distance (probe count). The legacy sliding_window_size parameter is gone;
-# the only knob is now LESIONS_BP, registered in init_env() and exposed via
+# the only knob is now LESIONS_BP, registered in core_init_env() and exposed via
 # semseeker(LESIONS_BP = ...).
 #
 # Semantics of LESIONS_BP: maximum bp distance for two probes to be in the
@@ -14,7 +14,7 @@
 lesions_get <- function(grouping_column, mutation_annotated_sorted)
 {
 
-  ssEnv <- get_session_info()
+  ssEnv <- core_get_session_info()
 
   if( is.null(mutation_annotated_sorted))
     return (mutation_annotated_sorted)
@@ -122,7 +122,7 @@ lesions_get <- function(grouping_column, mutation_annotated_sorted)
   lesionWeighted <- anno_sort_by_chr_and_start(lesionWeighted)
   lesionWeighted <- subset(lesionWeighted, lesionWeighted$LESIONS == TRUE)[, c("CHR", "START", "END")]
 
-  log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Got lesions for sample !")
+  core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"), " Got lesions for sample !")
   return(lesionWeighted)
 
 }

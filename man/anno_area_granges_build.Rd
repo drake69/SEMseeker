@@ -11,7 +11,7 @@ anno_area_granges_build(area_subarea, genome_build = NULL)
 (e.g. \code{"GENE_BODY"}, \code{"ISLAND_N_SHORE"}, \code{"CHR_CYTOBAND"}).}
 
 \item{genome_build}{Character scalar: reference assembly.  Defaults to
-\code{ssEnv$genome_build} (set by \code{\link{init_env}}), or
+\code{ssEnv$genome_build} (set by \code{\link{core_init_env}}), or
 \code{"hg19"} if the session is not initialised.}
 }
 \value{

@@ -10,7 +10,7 @@ io_file_path_build(baseFolder, detailsFilename, extension, add_gz = FALSE)
 \item{baseFolder}{Directory the file lives in.}
 
 \item{detailsFilename}{Character vector concatenated with "_" and
-passed to [name_cleaning()] (uppercased + non-alnum → "_").}
+passed to [core_name_cleaning()] (uppercased + non-alnum → "_").}
 
 \item{extension}{File extension (no leading dot). Empty string skips.}
 
@@ -21,7 +21,7 @@ Full path as a character scalar.
 }
 \description{
 All SEMseeker output files have their filename UPPERCASED via
-[name_cleaning()] (which calls `toupper()`). This is intentional and
+[core_name_cleaning()] (which calls `toupper()`). This is intentional and
 load-bearing: it guarantees that semantic identifiers (AREA / MARKER /
 FIGURE / Sample_ID) collapse to a stable case regardless of how the
 caller spelled them, so pivot / per-sample-bed / summary files always
