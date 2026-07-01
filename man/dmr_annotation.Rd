@@ -15,7 +15,7 @@ A data frame with three columns:
 }
 }
 \usage{
-data(dmr_annotation)
+dmr_annotation
 }
 \description{
 Differentially methylated region (DMR) annotations for CpG probes on

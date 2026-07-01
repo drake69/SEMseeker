@@ -10,7 +10,7 @@ An \code{environment} containing named slots for session-level
   use \code{\link{init_env}} and \code{set_env_variable()} instead.
 }
 \usage{
-data(ssEnv)
+ssEnv
 }
 \description{
 Internal session environment object persisted between SEMseeker analysis

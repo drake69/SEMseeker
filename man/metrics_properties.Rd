@@ -11,7 +11,7 @@ A data frame with one row per metric and columns including
   (logical: whether the metric is affected by data transformation).
 }
 \usage{
-data(metrics_properties)
+metrics_properties
 }
 \description{
 Metadata table describing the statistical properties of each SEM metric.

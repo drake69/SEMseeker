@@ -96,6 +96,17 @@
   list(CHR_CYTOBAND = cytoband_vec)
 }
 
+#' Build the Illumina probe annotation table
+#'
+#' Internal helper. Assembles the per-probe annotation (genomic position,
+#' cytoband and DMR/area membership) for an Illumina methylation array
+#' platform, joining the bundled \code{\link{cytoband_hg19}} and
+#' \code{\link{dmr_annotation}} reference data.
+#'
+#' @param tech Illumina platform identifier (e.g. "EPIC", "450k", "27k").
+#' @param force Logical; rebuild even when a cached annotation is available.
+#' @return A data frame of per-probe annotation columns.
+#' @keywords internal
 probe_annotation_build <- function(tech, force = FALSE) {
 
   ssEnv <- get_session_info()
