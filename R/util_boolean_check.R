@@ -10,12 +10,12 @@
 #' @return A single logical value (\code{TRUE} or \code{FALSE}).
 #'
 #' @examples
-#' SEMseeker:::boolean_check("TRUE")   # TRUE
-#' SEMseeker:::boolean_check("false")  # FALSE
-#' SEMseeker:::boolean_check(1)        # TRUE
-#' SEMseeker:::boolean_check(NA)       # FALSE
+#' SEMseeker:::util_boolean_check("TRUE")   # TRUE
+#' SEMseeker:::util_boolean_check("false")  # FALSE
+#' SEMseeker:::util_boolean_check(1)        # TRUE
+#' SEMseeker:::util_boolean_check(NA)       # FALSE
 #'
-boolean_check <- function(x)
+util_boolean_check <- function(x)
 {
   if (is.na(x) || x=="" || is.null(x))
     return(FALSE)

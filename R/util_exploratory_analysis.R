@@ -27,7 +27,7 @@
 #' @examples
 #' result_dir <- tempdir()
 #' \dontrun{
-#' exploratory_analysis(
+#' util_exploratory_analysis(
 #'   categorical_variables = c("Sample_Group", "Sex"),
 #'   numerical_variables   = c("Age"),
 #'   sample_sheet          = sample_sheet,
@@ -36,7 +36,7 @@
 #' }
 #' @export
 #'
-exploratory_analysis <- function(categorical_variables,numerical_variables, sample_sheet,signal_data, max_missed_sample_sheet = 0.3,
+util_exploratory_analysis <- function(categorical_variables,numerical_variables, sample_sheet,signal_data, max_missed_sample_sheet = 0.3,
   max_missed_signal_data = 0.10,sample_id_column="Sample_ID", delete_keyword="REMOVE",
   exploration_phase="0",
   mapping_folder = NULL,
@@ -153,7 +153,7 @@ exploratory_analysis <- function(categorical_variables,numerical_variables, samp
 
   step <- step + 1
   # Run the function on your dataframe
-  sample_sheet_report <- describe_dataframe(sample_sheet)
+  sample_sheet_report <- util_describe_dataframe(sample_sheet)
   # order desc by Missing_Values_Percent
   sample_sheet_report <- sample_sheet_report[order(-sample_sheet_report$Missing_Values_Percent),]
   file_path <- file_path_build(folder_path,c(step,"sample_sheet_report"),"csv")

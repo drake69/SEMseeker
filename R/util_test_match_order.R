@@ -6,7 +6,7 @@
 #' @return true if the order matches otherwise is false
 
 #'
-test_match_order <- function(x, y) {
+util_test_match_order <- function(x, y) {
 
 
   if(is.null(x) | is.null(y))
@@ -29,7 +29,7 @@ test_match_order <- function(x, y) {
 }
 
 
-test_match_order_by_rownames <- function(x, y) {
+util_test_match_order_by_rownames <- function(x, y) {
 
 
   if(is.null(x) | is.null(y))

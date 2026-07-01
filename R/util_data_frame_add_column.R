@@ -14,9 +14,9 @@
 #'
 #' @examples
 #' df <- data.frame(a = 1:3)
-#' SEMseeker:::data.frame_add.column(df, "b", c(4, 5, 6))
+#' SEMseeker:::util_data_frame_add_column(df, "b", c(4, 5, 6))
 #'
-data.frame_add.column <- function(df,col_name, value)
+util_data_frame_add_column <- function(df,col_name, value)
 {
   if(any(col_name %in% colnames(df)))
     df[,col_name] <- value

@@ -11,7 +11,7 @@ prepare_study_for_analysis(inference_detail, study_summary, family_test)
 
 \item{study_summary}{data.frame returned by study_summary_get().}
 
-\item{family_test}{character. Already split_and_clean'd.}
+\item{family_test}{character. Already util_split_and_clean'd.}
 }
 \value{
 list(study_summary, covariates, sample_names, independent_variable,

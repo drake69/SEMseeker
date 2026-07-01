@@ -52,7 +52,7 @@
                    "dump_sample_as_bed_file", "delta_single_sample",
                    "dir_check_and_create", "file_path_build",
                    "analyze_single_sample_both", "sort_by_chr_and_start",
-                   "test_match_order", "lesions_get", "mutations_get")
+                   "util_test_match_order", "lesions_get", "mutations_get")
 
 .apply_defaults <- function(arguments, defaults) {
   for (key in names(defaults)) {
@@ -281,7 +281,7 @@ init_env <- function(result_folder, maxResources = 90, ...) {
   ssEnv <- .init_env_setup_paths(ssEnv, result_folder)
   .init_env_setup_log_sink(ssEnv$session_folder)
 
-  arguments <- keys_create(ssEnv, arguments)
+  arguments <- util_keys_create(ssEnv, arguments)
   ssEnv     <- get_session_info()
   ssEnv$functionToExport <- .SS_FN_EXPORT
   .init_env_setup_progress(ssEnv$showprogress)

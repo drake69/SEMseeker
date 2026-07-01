@@ -1,4 +1,4 @@
-substitute_infinite <- function(x) {
+util_substitute_infinite <- function(x) {
 
   log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " replacing infinite values with max/min values.")
 

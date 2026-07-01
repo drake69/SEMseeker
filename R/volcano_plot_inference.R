@@ -270,16 +270,16 @@ volcano_plot_inference <- function(inference_detail,
                        "TRUE"  = sprintf("%s <= %.3g", pvalue_column, alpha)),
             name = NULL) +
           ggplot2::labs(
-            title = pretty_label(sprintf(
+            title = util_pretty_label(sprintf(
               "%s — %s / %s — %s vs %s",
               marker, area, subarea, iv, family_test)),
-            subtitle = pretty_label(sprintf(
+            subtitle = util_pretty_label(sprintf(
               "areas_sql=%s | covariates=%s",
               if (nzchar(areas_sql)) areas_sql else "none",
               paste(c(covariates, covariates_dummy)[
                 nzchar(c(covariates, covariates_dummy))], collapse = " + "))),
-            x = pretty_label(sprintf("ESTIMATE (%s)", estimate_col)),
-            y = pretty_label(sprintf("-log10(%s)", pvalue_column))
+            x = util_pretty_label(sprintf("ESTIMATE (%s)", estimate_col)),
+            y = util_pretty_label(sprintf("-log10(%s)", pvalue_column))
           ) +
           ggplot2::theme_bw() +
           ggplot2::theme(legend.position = "bottom")

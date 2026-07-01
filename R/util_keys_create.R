@@ -1,4 +1,4 @@
-keys_create <- function(ssEnv, arguments)
+util_keys_create <- function(ssEnv, arguments)
 {
 
   # remove BOTH and BOTHSUM

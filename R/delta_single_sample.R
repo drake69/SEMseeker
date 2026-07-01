@@ -6,7 +6,7 @@
 #' @param sample_detail named list/row with at least Sample_ID and Sample_Group fields
 #' @return invisibly NULL; HYPER and HYPO delta results are written as bedgraph.gz files.
 #'   Only positions present in both \code{values} and \code{thresholds} are processed
-#'   (inner join on CHR, START, END via \code{join_values_to_thresholds}).
+#'   (inner join on CHR, START, END via \code{util_join_values_to_thresholds}).
 #'   Returns \code{invisible(NULL)} early if there is no positional overlap.
 #'
 delta_single_sample <- function(values, thresholds, sample_detail) {
@@ -14,9 +14,9 @@ delta_single_sample <- function(values, thresholds, sample_detail) {
   ssEnv <- get_session_info()
 
   # Polars inner join on (CHR, START, END) — replaces sort-then-positional-zip.
-  # join_values_to_thresholds() handles type coercion and is shared with
+  # util_join_values_to_thresholds() handles type coercion and is shared with
   # mutations_get() and deltar_single_sample().
-  joined <- join_values_to_thresholds(values, thresholds)
+  joined <- util_join_values_to_thresholds(values, thresholds)
 
   if (nrow(joined) == 0L) {
     log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),

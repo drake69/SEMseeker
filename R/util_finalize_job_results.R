@@ -13,7 +13,7 @@
 #' @param processed_items integer. Total items processed in this job.
 #' @return Invisibly NULL.
 #' @keywords internal
-finalize_job_results <- function(results, inference_detail, family_test,
+util_finalize_job_results <- function(results, inference_detail, family_test,
                                   filter_p_value, fileNameResults,
                                   start_time, processed_items) {
   if (!is.null(results) && nrow(results) != 0) {

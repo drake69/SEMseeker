@@ -9,14 +9,14 @@
 #'
 #' @return mutations data.frame with columns CHR, START, END, MUTATIONS (0/1).
 #'   Only positions present in BOTH values and thresholds are returned
-#'   (inner join on CHR, START, END via join_values_to_thresholds).
+#'   (inner join on CHR, START, END via util_join_values_to_thresholds).
 #'
 mutations_get <- function(values, figure, thresholds, sampleName) {
 
   # Polars inner join on (CHR, START, END).
   # Coverage banner is emitted once per batch by analyze_population() before
   # the per-sample loop — not repeated here to avoid log noise.
-  joined <- join_values_to_thresholds(values, thresholds)
+  joined <- util_join_values_to_thresholds(values, thresholds)
 
   log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
     " [mutations_get] sample=", sampleName, " figure=", figure,

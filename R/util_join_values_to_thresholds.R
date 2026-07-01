@@ -1,4 +1,4 @@
-# join_values_to_thresholds
+# util_join_values_to_thresholds
 #
 # Private helper — inner-join a per-sample values data.frame to a thresholds
 # data.frame on (CHR, START, END) using Polars.
@@ -23,7 +23,7 @@
 # @return data.frame — inner join result; columns CHR, START, END, VALUE plus
 #         whichever threshold columns were present in the input.
 #         Returns 0-row data.frame if there is no positional overlap.
-join_values_to_thresholds <- function(values, thresholds) {
+util_join_values_to_thresholds <- function(values, thresholds) {
 
   # E-13: Normalise CHR — strip "chr" prefix so bed-file values (chr1) match
   # threshold values (1). dump_sample_as_bed_file() prepends "chr" when writing

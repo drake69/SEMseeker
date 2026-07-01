@@ -14,7 +14,7 @@ phenotype_analysis_name <- function(inference_detail, key,prefix = "", suffix=""
   inference_detail$independent_variable <- gsub("_SCALED","",as.character(inference_detail$independent_variable))
   if(inference_detail$transformation_x=="scale")
     inference_detail$independent_variable <- paste0(inference_detail$independent_variable, "_SCALED")
-  independent_variable <- split_and_clean(inference_detail$independent_variable)
+  independent_variable <- util_split_and_clean(inference_detail$independent_variable)
 
   significance_label <- ifelse(significance, "significant", "non_significant")
 

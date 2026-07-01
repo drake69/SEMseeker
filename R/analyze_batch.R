@@ -257,7 +257,7 @@ analyze_batch <- function(signal_data, sample_sheet)
 
   # Transparent conversion: WGBS/LONGREAD coordinate input → synthetic probe IDs
   signal_data <- normalize_signal_input(signal_data)
-  signal_data <- substitute_infinite(signal_data)
+  signal_data <- util_substitute_infinite(signal_data)
   signal_data <- inpute_missing_values(signal_data)
   signal_data <- as.data.frame(signal_data)
   ssEnv <- get_meth_tech(signal_data)

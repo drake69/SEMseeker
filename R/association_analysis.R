@@ -91,7 +91,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
 
     log_inference_header(inference_detail)
 
-    family_test <- split_and_clean(inference_detail$family_test)
+    family_test <- util_split_and_clean(inference_detail$family_test)
     if (!validate_family_test(family_test)) next
 
     study_summary <- study_summary_get(inference_detail$samples_sql_condition)
@@ -161,7 +161,7 @@ association_analysis <- function(inference_details, result_folder, maxResources 
       )
     }
 
-    finalize_job_results(last_results, prep$inference_detail, family_test,
+    util_finalize_job_results(last_results, prep$inference_detail, family_test,
       filter_p_value, last_filename, start_time, processed_items)
   }
 

@@ -1,7 +1,7 @@
 # Tests for association_analysis helpers and integration
 #
 # Covered:
-#  - split_and_clean()           pure string-splitting helper
+#  - util_split_and_clean()           pure string-splitting helper
 #  - validate_family_test()      returns TRUE/FALSE for known/unknown families
 #  - association_analysis()      end-to-end at depth=1 (sample-level)
 #
@@ -19,27 +19,27 @@
 #  the dependent-variable columns for depth=1 association tests.
 
 # ---------------------------------------------------------------------------
-# 1. split_and_clean — pure function, no session needed
+# 1. util_split_and_clean — pure function, no session needed
 # ---------------------------------------------------------------------------
 
-test_that("split_and_clean splits on + and cleans whitespace", {
-  expect_equal(SEMseeker:::split_and_clean("A+B+C"), c("A", "B", "C"))
-  expect_equal(SEMseeker:::split_and_clean("single"), "single")
-  expect_equal(SEMseeker:::split_and_clean("A + B"), c("A", "B"))   # leading/trailing space trimmed
+test_that("util_split_and_clean splits on + and cleans whitespace", {
+  expect_equal(SEMseeker:::util_split_and_clean("A+B+C"), c("A", "B", "C"))
+  expect_equal(SEMseeker:::util_split_and_clean("single"), "single")
+  expect_equal(SEMseeker:::util_split_and_clean("A + B"), c("A", "B"))   # leading/trailing space trimmed
 })
 
-test_that("split_and_clean removes empty parts", {
-  result <- SEMseeker:::split_and_clean("")
+test_that("util_split_and_clean removes empty parts", {
+  result <- SEMseeker:::util_split_and_clean("")
   expect_equal(length(result), 0)  # empty string → character(0) after filtering
 })
 
-test_that("split_and_clean deduplicates", {
-  result <- SEMseeker:::split_and_clean("A+A+B")
+test_that("util_split_and_clean deduplicates", {
+  result <- SEMseeker:::util_split_and_clean("A+A+B")
   expect_equal(sort(result), c("A", "B"))
 })
 
-test_that("split_and_clean respects a custom split delimiter", {
-  result <- SEMseeker:::split_and_clean("X,Y,Z", split = ",")
+test_that("util_split_and_clean respects a custom split delimiter", {
+  result <- SEMseeker:::util_split_and_clean("X,Y,Z", split = ",")
   expect_equal(result, c("X", "Y", "Z"))
 })
 

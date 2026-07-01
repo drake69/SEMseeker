@@ -222,8 +222,8 @@ inter_study_association_overlaps <- function(inference_detail, studies,alpha = 0
           categories <- names(SPLIT)
           if(length(categories)<2)
             next
-          # AI-044 (2026-06-09): use shared `pretty_label()` helper.
-          categories <- pretty_label(categories)
+          # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
+          categories <- util_pretty_label(categories)
           folder <- dir_check_and_create(ssEnv$result_folderChart,c("OVERLAPS",areas_sql_condition))
           filename <-
             paste(

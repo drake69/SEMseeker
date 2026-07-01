@@ -6,7 +6,7 @@
 #' stable IDs but it reads poorly inside plot titles, axes, and legend
 #' labels, where a human is meant to skim the chart at a glance.
 #'
-#' `pretty_label()` reverses just the cosmetic side of that contract:
+#' `util_pretty_label()` reverses just the cosmetic side of that contract:
 #'
 #'   1. Replace every `_` with a single space.
 #'   2. Collapse runs of two or more whitespace characters into one.
@@ -30,17 +30,17 @@
 #'
 #' @examples
 #' \dontrun{
-#' pretty_label("TUMOUR_STAGE_N")
+#' util_pretty_label("TUMOUR_STAGE_N")
 #' #> "TUMOUR STAGE N"
-#' pretty_label("PVALUE_ADJ_ALL_FDR")
+#' util_pretty_label("PVALUE_ADJ_ALL_FDR")
 #' #> "PVALUE ADJ ALL FDR"
-#' pretty_label(c("DELTARP_GENE_TSS200", NA, ""))
+#' util_pretty_label(c("DELTARP_GENE_TSS200", NA, ""))
 #' #> "DELTARP GENE TSS200" NA                  ""
 #' }
 #'
 #' @keywords internal
 #' @noRd
-pretty_label <- function(x) {
+util_pretty_label <- function(x) {
   if (length(x) == 0L) return(x)
   out <- ifelse(is.na(x) | !nzchar(x), x,
                 trimws(gsub("\\s{2,}", " ",

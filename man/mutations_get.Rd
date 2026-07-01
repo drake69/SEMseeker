@@ -20,7 +20,7 @@ CHR, START, END, signal_inferior_thresholds, signal_superior_thresholds.}
 \value{
 mutations data.frame with columns CHR, START, END, MUTATIONS (0/1).
   Only positions present in BOTH values and thresholds are returned
-  (inner join on CHR, START, END via join_values_to_thresholds).
+  (inner join on CHR, START, END via util_join_values_to_thresholds).
 }
 \description{
 mutations_get

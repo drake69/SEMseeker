@@ -7,7 +7,7 @@
 #' @param df A data frame to describe.
 #' @return A data frame with summary statistics.
 #'
-describe_dataframe <- function(df) {
+util_describe_dataframe <- function(df) {
   data.frame(
     Variable              = names(df),
     Class                 = sapply(df, class),

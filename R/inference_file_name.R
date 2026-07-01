@@ -2,17 +2,17 @@ inference_file_name <- function(inference_detail, marker, folder,file_extension=
 {
   ssEnv <- get_session_info()
 
-  covariates <- split_and_clean(inference_detail$covariates, "\\+")
-  covariates_dummy <- split_and_clean(inference_detail$covariates_dummy, "\\+")
-  covariates_pca <- boolean_check(inference_detail$covariates_pca)
-  family_test <- split_and_clean(inference_detail$family_test)
-  transformation_y <- split_and_clean(inference_detail$transformation_y)
+  covariates <- util_split_and_clean(inference_detail$covariates, "\\+")
+  covariates_dummy <- util_split_and_clean(inference_detail$covariates_dummy, "\\+")
+  covariates_pca <- util_boolean_check(inference_detail$covariates_pca)
+  family_test <- util_split_and_clean(inference_detail$family_test)
+  transformation_y <- util_split_and_clean(inference_detail$transformation_y)
   inference_detail$independent_variable <- as.character(inference_detail$independent_variable)
   inference_detail$independent_variable <- as.character(gsub("_SCALED","",inference_detail$independent_variable))
   if(inference_detail$transformation_x=="scale")
     inference_detail$independent_variable <- paste0(inference_detail$independent_variable, "_SCALED")
-  independent_variable <- split_and_clean(inference_detail$independent_variable)
-  depth_analysis <- split_and_clean(inference_detail$depth_analysis)
+  independent_variable <- util_split_and_clean(inference_detail$independent_variable)
+  depth_analysis <- util_split_and_clean(inference_detail$depth_analysis)
 
   file_suffix <- ""
   file_result_prefix <- paste(as.character(independent_variable),as.character(transformation_y),as.character(family_test),sep="_")

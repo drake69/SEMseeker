@@ -1,43 +1,43 @@
 # Tests for utility helper functions (no session required)
 #
 # Covered:
-#  - boolean_check()          string/logical/NA → logical coercion
+#  - util_boolean_check()          string/logical/NA → logical coercion
 #  - file_path_build()        path construction helper
 #  - name_composer()          filename fragment assembler
-#  - data.frame_add.column()  safe column add/update on data.frames
+#  - util_data_frame_add_column()  safe column add/update on data.frames
 #  - filter_sql()             SQL-condition row filter (requires sqldf)
 
 # ---------------------------------------------------------------------------
-# 1. boolean_check
+# 1. util_boolean_check
 # ---------------------------------------------------------------------------
 
-test_that("boolean_check returns FALSE for NA, empty string, NULL", {
-  expect_false(SEMseeker:::boolean_check(NA))
-  expect_false(SEMseeker:::boolean_check(""))
-  expect_false(SEMseeker:::boolean_check(NULL))
+test_that("util_boolean_check returns FALSE for NA, empty string, NULL", {
+  expect_false(SEMseeker:::util_boolean_check(NA))
+  expect_false(SEMseeker:::util_boolean_check(""))
+  expect_false(SEMseeker:::util_boolean_check(NULL))
 })
 
-test_that("boolean_check returns TRUE for TRUE, 'TRUE', 'T', 'true', 'True', '1', 1", {
-  expect_true(SEMseeker:::boolean_check(TRUE))
-  expect_true(SEMseeker:::boolean_check("TRUE"))
-  expect_true(SEMseeker:::boolean_check("T"))
-  expect_true(SEMseeker:::boolean_check("true"))
-  expect_true(SEMseeker:::boolean_check("True"))
-  expect_true(SEMseeker:::boolean_check("1"))
-  expect_true(SEMseeker:::boolean_check(1))
+test_that("util_boolean_check returns TRUE for TRUE, 'TRUE', 'T', 'true', 'True', '1', 1", {
+  expect_true(SEMseeker:::util_boolean_check(TRUE))
+  expect_true(SEMseeker:::util_boolean_check("TRUE"))
+  expect_true(SEMseeker:::util_boolean_check("T"))
+  expect_true(SEMseeker:::util_boolean_check("true"))
+  expect_true(SEMseeker:::util_boolean_check("True"))
+  expect_true(SEMseeker:::util_boolean_check("1"))
+  expect_true(SEMseeker:::util_boolean_check(1))
 })
 
-test_that("boolean_check returns FALSE for FALSE, 'FALSE', '0', 0", {
-  expect_false(SEMseeker:::boolean_check(FALSE))
-  expect_false(SEMseeker:::boolean_check("FALSE"))
-  expect_false(SEMseeker:::boolean_check("0"))
-  expect_false(SEMseeker:::boolean_check(0))
+test_that("util_boolean_check returns FALSE for FALSE, 'FALSE', '0', 0", {
+  expect_false(SEMseeker:::util_boolean_check(FALSE))
+  expect_false(SEMseeker:::util_boolean_check("FALSE"))
+  expect_false(SEMseeker:::util_boolean_check("0"))
+  expect_false(SEMseeker:::util_boolean_check(0))
 })
 
-test_that("boolean_check returns FALSE for arbitrary strings", {
-  expect_false(SEMseeker:::boolean_check("yes"))
-  expect_false(SEMseeker:::boolean_check("no"))
-  expect_false(SEMseeker:::boolean_check("maybe"))
+test_that("util_boolean_check returns FALSE for arbitrary strings", {
+  expect_false(SEMseeker:::util_boolean_check("yes"))
+  expect_false(SEMseeker:::util_boolean_check("no"))
+  expect_false(SEMseeker:::util_boolean_check("maybe"))
 })
 
 # ---------------------------------------------------------------------------
@@ -114,32 +114,32 @@ test_that("name_composer handles a single fragment", {
 })
 
 # ---------------------------------------------------------------------------
-# 4. data.frame_add.column
+# 4. util_data_frame_add_column
 # ---------------------------------------------------------------------------
 
-test_that("data.frame_add.column adds a new column when absent", {
+test_that("util_data_frame_add_column adds a new column when absent", {
   df <- data.frame(x = 1:3)
-  result <- SEMseeker:::data.frame_add.column(df, "y", c(4, 5, 6))
+  result <- SEMseeker:::util_data_frame_add_column(df, "y", c(4, 5, 6))
   expect_true("y" %in% colnames(result))
   expect_equal(result$y, c(4, 5, 6))
 })
 
-test_that("data.frame_add.column updates existing column", {
+test_that("util_data_frame_add_column updates existing column", {
   df <- data.frame(x = 1:3, y = c(0, 0, 0))
-  result <- SEMseeker:::data.frame_add.column(df, "y", c(7, 8, 9))
+  result <- SEMseeker:::util_data_frame_add_column(df, "y", c(7, 8, 9))
   expect_equal(result$y, c(7, 8, 9))
   expect_equal(ncol(result), 2)   # no extra column added
 })
 
-test_that("data.frame_add.column works on empty data.frame", {
+test_that("util_data_frame_add_column works on empty data.frame", {
   df <- data.frame()
-  result <- SEMseeker:::data.frame_add.column(df, "col", 42)
+  result <- SEMseeker:::util_data_frame_add_column(df, "col", 42)
   expect_true("col" %in% colnames(result))
 })
 
-test_that("data.frame_add.column preserves existing columns", {
+test_that("util_data_frame_add_column preserves existing columns", {
   df <- data.frame(a = 1:3, b = 4:6)
-  result <- SEMseeker:::data.frame_add.column(df, "c", 7:9)
+  result <- SEMseeker:::util_data_frame_add_column(df, "c", 7:9)
   expect_true(all(c("a", "b", "c") %in% colnames(result)))
   expect_equal(result$a, 1:3)
 })

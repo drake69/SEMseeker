@@ -224,8 +224,8 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
           categories <- ifelse(categories == "", "ALL", categories)
           if(length(categories)<2)
             next
-          # AI-044 (2026-06-09): use shared `pretty_label()` helper.
-          categories <- pretty_label(categories)
+          # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
+          categories <- util_pretty_label(categories)
           dest_folder <- dir_check_and_create(ssEnv$result_folderChart,c("ASSOCIATION_CROSS_SAMPLE_ANALYSIS",name_cleaning(unique(inference_details$association_results_sql_condition),"ALL"), name_cleaning(paste(family_test, pvalue_column, run_prefix))))
           filename <-
             paste(
@@ -284,8 +284,8 @@ intra_study_association_subsamples_overlaps <- function(inference_details,alpha 
             next
           # remove from column name _PVALUE_ADJ
           to_remove <- paste0("_",pvalue_column)
-          # AI-044 (2026-06-09): use shared `pretty_label()` helper.
-          categories <- pretty_label(categories)
+          # AI-044 (2026-06-09): use shared `util_pretty_label()` helper.
+          categories <- util_pretty_label(categories)
           colnames(area_set) <- gsub(to_remove, "", colnames(area_set))
           colnames(area_set) <- gsub("_", " ", colnames(area_set))
           missed_columns <- setdiff(categories, colnames(area_set))

@@ -2,7 +2,7 @@
 #
 # Covered:
 #  - pow()                        base^exponent utility (10E_model.R)
-#  - join_values_to_thresholds()  Polars positional inner join (join_values_to_thresholds.R)
+#  - util_join_values_to_thresholds()  Polars positional inner join (join_values_to_thresholds.R)
 #  - metrics_ranking()            ranking helper using metrics_properties (metrics_ranking.R)
 #  - model_performance()          train+test path and overfitting detection (model_performance.R)
 #  - compute_quantreg_permutation() quantile regression single-permutation draw
@@ -57,7 +57,7 @@ test_that("pow: result type is numeric", {
 })
 
 # ---------------------------------------------------------------------------
-# 2. join_values_to_thresholds
+# 2. util_join_values_to_thresholds
 # ---------------------------------------------------------------------------
 
 # Helpers ----------------------------------------------------------------
@@ -85,10 +85,10 @@ test_that("pow: result type is numeric", {
 }
 # ------------------------------------------------------------------------
 
-test_that("join_values_to_thresholds: full overlap returns all rows with correct columns", {
+test_that("util_join_values_to_thresholds: full overlap returns all rows with correct columns", {
   v <- .jvt_values("1", 1:5 * 1000L, seq(0.1, 0.5, by = 0.1))
   t <- .jvt_thresholds("1", 1:5 * 1000L, rep(0.2, 5), rep(0.8, 5))
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), 5L)
   expect_true(all(c("CHR", "START", "END", "VALUE",
@@ -96,86 +96,86 @@ test_that("join_values_to_thresholds: full overlap returns all rows with correct
                     "signal_superior_thresholds") %in% colnames(res)))
 })
 
-test_that("join_values_to_thresholds: partial overlap — only shared positions returned", {
+test_that("util_join_values_to_thresholds: partial overlap — only shared positions returned", {
   v <- .jvt_values("1", c(1000L, 2000L, 3000L), c(0.5, 0.5, 0.5))
   t <- .jvt_thresholds("1", c(2000L, 3000L, 4000L), rep(0.2, 3), rep(0.8, 3))
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   expect_equal(nrow(res), 2L)           # 2000 and 3000 shared
   expect_equal(sort(res$START), c(2000L, 3000L))
 })
 
-test_that("join_values_to_thresholds: zero overlap returns 0-row data.frame without crash", {
+test_that("util_join_values_to_thresholds: zero overlap returns 0-row data.frame without crash", {
   v <- .jvt_values("chr1", c(1000L, 2000L), c(0.5, 0.6))
   t <- .jvt_thresholds("chr2", c(1000L, 2000L), rep(0.2, 2), rep(0.8, 2))
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), 0L)
 })
 
-test_that("join_values_to_thresholds: VALUE column is preserved correctly", {
+test_that("util_join_values_to_thresholds: VALUE column is preserved correctly", {
   v <- .jvt_values("1", c(1000L, 2000L), c(0.3, 0.9))
   t <- .jvt_thresholds("1", c(1000L, 2000L), c(0.2, 0.2), c(0.8, 0.8))
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   res_sorted <- res[order(res$START), ]
   expect_equal(res_sorted$VALUE, c(0.3, 0.9), tolerance = 1e-10)
 })
 
-test_that("join_values_to_thresholds: threshold columns are preserved", {
+test_that("util_join_values_to_thresholds: threshold columns are preserved", {
   v <- .jvt_values("1", 1000L, 0.5)
   t <- .jvt_thresholds("1", 1000L, 0.1, 0.9)
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   expect_equal(res$signal_inferior_thresholds, 0.1, tolerance = 1e-10)
   expect_equal(res$signal_superior_thresholds, 0.9, tolerance = 1e-10)
 })
 
-test_that("join_values_to_thresholds: CHR prefix is normalised — '1' matches 'chr1'", {
+test_that("util_join_values_to_thresholds: CHR prefix is normalised — '1' matches 'chr1'", {
   # See E-13 in R/join_values_to_thresholds.R: strip_chr() normalises the CHR
   # column so bed-file values (chr1) match threshold values (1). The join is
   # semantically chr-prefix-insensitive, not exact-string.
   v <- .jvt_values("1",    1000L, 0.5)
   t <- .jvt_thresholds("chr1", 1000L, 0.1, 0.9)
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   expect_equal(nrow(res), 1L)
 })
 
-test_that("join_values_to_thresholds: genuinely different CHR gives zero rows", {
+test_that("util_join_values_to_thresholds: genuinely different CHR gives zero rows", {
   # The join still rejects CHR pairs that differ on more than the 'chr' prefix.
   v <- .jvt_values("1", 1000L, 0.5)
   t <- .jvt_thresholds("2", 1000L, 0.1, 0.9)
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   expect_equal(nrow(res), 0L)
 })
 
-test_that("join_values_to_thresholds: large (genome-scale) position values work", {
+test_that("util_join_values_to_thresholds: large (genome-scale) position values work", {
   big_starts <- c(100000000L, 150000000L, 200000000L)
   v <- .jvt_values("1", big_starts, c(0.2, 0.5, 0.8))
   t <- .jvt_thresholds("1", big_starts, rep(0.1, 3), rep(0.9, 3))
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   expect_equal(nrow(res), 3L)
 })
 
-test_that("join_values_to_thresholds: optional columns (iqr, q1, q3) are passed through", {
+test_that("util_join_values_to_thresholds: optional columns (iqr, q1, q3) are passed through", {
   v <- .jvt_values("1", c(1000L, 2000L), c(0.4, 0.6))
   t <- .jvt_thresholds("1", c(1000L, 2000L), c(0.1, 0.1), c(0.9, 0.9),
                         extra = data.frame(iqr = c(0.2, 0.2),
                                            q1  = c(0.3, 0.3),
                                            q3  = c(0.7, 0.7)))
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   expect_equal(nrow(res), 2L)
   expect_true(all(c("iqr", "q1", "q3") %in% colnames(res)))
 })
 
-test_that("join_values_to_thresholds: extra columns not in keep-list are dropped", {
+test_that("util_join_values_to_thresholds: extra columns not in keep-list are dropped", {
   v <- .jvt_values("1", 1000L, 0.5)
   t <- .jvt_thresholds("1", 1000L, 0.1, 0.9,
                         extra = data.frame(GENE_TSS200 = "BRCA1",  # annotation column
                                            stringsAsFactors = FALSE))
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   # Annotation columns not in the keep_cols list must be absent
   expect_false("GENE_TSS200" %in% colnames(res))
 })
 
-test_that("join_values_to_thresholds: multiple chromosomes handled correctly", {
+test_that("util_join_values_to_thresholds: multiple chromosomes handled correctly", {
   starts <- rep(1000L, 6)
   v <- data.frame(
     CHR   = c("1","1","2","2","X","X"),
@@ -192,7 +192,7 @@ test_that("join_values_to_thresholds: multiple chromosomes handled correctly", {
     signal_superior_thresholds = 0.8,
     stringsAsFactors           = FALSE
   )
-  res <- SEMseeker:::join_values_to_thresholds(v, t)
+  res <- SEMseeker:::util_join_values_to_thresholds(v, t)
   # Two value rows per chromosome but only one threshold row → 3 match rows total
   # (polars inner join: each chr1 value with each chr1 threshold → cross-join within chr)
   # Actually: positions are unique per chr since all starts are 1000 → 2 values match 1 threshold each

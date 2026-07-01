@@ -1,10 +1,10 @@
 covariates_model <- function(inference_detail, study_summary)
 {
   ssEnv <- get_session_info()
-  collinearity_check <- boolean_check(inference_detail$collinearity_check)
-  covariates_dummy <- split_and_clean(inference_detail$covariates_dummy)
-  covariates_pca <- boolean_check(inference_detail$covariates_pca)
-  covariates <- split_and_clean(inference_detail$covariates)
+  collinearity_check <- util_boolean_check(inference_detail$collinearity_check)
+  covariates_dummy <- util_split_and_clean(inference_detail$covariates_dummy)
+  covariates_pca <- util_boolean_check(inference_detail$covariates_pca)
+  covariates <- util_split_and_clean(inference_detail$covariates)
   independent_variable <- as.character(inference_detail$independent_variable)
   transformation_x <- as.character(inference_detail$transformation_x)
 

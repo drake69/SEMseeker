@@ -1,4 +1,4 @@
-split_and_clean <- function(x, split = "\\+") {
+util_split_and_clean <- function(x, split = "\\+") {
 
   x <- as.character(x)
   # Check if the input is NULL, NA, empty string, or character NA

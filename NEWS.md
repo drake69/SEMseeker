@@ -124,8 +124,8 @@
 - **`chr` prefix mismatch in Polars join** (E-13).
   `dump_sample_as_bed_file()` prepends `chr` to chromosome names, but
   `signal_thresholds` retains bare numbers from probe annotations. The inner
-  join in `join_values_to_thresholds()` returned 0 rows → no mutations detected.
-  Fix: `join_values_to_thresholds()` now strips the `chr` prefix from both sides
+  join in `util_join_values_to_thresholds()` returned 0 rows → no mutations detected.
+  Fix: `util_join_values_to_thresholds()` now strips the `chr` prefix from both sides
   before joining.
 
 - **`exists("signal_data")` scoped to local environment in `analyze_batch()` and
@@ -147,7 +147,7 @@
   via `populationControlRangeBetaValues`), the two position sets could differ in size or
   overlap, producing silently wrong mutation/delta calls or an out-of-bounds crash.
   Changes:
-  - Added `join_values_to_thresholds()` — a private helper that performs a Polars lazy inner
+  - Added `util_join_values_to_thresholds()` — a private helper that performs a Polars lazy inner
     join on `(CHR, START, END)`. Shared by all three per-sample functions to ensure consistent
     intersection logic. Required for Nanopore bedmethyl files (28M+ rows where base-R
     `merge()`/`match()` is too slow).

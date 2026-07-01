@@ -1,8 +1,8 @@
 ## test-0-math-stats.R
 ## Unit tests for pure mathematical / statistical utility functions:
 ##   ssim, variation_of_information, convertTextToNumeric,
-##   split_and_clean, metrics_filter, normalize_minimize, normalize_maximize,
-##   substitute_infinite, calculate_collinearity_score
+##   util_split_and_clean, metrics_filter, normalize_minimize, normalize_maximize,
+##   util_substitute_infinite, calculate_collinearity_score
 ##
 ## These functions have no file I/O or network dependencies and can be
 ## exercised directly after devtools::load_all().
@@ -113,34 +113,34 @@ test_that("convertTextToNumeric: European thousands separator (1.200.000,34)", {
 })
 
 # -----------------------------------------------------------------------
-# split_and_clean
+# util_split_and_clean
 # -----------------------------------------------------------------------
-test_that("split_and_clean: splits on default '+' delimiter", {
-  result <- SEMseeker:::split_and_clean("a+b+c")
+test_that("util_split_and_clean: splits on default '+' delimiter", {
+  result <- SEMseeker:::util_split_and_clean("a+b+c")
   expect_equal(sort(result), c("a", "b", "c"))
 })
 
-test_that("split_and_clean: single element returns itself", {
-  expect_equal(SEMseeker:::split_and_clean("hello"), "hello")
+test_that("util_split_and_clean: single element returns itself", {
+  expect_equal(SEMseeker:::util_split_and_clean("hello"), "hello")
 })
 
-test_that("split_and_clean: trims whitespace around parts", {
-  result <- SEMseeker:::split_and_clean("a + b + c")
+test_that("util_split_and_clean: trims whitespace around parts", {
+  result <- SEMseeker:::util_split_and_clean("a + b + c")
   expect_equal(sort(result), c("a", "b", "c"))
 })
 
-test_that("split_and_clean: removes duplicates", {
-  result <- SEMseeker:::split_and_clean("x+x+y")
+test_that("util_split_and_clean: removes duplicates", {
+  result <- SEMseeker:::util_split_and_clean("x+x+y")
   expect_equal(sort(result), c("x", "y"))
 })
 
-test_that("split_and_clean: custom split character", {
-  result <- SEMseeker:::split_and_clean("a,b,c", split = ",")
+test_that("util_split_and_clean: custom split character", {
+  result <- SEMseeker:::util_split_and_clean("a,b,c", split = ",")
   expect_equal(sort(result), c("a", "b", "c"))
 })
 
-test_that("split_and_clean: empty string returns character(0) after whitespace filter", {
-  result <- SEMseeker:::split_and_clean("")
+test_that("util_split_and_clean: empty string returns character(0) after whitespace filter", {
+  result <- SEMseeker:::util_split_and_clean("")
   # "" is not NULL/NA-empty (length 1), so rlang::is_empty is FALSE;
   # trimws("") == "" is then removed → character(0)
   expect_equal(length(result), 0)
@@ -250,39 +250,39 @@ test_that("normalize_minimize and normalize_maximize are complementary", {
 })
 
 # -----------------------------------------------------------------------
-# substitute_infinite  (calls log_event — uses global tempFolders from setup.R)
+# util_substitute_infinite  (calls log_event — uses global tempFolders from setup.R)
 # -----------------------------------------------------------------------
-test_that("substitute_infinite: no Inf values returns unchanged data frame", {
+test_that("util_substitute_infinite: no Inf values returns unchanged data frame", {
   SEMseeker:::init_env(result_folder = tempFolders[1], start_fresh = TRUE)
   df <- data.frame(x = c(1, 2, 3), y = c(4, 5, 6))
-  result <- SEMseeker:::substitute_infinite(df)
+  result <- SEMseeker:::util_substitute_infinite(df)
   expect_equal(as.numeric(result$x), c(1, 2, 3))
   expect_equal(as.numeric(result$y), c(4, 5, 6))
   SEMseeker:::close_env()
 })
 
-test_that("substitute_infinite: +Inf replaced by max finite value", {
+test_that("util_substitute_infinite: +Inf replaced by max finite value", {
   SEMseeker:::init_env(result_folder = tempFolders[2], start_fresh = TRUE)
   df <- data.frame(x = c(1, Inf, 3))
-  result <- SEMseeker:::substitute_infinite(df)
+  result <- SEMseeker:::util_substitute_infinite(df)
   expect_false(any(is.infinite(as.numeric(result$x))))
   expect_equal(as.numeric(result$x[2]), 3)  # max finite = 3, sign(+Inf)=+1
   SEMseeker:::close_env()
 })
 
-test_that("substitute_infinite: -Inf replaced by negative max finite value", {
+test_that("util_substitute_infinite: -Inf replaced by negative max finite value", {
   SEMseeker:::init_env(result_folder = tempFolders[3], start_fresh = TRUE)
   df <- data.frame(x = c(1, -Inf, 3))
-  result <- SEMseeker:::substitute_infinite(df)
+  result <- SEMseeker:::util_substitute_infinite(df)
   expect_false(any(is.infinite(as.numeric(result$x))))
   expect_equal(as.numeric(result$x[2]), -3)  # max finite = 3, sign(-Inf)=-1
   SEMseeker:::close_env()
 })
 
-test_that("substitute_infinite: returns a data.frame", {
+test_that("util_substitute_infinite: returns a data.frame", {
   SEMseeker:::init_env(result_folder = tempFolders[4], start_fresh = TRUE)
   df <- data.frame(x = c(1, Inf, 2), y = c(-Inf, 3, 4))
-  result <- SEMseeker:::substitute_infinite(df)
+  result <- SEMseeker:::util_substitute_infinite(df)
   expect_s3_class(result, "data.frame")
   SEMseeker:::close_env()
 })

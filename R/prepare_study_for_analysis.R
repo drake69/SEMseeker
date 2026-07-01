@@ -7,7 +7,7 @@
 #'
 #' @param inference_detail single-row data.frame.
 #' @param study_summary data.frame returned by study_summary_get().
-#' @param family_test character. Already split_and_clean'd.
+#' @param family_test character. Already util_split_and_clean'd.
 #' @return list(study_summary, covariates, sample_names, independent_variable,
 #'   depth_analysis, transformation_y, inference_detail, file_result_prefix)
 #'   OR NULL if the job must be skipped (logged via log_event).

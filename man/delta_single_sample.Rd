@@ -17,7 +17,7 @@ signal_superior_thresholds, signal_inferior_thresholds, signal_median_values}
 \value{
 invisibly NULL; HYPER and HYPO delta results are written as bedgraph.gz files.
   Only positions present in both \code{values} and \code{thresholds} are processed
-  (inner join on CHR, START, END via \code{join_values_to_thresholds}).
+  (inner join on CHR, START, END via \code{util_join_values_to_thresholds}).
   Returns \code{invisible(NULL)} early if there is no positional overlap.
 }
 \description{
