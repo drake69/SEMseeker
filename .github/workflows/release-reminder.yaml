@@ -1,0 +1,50 @@
+name: Monthly release reminder
+
+# Manual-only for now: Bioconductor submission is not yet on the roadmap.
+# Re-enable the monthly cron once a release cadence is established.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  open-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure 'release' label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create release --color FBCA04 --description "Release preparation" --force
+
+      - name: Open release reminder issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curr_v=$(grep '^Version:' DESCRIPTION | sed 's/Version:[[:space:]]*//')
+          month=$(date +'%Y-%m')
+          {
+            echo "Monthly cadence reminder per PROJECT_BLUEPRINT §18: time to prepare a release."
+            echo
+            echo "Current version in \`DESCRIPTION\`: \`${curr_v}\`"
+            echo
+            echo "Checklist:"
+            echo "- [ ] Decide next version (patch / minor / major)"
+            echo "- [ ] Bump \`Version:\` in \`DESCRIPTION\`"
+            echo "- [ ] Add a corresponding \`## semseeker X.Y.Z\` section to \`NEWS.md\`"
+            echo "- [ ] Open PR to \`main\`"
+            echo "- [ ] Verify CI green: R-CMD-check, BiocCheck, security, test-coverage"
+            echo "- [ ] Merge PR — \`release.yaml\` tags and publishes the GitHub Release automatically"
+            echo "- [ ] Zenodo mints a versioned DOI for the new Release"
+            echo "- [ ] If Bioconductor review is open: comment on the Contributions issue with the new version"
+            echo
+            echo "If there are no user-facing code changes since the last release, close this issue without action."
+          } > body.md
+          gh issue create \
+            --title "Release preparation ${month} — bump version and cut release" \
+            --label release \
+            --body-file body.md

@@ -1,0 +1,15 @@
+citHeader("To cite SEMseeker in publications, please use:")
+
+bibentry(
+  bibtype = "Manual",
+  title   = "SEMseeker: Stochastic Epigenetic Mutations SEM Seeker",
+  author  = person(
+    "Luigi", "Corsaro",
+    email   = "lcorsaro69@gmail.com",
+    comment = c(ORCID = "0000-0003-1218-230X")
+  ),
+  year    = format(Sys.Date(), "%Y"),
+  note    = paste("R package version", utils::packageVersion("SEMseeker")),
+  url     = "https://github.com/drake69/SEMseeker",
+  doi     = "10.18129/B9.bioc.SEMseeker"
+)

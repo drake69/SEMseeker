@@ -7,3 +7,30 @@ packrat/src/
 cache
 tmp
 .code_reader/
+.coding_agent/
+
+# macOS
+.DS_Store
+
+# R CMD check output
+*.Rcheck/
+..Rcheck/
+.Rcheck/
+
+# BiocCheck output
+*.BiocCheck/
+
+# RStudio project file
+*.Rproj
+
+# CI check output
+ci-check-output/
+
+# Test artifacts
+tests/testthat/_problems/
+
+# Secrets (blueprint §17)
+secrets/
+
+# Test side-effect garbage (created when init_env() runs with NA path)
+tests/testthat/NA/

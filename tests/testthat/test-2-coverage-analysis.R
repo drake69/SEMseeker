@@ -1,13 +1,13 @@
 test_that("coverage-analysis", {
 
   tempFolder <- tempFolders[1]
-  tempFolders <- tempFolders[-1]
-  # coverage_analysis strips POSITION and PROBE from the keys, so init_env must
+  tempFolders <<- tempFolders[-1]
+  # sem_coverage_analysis strips POSITION and PROBE from the keys, so core_init_env must
   # receive at least one other area (GENE, ISLAND, …) or it returns early with 0 rows.
-  SEMseeker:::init_env(tempFolder, parallel_strategy = parallel_strategy, areas = c("GENE"))
+  SEMseeker:::core_init_env(tempFolder, parallel_strategy = parallel_strategy, areas = c("GENE"))
 
-  tt <- SEMseeker:::get_meth_tech(signal_data)
-  res_cov <- SEMseeker:::coverage_analysis(signal_data)
+  tt <- SEMseeker:::core_get_meth_tech(signal_data)
+  res_cov <- SEMseeker:::sem_coverage_analysis(signal_data)
   testthat::expect_true(nrow(res_cov)!=0)
 
   # # test cases of some are fully missed
@@ -28,12 +28,12 @@ test_that("coverage-analysis", {
   # row.names(signal_data) <- probe_features$PROBE
   # ####################################################################################
   #
-  # res_cov <- SEMseeker:::coverage_analysis(signal_data)
+  # res_cov <- SEMseeker:::sem_coverage_analysis(signal_data)
   # testthat::expect_true(nrow(res_cov)!=0)
 
   ####################################################################################
 
-  SEMseeker:::close_env()
+  SEMseeker:::core_close_env()
   unlink(tempFolder,recursive = TRUE)
 
 })

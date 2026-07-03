@@ -1,13 +1,29 @@
 #!/usr/bin/env bash
 # ─── Run CI check locally in Docker ──────────────────────────────────────────
 # Usage:
-#   ./ci-local.sh               → full R CMD check, output to stdout
-#   ./ci-local.sh check         → same as above
-#   ./ci-local.sh coverage      → run covr::package_coverage() (mirrors test-coverage CI)
-#   ./ci-local.sh logs          → R CMD check + saves .Rcheck dir to ./ci-check-output/
-#   ./ci-local.sh shell         → interactive container for debugging
-#   ./ci-local.sh build         → (re)build image only, keep cache
-#   ./ci-local.sh rebuild       → force full rebuild (no cache)
+#   ./ci-local.sh                 → full R CMD check, output to stdout
+#   ./ci-local.sh check           → same as above
+#   ./ci-local.sh coverage        → run covr::package_coverage() (mirrors test-coverage CI)
+#   ./ci-local.sh logs            → R CMD check + saves .Rcheck dir to ./ci-check-output/
+#   ./ci-local.sh shell           → interactive container for debugging
+#   ./ci-local.sh build           → (re)build image only, keep cache
+#   ./ci-local.sh rebuild         → force full rebuild (no cache)
+#
+# ─── Native R (no Docker) — for macOS-specific bugs ──────────────────────────
+#   ./ci-local.sh native          → smoke: load_all + source setup.R
+#                                   Fastest check (~5s if deps cached). Use to
+#                                   verify the package loads and setup.R runs
+#                                   without crashing — catches load-time bugs
+#                                   that are mac-arm64-specific (tcltk segfault,
+#                                   onAttach chains, etc.).
+#   ./ci-local.sh native test_check → full testthat::test_check("SEMseeker")
+#                                     (slow, mirrors what R CMD check tests does)
+#   ./ci-local.sh native <test-file>  → load_all + source setup.R + test_file
+#                                     Example: ./ci-local.sh native tests/testthat/test-5-annotation-concordance.R
+#   All native modes set NOT_CRAN=true so skip_on_cran() does not fire,
+#   matching the GitHub Actions matrix.
+#   Requires: devtools, testthat, polars, and the package's Imports
+#   available in the local user library.
 #
 # Error collection:
 #   - Plain stdout:   ./ci-local.sh 2>&1 | tee ci-local.log
@@ -138,6 +154,77 @@ REOF
     exit $EXIT_CODE
     ;;
 
+  native)
+    # Native R (no Docker) — reproduces macOS-arm64 specific bugs.
+    # Use this for fast iteration when the GitHub Actions macOS runner
+    # fails in a way that Docker Linux cannot reproduce.
+    TARGET="${2:-smoke}"
+    RSCRIPT_TMP="/tmp/ci-native-$$.R"
+
+    case "$TARGET" in
+      smoke)
+        echo "==> Native smoke: load_all + setup.R + data sanity ..."
+        cat > "$RSCRIPT_TMP" <<'REOF'
+cat("R:", R.version$version.string, "\n")
+cat("sysname:", Sys.info()[["sysname"]], "\n\n")
+Sys.setenv(NOT_CRAN = "true")
+cat("=== devtools::load_all('.') ===\n")
+suppressMessages(devtools::load_all(".", quiet = TRUE))
+cat("OK\n\n")
+cat("=== source('tests/testthat/setup.R') ===\n")
+source("tests/testthat/setup.R")
+cat("OK\n")
+cat("probe_features dim:", paste(dim(probe_features), collapse = "x"), "\n")
+cat("first 3 probes:", paste(head(probe_features$PROBE, 3), collapse = ", "), "\n\n")
+cat("=== data files reachable through namespace ===\n")
+# Each .rda in data/ must be auto-loadable when LazyData: true.
+# This catches regressions where DESCRIPTION drops LazyData and breaks
+# `package::dataset` access (silently passes load_all but fails CI).
+for (obj in c("metrics_properties", "cytoband_hg19", "dmr_annotation")) {
+  x <- tryCatch(get(obj, envir = asNamespace("SEMseeker")),
+                error = function(e) NULL)
+  cat(sprintf("  %-24s %s\n", obj,
+              if (is.null(x)) "MISSING (LazyData broken?)"
+              else sprintf("OK (%s)", paste(class(x), collapse = "/"))))
+  if (is.null(x)) quit(status = 1)
+}
+REOF
+        ;;
+
+      test_check)
+        echo "==> Native test_check (full testthat suite) ..."
+        cat > "$RSCRIPT_TMP" <<'REOF'
+Sys.setenv(NOT_CRAN = "true")
+suppressMessages(devtools::load_all(".", quiet = TRUE))
+testthat::test_check("SEMseeker", reporter = "summary")
+REOF
+        ;;
+
+      *)
+        # Treat any other argument as a test file path
+        if [ ! -f "$TARGET" ]; then
+          echo "Error: '$TARGET' is not a file. Use:" >&2
+          echo "  ./ci-local.sh native                    (smoke)" >&2
+          echo "  ./ci-local.sh native test_check         (full suite)" >&2
+          echo "  ./ci-local.sh native <path/to/test.R>   (single file)" >&2
+          exit 2
+        fi
+        echo "==> Native test_file: $TARGET ..."
+        cat > "$RSCRIPT_TMP" <<REOF
+Sys.setenv(NOT_CRAN = "true")
+suppressMessages(devtools::load_all(".", quiet = TRUE))
+source("tests/testthat/setup.R")
+testthat::test_file("$TARGET", reporter = "summary")
+REOF
+        ;;
+    esac
+
+    EXIT_CODE=0
+    Rscript "$RSCRIPT_TMP" || EXIT_CODE=$?
+    rm -f "$RSCRIPT_TMP"
+    exit $EXIT_CODE
+    ;;
+
   check|*)
     echo "==> Building $IMAGE (if needed) ..."
     _build
@@ -145,6 +232,7 @@ REOF
     echo "==> Running R CMD check ..."
     echo "    Tip: pipe through 'tee' to save: ./ci-local.sh 2>&1 | tee ci-local.log"
     echo "    Tip: use './ci-local.sh logs' to also extract the full .Rcheck directory"
+    echo "    Tip: for macOS-arm64-only bugs, use './ci-local.sh native' (no Docker)"
     echo ""
     docker run --rm "$IMAGE"
     ;;

@@ -11,3 +11,6 @@
 ^README.Rmd
 ^SEMseeker\.BiocCheck$
 ^.*\.BiocCheck$
+^dev$
+^bench$
+^data-raw$

@@ -8,7 +8,7 @@
 # Debug shell: ./ci-local.sh shell
 # ───────────────────────────────────────────────────────────────────────────────
 
-FROM rocker/r-ver:4.5
+FROM rocker/r-ver:4.6
 
 # ── Disable renv for all R processes in this container.
 #    Without these, renv/activate.R (copied with the source) would intercept
@@ -73,6 +73,21 @@ RUN Rscript -e "\
     ),\
     dependencies = c('Imports', 'Depends', 'LinkingTo'),\
     ask = FALSE\
+  )"
+
+# ── Install Bioconductor annotation packages (mirrors GitHub Actions CI).
+#    Without these, .detect_tech_from_anno() returns "" and the row-count
+#    heuristic mis-classifies small synthetic-probe panels — diverging from
+#    real CI behaviour. Required to reproduce the Ubuntu R-CMD-check path.
+RUN Rscript -e "\
+  if (!requireNamespace('BiocManager', quietly = TRUE)) install.packages('BiocManager'); \
+  BiocManager::install(\
+    c(\
+      'IlluminaHumanMethylationEPICanno.ilm10b4.hg19', \
+      'IlluminaHumanMethylation450kanno.ilmn12.hg19', \
+      'IlluminaHumanMethylation27kanno.ilmn12.hg19'\
+    ), \
+    ask = FALSE, update = FALSE\
   )"
 
 # ── Copy full package source (only invalidates the layer above when R code changes)

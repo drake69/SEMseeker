@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5095417.svg)](https://doi.org/10.5281/zenodo.5095417)
 [![](https://img.shields.io/badge/devel%20version-0.11.0-blue.svg)](https://github.com/drake69/semseeker)
 [![](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![](https://codecov.io/gh/drake69/semseeker/branch/main/graph/badge.svg)](https://codecov.io/gh/drake69/semseeker)
@@ -38,6 +39,40 @@ install.packages("devtools")
 library(devtools)
 install_github("drake69/semseeker")
 ```
+
+### System requirements
+
+#### macOS
+
+R 4.6's base `tcltk` package is linked against XQuartz's
+`/opt/X11/lib/libX11.6.dylib` at install time. Plain SEMseeker usage
+(`library(SEMseeker)`, `semseeker(...)`, `association_analysis(...)`)
+does NOT load tcltk and works without XQuartz. But some Bioconductor
+optional features (e.g. annotation chains pulling `minfi` / `GEOquery`)
+transitively load tcltk, and without XQuartz the load segfaults with
+`invalid permissions`. To avoid the surprise:
+
+```sh
+brew install --cask xquartz
+```
+
+or download the installer from <https://www.xquartz.org/>. A logout/login
+may be required for the path to be picked up.
+
+#### Linux (build-from-source)
+
+Building from source on Linux requires `libuv` ≥ 1, a build-time dependency
+of the `fs` package (a transitive dep of `rmarkdown`/`pkgdown`/`bslib`).
+Either install it system-wide:
+
+```sh
+sudo apt-get install libuv1-dev          # Debian / Ubuntu
+sudo dnf install libuv-devel             # Fedora / RHEL
+```
+
+…or skip the system dep entirely by exporting `USE_BUNDLED_LIBUV=1` before
+installing — `fs` will then build its own bundled libuv. This is what the
+project's CI workflows do.
 
 ### Dependencies
 

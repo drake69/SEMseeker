@@ -1,0 +1,59 @@
+name: Auto-release on version bump
+
+# Manual-only for now: Bioconductor submission is not yet ready.
+# Re-enable `push: branches: [main]` once the package is closer to release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from DESCRIPTION
+        id: ver
+        run: |
+          v=$(grep '^Version:' DESCRIPTION | sed 's/Version:[[:space:]]*//')
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "tag=v$v"     >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          if git rev-parse "${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # NEWS.md sections use the format "## semseeker X.Y.Z" (optionally
+      # followed by a parenthesised suffix like " (dev)"). Extract the
+      # section matching the current DESCRIPTION version.
+      - name: Extract NEWS section for this version
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          v="${{ steps.ver.outputs.version }}"
+          awk -v ver="$v" '
+            $0 ~ "^## semseeker " ver "( |$)" { in_section = 1; next }
+            /^## semseeker / && in_section       { exit }
+            in_section                            { print }
+          ' NEWS.md > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "Release ${{ steps.ver.outputs.tag }}" > release_notes.md
+          fi
+
+      - name: Create tag and GitHub Release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            --title "${{ steps.ver.outputs.tag }}" \
+            --notes-file release_notes.md \
+            --target main

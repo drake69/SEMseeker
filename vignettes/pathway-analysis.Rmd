@@ -31,17 +31,17 @@ combination of genomic area, marker type and sample group that was analysed:
 
 | Function | Backend | Type of analysis |
 |---|---|---|
-| `pathway_WebGestalt()` | WebGestaltR [@WebGestaltR2023] | Gene Ontology ORA / GSEA |
-| `pathway_STRINGdb()` | STRINGdb [@STRINGdb2023] | Protein-protein interaction network |
-| `pathway_pathfindR()` | pathfindR [@pathfindR2019] | Active subnetwork enrichment |
-| `pathway_ctdR()` | ctdR / CTD [@CTD2023] | Chemical-gene-disease associations |
-| `pathway_Phenolyzer_WebGestalt()` | Phenolyzer + WebGestaltR | Disease-prioritised ORA / GSEA |
-| `pathway_Phenolyzer_STRINGdb()` | Phenolyzer + STRINGdb | Disease-prioritised network |
+| `enrich_WebGestalt()` | WebGestaltR [@WebGestaltR2023] | Gene Ontology ORA / GSEA |
+| `enrich_STRINGdb()` | STRINGdb [@STRINGdb2023] | Protein-protein interaction network |
+| `enrich_pathfindR()` | pathfindR [@pathfindR2019] | Active subnetwork enrichment |
+| `enrich_ctdR()` | ctdR / CTD [@CTD2023] | Chemical-gene-disease associations |
+| `enrich_Phenolyzer_WebGestalt()` | Phenolyzer + WebGestaltR | Disease-prioritised ORA / GSEA |
+| `enrich_Phenolyzer_STRINGdb()` | Phenolyzer + STRINGdb | Disease-prioritised network |
 
 All functions are **session-aware**: they read the active semseeker session
 (initialised by `association_analysis()`) and therefore do **not** require
 passing `result_folder` again — they pick it up automatically via
-`get_session_info()`.
+`core_get_session_info()`.
 
 <hr>
 
@@ -54,8 +54,8 @@ association_analysis()    →  statistical associations (CSV in Inference/)
       ↓
 pathway_*()               →  enriched pathways / networks (CSV in Pathway/)
       ↓
-pathway_cross_studies_compare()       →  cross-cohort Venn diagrams
-pathway_cross_subsamples_overlaps()   →  stability across subsamples
+enrich_inter_study_enrichment_compare()       →  cross-cohort Venn diagrams
+enrich_intra_study_enrichment_subsamples_overlaps()   →  stability across subsamples
 ```
 
 The `inference_details` object passed to the pathway functions is the **same**
@@ -91,7 +91,7 @@ remotes::install_github("drake69/ctdR")
 
 <hr>
 
-## 1. `pathway_WebGestalt()` — Gene Ontology ORA and GSEA
+## 1. `enrich_WebGestalt()` — Gene Ontology ORA and GSEA
 
 WebGestalt [@WebGestaltR2017; @WebGestaltR2023] runs Over-Representation
 Analysis (ORA) [@ORA-review] or Gene Set Enrichment Analysis (GSEA)
@@ -118,7 +118,7 @@ association_analysis(
 )
 
 # Gene Ontology ORA on Biological Process and Molecular Function
-pathway_WebGestalt(
+enrich_WebGestalt(
   study          = "my_study",
   types          = c("BP", "MF"),       # GO namespaces: BP, MF, CC
   enrich_methods = c("ORA"),            # "ORA" or "GSEA"
@@ -128,7 +128,7 @@ pathway_WebGestalt(
 )
 
 # GSEA on KEGG pathways
-pathway_WebGestalt(
+enrich_WebGestalt(
   study          = "my_study",
   types          = c("KEGG"),
   enrich_methods = c("GSEA"),
@@ -155,7 +155,7 @@ pathway_WebGestalt(
 ### Output
 
 Results land in `result_folder/Pathway/WebGestalt/` with one CSV per
-analysis key. After `enrichment_analysy_add_category()` normalisation, each
+analysis key. After `enrich_analysy_add_category()` normalisation, each
 result has a unified `SS_CATEGORY` column:
 
 | `SS_CATEGORY` | Source |
@@ -167,14 +167,14 @@ result has a unified `SS_CATEGORY` column:
 
 <hr>
 
-## 2. `pathway_STRINGdb()` — Protein-protein interaction network
+## 2. `enrich_STRINGdb()` — Protein-protein interaction network
 
 STRINGdb [@STRINGdb2019; @STRINGdb2023] maps the significant genes onto the
 STRING protein-protein interaction network and identifies enriched functional
 categories, GO terms, KEGG pathways and tissue expressions.
 
 ```{r stringdb, eval=FALSE}
-pathway_STRINGdb(
+enrich_STRINGdb(
   study              = "my_study",
   inference_details  = inference_details,
   pvalue_column      = "PVALUE_ADJ_ALL_BH",
@@ -205,7 +205,7 @@ or 700 for higher confidence interactions:
 # Higher confidence network (score >= 700)
 # Modify via the STRINGdb$new() call inside the function — currently fixed at 200
 # Use statistic_parameter to weight genes by their association score:
-pathway_STRINGdb(
+enrich_STRINGdb(
   study               = "my_study",
   inference_details   = inference_details,
   statistic_parameter = "SCORE",   # weight by Spearman rho or regression coefficient
@@ -224,7 +224,7 @@ pathway_STRINGdb(
 
 <hr>
 
-## 3. `pathway_pathfindR()` — Active subnetwork enrichment
+## 3. `enrich_pathfindR()` — Active subnetwork enrichment
 
 pathfindR [@pathfindR2019] identifies enriched pathways by searching for
 **active subnetworks** in a protein interaction network (PIN) rather than
@@ -232,7 +232,7 @@ simple gene list overlap. This approach captures pathway activity even when
 only a subset of pathway genes pass the significance threshold.
 
 ```{r pathfindr, eval=FALSE}
-pathway_pathfindR(
+enrich_pathfindR(
   study              = "my_study",
   path_dbs           = c("KEGG", "Reactome", "GO-BP", "GO-MF", "GO-CC"),
   iterations         = 20,              # number of active subnetwork iterations
@@ -275,15 +275,15 @@ install.packages("pathfindR")
 
 <hr>
 
-## 4. `pathway_ctdR()` — Chemical-gene-disease associations
+## 4. `enrich_ctdR()` — Chemical-gene-disease associations
 
-`pathway_ctdR()` uses the **Comparative Toxicogenomics Database** (CTD)
+`enrich_ctdR()` uses the **Comparative Toxicogenomics Database** (CTD)
 [@CTD2023] via the `ctdR` package to find chemical compounds and diseases
 associated with the significant genes. This is particularly useful for
 epigenetic studies involving environmental exposures.
 
 ```{r ctdr, eval=FALSE}
-pathway_ctdR(
+enrich_ctdR(
   study              = "my_study",
   inference_details  = inference_details,
   pvalue_column      = "PVALUE_ADJ_ALL_BH",
@@ -311,8 +311,8 @@ epigenetic regions to chemical exposures and associated diseases.
 
 ## 5 & 6. Phenolyzer variants — disease-prioritised enrichment
 
-The Phenolyzer variants (`pathway_Phenolyzer_WebGestalt()` and
-`pathway_Phenolyzer_STRINGdb()`) first **prioritise genes** using the
+The Phenolyzer variants (`enrich_Phenolyzer_WebGestalt()` and
+`enrich_Phenolyzer_STRINGdb()`) first **prioritise genes** using the
 Phenolyzer disease-gene scoring system and then run enrichment on the
 prioritised list.
 
@@ -321,7 +321,7 @@ enrichment on genes already known to be relevant to that disease:
 
 ```{r phenolyzer, eval=FALSE}
 # Phenolyzer + WebGestalt
-pathway_Phenolyzer_WebGestalt(
+enrich_Phenolyzer_WebGestalt(
   study            = "my_study",
   disease          = "breast cancer",   # disease name for Phenolyzer prioritisation
   types            = c("BP", "MF"),
@@ -332,7 +332,7 @@ pathway_Phenolyzer_WebGestalt(
 )
 
 # Phenolyzer + STRINGdb
-pathway_Phenolyzer_STRINGdb(
+enrich_Phenolyzer_STRINGdb(
   study               = "my_study",
   disease             = "breast cancer",
   inference_detail    = inference_details,
@@ -358,7 +358,7 @@ library(semseeker)
 result_folder <- "~/semseeker_results/"
 
 # 1. SEM detection
-semseeker(sample_sheet, beta_matrix, result_folder)
+semseeker(input = beta_matrix, sample_sheet = sample_sheet, result_folder = result_folder)
 
 # 2. Association analysis
 inference_details <- data.frame(
@@ -372,22 +372,22 @@ inference_details <- data.frame(
 association_analysis(inference_details, result_folder)
 
 # 3. Pathway enrichment — run all backends
-pathway_WebGestalt(
+enrich_WebGestalt(
   study="study1", types=c("BP","MF","KEGG"), enrich_methods=c("ORA"),
   pvalue_column="PVALUE_ADJ_ALL_BH",
   inference_detail=inference_details[1,], significance=TRUE)
 
-pathway_STRINGdb(
+enrich_STRINGdb(
   study="study1", inference_details=inference_details,
   pvalue_column="PVALUE_ADJ_ALL_BH", significance=TRUE,
   stringDBVersion="12.0")
 
-pathway_pathfindR(
+enrich_pathfindR(
   study="study1", path_dbs=c("KEGG","Reactome","GO-BP"),
   iterations=20, inference_details=inference_details,
   pvalue_column="PVALUE_ADJ_ALL_BH", significance=TRUE)
 
-pathway_ctdR(
+enrich_ctdR(
   study="study1", inference_details=inference_details,
   pvalue_column="PVALUE_ADJ_ALL_BH", significance=TRUE)
 ```
@@ -415,7 +415,7 @@ Pathway/
     └── ...
 ```
 
-Each CSV is processed by `enrichment_analysy_add_category()` which:
+Each CSV is processed by `enrich_analysy_add_category()` which:
 - Normalises category labels to `SS_CATEGORY` (consistent across backends)
 - Adds a `PHENOTYPE` column (`TRUE` if the term matches the study name)
 - Applies multiple testing correction (BH or q-value)
@@ -437,26 +437,26 @@ Each CSV is processed by `enrichment_analysy_add_category()` which:
 
 ## Cross-study and cross-subsample comparison
 
-### `pathway_cross_studies_compare()`
+### `enrich_inter_study_enrichment_compare()`
 
 Compares enriched pathways across two or more independent cohorts and produces
 Venn diagrams [@VennDiagram] of overlapping terms:
 
 ```{r cross_studies, eval=FALSE}
-pathway_cross_studies_compare(
+enrich_inter_study_enrichment_compare(
   result_folder = "~/meta_results/",
   # studies A and B must already have Pathway/ results
 )
 ```
 
-### `pathway_cross_subsamples_overlaps()`
+### `enrich_intra_study_enrichment_subsamples_overlaps()`
 
 Tests the **stability** of pathway enrichment under random subsampling of the
 cohort. Run this to assess how robust the enriched pathways are to sample
 variability:
 
 ```{r cross_subsamples, eval=FALSE}
-pathway_cross_subsamples_overlaps(
+enrich_intra_study_enrichment_subsamples_overlaps(
   inference_details  = inference_details,
   result_folder      = "~/semseeker_results/",
   pathway_package    = "WebGestalt",            # "" = compare all backends
@@ -474,15 +474,15 @@ pathway_cross_subsamples_overlaps(
 
 | Scenario | Recommended backend |
 |---|---|
-| First exploratory run, GO + KEGG | `pathway_WebGestalt()` with ORA |
-| Small gene lists (< 20 genes) | `pathway_WebGestalt()` with ORA |
-| Ranked gene lists, pathway activity | `pathway_WebGestalt()` with GSEA |
-| Protein interaction context | `pathway_STRINGdb()` |
-| Partial pathway activation (sparse hits) | `pathway_pathfindR()` |
-| Environmental/chemical exposure study | `pathway_ctdR()` |
-| Known disease hypothesis | `pathway_Phenolyzer_WebGestalt()` or `pathway_Phenolyzer_STRINGdb()` |
-| Replication across cohorts | `pathway_cross_studies_compare()` |
-| Bootstrap stability check | `pathway_cross_subsamples_overlaps()` |
+| First exploratory run, GO + KEGG | `enrich_WebGestalt()` with ORA |
+| Small gene lists (< 20 genes) | `enrich_WebGestalt()` with ORA |
+| Ranked gene lists, pathway activity | `enrich_WebGestalt()` with GSEA |
+| Protein interaction context | `enrich_STRINGdb()` |
+| Partial pathway activation (sparse hits) | `enrich_pathfindR()` |
+| Environmental/chemical exposure study | `enrich_ctdR()` |
+| Known disease hypothesis | `enrich_Phenolyzer_WebGestalt()` or `enrich_Phenolyzer_STRINGdb()` |
+| Replication across cohorts | `enrich_inter_study_enrichment_compare()` |
+| Bootstrap stability check | `enrich_intra_study_enrichment_subsamples_overlaps()` |
 
 ## Session info
 

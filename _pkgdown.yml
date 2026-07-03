@@ -39,26 +39,26 @@ reference:
     desc: "Top-level functions for running a full SEM analysis"
     contents:
       - semseeker
-      - analyze_population
-      - analyze_single_sample
+      - sem_analyze_population
+      - sem_analyze_single_sample
   - title: "Association & statistics"
     desc: "Downstream statistical analysis on SEM results"
     contents:
       - association_analysis
-      - apply_stat_model
+      - assoc_apply_stat_model
   - title: "Delta metrics"
     desc: "Per-region variability summaries"
     contents:
-      - deltaX_get
-      - delta_single_sample
-      - deltar_single_sample
+      - sem_deltaX_get
+      - sem_delta_single_sample
+      - sem_deltar_single_sample
   - title: "Data & annotation"
     desc: "Pivot tables, position annotations, signal helpers"
     contents:
-      - create_position_pivots
-      - annotate_position_pivots
-      - data_preparation
-      - build_data_set_from_geo
+      - anno_create_position_pivots
+      - anno_annotate_position_pivots
+      - io_data_preparation
+      - io_build_data_set_from_geo
   - title: "Datasets"
     contents:
       - PROBES

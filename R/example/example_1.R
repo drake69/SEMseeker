@@ -74,7 +74,7 @@
 # sample_sheet <- rbind(sample_sheet, reference)
 #
 #
-# semseeker (sample_sheet = sample_sheet,
-#            signal_data = normalizedData,
-#            result_folder = file.path(workingFolder,"/semseeker_result/"))
+# semseeker(input         = normalizedData,
+#           sample_sheet  = sample_sheet,
+#           result_folder = file.path(workingFolder, "/semseeker_result/"))
 #

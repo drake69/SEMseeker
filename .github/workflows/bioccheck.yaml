@@ -1,0 +1,173 @@
+name: BiocCheck
+
+on:
+  push:
+    branches-ignore: [main, master]      # direct push to main/master is blocked
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bioccheck:
+    runs-on: ubuntu-latest
+    name: BiocCheck
+
+    # BiocCheck's checkBBScompatibility requires the on-disk directory name
+    # to match the Package: field in DESCRIPTION (SEMseeker, CamelCase, makes
+    # the SEM = Stochastic Epigenetic Mutations acronym readable). We check
+    # out into a SEMseeker/ subdirectory so the dirname matches the package
+    # name and run all R steps from there.
+    defaults:
+      run:
+        working-directory: SEMseeker
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      # polars is on community.r-multiverse.org, not CRAN
+      NOT_CRAN: "true"
+      # 'fs' (transitive dep of rmarkdown/bslib/pkgdown) needs libuv at build
+      # time. Use the bundled libuv shipped with 'fs' instead of system
+      # libuv1-dev — same approach as R-CMD-check.yml. Documented in
+      # DESCRIPTION SystemRequirements.
+      USE_BUNDLED_LIBUV: "1"
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: SEMseeker
+
+      # System libs needed by transitive deps (cairo/fontconfig for gdtools,
+      # libxml2/libssl for various Bioc packages, libgit2 for remotes).
+      - name: Install system libraries (Linux)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libcurl4-openssl-dev libssl-dev libxml2-dev \
+            libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
+            libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
+            libcairo2-dev libgit2-dev libsodium-dev
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Cache R packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-r-bioccheck-${{ hashFiles('SEMseeker/DESCRIPTION') }}
+          restore-keys: ${{ runner.os }}-r-bioccheck-
+
+      # Use remotes (not pak/setup-r-dependencies) so DESCRIPTION's
+      # Additional_repositories (community.r-multiverse.org for polars) is
+      # honoured. Then install BiocCheck and the Illumina annotation
+      # Suggests required for the array-tech detection paths.
+      - name: Install R dependencies
+        run: |
+          Sys.setenv(NOT_CRAN = "true")
+          install.packages(
+            c("remotes", "BiocManager"),
+            repos = c(CRAN = "https://packagemanager.posit.co/cran/latest")
+          )
+          remotes::install_deps(
+            dependencies = NA,
+            repos = c(
+              rpolars = "https://community.r-multiverse.org",
+              CRAN    = "https://packagemanager.posit.co/cran/latest"
+            )
+          )
+          BiocManager::install("BiocCheck", ask = FALSE, update = FALSE)
+          BiocManager::install(
+            c(
+              "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
+              "IlluminaHumanMethylation450kanno.ilmn12.hg19",
+              "IlluminaHumanMethylation27kanno.ilmn12.hg19"
+            ),
+            ask = FALSE, update = FALSE
+          )
+        shell: Rscript {0}
+
+      - name: Install SEMseeker (needed by BiocCheck man-page namespace load)
+        run: |
+          tryCatch(
+            remotes::install_local(
+              ".",
+              dependencies = NA,
+              upgrade = "never",
+              repos = c(
+                rpolars = "https://community.r-multiverse.org",
+                CRAN    = "https://packagemanager.posit.co/cran/latest"
+              )
+            ),
+            error = function(e) {
+              cat("install_local failed:", conditionMessage(e), "\n")
+              quit(status = 1)
+            }
+          )
+          # remotes raises warnings (not errors) on cascading dep failures,
+          # so the shell step exits 0 even when SEMseeker did not install.
+          # Verify the namespace loads — fail loudly otherwise.
+          if (!requireNamespace("SEMseeker", quietly = TRUE)) {
+            cat("ERROR: SEMseeker namespace not available after install\n")
+            quit(status = 1)
+          }
+        shell: Rscript {0}
+
+      - name: Run BiocCheckGitClone
+        run: |
+          gc <- BiocCheck::BiocCheckGitClone(".")
+          n_err  <- length(gc$error)
+          n_warn <- length(gc$warning)
+          n_note <- length(gc$note)
+          cat(sprintf(
+            paste0(
+              "BiocCheckGitClone summary: %d error(s), ",
+              "%d warning(s), %d note(s)\n"
+            ),
+            n_err, n_warn, n_note
+          ))
+          if (n_err > 0) {
+            cat("\nGitClone errors:\n")
+            cat(paste0("  - ", gc$error, collapse = "\n"), "\n")
+            quit(status = 1)
+          }
+        shell: Rscript {0}
+
+      - name: Run BiocCheck
+        run: |
+          result <- BiocCheck::BiocCheck(".")
+          # Distinguish real code errors from transient Bioconductor
+          # infrastructure failures (support site / mailing list lookups
+          # that depend on bioconductor.org availability).
+          infra_pattern <- "Unable to find your email in the Support Site"
+          errs       <- result$error
+          flaky_errs <- errs[grepl(infra_pattern, errs, fixed = TRUE)]
+          real_errs  <- errs[!grepl(infra_pattern, errs, fixed = TRUE)]
+          n_real  <- length(real_errs)
+          n_flaky <- length(flaky_errs)
+          n_warn  <- length(result$warning)
+          n_note  <- length(result$note)
+          cat(sprintf(
+            paste0(
+              "BiocCheck summary: %d code error(s) ",
+              "[+ %d infra flake(s) skipped], ",
+              "%d warning(s), %d note(s)\n"
+            ),
+            n_real, n_flaky, n_warn, n_note
+          ))
+          if (n_flaky > 0) {
+            cat("\nSkipped infrastructure flakes:\n")
+            cat(paste0("  - ", flaky_errs, collapse = "\n"), "\n")
+          }
+          if (n_real > 0) {
+            cat("\nReal errors:\n")
+            cat(paste0("  - ", real_errs, collapse = "\n"), "\n")
+            quit(status = 1)
+          }
+        shell: Rscript {0}

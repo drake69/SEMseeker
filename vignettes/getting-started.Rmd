@@ -18,6 +18,31 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r real_data_setup, include=FALSE}
+# ── Demo dataset: real GSE133774 (EPIC 850k, BWS + MLID) ─────────────────
+#
+# test_signal_gse133774 and test_samplesheet_gse133774 are bundled fixtures
+# built from the GEO series matrix via data-raw/build_test_signal_fixture.R.
+# They contain real EPIC beta values for 18k probes around 81 imprinting DMRs
+# (10 samples: 6 controls + 4 BWS/MLID family members, including L1 = BWS).
+#
+# Filtering to the KCNQ1OT1 + H19_IGF2 DMR probes keeps the vignette fast
+# while preserving the biologically relevant signal (real BWS epimutations).
+data("test_signal_gse133774",      package = "SEMseeker")
+data("test_samplesheet_gse133774", package = "SEMseeker")
+data("test_master_features",       package = "SEMseeker")
+
+.demo_probes <- subset(test_master_features,
+                       DMR_LABEL %in% c("KCNQ1OT1:TSS-DMR", "H19_IGF2:IG-DMR") &
+                       PROBE %in% rownames(test_signal_gse133774))
+beta_matrix  <- test_signal_gse133774[.demo_probes$PROBE, , drop = FALSE]
+sample_sheet <- test_samplesheet_gse133774[, c("Sample_ID", "Sample_Group")]
+sample_sheet$Sample_Name <- sample_sheet$Sample_ID
+sample_sheet <- sample_sheet[, c("Sample_ID", "Sample_Name", "Sample_Group")]
+
+tmp_result_folder <- file.path(tempdir(), "semseeker_vignette_results")
+```
+
 ## What is semseeker?
 
 **semseeker** is an R package for detecting, quantifying and analysing
@@ -80,6 +105,30 @@ remotes::install_github("drake69/SEMseeker")
 > install.packages("polars", repos = "https://community.r-multiverse.org")
 > ```
 
+### System dependencies
+
+**macOS — XQuartz.** R 4.6's base `tcltk` package is linked against
+`/opt/X11/lib/libX11.6.dylib` at install time. Plain SEMseeker usage
+(`library(SEMseeker)`, `semseeker(...)`, `association_analysis(...)`)
+does not load tcltk. However, some Bioconductor optional features
+that transitively pull `minfi` or `GEOquery` (e.g. running the
+annotation-concordance checks) load tcltk and segfault if XQuartz is
+not installed. Install XQuartz once via:
+
+```sh
+brew install --cask xquartz
+```
+
+or download from <https://www.xquartz.org/>. You may need to log out
+and back in for the path to be picked up. Linux and Windows users do
+not need XQuartz.
+
+**Linux — libuv.** Building from source on Linux pulls `fs` which
+needs `libuv` ≥ 1 at compile time. Install via
+`sudo apt-get install libuv1-dev` (Debian/Ubuntu) or
+`sudo dnf install libuv-devel` (Fedora/RHEL), or set
+`USE_BUNDLED_LIBUV=1` to compile against a bundled copy.
+
 <hr>
 
 ## Step 1 — Prepare your data
@@ -89,11 +138,12 @@ remotes::install_github("drake69/SEMseeker")
 semseeker expects a **probe × sample** matrix of beta values (0–1) or M-values.
 Probe IDs must be Illumina CpG identifiers (e.g. `cg00000029`).
 
-```{r beta_matrix, eval=FALSE}
-# Example: load a pre-normalised matrix (rows = probes, columns = samples)
-beta_matrix <- readRDS("normalised_beta.rds")
+```{r beta_matrix}
+# Example: load a pre-normalised matrix (rows = probes, columns = samples).
+# Here we use the small synthetic matrix prepared in the hidden setup
+# chunk above; in practice you would readRDS("normalised_beta.rds").
 
-dim(beta_matrix)       # e.g. 866895 × 50
+dim(beta_matrix)       # e.g. 866895 × 50 on a real EPIC dataset
 beta_matrix[1:3, 1:3]
 ```
 
@@ -129,8 +179,9 @@ A data frame with at minimum:
 | `Sample_Name` | Human-readable label |
 | `Sample_Group` | One of `"Case"`, `"Control"`, `"Reference"` |
 
-```{r sample_sheet, eval=FALSE}
-sample_sheet <- read.csv2("sample_sheet.csv")
+```{r sample_sheet}
+# Example: load a sample sheet (here we use the synthetic one prepared
+# in the hidden setup chunk; in practice you would read.csv2("sample_sheet.csv")).
 
 # Minimal required columns
 head(sample_sheet[, c("Sample_ID", "Sample_Name", "Sample_Group")])
@@ -150,8 +201,8 @@ normalisation → mutation calling → lesion aggregation → delta metric compu
 library(semseeker)
 
 semseeker(
+  input         = beta_matrix,
   sample_sheet  = sample_sheet,
-  signal_data   = beta_matrix,
   result_folder = "~/semseeker_results/"
 )
 ```
@@ -172,14 +223,57 @@ Example — run only probe-level mutations, sequential mode, 2 cores:
 
 ```{r run_minimal, eval=FALSE}
 semseeker(
+  input             = beta_matrix,
   sample_sheet      = sample_sheet,
-  signal_data       = beta_matrix,
   result_folder     = "~/semseeker_results/",
   parallel_strategy = "sequential",
   areas             = c("PROBE"),
   marker            = c("MUTATIONS", "LESIONS")
 )
 ```
+
+### Genomic areas & subareas
+
+After per-probe markers are computed, SEMseeker annotates each probe to the
+genomic **areas** (and their **subareas**) it belongs to, so that epimutations
+can be aggregated region-by-region. The available subareas per area:
+
+| Area | Subareas |
+|---|---|
+| `GENE` | `BODY`, `TSS1500`, `TSS200`, `1STEXON`, `5UTR`, `3UTR`, `EXONBND`, `WHOLE` |
+| `ISLAND` | `ISLAND`, `N_SHORE`, `S_SHORE`, `N_SHELF`, `S_SHELF`, `OPENSEA`, `WHOLE` |
+| `CHR` | `WHOLE`, `CYTOBAND` |
+| `DMR` | `WHOLE`, `DMR` |
+| `PROBE` | `WHOLE` |
+
+#### CpG-island context mapping (`ISLAND`)
+
+The `ISLAND` subareas mirror Illumina's `Relation_to_Island`, which classifies
+every probe into one of six mutually exclusive categories. SEMseeker maps them
+as follows — and, exactly as `GENE_WHOLE` covers the **whole gene**,
+`ISLAND_WHOLE` covers the **whole island neighbourhood**:
+
+| Illumina `Relation_to_Island` | SEMseeker subarea | Region label |
+|---|---|---|
+| `Island` | `ISLAND` | island coordinate (`chr:start-end`) |
+| `N_Shore` / `S_Shore` | `N_SHORE` / `S_SHORE` | island coordinate (±2 kb flank) |
+| `N_Shelf` / `S_Shelf` | `N_SHELF` / `S_SHELF` | island coordinate (2–4 kb flank) |
+| `OpenSea` | `OPENSEA` | gap coordinate (`chr:start-end`) |
+| *(union of the above except OpenSea)* | `WHOLE` | island coordinate |
+
+Notes:
+
+- **`WHOLE` = `ISLAND` + shores + shelves** (the whole CpG-island
+  neighbourhood, island core ±4 kb). It is **not** the island core alone —
+  use `ISLAND` for the core.
+- **`OPENSEA`** are the CpGs outside every neighbourhood. Each open-sea probe
+  is grouped by the genomic **gap** between neighbourhoods that contains it,
+  labelled by that gap's coordinate `chr:start-end`. A gap never crosses a
+  chromosome boundary, so no open-sea region spans chromosomes.
+- The same definitions apply to WGBS / long-read data, where the island
+  neighbourhoods are reconstructed from UCSC CpG-island coordinates instead of
+  the Illumina manifest, so array and sequencing analyses share identical
+  region semantics.
 
 <hr>
 
@@ -274,27 +368,122 @@ whether mean methylation (or intra-region spread) differs by phenotype, without
 any mutation-calling step.
 
 ```{r signal_analysis, eval=FALSE}
-library(polars)
-
-# Read mean-signal pivot at gene level
-signal_mean <- as.data.frame(
-  pl$read_parquet("~/semseeker_results/Data/SIGNAL_MEAN_GENE_WHOLE.parquet")
+# inference_details specifies the PREDICTOR and the test — not a model formula.
+# `independent_variable` is the phenotype column, `family_test` the statistical
+# test. The dependent marker (SIGNAL_MEAN, MUTATIONS, …) is NOT named here: it
+# comes from the markers you ran through semseeker(); association_analysis()
+# iterates over them and reads the matching pivot tables internally.
+inference_details <- data.frame(
+  independent_variable = "Sample_Group",
+  family_test          = "wilcoxon",   # two independent groups, non-parametric
+  transformation_y     = "none",
+  depth_analysis       = 3,            # per genomic area (region-level / EWAS-style)
+  filter_p_value       = TRUE
 )
 
-# Run a Wilcoxon test between cases and controls on mean signal
 association_analysis(
-  result_folder   = "~/semseeker_results/",
-  sample_sheet    = sample_sheet,
-  marker          = c("SIGNAL_MEAN"),
-  areas           = c("GENE"),
-  stat_model      = list(type = "wilcoxon", alt = "two.sided"),
-  output_folder   = "~/semseeker_results/Stats/"
+  inference_details = inference_details,
+  result_folder     = "~/semseeker_results/",
+  parallel_strategy = "multicore",
+  maxResources      = 90
 )
 ```
 
 This is particularly useful when you want to detect **differential methylation**
 at the region level (classic EWAS-style analysis) alongside the epimutation
 burden analysis, using a single unified framework.
+
+<hr>
+
+## Subset rationale & full-pipeline runnable
+
+The runnable demo above uses a **subset** of probes (only those around the
+BWS-related imprinting DMRs `KCNQ1OT1:TSS-DMR` and `H19_IGF2:IG-DMR`) so the
+vignette builds in seconds during CRAN/Bioconductor checks. This is **not**
+representative of a real-world workflow: a production analysis would normalise
+IDAT files for an entire cohort, correct for biological confounders (age,
+cell composition for whole-blood samples), and then run semseeker on the
+full beta matrix.
+
+The block below — kept as commented `eval = FALSE` reference — shows the
+**complete end-to-end pipeline** as you would run it on a real GEO dataset
+such as Beckwith-Wiedemann GSE95486. Uncomment and adapt to your study.
+
+```{r full_pipeline_recipe, eval=FALSE}
+# ─── Full pipeline from raw GEO data (~30-60 min on a laptop) ──────────────
+
+## Step 0 — Download IDAT files from GEO (e.g. BWS GSE95486)
+library(GEOquery)
+gse <- getGEO("GSE95486", GSEMatrix = FALSE, destdir = "./raw")
+GEOquery::getGEOSuppFiles("GSE95486", baseDir = "./raw", makeDirectory = TRUE)
+# (then extract the IDATs into ./raw/GSE95486/IDATs/)
+
+## Step 1 — Load & SWAN-normalise IDAT files via ChAMP
+library(ChAMP)
+myLoad <- champ.load(
+  directory      = "./raw/GSE95486/IDATs",
+  arraytype      = "EPIC",
+  filterDetP     = TRUE,
+  filterSNPs     = TRUE,
+  filterMultiHit = TRUE,
+  filterXY       = TRUE
+)
+myNorm <- champ.norm(
+  beta       = myLoad$beta,
+  rgSet      = myLoad$rgSet,
+  mset       = myLoad$mset,
+  method     = "SWAN",
+  arraytype  = "EPIC",
+  cores      = parallel::detectCores() - 1L
+)
+
+## Step 2 — Age correction
+##   Confounding by chronological age is the strongest known driver of SEM
+##   burden (Gentilini et al., 2015 — SEMs accumulate exponentially with
+##   age). Always regress age out before disease-vs-control comparison.
+library(limma)
+age_residuals <- removeBatchEffect(
+  myNorm,
+  covariates = sample_sheet$Age   # numeric, years
+)
+
+## Step 3 — Cell composition deconvolution (whole-blood samples ONLY)
+##   In peripheral whole blood, methylation is strongly confounded by the
+##   relative proportions of B cells, CD4/CD8 T, monocytes, NK and granulocytes.
+##   For tissues other than whole blood, skip this step.
+library(FlowSorted.Blood.EPIC)
+cells <- estimateCellCounts2(
+  myLoad$rgSet,
+  compositeCellType = "Blood",
+  referencePlatform = "IlluminaHumanMethylationEPIC"
+)
+# Regress out the cell-fraction covariates from the (age-residualised) matrix
+adjusted <- removeBatchEffect(
+  age_residuals,
+  covariates = cells$counts
+)
+
+## Step 4 — Run SEMseeker on the fully preprocessed matrix
+SEMseeker::semseeker(
+  input         = adjusted,
+  sample_sheet  = sample_sheet,
+  result_folder = "./bws_full_results/"
+)
+# ──────────────────────────────────────────────────────────────────────────
+```
+
+**Pre-processing checklist** before running `semseeker()`:
+
+- [ ] Cohort normalisation (SWAN / BMIQ / Functional Normalisation)
+- [ ] Detection-p filter, multi-hit/SNP/cross-reactive probe removal
+- [ ] **Age** residualisation (mandatory if cohort age range > a few years)
+- [ ] **Cell composition** deconvolution (whole-blood only — `FlowSorted.Blood.EPIC`)
+- [ ] Batch / processing-date correction (if known)
+- [ ] Sample QC pass (detection rate, bead count, predicted-sex check)
+
+semseeker assumes upstream preprocessing has already been performed. Skipping
+these steps inflates the false-positive SEM rate — particularly in older
+cohorts and whole-blood studies.
 
 <hr>
 
