@@ -56,20 +56,19 @@ reference:
   - title: "Delta metrics"
     desc: "Per-region variability summaries"
     contents:
-      - sem_deltaX_get
       - sem_delta_single_sample
       - sem_deltar_single_sample
   - title: "Data & annotation"
     desc: "Pivot tables, position annotations, signal helpers"
     contents:
-      - anno_create_position_pivots
       - anno_annotate_position_pivots
       - io_data_preparation
       - io_build_data_set_from_geo
   - title: "Datasets"
     contents:
-      - PROBES
-      - PROBES_CHR_CHR
+      - cytoband_hg19
+      - dmr_annotation
+      - metrics_properties
 
 footer:
   structure:
