@@ -1,0 +1,58 @@
+# Smart split of a multi-gene AREA name with prefix recovery
+
+AI-107 (2026-06-09). Bioconductor and external annotations sometimes
+encode multiple genes in a compact slash-separated form where ALL suffix
+tokens inherit a prefix from the first token. The naive \`strsplit(s,
+"/")\` loses the prefix and produces unintelligible single-letter or
+digit-only tokens:
+
+## Usage
+
+``` r
+.anno_smart_split_area_name(s)
+```
+
+## Arguments
+
+- s:
+
+  A single character string (one AREA name).
+
+## Value
+
+A character vector with the expansion. If \`s\` does not contain
+\`"/"\`, returns \`s\` unchanged in a length-1 vector.
+
+## Details
+
+\`"HLA-A/B/C"\` → \`c("HLA-A", "B", "C")\` (BAD) \`"KRT8/18"\` →
+\`c("KRT8", "18")\` (BAD)
+
+This function reconstructs the missing prefix using one of two
+heuristics, applied in order:
+
+\- Strategy 1: if the first token contains \`-\`, take everything up to
+and including the LAST \`-\` as the prefix: \`"HLA-A"\` → prefix
+\`"HLA-"\` - Strategy 2: otherwise, take the leading run of alphabetic
+characters as the prefix: \`"KRT8"\` → prefix \`"KRT"\`
+
+Each non-first token is then prefixed only if it does not already start
+with the recovered prefix (avoids double-prepending on inputs like
+\`"HLA-A/HLA-B"\` or \`"HBA1/HBA2"\`).
+
+## Examples
+
+``` r
+# Internal helper — not exported. Reach it via ::: so R CMD check --as-cran
+# can run the examples block under CheckExEnv (which only sees exports).
+SEMseeker:::.anno_smart_split_area_name("HLA-A/B/C")    # c("HLA-A","HLA-B","HLA-C")
+#> [1] "HLA-A" "HLA-B" "HLA-C"
+SEMseeker:::.anno_smart_split_area_name("HBA1/HBA2")    # c("HBA1","HBA2")
+#> [1] "HBA1" "HBA2"
+SEMseeker:::.anno_smart_split_area_name("KRT8/18")      # c("KRT8","KRT18")
+#> [1] "KRT8"  "KRT18"
+SEMseeker:::.anno_smart_split_area_name("TP53")         # "TP53"
+#> [1] "TP53"
+SEMseeker:::.anno_smart_split_area_name("GENE-A-B/C/D") # c("GENE-A-B","GENE-A-C","GENE-A-D")
+#> [1] "GENE-A-B" "GENE-A-C" "GENE-A-D"
+```

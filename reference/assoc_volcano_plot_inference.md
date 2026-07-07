@@ -1,0 +1,96 @@
+# Volcano plot of association results for one inference_detail row.
+
+Reads the inference CSV that corresponds to the given
+\`inference_detail\` row (already written by \`association_analysis()\`
+into \`\<result_folder\>/Inference/\`), splits it by \`(AREA,
+SUBAREA)\`, and produces one PNG volcano per combination under
+\`\<result_folder\>/Chart/VOLCANO/\`. Naming mirrors the inference CSV
+convention so the visual artifact is one-to-one traceable to the
+analytic output:
+
+## Usage
+
+``` r
+assoc_volcano_plot_inference(
+  inference_detail,
+  result_folder,
+  markers = NULL,
+  pvalue_column = NULL,
+  alpha = 0.05,
+  top_n_label = 20L,
+  width = 9,
+  height = 9,
+  units = "in",
+  dpi = NULL,
+  overwrite = FALSE
+)
+```
+
+## Arguments
+
+- inference_detail:
+
+  A single row of \`inference_details\` (data.frame or list) — the same
+  shape consumed by \`association_analysis()\`. Must carry
+  \`independent_variable\`, \`family_test\`, \`covariates\`,
+  \`covariates_dummy\`, \`transformation_y\`, \`depth_analysis\`,
+  \`areas_sql_condition\`, \`samples_sql_condition\`.
+
+- result_folder:
+
+  Project results folder (e.g. \`~/.../results/GSE225845\`). The
+  function reads CSVs from \`\<result_folder\>/Inference/\` and writes
+  PNGs under \`\<result_folder\>/Chart/VOLCANO/\`.
+
+- markers:
+
+  Character vector of marker names to plot for this scheda (e.g.
+  \`c("SIGNAL","DELTARP","DELTARQ")\` for limma_2 PROBE). If NULL,
+  inferred from the CSVs that exist in \`Inference/\` matching this
+  scheda's metadata.
+
+- alpha:
+
+  Significance threshold drawn as a horizontal dashed line at
+  \`-log10(alpha)\`. Points with \`PVALUE_ADJ \<= alpha\` are coloured
+  red (significant), the rest grey (non-significant). Default 0.05.
+
+- top_n_label:
+
+  How many of the top-significant points (by lowest \`PVALUE_ADJ\`) get
+  an \`AREA_OF_TEST\` text label. Default 20. Set to 0 to disable
+  labels.
+
+- width, height, units:
+
+  Passed to \`ggplot2::ggsave()\`. Default 9 × 9 inches.
+
+- dpi:
+
+  Plot resolution. Defaults to \`ssEnv\$plot_resolution_ppi\` (typically
+  600).
+
+- overwrite:
+
+  If FALSE (default) skip PNGs that already exist.
+
+## Value
+
+Invisibly, a character vector of the PNG paths written (or that would
+have been written, when \`overwrite = FALSE\` and the file already
+exists).
+
+## Details
+
+\`MARKER_DEPTH_depth_IV_transformation_y_family_covariates_areas_sql_condition_AREA_SUBAREA.png\`
+
+(passed through \`core_name_cleaning()\` which uppercases + replaces
+comparison operators with \`\_GT\_\` / \`\_LT\_\` / \`\_EQ\_\` etc.)
+
+## Examples
+
+``` r
+# Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+invisible(NULL)
+```

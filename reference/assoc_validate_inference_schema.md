@@ -1,0 +1,37 @@
+# Validate the schema of inference_details (strict, with helpful errors)
+
+Two responsibilities:
+
+## Usage
+
+``` r
+assoc_validate_inference_schema(inference_details, strict = TRUE)
+```
+
+## Arguments
+
+- inference_details:
+
+  data.frame from the user.
+
+- strict:
+
+  Whether to error on unknown columns (\`TRUE\`, default, recommended)
+  or just warn (\`FALSE\`, lenient mode for back-compat).
+
+## Value
+
+data.frame with all expected columns present (NA where missing).
+
+## Details
+
+1\. \*\*Fill missing optional columns\*\* with NA, so downstream code
+can always reference them without \`is.null()\` checks. 2. \*\*Reject
+unknown columns\*\* with a clear diagnostic — including a fuzzy-match
+suggestion when the unknown name is close to an expected one (typical
+case: typo in setup like \`phenolyser\` vs \`phenolyzer\`, or
+\`areas_sql_condtion\` vs \`areas_sql_condition\`).
+
+The vocabulary of legal columns is the source of truth for what the
+package accepts from the user. Any new user-input column must be
+registered here.
