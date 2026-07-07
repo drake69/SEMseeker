@@ -3,6 +3,13 @@ url: https://drake69.github.io/semseeker/
 template:
   bootstrap: 5
   bootswatch: flatly
+  includes:
+    in_header: |
+      <script>
+        window.vmtrcq = window.vmtrcq || [];
+        window.vmtrc = window.vmtrc || function (){window.vmtrcq.push(Array.prototype.slice.call(arguments))};
+      </script>
+      <script defer src="https://cdn.vemetric.com/main.js" id="vmtrc-scr" data-token="nWIrdnyvzA1sksDn"></script>
 
 home:
   title: "semseeker — Stochastic Epigenetic Mutation Seeker"
