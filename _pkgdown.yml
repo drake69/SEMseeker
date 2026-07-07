@@ -41,35 +41,6 @@ navbar:
       icon: fab fa-github
       href: https://github.com/drake69/semseeker
 
-reference:
-  - title: "Main entry points"
-    desc: "Top-level functions for running a full SEM analysis"
-    contents:
-      - semseeker
-      - sem_analyze_population
-      - sem_analyze_single_sample
-  - title: "Association & statistics"
-    desc: "Downstream statistical analysis on SEM results"
-    contents:
-      - association_analysis
-      - assoc_apply_stat_model
-  - title: "Delta metrics"
-    desc: "Per-region variability summaries"
-    contents:
-      - sem_delta_single_sample
-      - sem_deltar_single_sample
-  - title: "Data & annotation"
-    desc: "Pivot tables, position annotations, signal helpers"
-    contents:
-      - anno_annotate_position_pivots
-      - io_data_preparation
-      - io_build_data_set_from_geo
-  - title: "Datasets"
-    contents:
-      - cytoband_hg19
-      - dmr_annotation
-      - metrics_properties
-
 footer:
   structure:
     left: developed_by
