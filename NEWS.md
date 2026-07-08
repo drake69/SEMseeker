@@ -2,6 +2,20 @@
 
 ## semseeker 0.99.2
 
+### Bug fixes
+
+- **`plot_box_plot()`: fixed R CMD check ERROR under ggplot2 >= 4.0.**
+  `ggpubr::stat_compare_means(label = "p.format")` builds an internal
+  `after_stat(create_p_label(...))` expression that ggplot2 >= 4.0 cannot
+  resolve when ggpubr is loaded via `::` but not attached, causing
+  "could not find function 'create_p_label'" (test-2-box-plot.R). The
+  comparison p-value is now computed directly from `stats`
+  (`t.test`/`wilcox.test`/`kruskal.test`/`anova`) and drawn with
+  `ggplot2::annotate()`, removing the ggpubr rendering-path dependency.
+  Behaviour change: the `kruskal.test` branch now shows the overall test
+  p-value only; the per-pair `ggpubr` brackets have been dropped. Also fixed
+  the `unit=`/`units=` partial-argument-match warning in `ggsave()`.
+
 ### Breaking changes
 
 - **LESIONS detection now uses genomic distance, not probe count (AI-092).**
