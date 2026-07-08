@@ -35,8 +35,9 @@ sample_sheet <- data.frame(
 
 `association_analysis()` is the downstream statistical engine of semseeker.
 After `semseeker()` has computed epimutation counts, lesion counts and delta
-metrics (ΔBeta, ΔRP, ΔIV, ΔEV, ΔRV), this function tests whether any of those
-values are associated with phenotypic or clinical variables.
+metrics (`DELTAS`, `DELTAR`, and their ranked variants `DELTAP`/`DELTARP` and
+`DELTAQ`/`DELTARQ`), this function tests whether any of those values are
+associated with phenotypic or clinical variables.
 
 The function supports **three broad families** of models, all run per genomic
 region in parallel using `future` [@future]:
@@ -102,13 +103,13 @@ Any semseeker output metric can be the dependent variable in `formula`:
 | `MUTATIONS_HYPER` | Count of hypermethylated mutations per region |
 | `LESIONS_HYPO` | Count of hypomethylated lesions per region |
 | `LESIONS_HYPER` | Count of hypermethylated lesions per region |
-| `DELTARP` | Delta Ranked Product — combined sensitivity score |
-| `DELTARQ` | Delta Ranked Product (quantile variant) |
-| `DELTAQ` | Delta quantile |
-| `DELTAS` | Delta signal |
-| `DELTAR` | Delta rank |
-| `DELTAP` | Delta proportion |
-| `MEAN` | Mean methylation signal |
+| `DELTAS` | Delta Signal — signed deviation of the value beyond the reference threshold |
+| `DELTAR` | Delta Ratio — `DELTAS` divided by the reference interval width (superior − inferior) |
+| `DELTAP` | `DELTAS` discretised into equal-width bins, each assigned an integer rank weight |
+| `DELTARP` | `DELTAR` discretised into equal-width bins, each assigned an integer rank weight (default 4 bins) |
+| `DELTAQ` | `DELTAS` discretised into quantile bins, each assigned an integer rank weight |
+| `DELTARQ` | `DELTAR` discretised into quantile bins, each assigned an integer rank weight (default 4 bins) |
+| `SIGNAL_MEAN` | Per-probe mean methylation signal (marker `SIGNAL`, figure `MEAN`) |
 
 <hr>
 

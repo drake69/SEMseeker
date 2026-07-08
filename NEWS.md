@@ -217,7 +217,7 @@
 - Corrected SEM citations: replaced Teschendorff with correct attribution to
   Gentilini et al. 2015 (doi:10.18632/aging.100792) and Corsaro et al. 2023
   (doi:10.3390/cancers15164109).
-- Added differential signal analysis section (SIGNAL_MEAN / SIGNAL_RANGE) to
+- Added differential signal analysis section (SIGNAL_MEAN) to
   getting-started vignette.
 
 ## semseeker 0.10.0 and earlier
