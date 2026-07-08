@@ -133,7 +133,7 @@ jobs:
           find "$RUNNER_TEMP/package" -name "*.Rout.fail" -exec echo "=== {} ===" \; -exec cat {} \;
         shell: bash
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         with:
           fail_ci_if_error: false
           files: ./cobertura.xml
