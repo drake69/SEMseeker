@@ -32,7 +32,7 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
 
       - name: Restore renv cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/R/renv
           key: renv-${{ runner.os }}-${{ hashFiles('renv.lock') }}

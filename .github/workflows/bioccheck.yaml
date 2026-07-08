@@ -58,7 +58,7 @@ jobs:
           use-public-rspm: true
 
       - name: Cache R packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.R_LIBS_USER }}
           key: ${{ runner.os }}-r-bioccheck-${{ hashFiles('SEMseeker/DESCRIPTION') }}
