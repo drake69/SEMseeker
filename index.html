@@ -63,7 +63,7 @@
 <!-- badges: start -->
 
 <!-- badges: end -->
-<p><strong>semseeker</strong> detects <strong>Stochastic Epigenetic Mutations (SEMs)</strong> — aberrant, sample-specific methylation changes that deviate from the expected population signal. Starting from a normalised beta-value (or M-value) matrix, semseeker identifies hypomethylated and hypermethylated mutations at single-probe resolution, aggregates them into lesions (genomic clusters of co-occurring mutations), and computes population-level delta metrics (ΔBeta, ΔIV, ΔEV, ΔRV) that summarise stochastic epigenetic variability per region.</p>
+<p><strong>semseeker</strong> detects <strong>Stochastic Epigenetic Mutations (SEMs)</strong> — aberrant, sample-specific methylation changes that deviate from the expected population signal. Starting from a normalised beta-value (or M-value) matrix, semseeker identifies hypomethylated and hypermethylated mutations at single-probe resolution, aggregates them into lesions (genomic clusters of co-occurring mutations), and computes per-region delta metrics — the signed deviation beyond the reference interval (<code>DELTAS</code>), its ratio to the interval width (<code>DELTAR</code>), and their equal-width and quantile ranked variants (<code>DELTAP</code>/<code>DELTARP</code>, <code>DELTAQ</code>/<code>DELTARQ</code>) — that quantify stochastic epigenetic variability per region.</p>
 <p>Supported input technologies:</p>
 <ul>
 <li>
@@ -241,7 +241,7 @@
 <li>
 <code>*_LESIONS_HYPO.bed</code> / <code>*_LESIONS_HYPER.bed</code> — genomic lesion clusters</li>
 <li>
-<code>*_DELTA*.bed</code> — ΔBeta, ΔIV, ΔEV, ΔRV per region</li>
+<code>*_DELTAS_*.bed</code> / <code>*_DELTAR_*.bed</code> — per-region signed deviation (<code>DELTAS</code>) and its ratio to the reference interval (<code>DELTAR</code>)</li>
 <li>Pivot tables aggregating all samples per marker</li>
 </ul>
 <hr>
@@ -308,7 +308,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

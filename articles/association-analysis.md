@@ -5,8 +5,9 @@
 [`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
 is the downstream statistical engine of semseeker. After
 [`semseeker()`](https://drake69.github.io/semseeker/reference/semseeker.md)
-has computed epimutation counts, lesion counts and delta metrics (ΔBeta,
-ΔRP, ΔIV, ΔEV, ΔRV), this function tests whether any of those values are
+has computed epimutation counts, lesion counts and delta metrics
+(`DELTAS`, `DELTAR`, and their ranked variants `DELTAP`/`DELTARP` and
+`DELTAQ`/`DELTARQ`), this function tests whether any of those values are
 associated with phenotypic or clinical variables.
 
 The function supports **three broad families** of models, all run per
@@ -79,19 +80,19 @@ Each row is one analysis to run. The columns are:
 
 Any semseeker output metric can be the dependent variable in `formula`:
 
-| Metric            | Description                                       |
-|-------------------|---------------------------------------------------|
-| `MUTATIONS_HYPO`  | Count of hypomethylated mutations per region      |
-| `MUTATIONS_HYPER` | Count of hypermethylated mutations per region     |
-| `LESIONS_HYPO`    | Count of hypomethylated lesions per region        |
-| `LESIONS_HYPER`   | Count of hypermethylated lesions per region       |
-| `DELTARP`         | Delta Ranked Product — combined sensitivity score |
-| `DELTARQ`         | Delta Ranked Product (quantile variant)           |
-| `DELTAQ`          | Delta quantile                                    |
-| `DELTAS`          | Delta signal                                      |
-| `DELTAR`          | Delta rank                                        |
-| `DELTAP`          | Delta proportion                                  |
-| `MEAN`            | Mean methylation signal                           |
+| Metric | Description |
+|----|----|
+| `MUTATIONS_HYPO` | Count of hypomethylated mutations per region |
+| `MUTATIONS_HYPER` | Count of hypermethylated mutations per region |
+| `LESIONS_HYPO` | Count of hypomethylated lesions per region |
+| `LESIONS_HYPER` | Count of hypermethylated lesions per region |
+| `DELTAS` | Delta Signal — signed deviation of the value beyond the reference threshold |
+| `DELTAR` | Delta Ratio — `DELTAS` divided by the reference interval width (superior − inferior) |
+| `DELTAP` | `DELTAS` discretised into equal-width bins, each assigned an integer rank weight |
+| `DELTARP` | `DELTAR` discretised into equal-width bins, each assigned an integer rank weight (default 4 bins) |
+| `DELTAQ` | `DELTAS` discretised into quantile bins, each assigned an integer rank weight |
+| `DELTARQ` | `DELTAR` discretised into quantile bins, each assigned an integer rank weight (default 4 bins) |
+| `SIGNAL_MEAN` | Per-probe mean methylation signal (marker `SIGNAL`, figure `MEAN`) |
 
 ------------------------------------------------------------------------
 
@@ -732,7 +733,7 @@ sessionInfo()
 #>  [1] digest_0.6.39     desc_1.4.3        R6_2.6.1          fastmap_1.2.0    
 #>  [5] xfun_0.59         cachem_1.1.0      knitr_1.51        htmltools_0.5.9  
 #>  [9] rmarkdown_2.31    lifecycle_1.0.5   cli_3.6.6         sass_0.4.10      
-#> [13] pkgdown_2.2.0     textshaping_1.0.5 jquerylib_0.1.4   systemfonts_1.3.2
+#> [13] pkgdown_2.2.1     textshaping_1.0.5 jquerylib_0.1.4   systemfonts_1.3.2
 #> [17] compiler_4.6.1    tools_4.6.1       ragg_1.5.2        bslib_0.11.0     
 #> [21] evaluate_1.0.5    yaml_2.3.12       otel_0.2.0        jsonlite_2.0.0   
 #> [25] rlang_1.3.0       fs_2.1.0          htmlwidgets_1.6.4

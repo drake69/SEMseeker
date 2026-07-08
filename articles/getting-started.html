@@ -106,12 +106,14 @@ from the reference population.</li>
 <strong>hypermethylated</strong> SEMs at single-probe resolution.</li>
 <li>Aggregates adjacent SEMs into <strong>lesions</strong> (genomic
 clusters of co-occurring mutations).</li>
-<li>Computes population-level <strong>delta metrics</strong> (ΔBeta,
-ΔIV, ΔEV, ΔRV, ΔRP) that summarise stochastic epigenetic variability per
-genomic region.</li>
+<li>Computes per-region <strong>delta metrics</strong>: the signed
+deviation beyond the reference interval (<code>DELTAS</code>), its ratio
+to the interval width (<code>DELTAR</code>), and their binned/ranked
+variants (<code>DELTAP</code>/<code>DELTARP</code>,
+<code>DELTAQ</code>/<code>DELTARQ</code>).</li>
 <li>Optionally analyses the <strong>raw methylation signal</strong>
-directly (mean and range per region) for differential methylation
-without mutation calling.</li>
+directly (mean per region, <code>SIGNAL_MEAN</code>) for differential
+methylation without mutation calling.</li>
 </ol>
 <p>Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 (detected automatically from probe IDs).</p>
@@ -472,20 +474,27 @@ sample produces:</p>
 ├── SAMPLEID_SIGNAL_MEAN.PROBE.bedgraph
 └── ...</code></pre>
 <p>Population-level pivot tables aggregate all samples per marker:</p>
-<pre><code>Data/
-├── SIGNAL_MEAN_PROBE_WHOLE.parquet   ← mean signal per probe, all samples
-├── MUTATIONS_HYPO_PROBE_WHOLE.parquet
-├── DELTARP_GENE_WHOLE.parquet        ← ΔRP per gene, all samples
+<pre><code>Data/Pivots/
+├── SIGNAL/SIGNAL_MEAN_PROBE_WHOLE_hg19.parquet       ← mean signal per probe, all samples
+├── MUTATIONS/MUTATIONS_HYPO_PROBE_WHOLE_hg19.parquet
+├── DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet     ← DELTARP (hyper) per gene, all samples
 └── ...</code></pre>
+<p>Pivot file names follow
+<code>&lt;MARKER&gt;_&lt;FIGURE&gt;_&lt;AREA&gt;_&lt;SUBAREA&gt;_&lt;genome_build&gt;.parquet</code>
+under <code>Data/Pivots/&lt;MARKER&gt;/</code>. The marker name is
+invariant across aggregation levels — only the <code>AREA</code> segment
+(<code>PROBE</code>, <code>GENE</code>, <code>ISLAND</code>, …)
+changes.</p>
 <div class="section level3">
 <h3 id="reading-results">Reading results<a class="anchor" aria-label="anchor" href="#reading-results"></a>
 </h3>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pola-rs.github.io/r-polars/" class="external-link">polars</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Read the DELTARP pivot table</span></span>
+<span><span class="co"># Read the DELTARP pivot table (the marker name is identical at every</span></span>
+<span><span class="co"># aggregation level; only the AREA segment changes, e.g. GENE vs PROBE)</span></span>
 <span><span class="va">deltarp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span></span>
-<span>  <span class="va">pl</span><span class="op">$</span><span class="fu">read_parquet</span><span class="op">(</span><span class="st">"~/semseeker_results/Data/DELTARP_GENE_WHOLE.parquet"</span><span class="op">)</span></span>
+<span>  <span class="va">pl</span><span class="op">$</span><span class="fu">read_parquet</span><span class="op">(</span><span class="st">"~/semseeker_results/Data/Pivots/DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">deltarp</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
@@ -495,8 +504,10 @@ sample produces:</p>
 <div class="section level2">
 <h2 id="step-4-delta-metrics-explained">Step 4 — Delta metrics explained<a class="anchor" aria-label="anchor" href="#step-4-delta-metrics-explained"></a>
 </h2>
-<p>semseeker computes five delta metrics per genomic region, each
-capturing a different aspect of epigenetic variability:</p>
+<p>semseeker computes delta metrics for each genomic position relative
+to a reference signal interval <code>[inferior, superior]</code>,
+derived per probe from the control population as IQR-based lower and
+upper thresholds:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -504,49 +515,61 @@ capturing a different aspect of epigenetic variability:</p>
 <col width="33%">
 </colgroup>
 <thead><tr class="header">
-<th>Metric</th>
+<th>Marker</th>
 <th>Full name</th>
 <th>Captures</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><strong>ΔBeta</strong></td>
-<td>Delta Beta</td>
-<td>Mean methylation shift vs reference</td>
+<td><code>DELTAS</code></td>
+<td>Delta Signal</td>
+<td>Signed deviation beyond the reference threshold
+(<code>value − superior</code> for hyper, <code>inferior − value</code>
+for hypo)</td>
 </tr>
 <tr class="even">
-<td><strong>ΔIV</strong></td>
-<td>Delta Intra-sample Variability</td>
-<td>Within-sample probe dispersion</td>
+<td><code>DELTAR</code></td>
+<td>Delta Ratio</td>
+<td>
+<code>DELTAS</code> divided by the reference interval width
+(<code>superior − inferior</code>) — the deviation as a proportion of
+the reference range</td>
 </tr>
 <tr class="odd">
-<td><strong>ΔEV</strong></td>
-<td>Delta Extra-sample Variability</td>
-<td>Between-sample variance</td>
+<td>
+<code>DELTAP</code> / <code>DELTARP</code>
+</td>
+<td>Delta (ratio) ranked, equal-width</td>
+<td>
+<code>DELTAS</code> / <code>DELTAR</code> discretised into
+equal-width bins; each position gets an integer rank weight
+<code>1..B</code> (default <code>B = 4</code>)</td>
 </tr>
 <tr class="even">
-<td><strong>ΔRV</strong></td>
-<td>Delta Relative Variability</td>
-<td>Normalised inter-sample spread</td>
-</tr>
-<tr class="odd">
-<td><strong>ΔRP</strong></td>
-<td>Delta Ranked Product</td>
-<td>Combined ranked signal — most sensitive</td>
+<td>
+<code>DELTAQ</code> / <code>DELTARQ</code>
+</td>
+<td>Delta (ratio) ranked, quantile</td>
+<td>
+<code>DELTAS</code> / <code>DELTAR</code> discretised into quantile
+bins; each position gets an integer rank weight <code>1..Q</code>
+(default <code>Q = 4</code>)</td>
 </tr>
 </tbody>
 </table>
-<p><strong>ΔRP</strong> (Delta Ranked Product) is the recommended metric
-for downstream analysis: it combines mutation burden, lesion frequency
-and signal variability into a single ranked score per region, making it
-robust to outliers and suitable for association testing.</p>
+<p><code>DELTARP</code> is the recommended metric for downstream
+analysis: by ranking the relative deviation (<code>DELTAR</code>) into
+equal-width bins it is robust to outliers and directly comparable across
+regions. The marker name is the same at every aggregation level (locus,
+gene, island, …) — only the AREA segment of the pivot file name
+changes.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Load ΔRP at gene level</span></span>
+<code class="sourceCode R"><span><span class="co"># Load DELTARP at gene level (hyper figure)</span></span>
 <span><span class="va">deltarp_gene</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span></span>
-<span>  <span class="va">pl</span><span class="op">$</span><span class="fu">read_parquet</span><span class="op">(</span><span class="st">"~/semseeker_results/Data/DELTARP_GENE_WHOLE.parquet"</span><span class="op">)</span></span>
+<span>  <span class="va">pl</span><span class="op">$</span><span class="fu">read_parquet</span><span class="op">(</span><span class="st">"~/semseeker_results/Data/Pivots/DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Top regions by mean ΔRP across cases</span></span>
+<span><span class="co"># Top regions by mean DELTARP across cases</span></span>
 <span><span class="va">case_cols</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"^CASE"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">deltarp_gene</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">deltarp_gene</span><span class="op">$</span><span class="va">mean_deltarp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowMeans</a></span><span class="op">(</span><span class="va">deltarp_gene</span><span class="op">[</span>, <span class="va">case_cols</span><span class="op">]</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
@@ -559,8 +582,8 @@ robust to outliers and suitable for association testing.</p>
 <h2 id="step-5-differential-signal-analysis">Step 5 — Differential signal analysis<a class="anchor" aria-label="anchor" href="#step-5-differential-signal-analysis"></a>
 </h2>
 <p>Beyond mutation calling, semseeker also tracks the <strong>raw
-methylation signal</strong> per region. Two signal markers are computed
-automatically:</p>
+methylation signal</strong> per region via the <code>SIGNAL_MEAN</code>
+marker:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -572,24 +595,16 @@ automatically:</p>
 <th>File pattern</th>
 <th>Description</th>
 </tr></thead>
-<tbody>
-<tr class="odd">
+<tbody><tr class="odd">
 <td><code>SIGNAL_MEAN</code></td>
-<td><code>SIGNAL_MEAN_*.parquet</code></td>
+<td><code>Pivots/SIGNAL/SIGNAL_MEAN_*.parquet</code></td>
 <td>Per-region mean beta value per sample</td>
-</tr>
-<tr class="even">
-<td><code>SIGNAL_RANGE</code></td>
-<td><code>SIGNAL_RANGE_*.parquet</code></td>
-<td>Per-region signal spread (max − min) per sample</td>
-</tr>
-</tbody>
+</tr></tbody>
 </table>
-<p>These pivot tables have exactly the same structure as the
-mutation/delta tables and can be passed directly to
-<code><a href="../reference/association_analysis.html">association_analysis()</a></code> — allowing you to test whether mean
-methylation (or intra-region spread) differs by phenotype, without any
-mutation-calling step.</p>
+<p>This pivot table has exactly the same structure as the mutation/delta
+tables and can be passed directly to <code><a href="../reference/association_analysis.html">association_analysis()</a></code>
+— allowing you to test whether mean methylation differs by phenotype,
+without any mutation-calling step.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># inference_details specifies the PREDICTOR and the test — not a model formula.</span></span>
 <span><span class="co"># `independent_variable` is the phenotype column, `family_test` the statistical</span></span>
@@ -762,7 +777,7 @@ vignette</a>.</li>
 <span><span class="co">#&gt;  [1] digest_0.6.39     desc_1.4.3        R6_2.6.1          fastmap_1.2.0    </span></span>
 <span><span class="co">#&gt;  [5] xfun_0.59         cachem_1.1.0      knitr_1.51        htmltools_0.5.9  </span></span>
 <span><span class="co">#&gt;  [9] rmarkdown_2.31    lifecycle_1.0.5   cli_3.6.6         sass_0.4.10      </span></span>
-<span><span class="co">#&gt; [13] pkgdown_2.2.0     textshaping_1.0.5 jquerylib_0.1.4   systemfonts_1.3.2</span></span>
+<span><span class="co">#&gt; [13] pkgdown_2.2.1     textshaping_1.0.5 jquerylib_0.1.4   systemfonts_1.3.2</span></span>
 <span><span class="co">#&gt; [17] compiler_4.6.1    tools_4.6.1       ragg_1.5.2        bslib_0.11.0     </span></span>
 <span><span class="co">#&gt; [21] evaluate_1.0.5    yaml_2.3.12       otel_0.2.0        jsonlite_2.0.0   </span></span>
 <span><span class="co">#&gt; [25] rlang_1.3.0       fs_2.1.0          htmlwidgets_1.6.4</span></span></code></pre></div>
@@ -807,7 +822,7 @@ Journal of Molecular Sciences</em> 21 (14): 5044. <a href="https://doi.org/10.33
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

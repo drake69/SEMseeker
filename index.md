@@ -5,9 +5,12 @@ aberrant, sample-specific methylation changes that deviate from the
 expected population signal. Starting from a normalised beta-value (or
 M-value) matrix, semseeker identifies hypomethylated and hypermethylated
 mutations at single-probe resolution, aggregates them into lesions
-(genomic clusters of co-occurring mutations), and computes
-population-level delta metrics (ΔBeta, ΔIV, ΔEV, ΔRV) that summarise
-stochastic epigenetic variability per region.
+(genomic clusters of co-occurring mutations), and computes per-region
+delta metrics — the signed deviation beyond the reference interval
+(`DELTAS`), its ratio to the interval width (`DELTAR`), and their
+equal-width and quantile ranked variants (`DELTAP`/`DELTARP`,
+`DELTAQ`/`DELTARQ`) — that quantify stochastic epigenetic variability
+per region.
 
 Supported input technologies:
 
@@ -190,7 +193,8 @@ For each sample semseeker writes to `result_folder/Data/`:
 - `*_MUTATIONS_HYPO.bed` / `*_MUTATIONS_HYPER.bed` — probe-level
   mutations
 - `*_LESIONS_HYPO.bed` / `*_LESIONS_HYPER.bed` — genomic lesion clusters
-- `*_DELTA*.bed` — ΔBeta, ΔIV, ΔEV, ΔRV per region
+- `*_DELTAS_*.bed` / `*_DELTAR_*.bed` — per-region signed deviation
+  (`DELTAS`) and its ratio to the reference interval (`DELTAR`)
 - Pivot tables aggregating all samples per marker
 
 ------------------------------------------------------------------------

@@ -35,12 +35,13 @@ Starting from a normalised beta-value (or M-value) matrix, semseeker:
     single-probe resolution.
 3.  Aggregates adjacent SEMs into **lesions** (genomic clusters of
     co-occurring mutations).
-4.  Computes population-level **delta metrics** (ΔBeta, ΔIV, ΔEV, ΔRV,
-    ΔRP) that summarise stochastic epigenetic variability per genomic
-    region.
+4.  Computes per-region **delta metrics**: the signed deviation beyond
+    the reference interval (`DELTAS`), its ratio to the interval width
+    (`DELTAR`), and their binned/ranked variants (`DELTAP`/`DELTARP`,
+    `DELTAQ`/`DELTARQ`).
 5.  Optionally analyses the **raw methylation signal** directly (mean
-    and range per region) for differential methylation without mutation
-    calling.
+    per region, `SIGNAL_MEAN`) for differential methylation without
+    mutation calling.
 
 Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 (detected automatically from probe IDs).
@@ -279,11 +280,16 @@ Results are written under `result_folder/Data/`. Each sample produces:
 
 Population-level pivot tables aggregate all samples per marker:
 
-    Data/
-    ├── SIGNAL_MEAN_PROBE_WHOLE.parquet   ← mean signal per probe, all samples
-    ├── MUTATIONS_HYPO_PROBE_WHOLE.parquet
-    ├── DELTARP_GENE_WHOLE.parquet        ← ΔRP per gene, all samples
+    Data/Pivots/
+    ├── SIGNAL/SIGNAL_MEAN_PROBE_WHOLE_hg19.parquet       ← mean signal per probe, all samples
+    ├── MUTATIONS/MUTATIONS_HYPO_PROBE_WHOLE_hg19.parquet
+    ├── DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet     ← DELTARP (hyper) per gene, all samples
     └── ...
+
+Pivot file names follow
+`<MARKER>_<FIGURE>_<AREA>_<SUBAREA>_<genome_build>.parquet` under
+`Data/Pivots/<MARKER>/`. The marker name is invariant across aggregation
+levels — only the `AREA` segment (`PROBE`, `GENE`, `ISLAND`, …) changes.
 
 ### Reading results
 
@@ -291,9 +297,10 @@ Population-level pivot tables aggregate all samples per marker:
 
 library(polars)
 
-# Read the DELTARP pivot table
+# Read the DELTARP pivot table (the marker name is identical at every
+# aggregation level; only the AREA segment changes, e.g. GENE vs PROBE)
 deltarp <- as.data.frame(
-  pl$read_parquet("~/semseeker_results/Data/DELTARP_GENE_WHOLE.parquet")
+  pl$read_parquet("~/semseeker_results/Data/Pivots/DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet")
 )
 
 head(deltarp[, 1:6])
@@ -303,30 +310,31 @@ head(deltarp[, 1:6])
 
 ## Step 4 — Delta metrics explained
 
-semseeker computes five delta metrics per genomic region, each capturing
-a different aspect of epigenetic variability:
+semseeker computes delta metrics for each genomic position relative to a
+reference signal interval `[inferior, superior]`, derived per probe from
+the control population as IQR-based lower and upper thresholds:
 
-| Metric | Full name | Captures |
+| Marker | Full name | Captures |
 |----|----|----|
-| **ΔBeta** | Delta Beta | Mean methylation shift vs reference |
-| **ΔIV** | Delta Intra-sample Variability | Within-sample probe dispersion |
-| **ΔEV** | Delta Extra-sample Variability | Between-sample variance |
-| **ΔRV** | Delta Relative Variability | Normalised inter-sample spread |
-| **ΔRP** | Delta Ranked Product | Combined ranked signal — most sensitive |
+| `DELTAS` | Delta Signal | Signed deviation beyond the reference threshold (`value − superior` for hyper, `inferior − value` for hypo) |
+| `DELTAR` | Delta Ratio | `DELTAS` divided by the reference interval width (`superior − inferior`) — the deviation as a proportion of the reference range |
+| `DELTAP` / `DELTARP` | Delta (ratio) ranked, equal-width | `DELTAS` / `DELTAR` discretised into equal-width bins; each position gets an integer rank weight `1..B` (default `B = 4`) |
+| `DELTAQ` / `DELTARQ` | Delta (ratio) ranked, quantile | `DELTAS` / `DELTAR` discretised into quantile bins; each position gets an integer rank weight `1..Q` (default `Q = 4`) |
 
-**ΔRP** (Delta Ranked Product) is the recommended metric for downstream
-analysis: it combines mutation burden, lesion frequency and signal
-variability into a single ranked score per region, making it robust to
-outliers and suitable for association testing.
+`DELTARP` is the recommended metric for downstream analysis: by ranking
+the relative deviation (`DELTAR`) into equal-width bins it is robust to
+outliers and directly comparable across regions. The marker name is the
+same at every aggregation level (locus, gene, island, …) — only the AREA
+segment of the pivot file name changes.
 
 ``` r
 
-# Load ΔRP at gene level
+# Load DELTARP at gene level (hyper figure)
 deltarp_gene <- as.data.frame(
-  pl$read_parquet("~/semseeker_results/Data/DELTARP_GENE_WHOLE.parquet")
+  pl$read_parquet("~/semseeker_results/Data/Pivots/DELTARP/DELTARP_HYPER_GENE_WHOLE_hg19.parquet")
 )
 
-# Top regions by mean ΔRP across cases
+# Top regions by mean DELTARP across cases
 case_cols  <- grep("^CASE", names(deltarp_gene), value = TRUE)
 deltarp_gene$mean_deltarp <- rowMeans(deltarp_gene[, case_cols], na.rm = TRUE)
 
@@ -341,18 +349,17 @@ head(deltarp_gene[order(-deltarp_gene$mean_deltarp),
 ## Step 5 — Differential signal analysis
 
 Beyond mutation calling, semseeker also tracks the **raw methylation
-signal** per region. Two signal markers are computed automatically:
+signal** per region via the `SIGNAL_MEAN` marker:
 
 | Marker | File pattern | Description |
 |----|----|----|
-| `SIGNAL_MEAN` | `SIGNAL_MEAN_*.parquet` | Per-region mean beta value per sample |
-| `SIGNAL_RANGE` | `SIGNAL_RANGE_*.parquet` | Per-region signal spread (max − min) per sample |
+| `SIGNAL_MEAN` | `Pivots/SIGNAL/SIGNAL_MEAN_*.parquet` | Per-region mean beta value per sample |
 
-These pivot tables have exactly the same structure as the mutation/delta
+This pivot table has exactly the same structure as the mutation/delta
 tables and can be passed directly to
 [`association_analysis()`](https://drake69.github.io/semseeker/reference/association_analysis.md)
-— allowing you to test whether mean methylation (or intra-region spread)
-differs by phenotype, without any mutation-calling step.
+— allowing you to test whether mean methylation differs by phenotype,
+without any mutation-calling step.
 
 ``` r
 
@@ -528,7 +535,7 @@ sessionInfo()
 #>  [1] digest_0.6.39     desc_1.4.3        R6_2.6.1          fastmap_1.2.0    
 #>  [5] xfun_0.59         cachem_1.1.0      knitr_1.51        htmltools_0.5.9  
 #>  [9] rmarkdown_2.31    lifecycle_1.0.5   cli_3.6.6         sass_0.4.10      
-#> [13] pkgdown_2.2.0     textshaping_1.0.5 jquerylib_0.1.4   systemfonts_1.3.2
+#> [13] pkgdown_2.2.1     textshaping_1.0.5 jquerylib_0.1.4   systemfonts_1.3.2
 #> [17] compiler_4.6.1    tools_4.6.1       ragg_1.5.2        bslib_0.11.0     
 #> [21] evaluate_1.0.5    yaml_2.3.12       otel_0.2.0        jsonlite_2.0.0   
 #> [25] rlang_1.3.0       fs_2.1.0          htmlwidgets_1.6.4
