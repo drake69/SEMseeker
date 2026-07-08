@@ -3,6 +3,13 @@ url: https://drake69.github.io/semseeker/
 template:
   bootstrap: 5
   bootswatch: flatly
+  includes:
+    in_header: |
+      <script>
+        window.vmtrcq = window.vmtrcq || [];
+        window.vmtrc = window.vmtrc || function (){window.vmtrcq.push(Array.prototype.slice.call(arguments))};
+      </script>
+      <script defer src="https://cdn.vemetric.com/main.js" id="vmtrc-scr" data-token="nWIrdnyvzA1sksDn"></script>
 
 home:
   title: "semseeker — Stochastic Epigenetic Mutation Seeker"
@@ -33,36 +40,6 @@ navbar:
     github:
       icon: fab fa-github
       href: https://github.com/drake69/semseeker
-
-reference:
-  - title: "Main entry points"
-    desc: "Top-level functions for running a full SEM analysis"
-    contents:
-      - semseeker
-      - sem_analyze_population
-      - sem_analyze_single_sample
-  - title: "Association & statistics"
-    desc: "Downstream statistical analysis on SEM results"
-    contents:
-      - association_analysis
-      - assoc_apply_stat_model
-  - title: "Delta metrics"
-    desc: "Per-region variability summaries"
-    contents:
-      - sem_deltaX_get
-      - sem_delta_single_sample
-      - sem_deltar_single_sample
-  - title: "Data & annotation"
-    desc: "Pivot tables, position annotations, signal helpers"
-    contents:
-      - anno_create_position_pivots
-      - anno_annotate_position_pivots
-      - io_data_preparation
-      - io_build_data_set_from_geo
-  - title: "Datasets"
-    contents:
-      - PROBES
-      - PROBES_CHR_CHR
 
 footer:
   structure:
