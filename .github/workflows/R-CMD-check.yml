@@ -99,7 +99,7 @@ jobs:
       # Cache the R package library keyed on DESCRIPTION hash.
       # Cache hit = 0 installs; only misses when dependencies change.
       - name: Cache R packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.R_LIBS_USER }}
           key: ${{ runner.os }}-r-${{ matrix.config.r }}-${{ hashFiles('DESCRIPTION') }}
