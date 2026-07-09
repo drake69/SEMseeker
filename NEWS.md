@@ -1,6 +1,15 @@
 # semseeker NEWS
 
-## semseeker 0.99.2
+## semseeker 0.99.3
+
+### Documentation
+
+- Aligned the delta-metric documentation in the vignettes and README with the
+  implementation: the `DELTAS`/`DELTAR`/`DELTAP`/`DELTARP`/`DELTAQ`/`DELTARQ`
+  descriptions now reflect the relative-delta ratio and its equal-width and
+  quantile ranked variants. Corrected the pivot file-name examples to
+  `Data/Pivots/<MARKER>/<MARKER>_<FIGURE>_<AREA>_<SUBAREA>_<build>.parquet` and
+  updated a stale `enrichment_analysis()` reference.
 
 ### Bug fixes
 
@@ -15,6 +24,13 @@
   Behaviour change: the `kruskal.test` branch now shows the overall test
   p-value only; the per-pair `ggpubr` brackets have been dropped. Also fixed
   the `unit=`/`units=` partial-argument-match warning in `ggsave()`.
+
+### Dependencies
+
+- Bumped pinned GitHub Actions: `actions/cache` 4→6, `actions/upload-artifact`
+  4→7, `actions/dependency-review-action` 4→5, `codecov/codecov-action` 4→7.
+
+## semseeker 0.99.2
 
 ### Breaking changes
 
