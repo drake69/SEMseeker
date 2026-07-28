@@ -19,10 +19,22 @@ jobs:
           fetch-depth: 1
 
       - name: Fetch traffic from GitHub API
+        # The traffic API (clones/views) requires repo ADMIN access, which the
+        # default GITHUB_TOKEN integration token cannot have (HTTP 403
+        # "Resource not accessible by integration"). Use a PAT with
+        # "Administration: read" (fine-grained) or `repo` scope (classic),
+        # stored as the TRAFFIC_TOKEN secret. If the secret is absent the job
+        # skips cleanly (neutral, not red) instead of failing every week.
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
         run: |
           mkdir -p traffic
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::TRAFFIC_TOKEN secret not set — skipping traffic archival. Add a PAT (Administration: read) as the TRAFFIC_TOKEN secret to enable weekly archival."
+            echo '{"clones":[]}' > /tmp/clones_new.json
+            echo '{"views":[]}'  > /tmp/views_new.json
+            exit 0
+          fi
           gh api repos/${{ github.repository }}/traffic/clones > /tmp/clones_new.json
           gh api repos/${{ github.repository }}/traffic/views  > /tmp/views_new.json
 

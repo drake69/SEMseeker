@@ -1,0 +1,24 @@
+# gitleaks configuration for SEMseeker
+#
+# Inherits all default gitleaks rules, then allowlists known-public false
+# positives so the scheduled `security` workflow (full-history scan) does not
+# fail on non-secrets. Keep this allowlist TIGHT: only allowlist values that
+# are public by design, so any genuinely new secret still fails the scan.
+
+title = "SEMseeker gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Vemetric web-analytics site token (`data-token`) embedded in the pkgdown site
+header (_pkgdown.yml) and propagated into every generated HTML page. It is a
+client-side ingestion token served to every visitor's browser — public by
+design, not a secret. This accounts for all 103 `generic-api-key` findings in
+the *.html files and _pkgdown.yml.
+"""
+regexTarget = "line"
+regexes = [
+  '''nWIrdnyvzA1sksDn''',
+]
