@@ -1,11 +1,24 @@
-sem_coverage_analysis <- function(observed_probes)
+#' @param observed_probes character. Probe identifiers present in the input.
+#' @param keys data.frame of AREA / SUBAREA (optionally COMBINED) to report on.
+#'   Defaults to the areas selected for the run. AI-074 passes the FULL
+#'   annotation set here: `areas` defaults to POSITION only
+#'   (util_keys_create.R:83) and this function skips POSITION and PROBE, so on
+#'   a default run the session keys are empty and no chart was ever produced.
+#'   The coverage picture must not depend on which areas the run analyses.
+#' @keywords internal
+#' @noRd
+sem_coverage_analysis <- function(observed_probes, keys = NULL)
 {
   # probe_features <- PROBES_CHR_CHR
   # area <- c("CHR")
   # probes_prefix <- "PROBES_CHR_"
   ssEnv <- core_get_session_info()
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), " Started Coverage analysis.")
-  keys <- ssEnv$keys_areas_subareas
+  if (is.null(keys))
+    keys <- ssEnv$keys_areas_subareas
+  if (!is.null(keys) && nrow(keys) > 0 && !("COMBINED" %in% colnames(keys)))
+    keys$COMBINED <- apply(keys[, c("AREA", "SUBAREA")], 1, function(x)
+      core_name_cleaning(gsub(" ", "", paste0(x[x != ""], collapse = "_"))))
   keys <- keys[keys$AREA != "POSITION",]
   keys <- keys[keys$AREA != "PROBE",]
   if(plyr::empty(keys))
@@ -13,6 +26,14 @@ sem_coverage_analysis <- function(observed_probes)
     core_log_event("ERROR: ", format(Sys.time(), "%a %b %d %X %Y"), " No keys found for coverage analysis.")
     return()
   }
+  # AI-074: local accumulators. The previous exists()-based logic resolved
+  # through globalenv(), so an object of the same name left in an interactive
+  # session changed the result — same defect class fixed in
+  # sem_study_summary_total() under AI-083. Now that coverage runs on EVERY SEM
+  # analysis this function must be deterministic.
+  cov_result <- NULL
+  tot_result <- NULL
+
   for ( k in seq_len(nrow(keys)))
   {
     # k <- 16
@@ -24,8 +45,7 @@ sem_coverage_analysis <- function(observed_probes)
       area_subarea <- paste(area_subarea,"_","WHOLE",sep="")
 
     # core_log_event(area,"\n")
-    if(exists("covered_count"))
-      rm(covered_count)
+    covered_count <- NULL
 
     probe_features <- anno_probe_features_get(area_subarea)
     if(plyr::empty(probe_features) | nrow(probe_features)==0)
@@ -63,7 +83,7 @@ sem_coverage_analysis <- function(observed_probes)
 
     cov_stat$AREA <- area
     cov_stat$SUBAREA <- subarea
-    if(exists("cov_result"))
+    if(!is.null(cov_result))
       cov_result <- rbind(cov_result, cov_stat)
     else
       cov_result <- cov_stat
@@ -72,14 +92,17 @@ sem_coverage_analysis <- function(observed_probes)
     total_count$AREA <- area
     total_count$SUBAREA <- subarea
 
-    if(exists("tot_result"))
+    if(!is.null(tot_result))
       tot_result <- rbind(total_count, tot_result)
     else
       tot_result <- total_count
 
   }
 
-  if(nrow(tot_result)<1)
+  # No area produced a usable table (e.g. tech without Illumina annotation):
+  # nothing to plot. Previously this line dereferenced a possibly non-existent
+  # tot_result and raised "object 'tot_result' not found".
+  if(is.null(tot_result) || nrow(tot_result)<1 || is.null(cov_result))
     return()
 
   chartFolder <- io_dir_check_and_create(ssEnv$result_folderChart,"COVERAGE")

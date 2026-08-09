@@ -42,6 +42,10 @@
 #'   (default 2000) is the maximum bp distance between two probes for them to
 #'   be in the same LESIONS enrichment window — replaces the legacy
 #'   \code{sliding_window_size} probe-count parameter (removed in AI-092).
+#'   \code{coverage_minimum} (default 80) is the minimum percentage of input
+#'   positions that must be present in the reference annotation: the coverage
+#'   charts are written on every run, and the run stops below this threshold
+#'   (AI-074). Lower it explicitly for deliberate cross-technology runs.
 #'
 #' @return Invisibly \code{NULL}; writes output files to \code{result_folder}.
 #'
