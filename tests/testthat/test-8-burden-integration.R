@@ -57,6 +57,12 @@
   list(signal = local_sig, samples = local_samples, probes = local_probes)
 }
 
+.burden_required_markers <- c("MUTATIONS",
+                              "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
+                              "DELTAS", "DELTAR")
+.burden_cols <- c(paste0(.burden_required_markers, "_HYPER"),
+                  paste0(.burden_required_markers, "_HYPO"))
+
 test_that("sample_sheet_result.csv has populated burden columns for all discrete + continuous markers (AI-086, canary for AI-083)", {
   tempFolder <- tempFolders[1]
   tempFolders <<- tempFolders[-1]
@@ -220,4 +226,119 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   }
 
   unlink(tempFolder, recursive = TRUE)
+})
+
+# ---------------------------------------------------------------------------
+# AI-083 hardening. The canary above runs on GSM-style identifiers in a clean
+# session; this block covers what it cannot see:
+#
+#   (a) identifiers that core_name_cleaning() actually rewrites — the
+#       ewas_osteoporosis/GSE99624 case was "DNAm_sample1" -> "DNAM_SAMPLE1";
+#   (b) a `temp_result` object left in the global environment. The old code
+#       used exists("temp_result"), which resolves through globalenv(). This
+#       is NOT sufficient on its own to produce the reported symptom (the
+#       inner merge uses all=TRUE, so a stray object only adds a spurious row),
+#       but the accumulator must be a local binding regardless;
+#   (c) the condition that DOES produce the reported symptom — a burden table
+#       sharing no Sample_ID with the sample sheet. The all.x=TRUE merge then
+#       yields 100% NA burden columns while PROBES_COUNT stays populated, and
+#       every depth=1 inference downstream dies with "data are not the same
+#       size". sem_study_summary_total() must refuse to write that file.
+# ---------------------------------------------------------------------------
+
+test_that("burden survives mixed-case Sample_IDs and a polluted global temp_result (AI-083)", {
+  tempFolder <- tempFolders[1]
+  tempFolders <<- tempFolders[-1]
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({
+    try(SEMseeker:::core_close_env(), silent = TRUE)
+    if (exists("temp_result", envir = globalenv(), inherits = FALSE))
+      rm("temp_result", envir = globalenv())
+    unlink(tempFolder, recursive = TRUE)
+  }, add = TRUE)
+
+  syn <- .burden_setup_signal_with_outliers()
+
+  # ewas_osteoporosis-style identifiers: core_name_cleaning() uppercases them
+  # ("DNAm_sample1" -> "DNAM_SAMPLE1"), so sample sheet and pivot columns must
+  # still meet after normalisation.
+  raw_ids <- paste0("DNAm_sample", seq_len(ncol(syn$signal)))
+  id_map  <- stats::setNames(raw_ids, colnames(syn$signal))
+  sig     <- syn$signal
+  sheet   <- syn$samples
+  colnames(sig)   <- unname(id_map[colnames(sig)])
+  sheet$Sample_ID <- unname(id_map[sheet$Sample_ID])
+
+  # (b) pollute globalenv BEFORE the run: the object name collides with the
+  # accumulator inside sem_study_summary_total().
+  assign("temp_result",
+         data.frame(Sample_ID = "NOT_A_REAL_SAMPLE", JUNK = 1,
+                    stringsAsFactors = FALSE),
+         envir = globalenv())
+
+  SEMseeker::semseeker(
+    input             = sig,
+    sample_sheet      = sheet,
+    result_folder     = tempFolder,
+    parallel_strategy = "sequential",
+    areas             = c("POSITION"),
+    markers           = c("MUTATIONS", "LESIONS",
+                          "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
+                          "DELTAS", "DELTAR"),
+    start_fresh       = TRUE,
+    inpute            = "median",
+    showprogress      = showprogress,
+    verbosity         = verbosity
+  )
+
+  result_csv <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
+  testthat::expect_true(file.exists(result_csv))
+  testthat::skip_if_not(file.exists(result_csv),
+                        "downstream assertions need the result CSV")
+
+  df <- utils::read.csv2(result_csv, stringsAsFactors = FALSE)
+
+  # identifiers landed normalised on both sides
+  testthat::expect_true(all(grepl("^DNAM_SAMPLE", df$Sample_ID)))
+
+  present <- intersect(.burden_cols, colnames(df))
+  testthat::expect_gt(length(present), 0L)
+
+  # the AI-083 signature is 100% NA on every burden column at once
+  na_fraction <- vapply(df[present], function(x) mean(is.na(x)), numeric(1))
+  testthat::expect_false(
+    all(na_fraction == 1),
+    info = sprintf("all burden columns are 100%% NA: %s",
+                   paste(names(na_fraction), collapse = ", "))
+  )
+  testthat::expect_lt(
+    mean(na_fraction), 0.5,
+    label = sprintf("mean NA fraction across burden columns (%.2f)",
+                    mean(na_fraction))
+  )
+  testthat::expect_true(all(df$PROBES_COUNT > 0L, na.rm = TRUE))
+
+  # (c) the actual AI-083 signature: rewrite the sample sheet with identifiers
+  # that exist in no pivot, then re-run the aggregation. Before the guard this
+  # silently produced a sample sheet with 100% NA burden; now it must stop and
+  # name both sides.
+  df_broken <- df
+  df_broken$Sample_ID <- paste0("UNRELATED_", seq_len(nrow(df_broken)))
+  utils::write.csv2(df_broken, result_csv, row.names = FALSE)
+
+  SEMseeker:::core_init_env(
+    result_folder     = tempFolder,
+    parallel_strategy = "sequential",
+    areas             = c("POSITION"),
+    markers           = c("MUTATIONS", "LESIONS",
+                          "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
+                          "DELTAS", "DELTAR"),
+    start_fresh       = FALSE,
+    showprogress      = FALSE,
+    verbosity         = 1
+  )
+  testthat::expect_error(
+    SEMseeker:::sem_study_summary_total(),
+    "no Sample_ID in common"
+  )
 })
