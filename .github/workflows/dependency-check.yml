@@ -57,8 +57,22 @@ jobs:
           add("- Running: R ", r_current)
 
           # ── Bioconductor version ──
-          lf <- renv:::renv_lockfile_read("renv.lock")
-          bioc_urls <- grep("bioconductor.org", sapply(lf$R$Repositories, `[[`, "URL"), value = TRUE)
+          # Guard every access: a lockfile whose Repositories entries lack a
+          # "URL" key would make sapply(`[[`, "URL") throw "subscript out of
+          # bounds" and fail the whole step (seen 2026-06/07). Extract URLs
+          # defensively and default to an empty vector on any error.
+          bioc_urls <- tryCatch({
+            lf <- renv:::renv_lockfile_read("renv.lock")
+            repos <- lf$R$Repositories
+            if (is.null(repos)) character(0) else {
+              urls <- vapply(
+                repos,
+                function(x) if (!is.null(x[["URL"]])) as.character(x[["URL"]]) else NA_character_,
+                character(1)
+              )
+              grep("bioconductor.org", urls, value = TRUE)
+            }
+          }, error = function(e) character(0))
           if (length(bioc_urls) > 0) {
             bioc_lock <- sub(".*/packages/([0-9.]+)/.*", "\\1", bioc_urls[1])
             add("- Bioconductor in lockfile: ", bioc_lock)
