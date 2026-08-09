@@ -2,6 +2,27 @@
 
 ## semseeker 0.99.3
 
+### New features
+
+- **Coverage is now a mandatory pre-step of every SEM analysis (AI-074).**
+  Coverage used to be an opt-in report, so a run could go straight to SEM
+  detection on input that barely overlaps the reference annotation (long-read
+  positions against an Illumina manifest, a batch with a probe mismatch, the
+  wrong genome build) and produce thresholds computed on a handful of probes.
+  Every run now: writes the coverage charts, logs a coverage banner
+  (`input_positions` / `covered_by_reference` / percentage), writes a
+  `COVERAGE_GATE.json` sidecar for audit, and **stops** when coverage falls
+  below the new `coverage_minimum` parameter (default 80%). The charts are
+  produced even when the gate rejects the run — they are what shows which
+  regions were missing. Coordinate-based technologies (WGBS, long reads)
+  derive their annotation from the positions themselves, so the threshold is
+  not applied there. Lower `coverage_minimum` explicitly for deliberate
+  cross-technology runs.
+- The coverage charts are now computed over the full annotation set instead of
+  the areas selected for the run. `areas` defaults to `POSITION` only, which
+  the coverage report skips, so on a default run the charts were previously
+  never produced.
+
 ### Documentation
 
 - Aligned the delta-metric documentation in the vignettes and README with the
@@ -10,8 +31,40 @@
   quantile ranked variants. Corrected the pivot file-name examples to
   `Data/Pivots/<MARKER>/<MARKER>_<FIGURE>_<AREA>_<SUBAREA>_<build>.parquet` and
   updated a stale `enrichment_analysis()` reference.
+- `inst/CITATION` now carries the Zenodo DOI `10.5281/zenodo.5095417` instead
+  of a Bioconductor DOI that does not resolve (the package is not on
+  Bioconductor yet), and the README no longer says a Zenodo DOI "will be
+  registered" — the archive has existed since 2021 (AI-119).
 
 ### Bug fixes
+
+- **A sample sheet that shares no identifier with the computed pivots no
+  longer produces a silently empty result (AI-083).**
+  `sem_study_summary_total()` merged the per-sample burden onto the sample
+  sheet by name with `all.x = TRUE`: when the two sides had no identifier in
+  common, every burden column landed as `NA` while `PROBES_COUNT` stayed
+  populated, and each `depth = 1` inference downstream then failed with
+  "data are not the same size". The merge now stops with a message naming
+  both sides, and reports partially missing samples as a warning. The
+  accumulator inside the function is also a proper local binding now: it was
+  resolved with `exists()`, which reaches the global environment.
+- The same `exists()` pattern was removed from `sem_coverage_analysis()`,
+  which could also raise "object 'tot_result' not found" when no area
+  produced a usable table.
+
+- **Sample identifiers containing `-`, `.` or spaces are now handled correctly
+  (AI-224).** Sample-column names of the signal matrix are normalised
+  (uppercase, non-alphanumeric characters replaced by `_`), but the sample
+  sheet identifiers were used as-is when selecting those columns. With
+  identifiers such as `C3L-00001-06` the two sides never matched:
+  `util_exploratory_analysis()` wrote a cleaned signal parquet holding the
+  `PROBE` column only, and the SEM pipeline stopped with
+  `undefined columns selected`. Datasets whose identifiers are already
+  alphanumeric (e.g. `GSM123456`) were unaffected. Both sides are now
+  normalised through a single, idempotent internal helper before any
+  name-based column selection; distinct identifiers that would collapse onto
+  the same normalised name, and identifiers without a matching signal column,
+  are reported explicitly instead of failing later.
 
 - **`plot_box_plot()`: fixed R CMD check ERROR under ggplot2 >= 4.0.**
   `ggpubr::stat_compare_means(label = "p.format")` builds an internal
