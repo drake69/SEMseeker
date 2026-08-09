@@ -28,6 +28,13 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   }
 
   ### get signal_values ########################################################
+  # AI-224: idempotent normalisation of both sides — the per-sample subset
+  # below is name-based and must not depend on the caller having cleaned them.
+  .normalized <- core_normalize_sample_ids(sample_sheet, signal_data)
+  sample_sheet <- .normalized$sample_sheet
+  signal_data  <- .normalized$signal_data
+  rm(.normalized)
+
   sample_sheet <- sample_sheet[order(sample_sheet[, "Sample_ID"], decreasing = FALSE), ]
   existent_samples <- colnames(signal_data)
   sample_names <- sample_sheet$Sample_ID
