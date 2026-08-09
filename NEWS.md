@@ -2,7 +2,32 @@
 
 ## semseeker 0.99.3
 
+### Breaking changes
+
+- **The per-sample burden moved out of `SAMPLE_SHEET_RESULT.csv` into a new
+  sibling file, `SAMPLE_STATS_RESULT.csv` (AI-223).** The columns that used to
+  be appended to the sample sheet (`MUTATIONS_HYPER`, `DELTAS_HYPO`, …, and
+  `PROBES_COUNT`) were aggregated over every probe with no genomic filter —
+  that is the *sample* scope of the new artefact — and are now written there as
+  `SAMPLE_<MARKER>_<FIGURE>` and `SAMPLE_N_PROBES`. The sample sheet stays the
+  description of the study; the two files join on `Sample_ID`, and
+  `sem_study_summary_get()` performs that join for you, so analyses inside the
+  package are unaffected. Code that read the burden straight from
+  `SAMPLE_SHEET_RESULT.csv` must read the sibling instead.
+
 ### New features
+
+- **Per-sample signal descriptors (AI-223).** Alongside the burden, the new
+  sibling carries `SAMPLE_MEDIAN`, `SAMPLE_MEAN`, `SAMPLE_VARIANCE`,
+  `SAMPLE_IQR` and `SAMPLE_N_PROBES` for every sample. On the beta scale it
+  also carries the two modes of the bimodal distribution, `SAMPLE_MODE_LOW` and
+  `SAMPLE_MODE_HIGH`, estimated as the highest density peak on each side of
+  0.5. On M-values the distribution is unimodal and the split carries no
+  meaning, so the two columns are omitted rather than filled with a
+  meaningless number. Column names are composed by a single shared helper, so
+  producer and consumer cannot drift apart. Region scopes
+  (`<AREA>[_<SUBAREA>]_*`) are the next step; the naming already accommodates
+  them.
 
 - **Coverage is now a mandatory pre-step of every SEM analysis (AI-074).**
   Coverage used to be an opt-in report, so a run could go straight to SEM

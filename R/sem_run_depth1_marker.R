@@ -21,11 +21,21 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   results <- data.frame()
   processed_items <- 0L
 
-  cols <- keys$COMBINED
-  if (sum(cols %in% colnames(prep$study_summary)) == 0)
+  # AI-223: the sample-level burden lives in the statistics sibling, joined
+  # onto study_summary by sem_study_summary_get() under the SAMPLE scope. Its
+  # column names are composed with the shared helper — never hard-coded — and
+  # renamed back to <MARKER>_<FIGURE> below so the inference output (AREA_OF_TEST)
+  # keeps its historical values.
+  cols        <- keys$COMBINED
+  burden_cols <- io_burden_colname("SAMPLE", keys$MARKER, keys$FIGURE)
+  present     <- burden_cols %in% colnames(prep$study_summary)
+  if (sum(present) == 0)
     return(list(results = results, processed_items = processed_items))
 
-  cols          <- cols[cols %in% colnames(prep$study_summary)]
+  keys        <- keys[present, , drop = FALSE]
+  cols        <- cols[present]
+  burden_cols <- burden_cols[present]
+  prep$study_summary <- .sem_burden_cols_rename(prep$study_summary, burden_cols, cols)
   keys$AREA     <- "SAMPLE_GROUP"
   keys$SUBAREA  <- "SAMPLE"
 
@@ -58,7 +68,14 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
       g_start <- 2 + length(prep$covariates)
       column_selectors <- c(prep$independent_variable, prep$covariates, key$COMBINED)
       column_selectors <- column_selectors[column_selectors != ""]
-      processed_items <- processed_items + ncol(study_summary_local) - g_start
+      # One key at depth=1 means exactly one test: a single burden column is
+      # fitted against the independent variable. The counter used to take
+      # ncol(study_summary_local), i.e. the width of the WHOLE sample sheet,
+      # which counted phenotype columns as if they had been tested (and, since
+      # AI-223 joins the statistics sibling, the signal descriptors too).
+      # Depth>1 counts the tested columns of its batch frame; this is the
+      # depth=1 equivalent.
+      processed_items <- processed_items + 1L
       if (any(is.na(study_summary_local[, column_selectors]))) {
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
           " Missing values in the data frame!")
@@ -97,4 +114,27 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   assoc_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
 
   list(results = results, processed_items = processed_items)
+}
+
+#' Rename the SAMPLE-scope burden columns back to <MARKER>_<FIGURE>
+#'
+#' AI-223. The statistics sibling stores the sample-level burden as
+#' `SAMPLE_<MARKER>_<FIGURE>`; the models and the inference output have always
+#' referred to it as `<MARKER>_<FIGURE>` (it becomes AREA_OF_TEST in the
+#' results). Renaming at the boundary keeps the artefact naming explicit about
+#' its scope without changing what the results look like.
+#'
+#' @keywords internal
+#' @noRd
+.sem_burden_cols_rename <- function(study_summary, from, to) {
+  if (is.null(study_summary) || length(from) == 0)
+    return(study_summary)
+  # drop any stale column that would collide with the target name
+  collisions <- intersect(to, colnames(study_summary))
+  if (length(collisions) > 0)
+    study_summary <- study_summary[, !(colnames(study_summary) %in% collisions), drop = FALSE]
+  idx <- match(from, colnames(study_summary))
+  keep <- !is.na(idx)
+  colnames(study_summary)[idx[keep]] <- to[keep]
+  study_summary
 }
