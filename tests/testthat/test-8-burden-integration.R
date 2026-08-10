@@ -1,9 +1,15 @@
-# AI-086: integration test for sample_sheet_result.csv burden columns.
+# AI-086: integration test for the per-sample burden.
 #
-# Canary for AI-083: sem_study_summary_total() failed to populate per-sample
-# burden in sample_sheet_result.csv on ewas_osteoporosis/GSE99624 (48 samples,
-# 450K) — all burden columns landed as NA, which then crashed every depth=1
-# inference downstream with "data are not the same size".
+# AI-223 moved the burden out of SAMPLE_SHEET_RESULT.csv and into the
+# statistics sibling SAMPLE_STATS_RESULT.csv, where it is named
+# SAMPLE_<MARKER>_<FIGURE> (PROBES_COUNT became SAMPLE_N_PROBES). This test
+# follows it there, and additionally asserts that the sample sheet is left
+# lean.
+#
+# Canary for AI-083: the burden aggregation failed to populate per-sample
+# values on ewas_osteoporosis/GSE99624 (48 samples, 450K) — all burden columns
+# landed as NA, which then crashed every depth=1 inference downstream with
+# "data are not the same size".
 #
 # test-7-association_analysis.R only verifies this indirectly (depth=1 would
 # fail on all-NA burden vectors); this test asserts the contract directly:
@@ -21,47 +27,6 @@
 # DELTAP / DELTARP) plus the two continuous DELTAS / DELTAR. LESIONS depends
 # on MUTATIONS having been computed (SOURCE column), so the full
 # (MUTATIONS + DELTA*) set exercises the whole derive-and-aggregate path.
-
-.burden_setup_signal_with_outliers <- function(seed = 12345L) {
-  set.seed(seed)
-  n_probes_b  <- 200L
-  n_samples_b <- nsamples
-  local_probes  <- probe_features[1:n_probes_b, ]
-  local_samples <- mySampleSheet
-
-  # Background: mostly methylated (Beta(90, 10)).
-  # IMPORTANT: outliers are detected per-probe across samples (IQR × 3 on
-  # the inter-sample distribution). If we inject the SAME band across all
-  # samples uniformly, the per-probe q1/q3 collapse to that uniform value
-  # and IQR → 0 → no sample is flagged. So we inject DISJOINT, RANDOM
-  # per-sample probe sets — each sample is an outlier at probes the other
-  # samples are not, which is exactly the inter-sample dispersion the
-  # threshold needs.
-  local_sig <- matrix(
-    stats::rbeta(n_probes_b * n_samples_b, 90L, 10L),
-    nrow = n_probes_b, ncol = n_samples_b
-  )
-  for (s in seq_len(n_samples_b)) {
-    # 10 random HYPO probes from positions 1:100 → values ≈ 0
-    hypo_probes <- sample.int(100L, 10L)
-    local_sig[hypo_probes, s] <- stats::rbeta(10L, 1L, 100L)
-    # 10 random HYPER probes from positions 101:200 → values ≈ 1
-    hyper_probes <- 100L + sample.int(100L, 10L)
-    local_sig[hyper_probes, s] <- stats::rbeta(10L, 100L, 1L)
-  }
-
-  rownames(local_sig) <- local_probes$PROBE
-  local_sig <- as.data.frame(local_sig)
-  # signal_data has 10 unique columns; mySampleSheet has 16 rows (Reference reuse pattern)
-  colnames(local_sig) <- colnames(signal_data)
-  list(signal = local_sig, samples = local_samples, probes = local_probes)
-}
-
-.burden_required_markers <- c("MUTATIONS",
-                              "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
-                              "DELTAS", "DELTAR")
-.burden_cols <- c(paste0(.burden_required_markers, "_HYPER"),
-                  paste0(.burden_required_markers, "_HYPO"))
 
 test_that("sample_sheet_result.csv has populated burden columns for all discrete + continuous markers (AI-086, canary for AI-083)", {
   tempFolder <- tempFolders[1]
@@ -94,18 +59,27 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   # by default so either spelling works; Linux ext4 is case-sensitive and
   # only the uppercase form resolves. Use uppercase here to be correct on
   # all three CI runners.
-  result_csv <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
+  result_csv <- file.path(tempFolder, "Data", "SAMPLE_STATS_RESULT.csv")
+  sheet_csv  <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
   testthat::expect_true(
     file.exists(result_csv),
     info = sprintf(
-      "SAMPLE_SHEET_RESULT.csv was not written by semseeker() — tempFolder=%s",
+      "SAMPLE_STATS_RESULT.csv was not written by semseeker() — tempFolder=%s",
       tempFolder
     )
   )
   testthat::skip_if_not(file.exists(result_csv),
-                        "downstream assertions need the result CSV")
+                        "downstream assertions need the statistics sibling")
 
   df <- utils::read.csv2(result_csv, stringsAsFactors = FALSE)
+
+  # AI-223 net move: the sample sheet must NOT carry the burden any more
+  sheet <- utils::read.csv2(sheet_csv, stringsAsFactors = FALSE)
+  testthat::expect_equal(
+    intersect(c("MUTATIONS_HYPER", "MUTATIONS_HYPO", "PROBES_COUNT"),
+              colnames(sheet)),
+    character(0)
+  )
 
   # Required columns: MUTATIONS + DELTA* (LESIONS is optional — derives from
   # MUTATIONS clusters and may legitimately be 0 on small synthetic data.
@@ -113,11 +87,11 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   required_markers <- c("MUTATIONS",
                         "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
                         "DELTAS", "DELTAR")
-  required_burden_cols <- c(
+  required_burden_cols <- paste0("SAMPLE_", c(
     paste0(required_markers, "_HYPER"),
     paste0(required_markers, "_HYPO")
-  )
-  required_cols <- c("Sample_ID", required_burden_cols, "PROBES_COUNT")
+  ))
+  required_cols <- c("Sample_ID", required_burden_cols, "SAMPLE_N_PROBES")
 
   missing_cols <- setdiff(required_cols, colnames(df))
   testthat::expect_equal(
@@ -127,7 +101,7 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 
   # Soft: log if LESIONS_HYPER/HYPO are absent so we surface the gap
   # without failing — see AI-088 follow-up for an explicit LESIONS canary.
-  for (lesion_col in c("LESIONS_HYPER", "LESIONS_HYPO")) {
+  for (lesion_col in c("SAMPLE_LESIONS_HYPER", "SAMPLE_LESIONS_HYPO")) {
     if (!(lesion_col %in% colnames(df))) {
       message(sprintf(
         "test-8-burden-integration: %s absent — likely synthetic-data sparsity (soft warn, see AI-088)",
@@ -176,22 +150,22 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 
   # PROBES_COUNT > 0 on every sample.
   testthat::expect_true(
-    all(df$PROBES_COUNT > 0L, na.rm = TRUE),
-    info = "PROBES_COUNT must be > 0 on every sample"
+    all(df$SAMPLE_N_PROBES > 0L, na.rm = TRUE),
+    info = "SAMPLE_N_PROBES must be > 0 on every sample"
   )
 
   # Sanity: injected HYPO outliers must surface as MUTATIONS_HYPO > 0 on
   # at least the 5 samples we touched (sample indices 1:5).
-  if ("MUTATIONS_HYPO" %in% colnames(df)) {
+  if ("SAMPLE_MUTATIONS_HYPO" %in% colnames(df)) {
     testthat::expect_gt(
-      sum(df$MUTATIONS_HYPO > 0, na.rm = TRUE), 0L,
-      label = "samples with MUTATIONS_HYPO > 0 (injected-outlier sanity)"
+      sum(df$SAMPLE_MUTATIONS_HYPO > 0, na.rm = TRUE), 0L,
+      label = "samples with SAMPLE_MUTATIONS_HYPO > 0 (injected-outlier sanity)"
     )
   }
-  if ("MUTATIONS_HYPER" %in% colnames(df)) {
+  if ("SAMPLE_MUTATIONS_HYPER" %in% colnames(df)) {
     testthat::expect_gt(
-      sum(df$MUTATIONS_HYPER > 0, na.rm = TRUE), 0L,
-      label = "samples with MUTATIONS_HYPER > 0 (injected-outlier sanity)"
+      sum(df$SAMPLE_MUTATIONS_HYPER > 0, na.rm = TRUE), 0L,
+      label = "samples with SAMPLE_MUTATIONS_HYPER > 0 (injected-outlier sanity)"
     )
   }
 
@@ -240,10 +214,10 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
 #       inner merge uses all=TRUE, so a stray object only adds a spurious row),
 #       but the accumulator must be a local binding regardless;
 #   (c) the condition that DOES produce the reported symptom — a burden table
-#       sharing no Sample_ID with the sample sheet. The all.x=TRUE merge then
-#       yields 100% NA burden columns while PROBES_COUNT stays populated, and
-#       every depth=1 inference downstream dies with "data are not the same
-#       size". sem_study_summary_total() must refuse to write that file.
+#       sharing no Sample_ID with the sample sheet, which used to yield 100% NA
+#       burden columns and killed every depth=1 inference downstream with
+#       "data are not the same size". Since AI-223 the aggregation lives in
+#       sem_sample_stats_build(), which must refuse to write that file.
 # ---------------------------------------------------------------------------
 
 test_that("burden survives mixed-case Sample_IDs and a polluted global temp_result (AI-083)", {
@@ -270,7 +244,7 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
   sheet$Sample_ID <- unname(id_map[sheet$Sample_ID])
 
   # (b) pollute globalenv BEFORE the run: the object name collides with the
-  # accumulator inside sem_study_summary_total().
+  # accumulator inside the burden aggregation.
   assign("temp_result",
          data.frame(Sample_ID = "NOT_A_REAL_SAMPLE", JUNK = 1,
                     stringsAsFactors = FALSE),
@@ -291,10 +265,10 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     verbosity         = verbosity
   )
 
-  result_csv <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
+  result_csv <- file.path(tempFolder, "Data", "SAMPLE_STATS_RESULT.csv")
   testthat::expect_true(file.exists(result_csv))
   testthat::skip_if_not(file.exists(result_csv),
-                        "downstream assertions need the result CSV")
+                        "downstream assertions need the statistics sibling")
 
   df <- utils::read.csv2(result_csv, stringsAsFactors = FALSE)
 
@@ -316,15 +290,18 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     label = sprintf("mean NA fraction across burden columns (%.2f)",
                     mean(na_fraction))
   )
-  testthat::expect_true(all(df$PROBES_COUNT > 0L, na.rm = TRUE))
+  testthat::expect_true(all(df$SAMPLE_N_PROBES > 0L, na.rm = TRUE))
 
-  # (c) the actual AI-083 signature: rewrite the sample sheet with identifiers
-  # that exist in no pivot, then re-run the aggregation. Before the guard this
-  # silently produced a sample sheet with 100% NA burden; now it must stop and
-  # name both sides.
-  df_broken <- df
-  df_broken$Sample_ID <- paste0("UNRELATED_", seq_len(nrow(df_broken)))
-  utils::write.csv2(df_broken, result_csv, row.names = FALSE)
+  # (c) the actual AI-083 signature: rewrite the SAMPLE SHEET with identifiers
+  # that exist in no pivot, then re-run the aggregation. The producer recomputes
+  # the burden from the pivots (which still carry the real identifiers) and
+  # compares it against the sheet, so corrupting the sheet is what reproduces
+  # the mismatch. Before the guard this silently produced 100% NA burden; now it
+  # must stop and name both sides.
+  sheet_csv <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
+  sheet_broken <- utils::read.csv2(sheet_csv, stringsAsFactors = FALSE)
+  sheet_broken$Sample_ID <- paste0("UNRELATED_", seq_len(nrow(sheet_broken)))
+  utils::write.csv2(sheet_broken, sheet_csv, row.names = FALSE)
 
   SEMseeker:::core_init_env(
     result_folder     = tempFolder,
@@ -338,7 +315,7 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     verbosity         = 1
   )
   testthat::expect_error(
-    SEMseeker:::sem_study_summary_total(),
+    SEMseeker:::sem_sample_stats_build(),
     "no Sample_ID in common"
   )
 })

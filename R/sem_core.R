@@ -56,6 +56,10 @@ sem_core <- function(sample_sheet,
 
   sem_deltaX_get()
   sem_study_summary_total()
+  # AI-223: per-sample statistics sibling (burden + signal descriptors),
+  # written next to the sample sheet and joined back on Sample_ID by
+  # sem_study_summary_get().
+  sem_sample_stats_build()
   anno_annotate_position_pivots()
 
   # Single point of sidecar materialisation (AI-027).
