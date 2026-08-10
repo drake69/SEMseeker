@@ -208,5 +208,7 @@ If you use semseeker in published work, please cite the package:
 citation("semseeker")
 ```
 
-A Zenodo DOI will be registered for each release tag (see
-[documents/requirements.md](https://drake69.github.io/semseeker/documents/requirements.md)).
+The package is archived on Zenodo under the concept DOI
+[10.5281/zenodo.5095417](https://doi.org/10.5281/zenodo.5095417), which
+always resolves to the latest archived version; every release tag also
+gets its own version DOI.
