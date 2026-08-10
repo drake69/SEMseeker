@@ -16,6 +16,14 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     return()
   }
 
+  # AI-224: normalise both sides and fail with the offending identifiers rather
+  # than with R's "undefined columns selected" on the subset below.
+  .normalized <- core_normalize_sample_ids(sample_sheet, signal_data,
+                                           require_all_ids = TRUE)
+  sample_sheet <- .normalized$sample_sheet
+  signal_data  <- .normalized$signal_data
+  rm(.normalized)
+
   signal_data <- signal_data[, unique(sample_sheet$Sample_ID), drop = FALSE]
 
   # ------------------------------------------------------------------

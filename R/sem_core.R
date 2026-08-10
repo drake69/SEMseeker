@@ -43,7 +43,11 @@ sem_core <- function(sample_sheet,
     ssEnv$running_batch_id <- batch_id
     ssEnv <- core_update_session_info(ssEnv)
     sample_sheet_local <- io_source_data_get(sample_sheet[[batch_id]])
-    sample_sheet_local$Sample_ID <- core_name_cleaning(sample_sheet_local$Sample_ID)
+    # AI-224: single normalisation point for the sheet side. The signal side is
+    # normalised inside sem_analyze_batch(), where the matrix is materialised
+    # (keeping it there avoids holding a second reference to a multi-GB object
+    # alive in this frame for the whole batch).
+    sample_sheet_local <- core_normalize_sample_ids(sample_sheet_local)$sample_sheet
     utils::write.csv2(sample_sheet_local, file = io_file_path_build(ssEnv$result_folderData, paste0(batch_id,"_sample_sheet_original"),"csv",FALSE))
     sem_analyze_batch(io_source_data_get(signal_data[[batch_id]]), sample_sheet_local)
     anno_create_position_pivots(sample_sheet_local,ssEnv$keys_markers_figures)

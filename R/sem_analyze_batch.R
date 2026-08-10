@@ -30,7 +30,9 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
  
   ssEnv <- core_get_session_info()
   batch_id <- ssEnv$running_batch_id
-  sample_sheet$Sample_ID <- core_name_cleaning(sample_sheet$Sample_ID)
+  # AI-224: idempotent — sem_core() already normalised the sheet, but
+  # sem_analyze_batch() is also called directly (tests, resume tooling).
+  sample_sheet <- core_normalize_sample_ids(sample_sheet)$sample_sheet
 
   # AI-027: read via unified dispatcher. CASE 2 (streaming merge) lets
   # the SEM step pick up raw bed/bedgraph files when the SIGNAL_MEAN
@@ -117,6 +119,11 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
     core_log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
               " post-probe_ids_collect mem_MB=", round(sum(gc()[, "(Mb)"]), 1),
               " n_probe_ids=", length(probe_ids_vec))
+
+    # AI-074: the gate applies to the resume path too — resuming from a SIGNAL
+    # pivot still runs the SEM detection downstream.
+    sem_coverage_gate(probe_ids_vec)
+
     if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
       probe_features <- io_coord_probe_features(probe_ids_vec)
     } else {
@@ -253,7 +260,10 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " working on batch:", batch_id, " of ", nrow(signal_data),
             " rows and ", ncol(signal_data), " samples (fresh mode).")
-  colnames(signal_data) <- core_name_cleaning(colnames(signal_data))
+  # AI-224: normalise the signal columns with the SAME function used on the
+  # sheet identifiers, so the name-based subsetting below cannot silently miss.
+  signal_data <- core_normalize_sample_ids(sample_sheet = NULL,
+                                           signal_data = signal_data)$signal_data
 
   # Transparent conversion: WGBS/LONGREAD coordinate input → synthetic probe IDs
   signal_data <- io_normalize_signal_input(signal_data)
@@ -265,6 +275,10 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
 
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " I will work on:", nrow(signal_data), " PROBES.")
+
+  # AI-074: mandatory coverage gate — charts are produced on every run and the
+  # run stops when the input barely overlaps the reference annotation.
+  sem_coverage_gate(rownames(signal_data))
 
   # AI-106+ (2026-06-09): single source of truth for input → annotation
   # alignment. sem_prepare_batch_signal() centralises:
@@ -293,6 +307,11 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   if (!is.null(sample_group_checkResult)) {
     stop(sample_group_checkResult)
   }
+
+  # AI-224: last gate before every name-based column subset below
+  # (io_signal_save, reference matrix, per-population matrices). Fails with the
+  # offending identifiers instead of R's opaque "undefined columns selected".
+  core_normalize_sample_ids(sample_sheet, signal_data, require_all_ids = TRUE)
 
   io_signal_save(signal_data, sample_sheet, batch_id, probe_features = probe_features)
   core_log_event("DEBUG_MEM: ", format(Sys.time(), "%a %b %d %X %Y"),
