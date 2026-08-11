@@ -213,6 +213,19 @@ sem_sample_stats_build <- function() {
     return(NULL)
   }
 
+  # SIGNAL is not an analysis you opt into: it is the data the run was given,
+  # and its descriptors — plus N_PROBES, which is metadata of the scope and not
+  # of any marker — must be there whatever `markers` was restricted to. Before
+  # AI-248 they came from a separate path that read the signal pivot directly;
+  # now they travel through the keys, so the key has to be there.
+  if (!any(keys$MARKER == "SIGNAL")) {
+    signal_key <- keys[1, , drop = FALSE]
+    signal_key$MARKER   <- "SIGNAL"
+    signal_key$FIGURE   <- io_signal_figure()
+    signal_key$DISCRETE <- FALSE
+    keys <- rbind(keys, signal_key)
+  }
+
   scope <- io_scope_name(area = area, subarea = subarea)
   mask  <- if (identical(scope, "SAMPLE")) NULL else .sem_scope_probe_mask(area, subarea)
   if (!identical(scope, "SAMPLE") && is.null(mask)) {
