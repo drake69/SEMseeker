@@ -1,6 +1,6 @@
 # semseeker NEWS
 
-## semseeker 0.99.3
+## semseeker 0.99.4
 
 ### Breaking changes
 
@@ -50,12 +50,6 @@
 
 ### Documentation
 
-- Aligned the delta-metric documentation in the vignettes and README with the
-  implementation: the `DELTAS`/`DELTAR`/`DELTAP`/`DELTARP`/`DELTAQ`/`DELTARQ`
-  descriptions now reflect the relative-delta ratio and its equal-width and
-  quantile ranked variants. Corrected the pivot file-name examples to
-  `Data/Pivots/<MARKER>/<MARKER>_<FIGURE>_<AREA>_<SUBAREA>_<build>.parquet` and
-  updated a stale `enrichment_analysis()` reference.
 - `inst/CITATION` now carries the Zenodo DOI `10.5281/zenodo.5095417` instead
   of a Bioconductor DOI that does not resolve (the package is not on
   Bioconductor yet), and the README no longer says a Zenodo DOI "will be
@@ -90,6 +84,19 @@
   name-based column selection; distinct identifiers that would collapse onto
   the same normalised name, and identifiers without a matching signal column,
   are reported explicitly instead of failing later.
+
+## semseeker 0.99.3
+
+### Documentation
+
+- Aligned the delta-metric documentation in the vignettes and README with the
+  implementation: the `DELTAS`/`DELTAR`/`DELTAP`/`DELTARP`/`DELTAQ`/`DELTARQ`
+  descriptions now reflect the relative-delta ratio and its equal-width and
+  quantile ranked variants. Corrected the pivot file-name examples to
+  `Data/Pivots/<MARKER>/<MARKER>_<FIGURE>_<AREA>_<SUBAREA>_<build>.parquet` and
+  updated a stale `enrichment_analysis()` reference.
+
+### Bug fixes
 
 - **`plot_box_plot()`: fixed R CMD check ERROR under ggplot2 >= 4.0.**
   `ggpubr::stat_compare_means(label = "p.format")` builds an internal
