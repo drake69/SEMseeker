@@ -72,7 +72,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     )
     candidates[grepl(paste0("/", pattern, "/"), candidates, fixed = TRUE)]
   }
-  existing_signal_mean <- .existing_bed_set("SIGNAL", "MEAN")
+  existing_signal_mean <- .existing_bed_set("SIGNAL", io_signal_figure())
   existing_mut_hyper   <- .existing_bed_set("MUTATIONS", "HYPER")
   existing_mut_hypo    <- .existing_bed_set("MUTATIONS", "HYPO")
   existing_deltas_hypo <- .existing_bed_set("DELTAS", "HYPO")
@@ -101,7 +101,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
   # foreach::foreach(i =1:nrow(sample_sheet), .export = variables_to_export) %dorng% {
     local_sample_detail <- sample_sheet[i,]
     ssEnv <- core_get_session_info()
-    bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN", skip_dir_create = dir_known_signal_mean)
+    bed_filename <- io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", io_signal_figure(), skip_dir_create = dir_known_signal_mean)
     if(!(bed_filename %in% existing_signal_mean)) {
       signal_values <- signal_data[,local_sample_detail$Sample_ID]
       sem_signal_single_sample( signal_values,local_sample_detail,probe_features)
@@ -121,7 +121,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
     coverage_first_sample <- sample_sheet[1L, ]
     coverage_bed <- io_bed_file_name(coverage_first_sample$Sample_ID,
                                   coverage_first_sample$Sample_Group,
-                                  "SIGNAL", "MEAN")
+                                  "SIGNAL", io_signal_figure())
     if (file.exists(coverage_bed)) {
       coverage_sig <- utils::read.delim(coverage_bed, header = FALSE, sep = "\t")
       colnames(coverage_sig) <- c("CHR", "START", "END", "VALUE")
@@ -192,7 +192,7 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
 
     # Only pay the read.delim cost when at least one figure needs computing.
     if (need_mut_hyper || need_mut_hypo || need_deltas_hypo || need_deltar_hypo) {
-      bed_filename <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL","MEAN")
+      bed_filename <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", io_signal_figure())
       signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
       colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
       signal_values$CHR <- SEMseeker:::anno_normalize_chr(signal_values$CHR, "internal")

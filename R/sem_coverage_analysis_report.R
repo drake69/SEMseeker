@@ -27,7 +27,7 @@ sem_coverage_analysis_report <- function (signal_data, result_folder, maxResourc
 {
 
   ssEnv <- core_init_env( result_folder =  result_folder, maxResources =  maxResources, ...)
-  # signal_data_path <- io_pivot_file_name_parquet("SIGNAL","MEAN","PROBE","WHOLE")
+  # signal_data_path <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(),"PROBE","WHOLE")
   # if (!file.exists(signal_data_path))
   # {
   #   core_log_event("ERROR:  ", format(Sys.time(), "%a %b %d %X %Y"), " Signal data is missing")

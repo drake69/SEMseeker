@@ -10,7 +10,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   if (is.null(probe_features))
     probe_features <- attr(signal_data, "probe_features")
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Saving signal data.")
-  pivot_file_name_pos <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "POSITION", "WHOLE")
+  pivot_file_name_pos <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
   if (file.exists(pivot_file_name_pos)) {
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data already saved.")
     return()
@@ -40,7 +40,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
     signal_probe$AREA      <- rownames(signal_data)
     signal_probe           <- signal_probe[, c(ncol(signal_probe),
                                                seq_len(ncol(signal_probe) - 1))]
-    pivot_file_name_probe  <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE", "WHOLE")
+    pivot_file_name_probe  <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
     polars::as_polars_df(signal_probe)$write_parquet(pivot_file_name_probe)
     rm(signal_probe)
 
@@ -74,7 +74,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   signal_data$AREA <- rownames(signal_data)
   signal_data      <- signal_data[, c(ncol(signal_data), seq_len(ncol(signal_data) - 1))]
 
-  pivot_file_name_probe <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE", "WHOLE")
+  pivot_file_name_probe <- io_pivot_file_name_parquet("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
   polars::as_polars_df(signal_data)$write_parquet(pivot_file_name_probe)
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"), "Signal data saved with probe.")
 
@@ -122,7 +122,7 @@ io_signal_save <- function(signal_data, sample_sheet, batch_id,
   # Scan parquet UNA SOLA VOLTA fuori dal loop: la lazy frame è immutabile,
   # ogni $filter/$join in iterazione produce una nuova lazy frame senza
   # ri-aprire il parquet. Riduce overhead per iter su big matrix.
-  sd_lazy <- io_read_pivot("SIGNAL", "MEAN", "PROBE", "WHOLE")$
+  sd_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")$
               with_columns(polars::pl$col("AREA")$alias("PROBE"))
 
   for (i in seq_along(chrs)) {

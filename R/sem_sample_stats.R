@@ -33,34 +33,28 @@ sem_sample_stats_build <- function() {
 
   ssEnv <- core_get_session_info()
 
-  burden <- NULL
+  stats  <- NULL
   scopes <- .sem_stats_scopes_get()
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " Per-sample statistics, scopes: ",
             paste(vapply(scopes, function(s) s$scope, character(1)), collapse = ", "), ".")
   for (scope in scopes) {
-    scope_burden <- .sem_sample_burden_get(scope$area, scope$subarea)
-    if (is.null(scope_burden))
+    # AI-248: one call covers every marker of the scope and, for each, every
+    # aggregation it carries — the signal descriptors included, since SIGNAL is
+    # a marker like the others and its figure is the scale of the values.
+    scope_stats <- .sem_sample_burden_get(scope$area, scope$subarea)
+    if (is.null(scope_stats))
       next
-    burden <- if (is.null(burden)) scope_burden else
-      merge(burden, scope_burden, by = "Sample_ID", all = TRUE)
+    stats <- if (is.null(stats)) scope_stats else
+      merge(stats, scope_stats, by = "Sample_ID", all = TRUE)
   }
 
-  # Signal descriptors stay at sample level: the region-scoped descriptors are
-  # a separate decision (they are not marker/figure pairs, so they do not
-  # travel through the keys machinery the way the burden does).
-  descriptors <- .sem_sample_descriptors_get()
-
-  if (is.null(burden) && is.null(descriptors)) {
+  if (is.null(stats)) {
     core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
               " No per-sample statistics could be computed; ",
               "SAMPLE_STATS_RESULT not written.")
     return(invisible(NULL))
   }
-
-  stats <- if (is.null(burden)) descriptors else
-           if (is.null(descriptors)) burden else
-           merge(descriptors, burden, by = "Sample_ID", all = TRUE)
 
   # Sample sheet identifiers are the reference: report what the pivots know
   # about samples the sheet does not mention, and vice versa (AI-083).
@@ -231,8 +225,8 @@ sem_sample_stats_build <- function() {
   result <- NULL
   for (k in seq_len(nrow(keys))) {
     key     <- keys[k, ]
-    marker  <- key$MARKER
-    figure  <- key$FIGURE
+    marker  <- as.character(key$MARKER)
+    figure  <- as.character(key$FIGURE)
 
     pivot <- io_read_pivot(marker, figure, key$AREA, key$SUBAREA)
     if (is.null(pivot))
@@ -246,105 +240,85 @@ sem_sample_stats_build <- function() {
       )
       pivot <- pivot$join(mask, on = c("CHR", "START", "END"), how = "semi")
     }
-
     pivot <- pivot$drop(c("CHR", "START", "END"))
-    # The operator is intrinsic to the marker: counts are summed, continuous
-    # deviations averaged. DISCRETE is the flag that already encodes it
-    # (util_keys_create.R).
-    pivot <- if (isTRUE(key$DISCRETE)) pivot$sum() else pivot$mean()
-    pivot <- pivot$with_columns(polars::pl$col("*"))
 
-    pivot <- as.data.frame(t(as.data.frame(pivot$collect())))
-    colname <- io_burden_colname(scope, marker, figure)
-    colnames(pivot) <- colname
-    pivot$Sample_ID <- rownames(pivot)
+    # AI-248: the operator is no longer a boolean intrinsic to the marker. The
+    # registry says which aggregations this pair carries; DISCRETE now only
+    # decides which one is produced without being asked.
+    aggregations <- util_aggregations_allowed(marker, figure,
+                                              discrete = isTRUE(key$DISCRETE),
+                                              default  = TRUE)
+    # The number of usable positions is a property of the SCOPE, not an
+    # aggregation of a marker, so it carries no marker/figure in its name. It is
+    # read off the signal, which is the only marker present at every position.
+    if (identical(marker, "SIGNAL"))
+      aggregations <- c(aggregations, "N_PROBES")
 
-    if (is.null(result)) {
-      result <- pivot
-    } else {
-      result <- result[, !(colnames(result) == colname), drop = FALSE]
-      result <- merge(result, pivot, by = "Sample_ID", all = TRUE)
+    for (aggregation in aggregations) {
+      values <- .sem_pivot_aggregate(pivot, aggregation)
+      if (is.null(values))
+        next
+      colname <- if (identical(aggregation, "N_PROBES"))
+        io_feature_colname(scope, aggregation = aggregation) else
+        io_feature_colname(scope, marker, figure, aggregation)
+      colnames(values) <- colname
+      values$Sample_ID <- rownames(values)
+      rownames(values) <- NULL
+
+      if (is.null(result)) {
+        result <- values
+      } else {
+        result <- result[, !(colnames(result) == colname), drop = FALSE]
+        result <- merge(result, values, by = "Sample_ID", all = TRUE)
+      }
     }
   }
 
   if (is.null(result))
     return(NULL)
 
-  result[is.na(result)] <- 0
   rownames(result) <- NULL
   result
 }
 
-#' Signal descriptors at sample level
+#' Reduce every sample column of a pivot with one aggregation (internal)
 #'
-#' One pass per sample over the SIGNAL pivot, parallelised with the same
-#' foreach/%dorng% idiom used elsewhere in the package. Each worker collects a
-#' single sample column (one column ~ n_probes doubles, so memory stays bounded
-#' by the number of workers, not by the size of the matrix) and reduces it to
-#' one row of statistics.
+#' AI-248. Two paths, and the difference is not cosmetic:
 #'
+#' \itemize{
+#'   \item `SUM` and `MEAN` are streaming reduces: polars computes them over the
+#'     whole frame without materialising a single column in R;
+#'   \item everything else needs the distribution — a median must sort, the two
+#'     modes must estimate a density — so each sample column is collected in
+#'     turn and reduced in R. One column at a time keeps memory bounded by the
+#'     number of workers, not by the size of the matrix, which is the same idiom
+#'     the rest of the package uses.
+#' }
+#'
+#' @param pivot lazy polars frame, sample columns only (keys already dropped).
+#' @param aggregation one name from [util_aggregations_allowed()].
+#' @return a one-column data.frame, rows named by sample, or `NULL`.
 #' @keywords internal
 #' @noRd
-.sem_sample_descriptors_get <- function() {
+.sem_pivot_aggregate <- function(pivot, aggregation) {
 
-  ssEnv <- core_get_session_info()
-
-  pivot_path <- io_pivot_file_name_parquet("SIGNAL", "MEAN", "PROBE", "WHOLE")
-  if (!file.exists(pivot_path)) {
-    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " SIGNAL pivot not found, signal descriptors skipped: ", pivot_path)
-    return(NULL)
+  if (aggregation %in% c("SUM", "MEAN")) {
+    reduced <- if (identical(aggregation, "SUM")) pivot$sum() else pivot$mean()
+    reduced <- reduced$with_columns(polars::pl$col("*"))
+    out <- as.data.frame(t(as.data.frame(reduced$collect())))
+    # A pivot with no row after the mask reduces to NA on MEAN and 0 on SUM;
+    # both are honest answers to "no position in this scope".
+    return(out)
   }
 
-  lazy <- polars::pl$scan_parquet(pivot_path)
-  # The probe identifier column is named AREA in the PROBE pivot
-  # (io_signal_save()); every other column is a sample.
-  samples <- setdiff(names(lazy$collect_schema()), c("AREA", "PROBE", "CHR", "START", "END"))
-  if (length(samples) == 0) {
-    core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-              " SIGNAL pivot carries no sample column; descriptors skipped.")
-    return(NULL)
-  }
-
-  beta  <- isTRUE(ssEnv$beta)
-  stats_wanted <- io_signal_stats(beta)
-  colnames_out <- vapply(stats_wanted, function(s) io_stat_colname("SAMPLE", s),
-                         character(1))
-
-  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-            " Computing signal descriptors for ", length(samples),
-            " samples (scale: ", if (beta) "beta" else "M-value", ").")
-
-  s <- NULL   # quiet R CMD check note
-  descriptors <- foreach::foreach(
-    s         = seq_along(samples),
-    .combine  = rbind,
-    .packages = c("SEMseeker", "polars", "stats"),
-    .export   = c("samples", "pivot_path", "beta", "stats_wanted", "colnames_out")
-  ) %dorng% tryCatch({
-    sample_id <- samples[s]
-    values <- as.data.frame(
-      polars::pl$scan_parquet(pivot_path)$select(sample_id)$collect()
-    )[[1]]
-    values <- as.numeric(values)
-    values <- values[is.finite(values)]
-
-    row <- SEMseeker:::util_signal_descriptors(values, beta = beta)
-    out <- data.frame(Sample_ID = sample_id, stringsAsFactors = FALSE)
-    for (i in seq_along(stats_wanted)) {
-      # NULL would DROP the column instead of filling it, and rows of unequal
-      # width break the rbind combine.
-      value <- row[[stats_wanted[i]]]
-      out[[colnames_out[i]]] <- if (is.null(value)) NA_real_ else value
-    }
-    out
-  }, error = function(e) {
-    NULL
-  })
-
-  if (is.null(descriptors) || nrow(descriptors) == 0)
+  samples <- names(pivot$collect_schema())
+  if (length(samples) == 0)
     return(NULL)
 
-  rownames(descriptors) <- NULL
-  descriptors
+  collected <- as.data.frame(pivot$collect())
+  out <- data.frame(value = vapply(samples, function(s)
+    as.numeric(util_aggregate_values(collected[[s]], aggregation)),
+    numeric(1)), stringsAsFactors = FALSE)
+  rownames(out) <- samples
+  out
 }
