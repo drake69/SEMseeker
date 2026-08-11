@@ -25,6 +25,16 @@ test_that("io_scope_name encodes depth as scope", {
   expect_equal(SEMseeker:::io_scope_name(3L, "", ""), "SAMPLE")
 })
 
+test_that("io_scope_name derives the scope from (area, subarea) with no depth", {
+  # AI-223 slice 2a: the producer is depth-agnostic — it writes every scope
+  # once, so it names them from the pair alone.
+  expect_equal(SEMseeker:::io_scope_name(area = "GENE", subarea = "TSS1500"),
+               "GENE_TSS1500")
+  expect_equal(SEMseeker:::io_scope_name(area = "GENE"), "GENE")
+  expect_equal(SEMseeker:::io_scope_name(), "SAMPLE")
+  expect_equal(SEMseeker:::io_scope_name(area = "", subarea = "TSS1500"), "SAMPLE")
+})
+
 test_that("io_stat_colname and io_burden_colname compose the documented names", {
   expect_equal(SEMseeker:::io_stat_colname("SAMPLE", "MEDIAN"), "SAMPLE_MEDIAN")
   expect_equal(SEMseeker:::io_stat_colname("GENE_BODY", "IQR"), "GENE_BODY_IQR")
@@ -165,4 +175,199 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
   joined <- SEMseeker:::sem_study_summary_get()
   expect_true(all(burden_cols %in% colnames(joined)))
   expect_true("SAMPLE_MEDIAN" %in% colnames(joined))
+})
+
+# ---------------------------------------------------------------------------
+# AI-223 slice 2a — region scope, produced and consumed at depth = 1
+# ---------------------------------------------------------------------------
+
+test_that("a region scope reaches the sibling and the depth=1 inference", {
+  tempFolder <- tempFolders[14]
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  syn <- .burden_setup_signal_with_outliers()
+  scope <- SEMseeker:::io_scope_name(area = "GENE", subarea = "TSS1500")
+
+  SEMseeker::semseeker(
+    input               = syn$signal,
+    sample_sheet        = syn$samples,
+    result_folder       = tempFolder,
+    parallel_strategy   = "sequential",
+    # "WHOLE" must stay in `subareas`: it is what keeps POSITION_WHOLE in the
+    # keys, and every burden — whatever its scope — is aggregated from the
+    # POSITION pivots.
+    areas               = c("POSITION", "GENE"),
+    subareas            = c("WHOLE", "TSS1500"),
+    markers             = c("MUTATIONS"),
+    sample_stats_scopes = c("SAMPLE", scope),
+    start_fresh         = TRUE,
+    inpute              = "median",
+    showprogress        = showprogress,
+    verbosity           = verbosity
+  )
+
+  stats_csv <- file.path(tempFolder, "Data", "SAMPLE_STATS_RESULT.csv")
+  expect_true(file.exists(stats_csv))
+  skip_if_not(file.exists(stats_csv), "downstream assertions need the sibling")
+  stats <- utils::read.csv2(stats_csv, stringsAsFactors = FALSE)
+
+  scope_cols <- SEMseeker:::io_burden_colname(scope, "MUTATIONS", c("HYPER", "HYPO"))
+  whole_cols <- SEMseeker:::io_burden_colname("SAMPLE", "MUTATIONS", c("HYPER", "HYPO"))
+  expect_true(all(scope_cols %in% colnames(stats)),
+              info = paste("missing:",
+                           paste(setdiff(scope_cols, colnames(stats)), collapse = ", ")))
+  expect_true(all(whole_cols %in% colnames(stats)))
+
+  # a subset of the probes can only carry a subset of the burden
+  for (i in seq_along(scope_cols))
+    expect_true(all(stats[[scope_cols[i]]] <= stats[[whole_cols[i]]]))
+
+  # ── the mask counts every position once ──────────────────────────────────
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            areas = c("POSITION", "GENE"), subareas = c("WHOLE", "TSS1500"),
+                            markers = c("MUTATIONS"),
+                            start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
+
+  mask <- SEMseeker:::.sem_scope_probe_mask("GENE", "TSS1500")
+  expect_false(is.null(mask))
+  skip_if(is.null(mask), "no probe of the fixture is annotated TSS1500")
+  mask_df <- as.data.frame(mask$collect())
+  expect_gt(nrow(mask_df), 0)
+
+  pivot <- SEMseeker:::io_read_pivot("MUTATIONS", "HYPER", "POSITION", "WHOLE")
+  pivot_df <- as.data.frame(pivot$collect())
+  pivot_df$CHR   <- sub("^(?i)chr", "", as.character(pivot_df$CHR), perl = TRUE)
+  pivot_df$START <- as.integer(pivot_df$START)
+  pivot_df$END   <- as.integer(pivot_df$END)
+  masked <- merge(pivot_df, mask_df, by = c("CHR", "START", "END"))
+  sample_columns <- setdiff(colnames(masked), c("CHR", "START", "END"))
+  expected <- colSums(masked[, sample_columns, drop = FALSE], na.rm = TRUE)
+
+  observed <- stats[[SEMseeker:::io_burden_colname(scope, "MUTATIONS", "HYPER")]]
+  names(observed) <- stats$Sample_ID
+  common <- intersect(names(expected), names(observed))
+  expect_gt(length(common), 0)
+  expect_equal(as.numeric(observed[common]), as.numeric(expected[common]))
+
+  # a probe annotated to several genes must not be counted twice: the mask has
+  # one row per position, whatever the annotation says
+  expect_equal(nrow(mask_df), nrow(unique(mask_df[, c("CHR", "START", "END")])))
+
+  # ── consumption at depth = 1 ─────────────────────────────────────────────
+  SEMseeker:::core_close_env()
+
+  inference_details <- data.frame(
+    independent_variable = "Phenotest",
+    family_test          = "spearman",
+    transformation_y     = "",
+    transformation_x     = "",
+    depth_analysis       = 1L,
+    scopes               = paste("SAMPLE", scope, sep = "+"),
+    filter_p_value       = FALSE,
+    stringsAsFactors     = FALSE
+  )
+
+  expect_no_error(
+    SEMseeker:::association_analysis(
+      inference_details = inference_details,
+      result_folder     = tempFolder,
+      parallel_strategy = "sequential",
+      markers           = c("MUTATIONS"),
+      # depth=1 reads the sibling, not the area pivots: no need to pay for the
+      # GENE keys here.
+      areas             = c("POSITION"),
+      multiple_test_adj = "BH",
+      showprogress      = showprogress,
+      verbosity         = verbosity
+    )
+  )
+
+  csv_files <- list.files(file.path(tempFolder, "Inference"), pattern = "\\.csv$",
+                          recursive = TRUE, full.names = TRUE)
+  csv_files <- csv_files[!grepl("(?i)assoc_covariates_model", csv_files)]
+  expect_gt(length(csv_files), 0)
+  skip_if(length(csv_files) == 0, "no inference CSV to inspect")
+
+  result_df <- do.call(plyr::rbind.fill,
+                       lapply(csv_files, function(f) utils::read.csv2(f, stringsAsFactors = FALSE)))
+  # the scope is one value per sample: still DEPTH 1, with the scope in AREA.
+  # which() and not a bare logical: the CSV carries rows with NA in AREA (the
+  # job-summary row), and `df[df$AREA == scope, ]` would materialise them as
+  # all-NA phantom rows.
+  scope_rows <- result_df[which(result_df$AREA == scope), , drop = FALSE]
+  expect_gt(nrow(scope_rows), 0)
+  expect_true(all(scope_rows$DEPTH == 1))
+  expect_true(all(scope_rows$SUBAREA == "SAMPLE"))
+  # which burden was tested stays in MARKER/FIGURE, as at every other depth;
+  # the scope is what AREA adds. (AREA_OF_TEST is "burden_values" on every
+  # depth=1 row, scoped or not: with a single tested column io_data_preparation
+  # loses the column name — pre-existing, see AI-247.)
+  expect_equal(sort(unique(scope_rows$MARKER)), "MUTATIONS")
+  expect_true(all(scope_rows$FIGURE %in% c("HYPER", "HYPO")))
+  expect_setequal(unique(scope_rows$FIGURE),
+                  unique(result_df[which(result_df$AREA == "SAMPLE_GROUP"), "FIGURE"]))
+  # and the whole-sample rows are still there, untouched
+  expect_gt(nrow(result_df[which(result_df$AREA == "SAMPLE_GROUP"), , drop = FALSE]), 0)
+})
+
+test_that("an unproduced scope stops the analysis instead of testing nothing", {
+  tempFolder <- tempFolders[15]
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  syn <- .burden_setup_signal_with_outliers()
+
+  SEMseeker::semseeker(
+    input             = syn$signal,
+    sample_sheet      = syn$samples,
+    result_folder     = tempFolder,
+    parallel_strategy = "sequential",
+    areas             = c("POSITION"),
+    markers           = c("MUTATIONS"),
+    start_fresh       = TRUE,
+    inpute            = "median",
+    showprogress      = showprogress,
+    verbosity         = verbosity
+  )
+
+  inference_details <- data.frame(
+    independent_variable = "Phenotest",
+    family_test          = "spearman",
+    transformation_y     = "",
+    transformation_x     = "",
+    depth_analysis       = 1L,
+    scopes               = "GENE_TSS1500",
+    filter_p_value       = FALSE,
+    stringsAsFactors     = FALSE
+  )
+
+  expect_error(
+    SEMseeker:::association_analysis(
+      inference_details = inference_details,
+      result_folder     = tempFolder,
+      parallel_strategy = "sequential",
+      markers           = c("MUTATIONS"),
+      areas             = c("POSITION"),
+      multiple_test_adj = "BH",
+      showprogress      = showprogress,
+      verbosity         = verbosity
+    ),
+    "GENE_TSS1500")
+})
+
+test_that("an unknown scope is refused by the producer, not silently ignored", {
+  tempFolder <- tempFolders[16]
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            areas = c("POSITION"), markers = c("MUTATIONS"),
+                            sample_stats_scopes = c("SAMPLE", "GENE_NOWHERE"),
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  expect_error(SEMseeker:::.sem_stats_scopes_get(), "GENE_NOWHERE")
 })

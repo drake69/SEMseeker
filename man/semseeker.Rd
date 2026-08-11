@@ -44,7 +44,19 @@ and \code{core_init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
 \code{LESIONS_BP}, \code{marker}, \code{areas}). \code{LESIONS_BP}
 (default 2000) is the maximum bp distance between two probes for them to
 be in the same LESIONS enrichment window — replaces the legacy
-\code{sliding_window_size} probe-count parameter (removed in AI-092).}
+\code{sliding_window_size} probe-count parameter (removed in AI-092).
+\code{coverage_minimum} (default 80) is the minimum percentage of input
+positions that must be present in the reference annotation: the coverage
+charts are written on every run, and the run stops below this threshold
+(AI-074). Lower it explicitly for deliberate cross-technology runs.
+\code{sample_stats_scopes} (default \code{"SAMPLE"}) selects the scopes of
+the per-sample statistics sibling \code{SAMPLE_STATS_RESULT.csv}:
+\code{"SAMPLE"} is the whole sample (always produced), and any registered
+\code{AREA_SUBAREA} pair adds the burden restricted to that region class,
+e.g. \code{sample_stats_scopes = c("SAMPLE", "GENE_TSS1500")} produces
+\code{GENE_TSS1500_<MARKER>_<FIGURE>}. Each position is counted once, even
+when it is annotated to several genes. Consume them at \code{depth = 1}
+with \code{association_analysis(inference_details$scopes)}.}
 }
 \value{
 Invisibly \code{NULL}; writes output files to \code{result_folder}.

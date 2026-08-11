@@ -33,6 +33,14 @@ Required columns:
   \item{depth_analysis}{Integer depth: \code{1} = sample level,
     \code{2} = type level (gene, DMR, CpG island),
     \code{3} = genomic area (TSS1550, WHOLE, TSS200, …).}
+  \item{scopes}{Optional, depth=1 only. Which scopes of
+    \code{SAMPLE_STATS_RESULT.csv} to test, several separated by
+    \code{"+"} (default \code{"SAMPLE"}). A region scope such as
+    \code{"GENE_TSS1500"} tests the burden restricted to that region
+    class, still one value per sample: the result rows carry
+    \code{DEPTH = 1} with \code{AREA = "GENE_TSS1500"}. The scope must
+    have been produced by
+    \code{semseeker(sample_stats_scopes = ...)}, otherwise the run stops.}
 }}
 
 \item{result_folder}{character. Path to the SEMseeker result folder.}
