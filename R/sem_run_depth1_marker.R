@@ -30,7 +30,8 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   # (e.g. GENE_TSS1500 = burden restricted to the probes of that region class).
   # It is still one value per sample, hence still DEPTH=1; the scope is what
   # the AREA column carries.
-  scopes <- .sem_depth1_scopes_get(prep, ssEnv)
+  scopes      <- .sem_depth1_scopes_get(prep, ssEnv)
+  aggregation <- .sem_depth1_aggregation_get(prep)
 
   # resume: drop keys already present in the CSV (DEPTH==1 only). Read once,
   # the scope is part of the identity through AREA.
@@ -40,7 +41,7 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   if (file_good) {
     old_results <- unique(utils::read.csv2(fileNameResults, header = TRUE))
     old_filtered <- old_results[old_results$DEPTH == 1, ]
-    done_ids <- unlist(apply(unique(old_filtered[, c("MARKER", "FIGURE", "AREA", "SUBAREA")]), 1,
+    done_ids <- unlist(apply(unique(old_filtered[, intersect(c("MARKER", "FIGURE", "AGGREGATION", "AREA", "SUBAREA"), colnames(old_filtered))]), 1,
       function(x) paste(x, collapse = "_", sep = "")))
   }
 
@@ -48,12 +49,16 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   for (scope in scopes) {
     scope_keys  <- keys
     cols        <- scope_keys$COMBINED
-    burden_cols <- io_burden_colname(scope, scope_keys$MARKER, scope_keys$FIGURE)
+    # AI-248: the four axes of the taxonomy, composed by the one compositor the
+    # producer also uses. The aggregation is the axis the request must name.
+    burden_cols <- io_feature_colname(scope, scope_keys$MARKER, scope_keys$FIGURE,
+                                      aggregation)
     present     <- burden_cols %in% colnames(prep$study_summary)
     if (sum(present) == 0) {
       if (!identical(scope, "SAMPLE"))
         core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-          " Scope ", scope, " carries no burden column for this marker; skipped.")
+          " Scope ", scope, " carries no ", aggregation,
+          " column for this marker; skipped.")
       next
     }
 
@@ -66,8 +71,12 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
     study_summary_scope <- .sem_burden_cols_rename(prep$study_summary, burden_cols, cols)
     # SUBAREA == "SAMPLE" is what makes assoc_analysis_save_results() stamp
     # DEPTH = 1; AREA says which scope was aggregated.
-    scope_keys$AREA    <- if (identical(scope, "SAMPLE")) "SAMPLE_GROUP" else scope
-    scope_keys$SUBAREA <- "SAMPLE"
+    scope_keys$AREA        <- if (identical(scope, "SAMPLE")) "SAMPLE_GROUP" else scope
+    scope_keys$SUBAREA     <- "SAMPLE"
+    # AI-248: which operator produced the number travels with the row. Without
+    # it two aggregations of the same scope would be indistinguishable, and the
+    # dedup in assoc_analysis_save_results() would fuse them into one.
+    scope_keys$AGGREGATION <- aggregation
 
     has_covariates <- !is.null(prep$covariates) && length(prep$covariates) != 0
     if (has_covariates) {
@@ -78,7 +87,7 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
     }
 
     if (length(done_ids) > 0) {
-      todo_ids <- unlist(apply(scope_keys[, c("MARKER", "FIGURE", "AREA", "SUBAREA")], 1,
+      todo_ids <- unlist(apply(scope_keys[, c("MARKER", "FIGURE", "AGGREGATION", "AREA", "SUBAREA")], 1,
         function(x) paste(x, collapse = "_", sep = "")))
       scope_keys <- scope_keys[!(todo_ids %in% done_ids), ]
     }
@@ -146,6 +155,38 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   list(results = results, processed_items = processed_items)
 }
 
+#' The aggregation the request asks for (internal)
+#'
+#' AI-248. Mandatory at depth 1. While every marker admitted exactly one
+#' operator the axis could stay implicit; now that a scope carries several, a
+#' request that does not name one does not identify what it wants tested — and
+#' silently picking one for the researcher is how a median gets reported as a
+#' mean.
+#'
+#' @keywords internal
+#' @noRd
+.sem_depth1_aggregation_get <- function(prep) {
+
+  requested <- prep$inference_detail$aggregation
+  if (is.null(requested) || length(requested) == 0 || all(is.na(requested)) ||
+      !any(nzchar(as.character(requested))))
+    stop("inference_details$aggregation is required at depth 1: name which ",
+         "aggregation of the feature to test (SUM, MEAN, MEDIAN, VARIANCE, ",
+         "IQR, MODE_LOW, MODE_HIGH). It used to be implicit because every ",
+         "marker admitted exactly one; a scope now carries several.")
+
+  requested <- core_name_cleaning(as.character(requested)[1])
+  legal <- unique(unlist(lapply(c(TRUE, FALSE), function(discrete)
+    util_aggregations_allowed("SIGNAL", "BETA", discrete = discrete, default = FALSE))))
+  if (!(requested %in% legal))
+    stop("inference_details$aggregation = '", requested, "' is not an ",
+         "aggregation of the taxonomy. Legal names: ",
+         paste(legal, collapse = ", "), ".")
+
+  # The coherence check lives at the door, in assoc_validate_aggregation().
+  requested
+}
+
 #' Scopes to test at depth=1, validated against the statistics sibling
 #'
 #' AI-223 slice 2a. `inference_details$scopes` names them the way the sibling
@@ -174,7 +215,10 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   all_keys <- ssEnv$keys_markers_figures
   known_cols <- colnames(prep$study_summary)
   for (scope in requested) {
-    candidates <- io_burden_colname(scope, all_keys$MARKER, all_keys$FIGURE)
+    # a scope is present if ANY of its columns is, whatever the aggregation
+    candidates <- unlist(lapply(c("SUM", "MEAN", "MEDIAN", "VARIANCE", "IQR"),
+      function(aggregation)
+        io_feature_colname(scope, all_keys$MARKER, all_keys$FIGURE, aggregation)))
     if (!any(candidates %in% known_cols))
       stop("inference_details$scopes: scope '", scope, "' has no column in ",
            "SAMPLE_STATS_RESULT. Produce it with ",

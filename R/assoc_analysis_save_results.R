@@ -85,7 +85,9 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # remove duplicates based on MARKER   FIGURE  AREA    SUBAREA AREA_OF_TEST    FAMILY_TEST TRANSFORMATION_Y    PVALUE  R_MODEL
   # calculating the max of all others columns
   # C-06: include provenance columns in the grouping key so summarise() preserves them
-  group_column <- c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",
+  # AI-248: AGGREGATION is part of the identity. Without it the summarise(max)
+  # below would fuse the median and the mean of the same scope into one row.
+  group_column <- c("MARKER", "FIGURE", "AGGREGATION", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",
                     "TRANSFORMATION_Y", "R_MODEL", "TRANSFORMATION_X",
                     "INDEPENDENT_VARIABLE", "COVARIATES",
                     "GENOME_BUILD", "TECH")

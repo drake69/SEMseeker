@@ -177,6 +177,12 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       local_result$FIGURE <-  as.character(key$FIGURE)
       local_result$AREA <-  as.character(key$AREA)
       local_result$SUBAREA <-  as.character(key$SUBAREA)
+      # AI-248: which operator reduced the positions to this number. Absent for
+      # the depths that do not aggregate, present wherever the caller declared
+      # it — and part of the row identity, so two aggregations of the same
+      # scope never collapse into one.
+      if (!is.null(key$AGGREGATION))
+        local_result$AGGREGATION <- as.character(key$AGGREGATION)
       # AI-106 (2026-06-09): reverse-map back to the upstream raw name
       # (HLA-A, chr10:100028204-100028508, ...) so the CSV preserves it
       # for enrichment / resume match. Fallback to burdenValue itself if

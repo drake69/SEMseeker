@@ -54,27 +54,40 @@ test_that("the two modes are admissible only on the bounded scale", {
                                                            default = FALSE)))
 })
 
-test_that("the axis is permissive: every aggregation applies to every marker", {
+test_that("a 0/1 marker admits only the two aggregations that carry information", {
   admissible <- SEMseeker:::util_aggregations_allowed("MUTATIONS", "HYPER",
-                                                      default = FALSE)
-  expect_true(all(c("SUM", "MEAN", "MEDIAN", "VARIANCE", "IQR") %in% admissible))
+                                                      discrete = TRUE, default = FALSE)
+  # the burden, and the burden per position — the density, which is what makes
+  # regions of different size comparable
+  expect_setequal(admissible, c("SUM", "MEAN"))
+  # median / variance / IQR of a vector of zeros and ones are degenerate
+  expect_false(any(c("MEDIAN", "VARIANCE", "IQR") %in% admissible))
+})
+
+test_that("the continuous markers are one class: DELTAS and DELTAR match SIGNAL", {
+  signal <- SEMseeker:::util_aggregations_allowed("SIGNAL", "MVALUE",
+                                                  discrete = FALSE, default = FALSE)
+  deltas <- SEMseeker:::util_aggregations_allowed("DELTAS", "HYPER",
+                                                  discrete = FALSE, default = FALSE)
+  deltar <- SEMseeker:::util_aggregations_allowed("DELTAR", "HYPO",
+                                                  discrete = FALSE, default = FALSE)
+  expect_setequal(deltas, signal)
+  expect_setequal(deltar, signal)
+  expect_true(all(c("MEAN", "MEDIAN", "VARIANCE", "IQR") %in% deltas))
 })
 
 test_that("what is produced by default is narrower than what is admissible", {
   # a count of epimutations is a burden, and the burden is its sum
   expect_equal(SEMseeker:::util_aggregations_allowed("MUTATIONS", "HYPER"), "SUM")
-  # a continuous deviation is averaged — the DELTA family must keep the numbers
-  # it has always produced
-  expect_equal(SEMseeker:::util_aggregations_allowed("DELTAS", "HYPER",
-                                                     discrete = FALSE), "MEAN")
-  # the raw signal has no privileged operator, so it carries the descriptors
-  produced <- SEMseeker:::util_aggregations_allowed("SIGNAL", "BETA")
-  expect_true(all(c("MEAN", "MEDIAN", "VARIANCE", "IQR",
-                    "MODE_LOW", "MODE_HIGH") %in% produced))
-  expect_false("SUM" %in% produced)
-  expect_true(length(produced) <
-                length(SEMseeker:::util_aggregations_allowed("SIGNAL", "BETA",
-                                                             default = FALSE)))
+  # every continuous marker carries the whole descriptor set: adding them does
+  # not change the historical mean, it only gives it a suffix
+  for (marker in c("SIGNAL", "DELTAS", "DELTAR")) {
+    produced <- SEMseeker:::util_aggregations_allowed(marker, "HYPER",
+                                                      discrete = FALSE)
+    expect_true(all(c("MEAN", "MEDIAN", "VARIANCE", "IQR") %in% produced),
+                info = marker)
+    expect_false("SUM" %in% produced, info = marker)
+  }
 })
 
 # ---------------------------------------------------------------------------
@@ -155,4 +168,82 @@ test_that("the pivot name carries the aggregation, and the scale for SIGNAL", {
                                                      "POSITION", "WHOLE")
   expect_match(basename(position), "^MUTATIONS_HYPER_POSITION_WHOLE_HG19\\.parquet$",
                ignore.case = TRUE)
+})
+
+# ---------------------------------------------------------------------------
+# coherence of the request, checked at the door
+# ---------------------------------------------------------------------------
+
+.tax_keys <- function(...) {
+  k <- data.frame(..., stringsAsFactors = FALSE)
+  k
+}
+
+test_that("a request that names no aggregation is refused, at every depth", {
+  keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
+  for (depth in c(1L, 2L, 3L)) {
+    details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
+                          depth_analysis = depth, aggregation = NA,
+                          stringsAsFactors = FALSE)
+    expect_error(SEMseeker:::assoc_validate_aggregation(details, keys), "required")
+  }
+})
+
+test_that("an aggregation outside the taxonomy is refused", {
+  keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
+  details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
+                        depth_analysis = 1L, aggregation = "AVERAGE",
+                        stringsAsFactors = FALSE)
+  expect_error(SEMseeker:::assoc_validate_aggregation(details, keys),
+               "not an aggregation")
+})
+
+test_that("an impossible request drops its row instead of stopping the batch", {
+  keys <- .tax_keys(MARKER = c("MUTATIONS", "SIGNAL"),
+                    FIGURE = c("HYPER", "BETA"),
+                    DISCRETE = c(TRUE, FALSE))
+  details <- data.frame(
+    independent_variable = c("Phenotest", "Phenotest"),
+    family_test          = c("spearman", "spearman"),
+    depth_analysis       = c(1L, 1L),
+    # MODE_LOW exists only for SIGNAL/BETA, so the first row is possible;
+    # a run with only counts would make it impossible
+    aggregation          = c("MEDIAN", "SUM"),
+    stringsAsFactors = FALSE)
+
+  expect_warning(kept <- SEMseeker:::assoc_validate_aggregation(details, keys),
+                 "not admissible for MUTATIONS/HYPER")
+  # partially admissible: the row survives, the impossible pairs are skipped
+  expect_equal(nrow(kept), 2L)
+
+  # now the same median against counts only: nothing can be computed
+  counts_only <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
+  one_row <- details[1, , drop = FALSE]
+  expect_error(
+    suppressWarnings(SEMseeker:::assoc_validate_aggregation(one_row, counts_only)),
+    "nothing left to analyse")
+})
+
+test_that("a batch keeps the rows it can run and drops the ones it cannot", {
+  keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
+  details <- data.frame(
+    independent_variable = c("Phenotest", "Phenotest"),
+    family_test          = c("spearman", "spearman"),
+    depth_analysis       = c(1L, 1L),
+    aggregation          = c("MEDIAN", "SUM"),
+    stringsAsFactors = FALSE)
+
+  expect_warning(kept <- SEMseeker:::assoc_validate_aggregation(details, keys),
+                 "row 1")
+  expect_equal(nrow(kept), 1L)
+  expect_equal(kept$aggregation, "SUM")
+})
+
+test_that("a possible request passes silently", {
+  keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
+  details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
+                        depth_analysis = 1L, aggregation = "SUM",
+                        stringsAsFactors = FALSE)
+  expect_silent(kept <- SEMseeker:::assoc_validate_aggregation(details, keys))
+  expect_equal(nrow(kept), 1L)
 })

@@ -35,27 +35,6 @@ test_that("io_scope_name derives the scope from (area, subarea) with no depth", 
   expect_equal(SEMseeker:::io_scope_name(area = "", subarea = "TSS1500"), "SAMPLE")
 })
 
-test_that("io_stat_colname and io_burden_colname compose the documented names", {
-  expect_equal(SEMseeker:::io_stat_colname("SAMPLE", "MEDIAN"), "SAMPLE_MEDIAN")
-  expect_equal(SEMseeker:::io_stat_colname("GENE_BODY", "IQR"), "GENE_BODY_IQR")
-  expect_equal(
-    SEMseeker:::io_burden_colname("SAMPLE", "MUTATIONS", "HYPER"),
-    "SAMPLE_MUTATIONS_HYPER")
-  expect_equal(
-    SEMseeker:::io_burden_colname("GENE_BODY", "LESIONS", "HYPO"),
-    "GENE_BODY_LESIONS_HYPO")
-  # a scope is mandatory: an unscoped column would be ambiguous in the file
-  expect_error(SEMseeker:::io_stat_colname("", "MEDIAN"), "scope")
-  expect_error(SEMseeker:::io_burden_colname("", "MUTATIONS", "HYPER"), "scope")
-})
-
-test_that("io_signal_stats drops the two modes off the beta scale", {
-  expect_true(all(c("MODE_LOW", "MODE_HIGH") %in% SEMseeker:::io_signal_stats(beta = TRUE)))
-  expect_false(any(c("MODE_LOW", "MODE_HIGH") %in% SEMseeker:::io_signal_stats(beta = FALSE)))
-  expect_true(all(c("MEDIAN", "MEAN", "VARIANCE", "IQR", "N_PROBES") %in%
-                    SEMseeker:::io_signal_stats(beta = FALSE)))
-})
-
 # ---------------------------------------------------------------------------
 # descriptors (pure)
 # ---------------------------------------------------------------------------
@@ -138,12 +117,17 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
   # one row per sample of the signal matrix
   expect_equal(nrow(stats), ncol(syn$signal))
 
-  descriptor_cols <- c("SAMPLE_MEDIAN", "SAMPLE_MEAN", "SAMPLE_VARIANCE",
-                       "SAMPLE_IQR", "SAMPLE_N_PROBES",
-                       "SAMPLE_MODE_LOW", "SAMPLE_MODE_HIGH")
-  burden_cols <- c("SAMPLE_MUTATIONS_HYPER", "SAMPLE_MUTATIONS_HYPO",
-                   "SAMPLE_DELTAP_HYPER", "SAMPLE_DELTAP_HYPO",
-                   "SAMPLE_DELTAS_HYPER", "SAMPLE_DELTAS_HYPO")
+  # AI-248: SIGNAL is a marker like the others, its figure is the scale, and
+  # the operator is named. N_PROBES stays scope-level: no marker, no figure.
+  descriptor_cols <- c(
+    vapply(c("MEDIAN", "MEAN", "VARIANCE", "IQR", "MODE_LOW", "MODE_HIGH"),
+           function(a) SEMseeker:::io_feature_colname("SAMPLE", "SIGNAL", "BETA", a),
+           character(1)),
+    "SAMPLE_N_PROBES")
+  burden_cols <- c(
+    SEMseeker:::io_feature_colname("SAMPLE", "MUTATIONS", c("HYPER", "HYPO"), "SUM"),
+    SEMseeker:::io_feature_colname("SAMPLE", "DELTAP", c("HYPER", "HYPO"), "SUM"),
+    SEMseeker:::io_feature_colname("SAMPLE", "DELTAS", c("HYPER", "HYPO"), "MEAN"))
   expect_true(all(descriptor_cols %in% colnames(stats)),
               info = paste("missing:",
                            paste(setdiff(descriptor_cols, colnames(stats)), collapse = ", ")))
@@ -153,11 +137,11 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
 
   # the fixture is on the beta scale: descriptors must be in range and the two
   # modes must sit on either side of 0.5
-  expect_true(all(stats$SAMPLE_MEDIAN >= 0 & stats$SAMPLE_MEDIAN <= 1))
-  expect_true(all(stats$SAMPLE_IQR >= 0))
+  expect_true(all(stats$SAMPLE_SIGNAL_BETA_MEDIAN >= 0 & stats$SAMPLE_SIGNAL_BETA_MEDIAN <= 1))
+  expect_true(all(stats$SAMPLE_SIGNAL_BETA_IQR >= 0))
   expect_true(all(stats$SAMPLE_N_PROBES > 0))
-  expect_true(all(stats$SAMPLE_MODE_LOW < 0.5, na.rm = TRUE))
-  expect_true(all(stats$SAMPLE_MODE_HIGH >= 0.5, na.rm = TRUE))
+  expect_true(all(stats$SAMPLE_SIGNAL_BETA_MODE_LOW < 0.5, na.rm = TRUE))
+  expect_true(all(stats$SAMPLE_SIGNAL_BETA_MODE_HIGH >= 0.5, na.rm = TRUE))
 
   # AI-223 net move: the burden left the sample sheet
   moved_away <- c("MUTATIONS_HYPER", "MUTATIONS_HYPO", "DELTAS_HYPER",
@@ -174,7 +158,7 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
                             start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
   joined <- SEMseeker:::sem_study_summary_get()
   expect_true(all(burden_cols %in% colnames(joined)))
-  expect_true("SAMPLE_MEDIAN" %in% colnames(joined))
+  expect_true("SAMPLE_SIGNAL_BETA_MEDIAN" %in% colnames(joined))
 })
 
 # ---------------------------------------------------------------------------
@@ -213,8 +197,8 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   skip_if_not(file.exists(stats_csv), "downstream assertions need the sibling")
   stats <- utils::read.csv2(stats_csv, stringsAsFactors = FALSE)
 
-  scope_cols <- SEMseeker:::io_burden_colname(scope, "MUTATIONS", c("HYPER", "HYPO"))
-  whole_cols <- SEMseeker:::io_burden_colname("SAMPLE", "MUTATIONS", c("HYPER", "HYPO"))
+  scope_cols <- SEMseeker:::io_feature_colname(scope, "MUTATIONS", c("HYPER", "HYPO"), "SUM")
+  whole_cols <- SEMseeker:::io_feature_colname("SAMPLE", "MUTATIONS", c("HYPER", "HYPO"), "SUM")
   expect_true(all(scope_cols %in% colnames(stats)),
               info = paste("missing:",
                            paste(setdiff(scope_cols, colnames(stats)), collapse = ", ")))
@@ -245,7 +229,7 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   sample_columns <- setdiff(colnames(masked), c("CHR", "START", "END"))
   expected <- colSums(masked[, sample_columns, drop = FALSE], na.rm = TRUE)
 
-  observed <- stats[[SEMseeker:::io_burden_colname(scope, "MUTATIONS", "HYPER")]]
+  observed <- stats[[SEMseeker:::io_feature_colname(scope, "MUTATIONS", "HYPER", "SUM")]]
   names(observed) <- stats$Sample_ID
   common <- intersect(names(expected), names(observed))
   expect_gt(length(common), 0)
@@ -265,6 +249,7 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
     transformation_x     = "",
     depth_analysis       = 1L,
     scopes               = paste("SAMPLE", scope, sep = "+"),
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -340,6 +325,7 @@ test_that("an unproduced scope stops the analysis instead of testing nothing", {
     transformation_x     = "",
     depth_analysis       = 1L,
     scopes               = "GENE_TSS1500",
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )

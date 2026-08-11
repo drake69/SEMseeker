@@ -40,6 +40,11 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
     # statistics sibling ("SAMPLE", "GENE_TSS1500", …). Several are given
     # separated by "+", like covariates. Default "SAMPLE".
     "scopes",
+    # AI-248: which aggregation of the feature is tested (SUM, MEAN, MEDIAN,
+    # VARIANCE, IQR, MODE_LOW, MODE_HIGH). Mandatory at depth 1: with several
+    # aggregations over the same scope, a request that does not name one does
+    # not identify what it wants tested.
+    "aggregation",
     "filter_p_value",
     "samples_sql_condition",
     "areas_sql_condition",

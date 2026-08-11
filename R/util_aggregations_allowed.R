@@ -36,23 +36,38 @@ util_aggregations_allowed <- function(marker, figure = NULL, discrete = TRUE,
   marker <- toupper(as.character(marker))
   figure <- if (is.null(figure)) "" else toupper(as.character(figure))
 
-  is_signal <- identical(marker, "SIGNAL")
-  bounded   <- is_signal && identical(figure, "BETA")
+  # Two classes, and the class is what decides. SIGNAL, DELTAS and DELTAR are
+  # all continuous — a value per position — and take the same operators; the
+  # instability markers are counts, 0 or 1 per position.
+  # SIGNAL is continuous by definition, whatever the caller passes: the raw
+  # signal is never a count.
+  if (identical(marker, "SIGNAL"))
+    discrete <- FALSE
+  bounded <- identical(marker, "SIGNAL") && identical(figure, "BETA")
 
-  every <- c("SUM", "MEAN", "MEDIAN", "VARIANCE", "IQR")
+  if (isTRUE(discrete)) {
+    # SUM is the burden. MEAN of a 0/1 vector is the same burden divided by the
+    # positions of the scope, i.e. the DENSITY of epimutations — the only form
+    # comparable across regions of different size, which a raw burden is not.
+    # MEDIAN, VARIANCE and IQR of a 0/1 vector are degenerate, so they are not
+    # admissible: naming them would only add noise to the file.
+    admissible <- c("SUM", "MEAN")
+    return(if (isTRUE(default)) "SUM" else admissible)
+  }
+
+  admissible <- c("SUM", "MEAN", "MEDIAN", "VARIANCE", "IQR")
+  # The two modes look for the highest density peak on EACH SIDE OF 0.5, which
+  # presupposes a scale bounded in [0,1] and bimodal. DELTAS and DELTAR are
+  # deviations centred on zero: that split says nothing about them.
   if (bounded)
-    every <- c(every, "MODE_LOW", "MODE_HIGH")
+    admissible <- c(admissible, "MODE_LOW", "MODE_HIGH")
 
   if (!isTRUE(default))
-    return(every)
+    return(admissible)
 
-  # Produced by default: the operator that carries the meaning of the marker.
-  # For the raw signal there is no privileged operator, so the whole descriptor
-  # set is produced. For everything else the default is the operator the package
-  # has always applied — a count of epimutations is a burden and the burden is
-  # its sum, a continuous deviation is averaged.
-  if (is_signal)
-    return(setdiff(every, "SUM"))
-
-  if (isTRUE(discrete)) "SUM" else "MEAN"
+  # Every continuous marker is produced with the whole descriptor set: no
+  # operator is privileged for a continuous value. This ADDS columns without
+  # changing any existing number — the historical mean keeps its value and
+  # merely gains the _MEAN suffix.
+  setdiff(admissible, "SUM")
 }

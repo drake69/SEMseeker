@@ -43,6 +43,13 @@
 # AI-223: the burden lives in the statistics sibling under the SAMPLE scope,
 # so the column names carry the scope prefix. Composed here the same way
 # io_burden_colname() composes them on the package side.
-.burden_cols <- paste0("SAMPLE_",
-                       c(paste0(.burden_required_markers, "_HYPER"),
-                         paste0(.burden_required_markers, "_HYPO")))
+# AI-248: the name carries the aggregation, and which one is produced by
+# default depends on the class of the marker — a count is summed, a continuous
+# deviation carries the descriptor set (of which MEAN is the historical value).
+.burden_discrete_markers   <- c("MUTATIONS", "DELTAP", "DELTAQ", "DELTARP", "DELTARQ")
+.burden_continuous_markers <- c("DELTAS", "DELTAR")
+.burden_cols <- c(
+  paste0("SAMPLE_", c(paste0(.burden_discrete_markers, "_HYPER"),
+                      paste0(.burden_discrete_markers, "_HYPO")), "_SUM"),
+  paste0("SAMPLE_", c(paste0(.burden_continuous_markers, "_HYPER"),
+                      paste0(.burden_continuous_markers, "_HYPO")), "_MEAN"))

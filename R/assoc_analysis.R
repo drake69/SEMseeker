@@ -90,6 +90,10 @@ association_analysis <- function(inference_details, result_folder, maxResources 
   anno_annotate_position_pivots()
 
   inference_details <- assoc_validate_inference_schema(unique(inference_details))
+  # AI-248: shape first, then meaning. Refuse an aggregation that no marker of
+  # this run admits before any result is written — checking it inside the
+  # per-marker loop would surface the mistake after part of the output exists.
+  inference_details <- assoc_validate_aggregation(inference_details)
 
   for (z in seq_len(nrow(inference_details))) {
     start_time <- Sys.time()
