@@ -185,7 +185,7 @@ sem_sample_stats_build <- function() {
     values <- as.numeric(values)
     values <- values[is.finite(values)]
 
-    row <- SEMseeker:::.sem_signal_descriptors(values, beta = beta)
+    row <- SEMseeker:::util_signal_descriptors(values, beta = beta)
     out <- data.frame(Sample_ID = sample_id, stringsAsFactors = FALSE)
     for (i in seq_along(stats_wanted)) {
       # NULL would DROP the column instead of filling it, and rows of unequal
@@ -203,58 +203,4 @@ sem_sample_stats_build <- function() {
 
   rownames(descriptors) <- NULL
   descriptors
-}
-
-#' Reduce one sample's signal vector to its descriptors
-#'
-#' Split at 0.5 for the two beta modes: methylation beta values are bimodal
-#' with peaks near 0 (unmethylated) and near 1 (methylated), so the highest
-#' density peak on each side of 0.5 is the natural estimate of each mode. On
-#' M-values the distribution is unimodal and the split is meaningless, which is
-#' why [io_signal_stats()] does not request the mode columns there.
-#'
-#' @param values numeric vector, already filtered to finite values.
-#' @param beta logical. TRUE when the signal is on the [0,1] beta scale.
-#' @return named list of statistics.
-#' @keywords internal
-#' @noRd
-.sem_signal_descriptors <- function(values, beta = TRUE) {
-
-  out <- list(
-    MEDIAN     = NA_real_,
-    MEAN       = NA_real_,
-    VARIANCE   = NA_real_,
-    IQR        = NA_real_,
-    N_PROBES   = length(values)
-  )
-
-  if (length(values) == 0)
-    return(out)
-
-  out$MEDIAN   <- stats::median(values)
-  out$MEAN     <- mean(values)
-  out$VARIANCE <- stats::var(values)
-  out$IQR      <- stats::IQR(values)
-
-  if (!isTRUE(beta))
-    return(out)
-
-  out$MODE_LOW  <- NA_real_
-  out$MODE_HIGH <- NA_real_
-  # density() needs at least two distinct points to estimate anything.
-  if (length(unique(values)) < 2L)
-    return(out)
-
-  dens <- tryCatch(stats::density(values, from = 0, to = 1),
-                   error = function(e) NULL)
-  if (is.null(dens))
-    return(out)
-
-  low <- dens$x < 0.5
-  if (any(low))
-    out$MODE_LOW <- dens$x[low][which.max(dens$y[low])]
-  if (any(!low))
-    out$MODE_HIGH <- dens$x[!low][which.max(dens$y[!low])]
-
-  out
 }

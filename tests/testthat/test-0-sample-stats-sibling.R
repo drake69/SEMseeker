@@ -55,7 +55,7 @@ test_that("the two beta modes land on the injected peaks", {
   values <- c(stats::rbeta(4000, 2, 40),    # peak near 0.05
               stats::rbeta(4000, 40, 2))    # peak near 0.95
 
-  d <- SEMseeker:::.sem_signal_descriptors(values, beta = TRUE)
+  d <- SEMseeker:::util_signal_descriptors(values, beta = TRUE)
 
   expect_lt(d$MODE_LOW, 0.5)
   expect_gt(d$MODE_HIGH, 0.5)
@@ -71,7 +71,7 @@ test_that("descriptors omit the modes on the M-value scale", {
   set.seed(7L)
   values <- stats::rnorm(1000, mean = 1.5, sd = 2)
 
-  d <- SEMseeker:::.sem_signal_descriptors(values, beta = FALSE)
+  d <- SEMseeker:::util_signal_descriptors(values, beta = FALSE)
 
   expect_null(d$MODE_LOW)
   expect_null(d$MODE_HIGH)
@@ -80,12 +80,12 @@ test_that("descriptors omit the modes on the M-value scale", {
 })
 
 test_that("descriptors degrade gracefully on degenerate input", {
-  empty <- SEMseeker:::.sem_signal_descriptors(numeric(0), beta = TRUE)
+  empty <- SEMseeker:::util_signal_descriptors(numeric(0), beta = TRUE)
   expect_equal(empty$N_PROBES, 0L)
   expect_true(is.na(empty$MEDIAN))
 
   # a constant vector has no density to speak of
-  flat <- SEMseeker:::.sem_signal_descriptors(rep(0.5, 100), beta = TRUE)
+  flat <- SEMseeker:::util_signal_descriptors(rep(0.5, 100), beta = TRUE)
   expect_equal(flat$MEDIAN, 0.5)
   expect_true(is.na(flat$MODE_LOW))
   expect_true(is.na(flat$MODE_HIGH))
