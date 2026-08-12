@@ -1,5 +1,30 @@
 # semseeker NEWS
 
+## semseeker 0.99.5 (development)
+
+### New features
+
+- **Per-sample burden restricted to a region class (AI-223 slice 2a).** The
+  statistics sibling can now carry a scope other than the whole sample:
+  `semseeker(sample_stats_scopes = c("SAMPLE", "GENE_TSS1500"))` adds
+  `GENE_TSS1500_<MARKER>_<FIGURE>`, the burden computed over the probes of that
+  region class only. Any registered `(AREA, SUBAREA)` pair of the run is a
+  legal scope; `SAMPLE` is always produced. A scope that does not resolve stops
+  the run instead of being ignored.
+
+  Each position is counted **once**, even when the annotation maps it to
+  several genes. The burden is computed from the POSITION pivot restricted to
+  the probes of the region, not by summing the per-gene pivot — summing the
+  latter would count a multi-gene probe once per gene.
+
+- **Region scopes as dependent variable at `depth = 1`.** The new
+  `inference_details$scopes` column (several separated by `"+"`, default
+  `"SAMPLE"`) selects which scopes `association_analysis()` tests at depth 1.
+  A region scope is still one value per sample, so its rows keep `DEPTH = 1`
+  and `SUBAREA = "SAMPLE"`, with the scope in `AREA` (e.g. `GENE_TSS1500`) and
+  `AREA_OF_TEST` unchanged. Requesting a scope that was never produced is an
+  error naming the scope, not a silently empty result.
+
 ## semseeker 0.99.4
 
 ### Breaking changes

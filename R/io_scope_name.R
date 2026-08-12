@@ -19,9 +19,26 @@
 #' The set of statistics a scope carries is declared by [io_signal_stats()] and
 #' computed by [util_signal_descriptors()].
 #'
+#' @section Depth-free entry (AI-223 slice 2a):
+#' The producer is depth-agnostic by design — the sibling is written ONCE with
+#' every requested scope, not once per depth. Called with `depth = NULL` (e.g.
+#' `io_scope_name(area = "GENE", subarea = "TSS1500")`) the scope is derived
+#' from the pair alone: no area means `SAMPLE`, otherwise `<AREA>[_<SUBAREA>]`.
+#' The depth-driven form is what the depth=2/3 consumers still use.
+#'
 #' @keywords internal
 #' @noRd
-io_scope_name <- function(depth = 1L, area = NULL, subarea = NULL) {
+io_scope_name <- function(depth = NULL, area = NULL, subarea = NULL) {
+
+  if (is.null(depth)) {
+    if (is.null(area) || !nzchar(as.character(area)))
+      return("SAMPLE")
+    parts <- as.character(area)
+    if (!is.null(subarea) && nzchar(as.character(subarea)))
+      parts <- c(parts, as.character(subarea))
+    return(core_name_cleaning(paste(parts, collapse = "_")))
+  }
+
   depth <- suppressWarnings(as.integer(depth))
   if (length(depth) != 1L || is.na(depth)) depth <- 1L
 

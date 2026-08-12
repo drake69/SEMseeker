@@ -36,6 +36,10 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
     "transformation_y",
     "transformation_x",
     "depth_analysis",
+    # AI-223 slice 2a: scopes tested at depth=1, as they are named in the
+    # statistics sibling ("SAMPLE", "GENE_TSS1500", …). Several are given
+    # separated by "+", like covariates. Default "SAMPLE".
+    "scopes",
     "filter_p_value",
     "samples_sql_condition",
     "areas_sql_condition",

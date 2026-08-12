@@ -35,6 +35,7 @@
   showprogress           = list(value = FALSE),
   openai_api_key         = list(value = ""),
   multiple_test_adj      = list(value = "q", choices = c("BY","fdr","BH","bonferroni","q")),
+  sample_stats_scopes    = list(value = "SAMPLE"), # AI-223 slice 2a: scopes of the per-sample statistics sibling. "SAMPLE" (whole sample, always produced) plus any registered AREA_SUBAREA pair, e.g. "GENE_TSS1500".
   coverage_minimum       = list(value = 80),      # AI-074: minimum % of input positions that must be present in the reference annotation; below it sem_coverage_gate() stops the run.
   bulk_population        = list(value = TRUE)    # AI-042: vectorized population is the default (no per-sample bed dump). Set FALSE only to core_recover the legacy per-sample loop.
 )
