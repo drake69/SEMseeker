@@ -2,7 +2,68 @@
 
 ## semseeker 0.99.5 (development)
 
+### Breaking changes
+
+- **Every computed quantity is now named by four coordinates (AI-248).** A
+  number produced by SEMseeker is the reduction of a set of genomic positions,
+  and until now the operator that reduced them was implicit — one per marker, so
+  the marker and its direction identified the value. A scope can carry several
+  reductions, so the operator became an axis of its own and the names changed
+  accordingly:
+
+  ```
+  <SCOPE>_<MARKER>_<FIGURE>_<AGGREGATION>
+  ```
+
+  | before | after |
+  |---|---|
+  | `SAMPLE_MUTATIONS_HYPER` | `SAMPLE_MUTATIONS_HYPER_SUM` |
+  | `SAMPLE_DELTAS_HYPO` | `SAMPLE_DELTAS_HYPO_MEAN` |
+  | `SAMPLE_MEDIAN` | `SAMPLE_SIGNAL_BETA_MEDIAN` |
+  | `SAMPLE_MODE_LOW` | `SAMPLE_SIGNAL_BETA_MODE_LOW` |
+  | `SAMPLE_N_PROBES` | unchanged — it is a property of the scope, not of a marker |
+
+- **The figure of `SIGNAL` is the scale of the values, `BETA` or `MVALUE`.** It
+  used to be `MEAN`, a placeholder that made the key unique while describing a
+  way of aggregating — which now has an axis of its own. Pivot files carry it,
+  so a beta run and an M-value run no longer write the same file name and
+  overwrite each other in one folder. WGBS, ONT and PacBio stay `BETA`: a
+  methylation fraction from reads is the same bounded scale as an array beta
+  value, and the package compares the two on purpose.
+
+- **Pivot file names carry the aggregation**, e.g.
+  `MUTATIONS_HYPER_CHR_CYTOBAND_SUM_hg19.parquet`. Result folders produced by
+  earlier versions do not match the new names and recompute once. This buys a
+  guarantee that did not exist: the name used to say nothing about which
+  operator had produced the file, so an existing pivot was reused on trust.
+
+- **`inference_details$aggregation` is required.** A request that does not name
+  the reduction does not identify what it wants tested. A malformed request (no
+  aggregation, or a name outside the taxonomy) stops the run; a request that no
+  marker of the run admits — the median of a 0/1 marker, say — drops that row
+  with a warning naming it and lets the other rows proceed.
+
+- **Results carry an `AGGREGATION` column**, part of the row identity along with
+  marker, figure, area and subarea, in the deduplication, in the resume match
+  and in the cross-study overlaps.
+
 ### New features
+
+- **Descriptors on any scope.** The signal descriptors are no longer a separate
+  path: `SIGNAL` is a marker like the others, so `sample_stats_scopes` now
+  produces its median, mean, variance, IQR and — on the beta scale — its two
+  modes restricted to a region class, e.g. `GENE_TSS1500_SIGNAL_BETA_MEDIAN`.
+
+- **Density.** The mean of a binary marker over a scope is the fraction of its
+  positions classified as epimutations. Unlike the raw burden it is comparable
+  between region classes of different size, which the burden is not.
+
+- Which reductions a marker admits is declared in one place. Continuous markers
+  (`SIGNAL`, `DELTAS`, `DELTAR`) take the full descriptor set; counts take the
+  sum and the mean, because their median and IQR are degenerate on a vector of
+  zeros and ones. The two modes assume a bounded bimodal scale and are therefore
+  restricted to the signal on the beta scale.
+
 
 - **Per-sample burden restricted to a region class (AI-223 slice 2a).** The
   statistics sibling can now carry a scope other than the whole sample:
