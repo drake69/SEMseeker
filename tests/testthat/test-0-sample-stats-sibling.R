@@ -117,13 +117,14 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
   # one row per sample of the signal matrix
   expect_equal(nrow(stats), ncol(syn$signal))
 
-  # AI-248: SIGNAL is a marker like the others, its figure is the scale, and
-  # the operator is named. N_PROBES stays scope-level: no marker, no figure.
-  descriptor_cols <- c(
-    vapply(c("MEDIAN", "MEAN", "VARIANCE", "IQR", "MODE_LOW", "MODE_HIGH"),
-           function(a) SEMseeker:::io_feature_colname("SAMPLE", "SIGNAL", "BETA", a),
-           character(1)),
-    "SAMPLE_N_PROBES")
+  # AI-248: `markers` means one thing for every marker, SIGNAL included — this
+  # run did not ask for it, so its descriptors must NOT be there. N_PROBES is
+  # not a marker column: it is the size of the scope, the denominator of the
+  # density, and it is there regardless.
+  descriptor_cols <- "SAMPLE_N_PROBES"
+  signal_cols <- vapply(c("MEDIAN", "MEAN", "VARIANCE", "IQR", "MODE_LOW", "MODE_HIGH"),
+                        function(a) SEMseeker:::io_feature_colname("SAMPLE", "SIGNAL", "BETA", a),
+                        character(1))
   burden_cols <- c(
     SEMseeker:::io_feature_colname("SAMPLE", "MUTATIONS", c("HYPER", "HYPO"), "SUM"),
     SEMseeker:::io_feature_colname("SAMPLE", "DELTAP", c("HYPER", "HYPO"), "SUM"),
@@ -135,13 +136,9 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
               info = paste("missing:",
                            paste(setdiff(burden_cols, colnames(stats)), collapse = ", ")))
 
-  # the fixture is on the beta scale: descriptors must be in range and the two
-  # modes must sit on either side of 0.5
-  expect_true(all(stats$SAMPLE_SIGNAL_BETA_MEDIAN >= 0 & stats$SAMPLE_SIGNAL_BETA_MEDIAN <= 1))
-  expect_true(all(stats$SAMPLE_SIGNAL_BETA_IQR >= 0))
+  # a marker that was not asked for produces no column
+  expect_equal(intersect(signal_cols, colnames(stats)), character(0))
   expect_true(all(stats$SAMPLE_N_PROBES > 0))
-  expect_true(all(stats$SAMPLE_SIGNAL_BETA_MODE_LOW < 0.5, na.rm = TRUE))
-  expect_true(all(stats$SAMPLE_SIGNAL_BETA_MODE_HIGH >= 0.5, na.rm = TRUE))
 
   # AI-223 net move: the burden left the sample sheet
   moved_away <- c("MUTATIONS_HYPER", "MUTATIONS_HYPO", "DELTAS_HYPER",
@@ -158,7 +155,7 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
                             start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
   joined <- SEMseeker:::sem_study_summary_get()
   expect_true(all(burden_cols %in% colnames(joined)))
-  expect_true("SAMPLE_SIGNAL_BETA_MEDIAN" %in% colnames(joined))
+  expect_true("SAMPLE_N_PROBES" %in% colnames(joined))
 })
 
 # ---------------------------------------------------------------------------
@@ -184,7 +181,7 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
     # POSITION pivots.
     areas               = c("POSITION", "GENE"),
     subareas            = c("WHOLE", "TSS1500"),
-    markers             = c("MUTATIONS"),
+    markers             = c("MUTATIONS", "SIGNAL"),
     sample_stats_scopes = c("SAMPLE", scope),
     start_fresh         = TRUE,
     inpute              = "median",
@@ -207,6 +204,16 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   # a subset of the probes can only carry a subset of the burden
   for (i in seq_along(scope_cols))
     expect_true(all(stats[[scope_cols[i]]] <= stats[[whole_cols[i]]]))
+
+  # AI-248: asking for SIGNAL gives its descriptors on the scope too — this is
+  # the per-sample median restricted to a region class
+  scope_median <- SEMseeker:::io_feature_colname(scope, "SIGNAL", "BETA", "MEDIAN")
+  expect_true(scope_median %in% colnames(stats),
+              info = paste("missing:", scope_median))
+  expect_true(all(stats[[scope_median]] >= 0 & stats[[scope_median]] <= 1, na.rm = TRUE))
+  # the scope holds fewer positions than the whole sample
+  expect_true(all(stats[[SEMseeker:::io_feature_colname(scope, aggregation = "N_PROBES")]] <=
+                    stats$SAMPLE_N_PROBES))
 
   # ── the mask counts every position once ──────────────────────────────────
   SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",

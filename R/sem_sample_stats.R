@@ -213,19 +213,6 @@ sem_sample_stats_build <- function() {
     return(NULL)
   }
 
-  # SIGNAL is not an analysis you opt into: it is the data the run was given,
-  # and its descriptors — plus N_PROBES, which is metadata of the scope and not
-  # of any marker — must be there whatever `markers` was restricted to. Before
-  # AI-248 they came from a separate path that read the signal pivot directly;
-  # now they travel through the keys, so the key has to be there.
-  if (!any(keys$MARKER == "SIGNAL")) {
-    signal_key <- keys[1, , drop = FALSE]
-    signal_key$MARKER   <- "SIGNAL"
-    signal_key$FIGURE   <- io_signal_figure()
-    signal_key$DISCRETE <- FALSE
-    keys <- rbind(keys, signal_key)
-  }
-
   scope <- io_scope_name(area = area, subarea = subarea)
   mask  <- if (identical(scope, "SAMPLE")) NULL else .sem_scope_probe_mask(area, subarea)
   if (!identical(scope, "SAMPLE") && is.null(mask)) {
@@ -261,12 +248,6 @@ sem_sample_stats_build <- function() {
     aggregations <- util_aggregations_allowed(marker, figure,
                                               discrete = isTRUE(key$DISCRETE),
                                               default  = TRUE)
-    # The number of usable positions is a property of the SCOPE, not an
-    # aggregation of a marker, so it carries no marker/figure in its name. It is
-    # read off the signal, which is the only marker present at every position.
-    if (identical(marker, "SIGNAL"))
-      aggregations <- c(aggregations, "N_PROBES")
-
     for (aggregation in aggregations) {
       values <- .sem_pivot_aggregate(pivot, aggregation)
       if (is.null(values))
@@ -287,11 +268,53 @@ sem_sample_stats_build <- function() {
     }
   }
 
+  # The number of usable positions is a property of the SCOPE, not of any
+  # marker: it is the denominator that makes every other column readable, and
+  # the density is defined on it. It is therefore computed whatever `markers`
+  # asked for — reading the signal pivot to count positions is not the same as
+  # producing the signal's own columns, which follow `markers` like every other
+  # marker's do.
+  n_probes <- .sem_scope_n_probes(mask)
+  if (!is.null(n_probes)) {
+    colnames(n_probes) <- io_feature_colname(scope, aggregation = "N_PROBES")
+    n_probes$Sample_ID <- rownames(n_probes)
+    rownames(n_probes) <- NULL
+    result <- if (is.null(result)) n_probes else
+      merge(result, n_probes, by = "Sample_ID", all = TRUE)
+  }
+
   if (is.null(result))
     return(NULL)
 
   rownames(result) <- NULL
   result
+}
+
+#' Positions of a scope that carry a usable value, per sample (internal)
+#'
+#' AI-248. Read off the signal pivot, which is the one matrix defined at every
+#' eligible position, and independently of the `markers` the run asked for.
+#'
+#' @param mask scope mask, or `NULL` for the whole sample.
+#' @keywords internal
+#' @noRd
+.sem_scope_n_probes <- function(mask) {
+
+  pivot <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
+  if (is.null(pivot))
+    return(NULL)
+
+  if (!is.null(mask)) {
+    pivot <- pivot$with_columns(
+      polars::pl$col("CHR")$cast(polars::pl$String)$str$replace("^(?i)chr", ""),
+      polars::pl$col("START")$cast(polars::pl$Int32),
+      polars::pl$col("END")$cast(polars::pl$Int32)
+    )
+    pivot <- pivot$join(mask, on = c("CHR", "START", "END"), how = "semi")
+  }
+  pivot <- pivot$drop(c("CHR", "START", "END"))
+
+  .sem_pivot_aggregate(pivot, "N_PROBES")
 }
 
 #' Reduce every sample column of a pivot with one aggregation (internal)
