@@ -1,4 +1,4 @@
-url: https://drake69.github.io/semseeker/
+url: https://corsaro-lab.github.io/SEMseeker/
 
 template:
   bootstrap: 5
@@ -39,7 +39,7 @@ navbar:
       href: reference/index.html
     github:
       icon: fab fa-github
-      href: https://github.com/drake69/semseeker
+      href: https://github.com/corsaro-lab/SEMseeker
 
 footer:
   structure:
