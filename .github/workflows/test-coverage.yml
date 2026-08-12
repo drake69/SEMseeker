@@ -61,12 +61,21 @@ jobs:
           # mirrors R-CMD-check.yml and is kept in sync by the
           # `test-0-suggests-installed.R` meta-test which fails CI if any
           # named pkg is missing.
+          # limma FIRST, and on its own. The three Illumina annotation packages
+          # load minfi while they install, minfi needs limma, and asking for all
+          # of them in one call does not guarantee limma is built before them:
+          # when limma came later in the same vector the annotation packages
+          # failed with "there is no package called 'limma'", left the runner
+          # with no annotation at all, and the suite fell back to the row-count
+          # technology heuristic and broke. A warm dependency cache hid this for
+          # months; moving the repository to an organisation reset the cache and
+          # exposed it.
+          BiocManager::install("limma", ask = FALSE, update = FALSE)
           BiocManager::install(
             c(
               "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
               "IlluminaHumanMethylation450kanno.ilmn12.hg19",
               "IlluminaHumanMethylation27kanno.ilmn12.hg19",
-              "limma",
               "AnnotationHub",
               "TxDb.Hsapiens.UCSC.hg19.knownGene"
             ),
