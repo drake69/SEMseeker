@@ -18,8 +18,8 @@ Description: Detection, quantification and association analysis of Stochastic
     (WebGestalt, STRINGdb, pathfindR, CTD).
 License: AGPL-3
 Encoding: UTF-8
-URL: https://github.com/drake69/semseeker
-BugReports: https://github.com/drake69/semseeker/issues
+URL: https://github.com/corsaro-lab/SEMseeker
+BugReports: https://github.com/corsaro-lab/SEMseeker/issues
 biocViews: Epigenetics, DNAMethylation, MethylationArray, DifferentialMethylation,
         GeneExpression, Pathways, MultipleComparison, Normalization,
         StatisticalMethod, Software, Coverage, Sequencing

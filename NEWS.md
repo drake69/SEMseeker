@@ -136,7 +136,7 @@
 
 ### Documentation
 
-- `inst/CITATION` now carries the Zenodo DOI `10.5281/zenodo.5095417` instead
+- `inst/CITATION` now carries the Zenodo DOI `10.5281/zenodo.5095416` instead
   of a Bioconductor DOI that does not resolve (the package is not on
   Bioconductor yet), and the README no longer says a Zenodo DOI "will be
   registered" — the archive has existed since 2021 (AI-119).

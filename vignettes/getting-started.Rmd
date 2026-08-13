@@ -95,7 +95,7 @@ Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 install.packages("remotes")
 
 # Install SEMseeker from GitHub
-remotes::install_github("drake69/SEMseeker")
+remotes::install_github("corsaro-lab/SEMseeker")
 ```
 
 > **Note:** semseeker requires the `polars` package from R-multiverse.
