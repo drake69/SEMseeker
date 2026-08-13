@@ -32,7 +32,7 @@
   value, and the package compares the two on purpose.
 
 - **Pivot file names carry the aggregation**, e.g.
-  `MUTATIONS_HYPER_CHR_CYTOBAND_SUM_hg19.parquet`. Result folders produced by
+  `MUTATIONS_HYPER_CHR_CYTOBAND_SUM_HG19.parquet`. Result folders produced by
   earlier versions do not match the new names and recompute once. This buys a
   guarantee that did not exist: the name used to say nothing about which
   operator had produced the file, so an existing pivot was reused on trust.
@@ -85,6 +85,14 @@
   and `SUBAREA = "SAMPLE"`, with the scope in `AREA` (e.g. `GENE_TSS1500`) and
   `AREA_OF_TEST` unchanged. Requesting a scope that was never produced is an
   error naming the scope, not a silently empty result.
+
+### Documentation
+
+- The vignettes now show the names this version writes: `SIGNAL` pivots carry
+  the scale of the run (`SIGNAL_BETA_*`, or `SIGNAL_MVALUE_*`), file names are
+  uppercase, and the optional `AGGREGATION` segment is part of the documented
+  pattern. `sem_coverage_analysis_report()` describes its `signal_data` path
+  the same way.
 
 ## semseeker 0.99.4
 

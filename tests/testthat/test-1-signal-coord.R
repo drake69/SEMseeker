@@ -338,7 +338,10 @@ test_that("sem_signal_single_sample: writes bedgraph file for coordinate-format 
   )
 
   ssEnv       <- SEMseeker:::core_get_session_info()
-  folder      <- file.path(ssEnv$result_folderData, "Control", "SIGNAL_MEAN")
+  # The FIGURE of SIGNAL is the scale of the session, resolved by the same
+  # function the writer uses: the test follows BETA or MVALUE.
+  folder      <- file.path(ssEnv$result_folderData, "Control",
+                           paste0("SIGNAL_", SEMseeker:::io_signal_figure()))
   bed_files   <- list.files(folder, pattern = "\\.bedgraph(\\.gz)?$", recursive = TRUE)
   expect_gte(length(bed_files), 1L)
 })

@@ -176,8 +176,9 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
          "marker admitted exactly one; a scope now carries several.")
 
   requested <- core_name_cleaning(as.character(requested)[1])
-  legal <- unique(unlist(lapply(c(TRUE, FALSE), function(discrete)
-    util_aggregations_allowed("SIGNAL", "BETA", discrete = discrete, default = FALSE))))
+  # Spell-check only: the coherence check lives at the door, in
+  # assoc_validate_aggregation().
+  legal <- util_aggregation_vocabulary()
   if (!(requested %in% legal))
     stop("inference_details$aggregation = '", requested, "' is not an ",
          "aggregation of the taxonomy. Legal names: ",

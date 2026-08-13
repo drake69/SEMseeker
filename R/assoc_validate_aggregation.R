@@ -52,8 +52,8 @@ assoc_validate_aggregation <- function(inference_details, keys = NULL) {
 
   impossible <- logical(nrow(inference_details))
 
-  legal <- unique(unlist(lapply(c(TRUE, FALSE), function(discrete)
-    util_aggregations_allowed("SIGNAL", "BETA", discrete = discrete, default = FALSE))))
+  # Spell-check only: the semantic check against the keys of the run is below.
+  legal <- util_aggregation_vocabulary()
 
   for (z in seq_len(nrow(inference_details))) {
     detail <- inference_details[z, ]

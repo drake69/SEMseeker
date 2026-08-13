@@ -57,7 +57,7 @@ anno_probe_features_get <- function(area_subarea) {
               "sem_prepare_batch_signal() should run first in the normal pipeline.")
     signal_pivot_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "PROBE", "WHOLE")
     if (is.null(signal_pivot_lazy))
-      stop("SIGNAL_MEAN PROBE pivot not available — cannot detect technology.")
+      stop("SIGNAL PROBE pivot not available — cannot detect technology.")
     signal_data_r <- as.data.frame(signal_pivot_lazy$collect())
     if ("AREA" %in% colnames(signal_data_r)) {
       rownames(signal_data_r) <- signal_data_r$AREA
@@ -80,7 +80,7 @@ anno_probe_features_get <- function(area_subarea) {
   if (ssEnv$tech %in% c("WGBS", "LONGREAD")) {
 
     # AI-027: read via unified dispatcher. NULL means neither cached
-    # nor per-sample bed files exist for SIGNAL_MEAN — same failure
+    # nor per-sample bed files exist for SIGNAL — same failure
     # mode as the previous file.exists() check.
     sig_pivot_lazy <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
     if (is.null(sig_pivot_lazy))
