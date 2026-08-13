@@ -71,10 +71,10 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
 
       if(statistic_parameter!="")
       {
-        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",statistic_parameter, pvalue_column)]
+        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AGGREGATION","AREA_OF_TEST","DEPTH",statistic_parameter, pvalue_column)]
         # get only "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH" common to STUDY
         tt <- tt %>%
-          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AGGREGATION, .data$AREA_OF_TEST, .data$DEPTH) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE),
             statistic_parameter = mean(get(statistic_parameter), na.rm = TRUE)
@@ -84,10 +84,10 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
       }
       else
       {
-        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",pvalue_column)]
+        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AGGREGATION","AREA_OF_TEST","DEPTH",pvalue_column)]
         # summarise grouping by "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST" and calculate the max of the pvalues
         tt <- tt %>%
-          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AGGREGATION, .data$AREA_OF_TEST, .data$DEPTH) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE)
           ) %>%
@@ -104,7 +104,7 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
         # remove statistic_parameter column
         old_results <- old_results[,!colnames(old_results) %in% c(statistic_parameter)]
         if(!pvalue_column %in% colnames(old_results))
-          tt <- merge(old_results, tt, all = TRUE, by = c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH"))
+          tt <- merge(old_results, tt, all = TRUE, by = c("AREA","SUBAREA","MARKER","FIGURE","AGGREGATION","AREA_OF_TEST","DEPTH"))
         # remove KEY COLUMN
         tt$KEY <- NULL
       }

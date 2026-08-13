@@ -162,6 +162,7 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
     transformation_y     = "",
     transformation_x     = "",
     depth_analysis       = 1L,
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -253,6 +254,7 @@ test_that("association_analysis depth=3 reads area pivots and writes inference C
     transformation_y     = "",
     transformation_x     = "",
     depth_analysis       = 3L,
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -312,6 +314,7 @@ test_that("association_analysis polynomial family runs without error", {
     transformation_y     = "",
     transformation_x     = "",
     depth_analysis       = 1L,
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -351,6 +354,7 @@ test_that("association_analysis with covariates runs and produces a assoc_covari
     transformation_y     = "",
     transformation_x     = "",
     depth_analysis       = 1L,
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     collinearity_check   = TRUE,
     stringsAsFactors     = FALSE
@@ -391,6 +395,7 @@ test_that("association_analysis is idempotent: second run on same folder does no
     transformation_y     = "",
     transformation_x     = "",
     depth_analysis       = 1L,
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )
@@ -469,6 +474,7 @@ test_that("association_analysis skips gracefully when independent_variable absen
     transformation_y     = "",
     transformation_x     = "",
     depth_analysis       = 1L,
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )

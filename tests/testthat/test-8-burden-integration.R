@@ -87,10 +87,9 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   required_markers <- c("MUTATIONS",
                         "DELTAP", "DELTAQ", "DELTARP", "DELTARQ",
                         "DELTAS", "DELTAR")
-  required_burden_cols <- paste0("SAMPLE_", c(
-    paste0(required_markers, "_HYPER"),
-    paste0(required_markers, "_HYPO")
-  ))
+  # AI-248: composed once in helper-burden.R, where the aggregation each class
+  # produces by default is spelled out.
+  required_burden_cols <- .burden_cols
   required_cols <- c("Sample_ID", required_burden_cols, "SAMPLE_N_PROBES")
 
   missing_cols <- setdiff(required_cols, colnames(df))

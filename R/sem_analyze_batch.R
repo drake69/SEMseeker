@@ -35,9 +35,9 @@ sem_analyze_batch <- function(signal_data, sample_sheet)
   sample_sheet <- core_normalize_sample_ids(sample_sheet)$sample_sheet
 
   # AI-027: read via unified dispatcher. CASE 2 (streaming merge) lets
-  # the SEM step pick up raw bed/bedgraph files when the SIGNAL_MEAN
+  # the SEM step pick up raw bed/bedgraph files when the SIGNAL
   # pivot has not been materialised yet.
-  signal_pivot <- io_read_pivot("SIGNAL", "MEAN", "POSITION", "WHOLE")
+  signal_pivot <- io_read_pivot("SIGNAL", io_signal_figure(), "POSITION", "WHOLE")
   resume_mode  <- !is.null(signal_pivot)
 
   if (resume_mode) {

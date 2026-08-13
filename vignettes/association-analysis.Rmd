@@ -109,7 +109,7 @@ Any semseeker output metric can be the dependent variable in `formula`:
 | `DELTARP` | `DELTAR` discretised into equal-width bins, each assigned an integer rank weight (default 4 bins) |
 | `DELTAQ` | `DELTAS` discretised into quantile bins, each assigned an integer rank weight |
 | `DELTARQ` | `DELTAR` discretised into quantile bins, each assigned an integer rank weight (default 4 bins) |
-| `SIGNAL_MEAN` | Per-probe mean methylation signal (marker `SIGNAL`, figure `MEAN`) |
+| `SIGNAL` | Per-probe methylation signal; its figure is the scale of the value — `BETA` for a proportion bounded in [0,1], `MVALUE` for the logit-transformed one |
 
 <hr>
 

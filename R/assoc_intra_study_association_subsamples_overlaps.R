@@ -74,10 +74,10 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
 
       if(statistic_parameter!="")
       {
-        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",statistic_parameter, pvalue_column)]
+        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AGGREGATION","AREA_OF_TEST","DEPTH",statistic_parameter, pvalue_column)]
         # get only "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH" common to SAMPLES_SQL_CONDITION
         tt <- tt %>%
-          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AGGREGATION, .data$AREA_OF_TEST, .data$DEPTH) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE),
             statistic_parameter = mean(get(statistic_parameter), na.rm = TRUE)
@@ -87,10 +87,10 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
       }
       else
       {
-        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","DEPTH",pvalue_column)]
+        tt <- tt[,c("AREA","SUBAREA","MARKER","FIGURE","AGGREGATION","AREA_OF_TEST","DEPTH",pvalue_column)]
         # summarise grouping by "AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST" and calculate the max of the pvalues
         tt <- tt %>%
-          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AREA_OF_TEST, .data$DEPTH) %>%
+          dplyr::group_by(.data$AREA, .data$SUBAREA, .data$MARKER, .data$FIGURE, .data$AGGREGATION, .data$AREA_OF_TEST, .data$DEPTH) %>%
           dplyr::summarise(
             alpha = max(get(pvalue_column), na.rm = TRUE)
           ) %>%

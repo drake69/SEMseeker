@@ -25,6 +25,17 @@
 #'     \item{depth_analysis}{Integer depth: \code{1} = sample level,
 #'       \code{2} = type level (gene, DMR, CpG island),
 #'       \code{3} = genomic area (TSS1550, WHOLE, TSS200, …).}
+#'     \item{aggregation}{Required. How the positions are reduced to the one
+#'       number the model is fitted on: \code{"SUM"}, \code{"MEAN"},
+#'       \code{"MEDIAN"}, \code{"VARIANCE"}, \code{"IQR"}, \code{"MODE_LOW"} or
+#'       \code{"MODE_HIGH"}. While every marker admitted exactly one operator
+#'       this could stay implicit; a scope now carries several, so the request
+#'       has to name the one it wants. Which are admissible depends on the
+#'       marker: a count carries \code{SUM} (the burden) and \code{MEAN} (the
+#'       density, the form comparable across regions of different size), while
+#'       its median and IQR are degenerate; the two modes exist only for the
+#'       signal on the beta scale. A request no marker of the run admits is
+#'       dropped with a warning naming it, not answered with an empty result.}
 #'     \item{scopes}{Optional, depth=1 only. Which scopes of
 #'       \code{SAMPLE_STATS_RESULT.csv} to test, several separated by
 #'       \code{"+"} (default \code{"SAMPLE"}). A region scope such as
@@ -90,6 +101,10 @@ association_analysis <- function(inference_details, result_folder, maxResources 
   anno_annotate_position_pivots()
 
   inference_details <- assoc_validate_inference_schema(unique(inference_details))
+  # AI-248: shape first, then meaning. Refuse an aggregation that no marker of
+  # this run admits before any result is written — checking it inside the
+  # per-marker loop would surface the mistake after part of the output exists.
+  inference_details <- assoc_validate_aggregation(inference_details)
 
   for (z in seq_len(nrow(inference_details))) {
     start_time <- Sys.time()
