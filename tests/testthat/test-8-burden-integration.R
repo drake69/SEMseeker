@@ -83,7 +83,10 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   # AI-248: composed once in helper-burden.R, where the aggregation each class
   # produces by default is spelled out.
   required_burden_cols <- .burden_cols
-  required_cols <- c("Sample_ID", required_burden_cols, "SAMPLE_N_PROBES")
+  # AI-255: N_PROBES describes the sample, not a scope of it — it counts the
+  # positions the imputation left usable — so it comes in from the sample sheet
+  # under its own name.
+  required_cols <- c("Sample_ID", required_burden_cols, "N_PROBES")
 
   missing_cols <- setdiff(required_cols, colnames(df))
   testthat::expect_equal(

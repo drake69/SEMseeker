@@ -49,6 +49,14 @@
   `association_analysis(inference_details$scopes)` or
   `sem_study_summary_get(regions = ...)`.
 
+  The cost moved rather than vanished: the call that asks for a region class has
+  to know it, so `association_analysis(inference_details$scopes = "GENE_TSS1500")`
+  needs `areas` and `subareas` to cover `GENE`/`TSS1500` — a run that does not
+  register the pair refuses the request instead of silently testing nothing. The
+  registry is also what resolves `GENE_TSS1500` into its two coordinates without
+  splitting the string, which cannot be done safely: `N_SHORE` carries an
+  underscore of its own.
+
 - **`MODE_LOW` / `MODE_HIGH` are spelled `MODELOW` / `MODEHIGH`**, and they are
   admissible only at `SCOPE = SAMPLE`. Per instance a gene holds about nineteen
   probes and a TSS200 window two to five: a two-peak density estimate on those

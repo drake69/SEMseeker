@@ -118,10 +118,15 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
   expect_equal(nrow(stats), ncol(syn$signal))
 
   # AI-248: `markers` means one thing for every marker, SIGNAL included — this
-  # run did not ask for it, so its descriptors must NOT be there. N_PROBES is
-  # not a marker column: it is the size of the scope, the denominator of the
-  # density, and it is there regardless.
-  descriptor_cols <- "SAMPLE_N_PROBES"
+  # run did not ask for it, so its descriptors must NOT be there.
+  #
+  # AI-255: N_PROBES is no longer among them. It is not an aggregation of a
+  # marker over a region class but a property of the imputation — how many
+  # positions of that sample survived the treatment of missing values — so it
+  # travels with the sample sheet. Nothing is lost for the density: the MEAN of
+  # a binary marker *is* the density, denominator included.
+  descriptor_cols <- character(0)
+  expect_false("SAMPLE_N_PROBES" %in% colnames(stats))
   signal_cols <- vapply(c("MEDIAN", "MEAN", "VARIANCE", "IQR", "MODELOW", "MODEHIGH"),
                         function(a) SEMseeker:::io_feature_colname("SAMPLE", "SIGNAL", "BETA", a),
                         character(1))
@@ -155,7 +160,10 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
                             start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
   joined <- SEMseeker:::sem_study_summary_get()
   expect_true(all(burden_cols %in% colnames(joined)))
-  expect_true("SAMPLE_N_PROBES" %in% colnames(joined))
+  # AI-255: N_PROBES comes in from the sample sheet, under its own name — it
+  # describes the sample, not a scope of it.
+  expect_true("N_PROBES" %in% colnames(joined))
+  expect_false("SAMPLE_N_PROBES" %in% colnames(joined))
 })
 
 # ---------------------------------------------------------------------------
@@ -211,20 +219,27 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   expect_true(scope_median %in% colnames(stats),
               info = paste("missing:", scope_median))
   expect_true(all(stats[[scope_median]] >= 0 & stats[[scope_median]] <= 1, na.rm = TRUE))
-  # the scope holds fewer positions than the whole sample
-  expect_true(all(stats[[SEMseeker:::io_feature_colname(scope, aggregation = "N_PROBES")]] <=
-                    stats$SAMPLE_N_PROBES))
 
   # ── the mask counts every position once ──────────────────────────────────
+  # AI-255: the mask is no longer a helper of its own — io_pivot_build() derives
+  # every artefact from the position pivot, and at SCOPE = SAMPLE it selects
+  # positions rather than partitioning them. The invariant this block guards is
+  # unchanged and is the important one: a probe the annotation maps onto three
+  # genes must enter the sample's number ONCE. Build the mask the way the
+  # producer does — the distinct positions of the region class.
   SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
                             areas = c("POSITION", "GENE"), subareas = c("WHOLE", "TSS1500"),
                             markers = c("MUTATIONS"),
                             start_fresh = FALSE, showprogress = FALSE, verbosity = 1)
 
-  mask <- SEMseeker:::.sem_scope_probe_mask("GENE", "TSS1500")
-  expect_false(is.null(mask))
-  skip_if(is.null(mask), "no probe of the fixture is annotated TSS1500")
-  mask_df <- as.data.frame(mask$collect())
+  pf <- SEMseeker:::anno_probe_features_get("GENE_TSS1500")
+  skip_if(is.null(pf) || nrow(pf) == 0,
+          "no probe of the fixture is annotated TSS1500")
+  mask_df <- unique(data.frame(
+    CHR   = sub("^(?i)chr", "", as.character(pf$CHR), perl = TRUE),
+    START = as.integer(pf$START),
+    END   = as.integer(pf$END),
+    stringsAsFactors = FALSE))
   expect_gt(nrow(mask_df), 0)
 
   pivot <- SEMseeker:::io_read_pivot("MUTATIONS", "HYPER", "POSITION", "WHOLE")
@@ -267,9 +282,14 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
       result_folder     = tempFolder,
       parallel_strategy = "sequential",
       markers           = c("MUTATIONS"),
-      # depth=1 reads the sibling, not the area pivots: no need to pay for the
-      # GENE keys here.
-      areas             = c("POSITION"),
+      # AI-255: the artefact is built here, on the way in, so this call has to
+      # know the region class it is being asked for. The cost did not vanish, it
+      # moved: no SEM rerun, but the analysis names its areas. The registry is
+      # also what lets a class be resolved without parsing "GENE_TSS1500" back
+      # into a pair — which cannot be done safely, since N_SHORE has an
+      # underscore of its own.
+      areas             = c("POSITION", "GENE"),
+      subareas          = c("WHOLE", "TSS1500"),
       multiple_test_adj = "BH",
       showprogress      = showprogress,
       verbosity         = verbosity
