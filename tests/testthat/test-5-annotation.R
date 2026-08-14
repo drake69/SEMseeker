@@ -46,7 +46,7 @@ test_that("annotations", {
   # reload keys some subareas may have been removed because not presente as positions
   keys <- subset(ssEnv$keys_areas_subareas_markers_figures, AREA != "POSITION")
 
-  for (k in 1:nrow(keys))
+  for (k in seq_len(nrow(keys)))
   {
     # k <- 1
     key <- keys[k,]

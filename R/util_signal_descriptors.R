@@ -1,19 +1,28 @@
 #' Reduce one sample's signal vector to its descriptors
 #'
 #' Generic descriptive statistics on a numeric vector: no SEM domain knowledge,
-#' no I/O. Slice 1 of AI-223 calls it once per sample on the whole probe set
-#' (scope `SAMPLE`); the region scopes reuse it unchanged on the subset of
-#' probes of an area/subarea.
+#' no I/O. AI-223 calls it once per sample on the whole probe set (scope
+#' `SAMPLE`); the region scopes reuse it unchanged on the subset of positions of
+#' an area/subarea.
 #'
 #' The returned keys are built from [io_signal_stats()] rather than written out
 #' here, so the computed statistics and the vocabulary declared to the consumer
 #' cannot diverge. A statistic this function does not fill stays `NA`.
 #'
-#' Split at 0.5 for the two beta modes: methylation beta values are bimodal
-#' with peaks near 0 (unmethylated) and near 1 (methylated), so the highest
-#' density peak on each side of 0.5 is the natural estimate of each mode. On
-#' M-values the distribution is unimodal and the split is meaningless, which is
-#' why [io_signal_stats()] does not declare the mode columns there.
+#' Split at 0.5 for the two beta modes: methylation beta values are bimodal with
+#' peaks near 0 (unmethylated) and near 1 (methylated), so the highest density
+#' peak on each side of 0.5 is the natural estimate of each mode. On M-values the
+#' distribution is unimodal and the split is meaningless, which is why
+#' [io_signal_stats()] does not declare the mode columns there.
+#'
+#' **The numerosity guard (AI-255).** The old guard asked only for two distinct
+#' points, which is what `density()` needs to run — not what the estimate needs
+#' to mean something. On a handful of values the kernel bandwidth dominates and
+#' "the highest peak below 0.5" is noise, but the function would still return a
+#' number, and a plausible-looking number is worse than a refusal because nobody
+#' goes looking for it. The taxonomy already keeps the modes at `SCOPE = SAMPLE`
+#' for this reason (see [util_aggregations_allowed()]); this guard is the second
+#' line, for any caller that reaches here with a small vector.
 #'
 #' @param values numeric vector, already filtered to finite values.
 #' @param beta logical. TRUE when the signal is on the [0,1] beta scale.
@@ -38,11 +47,12 @@ util_signal_descriptors <- function(values, beta = TRUE) {
 
   # Off the beta scale the modes are not part of the vocabulary at all, so
   # there is nothing left to estimate.
-  if (!all(c("MODE_LOW", "MODE_HIGH") %in% wanted))
+  if (!all(c("MODELOW", "MODEHIGH") %in% wanted))
     return(out)
 
-  # density() needs at least two distinct points to estimate anything.
-  if (length(unique(values)) < 2L)
+  # Not enough of a distribution to have two identifiable peaks: leave NA rather
+  # than return the bandwidth's opinion.
+  if (length(values) < .MODE_MIN_N || length(unique(values)) < 2L)
     return(out)
 
   dens <- tryCatch(stats::density(values, from = 0, to = 1),
@@ -52,9 +62,23 @@ util_signal_descriptors <- function(values, beta = TRUE) {
 
   low <- dens$x < 0.5
   if (any(low))
-    out$MODE_LOW <- dens$x[low][which.max(dens$y[low])]
+    out$MODELOW <- dens$x[low][which.max(dens$y[low])]
   if (any(!low))
-    out$MODE_HIGH <- dens$x[!low][which.max(dens$y[!low])]
+    out$MODEHIGH <- dens$x[!low][which.max(dens$y[!low])]
 
   out
 }
+
+#' Minimum numerosity for a two-peak density estimate (internal)
+#'
+#' AI-255. A deliberate, conservative default rather than a derived quantity:
+#' below roughly a hundred values a gaussian-kernel density on [0,1] is shaped
+#' more by its bandwidth than by the data, and the two-peak structure the modes
+#' claim to find is not identifiable. Callers that legitimately want the modes
+#' work at `SCOPE = SAMPLE`, where the vector is the whole probe set of a sample
+#' (tens to hundreds of thousands of values) or a region class of it (thousands),
+#' so the guard never bites there.
+#'
+#' @keywords internal
+#' @noRd
+.MODE_MIN_N <- 100L

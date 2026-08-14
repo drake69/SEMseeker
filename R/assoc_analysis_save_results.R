@@ -38,6 +38,25 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
     # remove all existing column adjusted all pvalues
     results <- unique(results[,!grepl("_ADJ_ALL_", colnames(results))])
 
+    # AI-257: PVALUE_ADJ is adjusted WITHIN THE KEY — the instances tested for
+    # one measurement — and it is recomputed here because here is the only place
+    # where every row of a key is together.
+    #
+    # assoc_apply_stat_model() adjusts what it has in hand, and what it has in
+    # hand is one CHUNK: sem_run_depth_n_marker() splits a pivot at
+    # ceiling(6e6 / ncol) rows, so a 485k-probe pivot on ~100 samples is nine
+    # independent BH corrections instead of one. That made the family a memory
+    # parameter rather than a statistical choice.
+    #
+    # The family is the key and not the whole file because the file now holds the
+    # same area several times — once per aggregation asked for. Adjusting across
+    # all of them would make the correction a function of how many ways you
+    # looked rather than of how many hypotheses you tested: request MEAN, MEDIAN
+    # and IQR of the same genes and every adjusted p roughly triples. The global
+    # correction is still available in PVALUE_ADJ_ALL_<method>, and the two say
+    # different things on purpose.
+    results <- .assoc_adjust_within_key(results)
+
     if (exists("results") & length(pvalue_columns)>0)
     {
       for (p in seq_along(pvalue_columns))
@@ -106,4 +125,57 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
     utils::write.csv2(results,fileNameResults , row.names  =  FALSE)
   }
+}
+
+#' Adjust p-values within the key, not within the chunk (internal)
+#'
+#' AI-257. The family over which an FDR is controlled has to be a statistical
+#' choice. Two things had made it something else:
+#'
+#' \itemize{
+#'   \item `assoc_apply_stat_model()` adjusts whatever `result_temp` it is
+#'     handed, and at `SCOPE = INSTANCE` that is one chunk of the pivot — the
+#'     family was the memory split;
+#'   \item since the aggregation became an axis, one file holds the same area
+#'     once per aggregation requested, so adjusting across the whole file makes
+#'     the correction depend on how many ways the data were described.
+#' }
+#'
+#' The family is therefore the identity key minus the instance: the areas tested
+#' for one `(MARKER, FIGURE, SCOPE, AREA, SUBAREA, AGGREGATION)`. Asking for a
+#' second aggregation no longer penalises the first, and the choice *between*
+#' aggregations is a multiplicity to be handled by naming the aggregation in
+#' advance — not by a correction, which cannot tell a planned comparison from an
+#' opportunistic one.
+#'
+#' `PVALUE_ADJ_ALL_<method>` keeps the global view alongside it. The two answer
+#' different questions and the analysis has to say which one it used.
+#'
+#' @param results the accumulated results of the run.
+#' @return `results` with `PVALUE_ADJ` recomputed per family.
+#' @keywords internal
+#' @noRd
+.assoc_adjust_within_key <- function(results) {
+
+  if (is.null(results) || nrow(results) == 0 || !("PVALUE" %in% colnames(results)))
+    return(results)
+
+  key_cols <- intersect(c("MARKER", "FIGURE", "SCOPE", "AREA", "SUBAREA",
+                          "AGGREGATION"),
+                        colnames(results))
+  if (length(key_cols) == 0)
+    return(results)
+
+  pvalues <- suppressWarnings(as.numeric(results$PVALUE))
+  families <- do.call(paste, c(lapply(key_cols, function(cl)
+    as.character(results[[cl]])), list(sep = "\r")))
+
+  adjusted <- rep(NA_real_, length(pvalues))
+  for (fam in unique(families)) {
+    idx <- which(families == fam)
+    adjusted[idx] <- stats::p.adjust(pvalues[idx], method = "BH")
+  }
+
+  results$PVALUE_ADJ <- adjusted
+  results
 }

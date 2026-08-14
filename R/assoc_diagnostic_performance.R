@@ -87,7 +87,19 @@ diagnostic_performance <-
         {
           # k <- 3
           key <- keys [k, ]
-          fname <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+          # AI-255: the diagnostic reads the same artefact the inference tested,
+          # so it has to name the same aggregation. Defaulting to the produced
+          # one keeps the historical behaviour for callers that do not pass an
+          # inference detail.
+          aggregation <- util_aggregations_allowed(key$MARKER, key$FIGURE,
+                                                   discrete = isTRUE(key$DISCRETE),
+                                                   default  = TRUE,
+                                                   scope    = "INSTANCE",
+                                                   area     = key$AREA)[1]
+          fname <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA,
+                                              key$SUBAREA,
+                                              aggregation = aggregation,
+                                              scope = "INSTANCE")
           if (file.exists(fname))
           {
             core_log_event("INFO: ",

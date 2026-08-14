@@ -5,7 +5,7 @@
 #' [util_signal_descriptors()] builds its output on it, so the computed keys and
 #' the declared vocabulary cannot drift apart.
 #'
-#' MODE_LOW / MODE_HIGH only make sense on a bounded, bimodal scale (beta in
+#' MODELOW / MODEHIGH only make sense on a bounded, bimodal scale (beta in
 #' [0,1], the two peaks around 0 and 1). On M-values the distribution is
 #' roughly gaussian and the two-mode split carries no meaning, so the columns
 #' are omitted rather than filled with a meaningless number.
@@ -16,5 +16,5 @@
 #' @noRd
 io_signal_stats <- function(beta = TRUE) {
   base <- c("MEDIAN", "MEAN", "VARIANCE", "IQR", "N_PROBES")
-  if (isTRUE(beta)) c(base, "MODE_LOW", "MODE_HIGH") else base
+  if (isTRUE(beta)) c(base, "MODELOW", "MODEHIGH") else base
 }

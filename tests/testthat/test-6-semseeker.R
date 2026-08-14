@@ -23,7 +23,7 @@ test_that("semeeker", {
   # core_name_cleaning uppercases Sample_ID inside semseeker(); use the same for comparison
   cleaned_sample_ids <- SEMseeker:::core_name_cleaning(mySampleSheet$Sample_ID)
 
-  for (k in 1:nrow(keys))
+  for (k in seq_len(nrow(keys)))
   {
     # k <- 1
     key <- keys[k,]

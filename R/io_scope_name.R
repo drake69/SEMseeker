@@ -1,10 +1,13 @@
 #' Column names of the per-sample statistics sibling (internal)
 #'
-#' AI-223. The sibling artefact (`SAMPLE_STATS_RESULT.csv`) is the contract
-#' between production (annotation + aggregation, inside `semseeker()`) and
-#' consumption (`association_analysis()`). Both sides MUST compose its column
-#' names through these helpers: if producer and consumer built the strings
-#' independently, the contract would break at the first divergence.
+#' AI-223. These names are the contract between the `SCOPE = SAMPLE` artefacts
+#' and the models fitted on them: [sem_study_summary_get()] composes a column per
+#' artefact, `association_analysis()` looks its features up by name. Both sides
+#' MUST go through these helpers — if they built the strings independently the
+#' contract would break at the first divergence.
+#'
+#' AI-255 removed the file they used to live in (`SAMPLE_STATS_RESULT.csv`); the
+#' names outlived it because they name a *feature*, not a file.
 #'
 #' Naming, all uppercase via [core_name_cleaning()]:
 #' \itemize{

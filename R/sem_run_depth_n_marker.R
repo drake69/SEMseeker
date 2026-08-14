@@ -84,15 +84,32 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
     if (key$AREA == "POSITION" && !tech_is_longread) next
     if (key$AREA == "PROBE"    &&  tech_is_longread) next
 
-    pivot_filename <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+    # AI-255: the requested aggregation reaches the read. Until now it was
+    # validated at the door and then dropped here, so a request for MEDIAN on
+    # GENE_TSS1500 was answered with the mean — silently, because the file
+    # existed and its name said nothing about which operator had produced it.
+    # An aggregation the artefact cannot admit is a request that can never be
+    # satisfied, so it stops the run; a missing SOURCE is an environmental
+    # condition, so it is logged and skipped as before.
+    aggregation <- .sem_depth_n_aggregation(prep, key)
+    key$SCOPE       <- "INSTANCE"
+    key$AGGREGATION <- aggregation
 
-    # AI-027: read via unified dispatcher. Returns NULL when neither the
-    # cached parquet nor per-sample bed/bedgraph files are available,
-    # which is the case sem_run_depth_n_marker needs to skip with a warning.
-    pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA)
+    pivot_filename <- io_pivot_file_name_parquet(key$MARKER, key$FIGURE,
+                                                 key$AREA, key$SUBAREA,
+                                                 aggregation = aggregation,
+                                                 scope = "INSTANCE")
+
+    # AI-027 + AI-255: read via unified dispatcher, which builds the artefact
+    # from the position pivot when it is not on disk. Returns NULL only when the
+    # source itself is unavailable.
+    pivot_lazy <- io_read_pivot(key$MARKER, key$FIGURE, key$AREA, key$SUBAREA,
+                                aggregation = aggregation, scope = "INSTANCE")
     if (is.null(pivot_lazy)) {
       core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-        " File not found:", pivot_filename, ".")
+        " Source unavailable for ", key$MARKER, "_", key$FIGURE, " on ",
+        key$AREA, "_", key$SUBAREA, " aggregated by ", aggregation,
+        "; expected ", pivot_filename, ".")
       assoc_analysis_log(cbind(prep$inference_detail, keys[k, ]),
         start_time, Sys.time(), processed_items)
       next
@@ -301,4 +318,44 @@ sem_run_depth_n_marker <- function(prep, marker, family_test, fileNameResults,
   assoc_analysis_save_results(results, fileNameResults, family_test, filter_p_value)
 
   list(results = results, processed_items = processed_items)
+}
+
+#' The aggregation this key is tested on (internal)
+#'
+#' AI-255. `inference_details$aggregation` names the reduction the request wants.
+#' It was already required and already validated at the door
+#' ([assoc_validate_aggregation()]); what was missing is that it never reached
+#' the read, so the artefact consumed was whichever one the producer happened to
+#' have written.
+#'
+#' A request the artefact cannot admit stops the run instead of being quietly
+#' downgraded: an inference CSV that looks complete but tested something else is
+#' the failure mode this whole migration exists to remove.
+#'
+#' @keywords internal
+#' @noRd
+.sem_depth_n_aggregation <- function(prep, key) {
+
+  requested <- prep$inference_detail$aggregation
+  if (is.null(requested) || length(requested) == 0 || all(is.na(requested)) ||
+      !any(nzchar(as.character(requested))))
+    stop("inference_details$aggregation is required: name which aggregation of ",
+         "the feature to test. Legal names: ",
+         paste(util_aggregation_vocabulary(), collapse = ", "), ".",
+         call. = FALSE)
+
+  requested <- core_name_cleaning(as.character(requested)[1])
+
+  admissible <- util_aggregations_allowed(key$MARKER, key$FIGURE,
+                                          discrete = isTRUE(key$DISCRETE),
+                                          default  = FALSE,
+                                          scope    = "INSTANCE",
+                                          area     = key$AREA)
+  if (!(requested %in% admissible))
+    stop("aggregation '", requested, "' is not admissible for ", key$MARKER,
+         "/", key$FIGURE, " per instance of ", key$AREA, "_", key$SUBAREA,
+         ". Admissible: ", paste(admissible, collapse = ", "), ".",
+         call. = FALSE)
+
+  requested
 }

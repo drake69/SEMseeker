@@ -62,7 +62,7 @@ test_that("sem_deltaX_get", {
   keys <- subset(keys, MARKER != "SIGNAL")
 
 
-  for (k in 1:nrow(keys))
+  for (k in seq_len(nrow(keys)))
   {
     # k <- 1
     key <- keys[k,]

@@ -46,10 +46,10 @@ test_that("the two modes are admissible only on the bounded scale", {
                                                            default = FALSE)
   admissible_mval <- SEMseeker:::util_aggregations_allowed("SIGNAL", "MVALUE",
                                                            default = FALSE)
-  expect_true(all(c("MODE_LOW", "MODE_HIGH") %in% admissible_beta))
-  expect_false(any(c("MODE_LOW", "MODE_HIGH") %in% admissible_mval))
+  expect_true(all(c("MODELOW", "MODEHIGH") %in% admissible_beta))
+  expect_false(any(c("MODELOW", "MODEHIGH") %in% admissible_mval))
   # an unbounded marker has no bimodal split to speak of either
-  expect_false(any(c("MODE_LOW", "MODE_HIGH") %in%
+  expect_false(any(c("MODELOW", "MODEHIGH") %in%
                      SEMseeker:::util_aggregations_allowed("MUTATIONS", "HYPER",
                                                            default = FALSE)))
 })
@@ -105,23 +105,32 @@ test_that("util_aggregate_values computes what the name says", {
   expect_equal(SEMseeker:::util_aggregate_values(values, "VARIANCE"),
                stats::var(values))
   expect_equal(SEMseeker:::util_aggregate_values(values, "IQR"), stats::IQR(values))
-  expect_equal(SEMseeker:::util_aggregate_values(values, "N_PROBES"), length(values))
+  # AI-255: VALUE is the identity, and it is only meaningful on a single
+  # position — asking it of a set is a request that contradicts itself.
+  expect_equal(SEMseeker:::util_aggregate_values(0.42, "VALUE"), 0.42)
+  expect_error(SEMseeker:::util_aggregate_values(values, "VALUE"),
+               "single position")
+  # N_PROBES left the taxonomy: it is a property of the imputation, not an
+  # aggregation of a marker.
+  expect_error(SEMseeker:::util_aggregate_values(values, "N_PROBES"),
+               "unknown aggregation")
 })
 
 test_that("util_aggregate_values finds the two peaks of a bimodal sample", {
   set.seed(11L)
   values <- c(stats::rbeta(3000, 2, 40), stats::rbeta(3000, 40, 2))
-  low  <- SEMseeker:::util_aggregate_values(values, "MODE_LOW")
-  high <- SEMseeker:::util_aggregate_values(values, "MODE_HIGH")
+  low  <- SEMseeker:::util_aggregate_values(values, "MODELOW")
+  high <- SEMseeker:::util_aggregate_values(values, "MODEHIGH")
   expect_lt(low, 0.5)
   expect_gt(high, 0.5)
 })
 
 test_that("util_aggregate_values degrades instead of inventing a number", {
   expect_true(is.na(SEMseeker:::util_aggregate_values(numeric(0), "MEDIAN")))
-  expect_equal(SEMseeker:::util_aggregate_values(numeric(0), "N_PROBES"), 0L)
-  # non-finite values are not data
-  expect_equal(SEMseeker:::util_aggregate_values(c(1, NA, Inf, 3), "N_PROBES"), 2L)
+  expect_true(is.na(SEMseeker:::util_aggregate_values(numeric(0), "MEAN")))
+  # non-finite values are not data: the mean of c(1, NA, Inf, 3) is the mean of
+  # the two numbers that are.
+  expect_equal(SEMseeker:::util_aggregate_values(c(1, NA, Inf, 3), "MEAN"), 2)
   expect_error(SEMseeker:::util_aggregate_values(1:10, "AVERAGE"), "unknown aggregation")
 })
 
@@ -152,7 +161,8 @@ test_that("the pivot name carries the aggregation, and the scale for SIGNAL", {
 
   burden <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER", "CHR",
                                                    "CYTOBAND", aggregation = "SUM")
-  expect_match(basename(burden), "^MUTATIONS_HYPER_CHR_CYTOBAND_SUM_HG19\\.parquet$",
+  expect_match(basename(burden),
+               "^MUTATIONS_HYPER_INSTANCE_CHR_CYTOBAND_SUM_HG19\\.parquet$",
                ignore.case = TRUE)
 
   beta_mean <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "CHR",
@@ -162,12 +172,76 @@ test_that("the pivot name carries the aggregation, and the scale for SIGNAL", {
   # the two scales must not overwrite each other in the same folder
   expect_false(identical(beta_mean, mval_mean))
 
-  # omitting the aggregation is how the not-yet-aggregated POSITION pivots are
-  # named, and must keep the historical shape
+  # AI-255: omitting the aggregation resolves to VALUE where the block is a
+  # single position — the identity now has a name instead of being an absence.
   position <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER",
                                                      "POSITION", "WHOLE")
-  expect_match(basename(position), "^MUTATIONS_HYPER_POSITION_WHOLE_HG19\\.parquet$",
+  expect_match(basename(position),
+               "^MUTATIONS_HYPER_INSTANCE_POSITION_WHOLE_VALUE_HG19\\.parquet$",
                ignore.case = TRUE)
+
+  # ... and stays an error where it is not, because a block holding many
+  # positions was reduced somehow and the name has to say how.
+  expect_error(
+    SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER", "GENE", "WHOLE"),
+    "aggregation is required")
+
+  # the same region class collapsed to one number per sample is a different
+  # artefact, and says so in one token
+  collapsed <- SEMseeker:::io_pivot_file_name_parquet(
+    "MUTATIONS", "HYPER", "GENE", "WHOLE", aggregation = "SUM", scope = "SAMPLE")
+  expect_match(basename(collapsed),
+               "^MUTATIONS_HYPER_SAMPLE_GENE_WHOLE_SUM_HG19\\.parquet$",
+               ignore.case = TRUE)
+})
+
+test_that("the artefact key is injective over the closed vocabularies", {
+  tempFolder <- file.path(tempdir(), "test_key_injective")
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  # The key is the identity of a row, so two different coordinate tuples must
+  # never compose to the same string. It is not obvious that they cannot:
+  # core_name_cleaning() maps every separator to "_", and two vocabularies carry
+  # an underscore inside their values (N_SHORE, and CHR_CYTOBAND read as three
+  # tokens for two coordinates). This is the test that fails loudly the day
+  # someone adds a subarea called LOW or a marker called MODE.
+  grid <- expand.grid(
+    marker      = c("SIGNAL", "MUTATIONS", "DELTAS", "DELTAR", "DELTARP"),
+    figure      = c("HYPER", "HYPO", "BETA", "MVALUE"),
+    scope       = SEMseeker:::io_scope_vocabulary(),
+    area        = c("PROBE", "POSITION", "GENE", "ISLAND", "CHR", "DMR"),
+    subarea     = c("WHOLE", "TSS200", "TSS1500", "BODY", "OPENSEA", "CYTOBAND",
+                    "N_SHORE", "S_SHORE", "N_SHELF", "S_SHELF"),
+    aggregation = SEMseeker:::util_aggregation_vocabulary(),
+    stringsAsFactors = FALSE)
+
+  keys <- vapply(seq_len(nrow(grid)), function(i)
+    SEMseeker:::io_artefact_key(grid$marker[i], grid$figure[i], grid$scope[i],
+                                grid$area[i], grid$subarea[i],
+                                grid$aggregation[i]),
+    character(1))
+
+  expect_equal(length(unique(keys)), nrow(grid))
+})
+
+test_that("every coordinate of the key is required", {
+  tempFolder <- file.path(tempdir(), "test_key_required")
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  expect_error(
+    SEMseeker:::io_artefact_key("MUTATIONS", "HYPER", "INSTANCE", "GENE", "WHOLE", ""),
+    "every coordinate is required")
+  expect_error(SEMseeker:::io_scope_validate("DEPTH2"), "is not a scope")
 })
 
 # ---------------------------------------------------------------------------
@@ -206,7 +280,7 @@ test_that("an impossible request drops its row instead of stopping the batch", {
     independent_variable = c("Phenotest", "Phenotest"),
     family_test          = c("spearman", "spearman"),
     depth_analysis       = c(1L, 1L),
-    # MODE_LOW exists only for SIGNAL/BETA, so the first row is possible;
+    # MODELOW exists only for SIGNAL/BETA, so the first row is possible;
     # a run with only counts would make it impossible
     aggregation          = c("MEDIAN", "SUM"),
     stringsAsFactors = FALSE)

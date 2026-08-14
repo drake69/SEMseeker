@@ -55,17 +55,41 @@
 #' @keywords internal
 #' @noRd
 io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
-                       cache = TRUE) {
+                       cache = TRUE, aggregation = NULL, scope = "INSTANCE",
+                       build = TRUE) {
 
   ssEnv <- core_get_session_info()
+  scope <- io_scope_validate(scope)
 
   # --- Branch 1: cached parquet pivot ----------------------------------------
-  pivot_filename <- io_pivot_file_name_parquet(marker, figure, area, subarea)
+  pivot_filename <- io_pivot_file_name_parquet(marker, figure, area, subarea,
+                                               aggregation = aggregation,
+                                               scope = scope)
   if (file.exists(pivot_filename)) {
     core_log_event("DEBUG: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_read_pivot[", marker, "_", figure,
               "] hit cached parquet: ", basename(pivot_filename))
     return(polars::pl$scan_parquet(pivot_filename))
+  }
+
+  # --- Branch 1b: derived artefact, built on demand --------------------------
+  # AI-255. Anything that is not the base position pivot is derived, and it is
+  # derived HERE rather than having to be foreseen at SEM time. This is what
+  # removes the old "produce it with semseeker(...) and rerun the analysis":
+  # changing your mind now costs one scan instead of a whole run. The written
+  # file is the cache — the second call takes branch 1.
+  is_base <- identical(scope, "INSTANCE") && io_area_is_single_position(area) &&
+             identical(toupper(as.character(subarea)), "WHOLE")
+  if (isTRUE(build) && !is_base) {
+    agg <- .io_aggregation_resolve(aggregation, scope, area)
+    core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+              " io_read_pivot[", marker, "_", figure,
+              "] building ", basename(pivot_filename), " on demand")
+    built <- io_pivot_build(marker, figure, scope = scope, area = area,
+                            subarea = subarea, aggregations = agg)
+    if (length(built) > 0 && file.exists(pivot_filename))
+      return(polars::pl$scan_parquet(pivot_filename))
+    return(NULL)
   }
 
   # --- Branch 2: per-sample bed/bedgraph files -------------------------------

@@ -73,6 +73,12 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
     # DEPTH = 1; AREA says which scope was aggregated.
     scope_keys$AREA        <- if (identical(scope, "SAMPLE")) "SAMPLE_GROUP" else scope
     scope_keys$SUBAREA     <- "SAMPLE"
+    # AI-255: the extent the number is valid over. Depth 1 collapses the region
+    # class to one value per sample — that is what SCOPE = SAMPLE means — and
+    # without the column a burden over the whole sample and one over the genes
+    # differ only in AREA, which reads as two region classes rather than as two
+    # extents of the same one.
+    scope_keys$SCOPE       <- "SAMPLE"
     # AI-248: which operator produced the number travels with the row. Without
     # it two aggregations of the same scope would be indistinguishable, and the
     # dedup in assoc_analysis_save_results() would fuse them into one.
@@ -172,7 +178,7 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
       !any(nzchar(as.character(requested))))
     stop("inference_details$aggregation is required at depth 1: name which ",
          "aggregation of the feature to test (SUM, MEAN, MEDIAN, VARIANCE, ",
-         "IQR, MODE_LOW, MODE_HIGH). It used to be implicit because every ",
+         "IQR, MODELOW, MODEHIGH). It used to be implicit because every ",
          "marker admitted exactly one; a scope now carries several.")
 
   requested <- core_name_cleaning(as.character(requested)[1])
@@ -194,10 +200,11 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
 #' names its columns (`SAMPLE`, `GENE_TSS1500`, …), several separated by `"+"`
 #' like covariates. Default `SAMPLE`, which is the historical behaviour.
 #'
-#' A requested scope whose columns are absent from the sibling is an error, not
-#' a skip: the run would otherwise produce a complete-looking inference CSV
-#' that simply never tested what was asked. The producer side of the contract
-#' is `semseeker(sample_stats_scopes = ...)`.
+#' A requested scope that produced no column is an error, not a skip: the run
+#' would otherwise write a complete-looking inference CSV that simply never
+#' tested what was asked. AI-255 removed the *other* half of that error — the
+#' instruction to rerun the whole SEM analysis — because the columns are now
+#' built on the way in by [sem_study_summary_get()].
 #'
 #' @keywords internal
 #' @noRd
@@ -211,20 +218,23 @@ sem_run_depth1_marker <- function(prep, keys, family_test, fileNameResults,
   if (length(requested) == 0)
     return("SAMPLE")
 
-  # Every marker/figure the run knows about — the sibling carries a column per
-  # pair and per scope, so one hit is enough to say the scope was produced.
+  # AI-255: the columns are built on the way in by sem_study_summary_get(), so a
+  # requested scope that has no column is no longer "you should have foreseen
+  # this six hours ago" — it means the artefact could not be produced at all,
+  # which is a real failure and still stops the run. What disappeared is the
+  # remedy that used to be printed with it: rerunning the whole SEM analysis.
   all_keys <- ssEnv$keys_markers_figures
   known_cols <- colnames(prep$study_summary)
   for (scope in requested) {
     # a scope is present if ANY of its columns is, whatever the aggregation
-    candidates <- unlist(lapply(c("SUM", "MEAN", "MEDIAN", "VARIANCE", "IQR"),
+    candidates <- unlist(lapply(util_aggregation_vocabulary(),
       function(aggregation)
         io_feature_colname(scope, all_keys$MARKER, all_keys$FIGURE, aggregation)))
     if (!any(candidates %in% known_cols))
-      stop("inference_details$scopes: scope '", scope, "' has no column in ",
-           "SAMPLE_STATS_RESULT. Produce it with ",
-           "semseeker(sample_stats_scopes = c(\"SAMPLE\", \"", scope, "\")) ",
-           "and rerun the analysis.")
+      stop("inference_details$scopes: scope '", scope, "' produced no column. ",
+           "The region class resolves but no artefact could be built for it — ",
+           "check that the position pivots of this run exist and that the ",
+           "annotation covers the class.", call. = FALSE)
   }
   unique(requested)
 }

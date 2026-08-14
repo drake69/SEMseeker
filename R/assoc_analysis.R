@@ -22,13 +22,20 @@
 #'       \code{"quantile_<n>"} (e.g. \code{"quantile_3"}).}
 #'     \item{marker}{SEM metric column prefix (e.g. \code{"DELTARP"},
 #'       \code{"MUTATIONS"}).}
-#'     \item{depth_analysis}{Integer depth: \code{1} = sample level,
-#'       \code{2} = type level (gene, DMR, CpG island),
-#'       \code{3} = genomic area (TSS1550, WHOLE, TSS200, …).}
+#'     \item{depth_analysis}{Whether the region class is collapsed or kept open.
+#'       \code{1} tests one number per sample (scope \code{SAMPLE}); anything
+#'       above tests one row per instance of the class — a gene, an island, a
+#'       cytoband, a probe (scope \code{INSTANCE}). It used to be documented as a
+#'       three-step ladder (sample, type, genomic area), which described a
+#'       containment that the code never implemented and that the region classes
+#'       do not have: a TSS200 window and an open-sea stretch refine neither each
+#'       other nor anything between them, so they cannot be placed on one line.
+#'       What the artefact covers is said by \code{AREA} and \code{SUBAREA}; this
+#'       value survives as a label on the result rows.}
 #'     \item{aggregation}{Required. How the positions are reduced to the one
 #'       number the model is fitted on: \code{"SUM"}, \code{"MEAN"},
-#'       \code{"MEDIAN"}, \code{"VARIANCE"}, \code{"IQR"}, \code{"MODE_LOW"} or
-#'       \code{"MODE_HIGH"}. While every marker admitted exactly one operator
+#'       \code{"MEDIAN"}, \code{"VARIANCE"}, \code{"IQR"}, \code{"MODELOW"} or
+#'       \code{"MODEHIGH"}. While every marker admitted exactly one operator
 #'       this could stay implicit; a scope now carries several, so the request
 #'       has to name the one it wants. Which are admissible depends on the
 #'       marker: a count carries \code{SUM} (the burden) and \code{MEAN} (the
@@ -36,14 +43,16 @@
 #'       its median and IQR are degenerate; the two modes exist only for the
 #'       signal on the beta scale. A request no marker of the run admits is
 #'       dropped with a warning naming it, not answered with an empty result.}
-#'     \item{scopes}{Optional, depth=1 only. Which scopes of
-#'       \code{SAMPLE_STATS_RESULT.csv} to test, several separated by
-#'       \code{"+"} (default \code{"SAMPLE"}). A region scope such as
+#'     \item{scopes}{Optional, depth=1 only. Which region classes to test,
+#'       several separated by
+#'       \code{"+"} (default \code{"SAMPLE"}, meaning no restriction). A region
+#'       class such as
 #'       \code{"GENE_TSS1500"} tests the burden restricted to that region
 #'       class, still one value per sample: the result rows carry
-#'       \code{DEPTH = 1} with \code{AREA = "GENE_TSS1500"}. The scope must
-#'       have been produced by
-#'       \code{semseeker(sample_stats_scopes = ...)}, otherwise the run stops.}
+#'       \code{DEPTH = 1} with \code{AREA = "GENE_TSS1500"}. The artefact is
+#'       built on the way in if it does not exist yet (AI-255), so a scope no
+#'       previous run foresaw costs one scan of the position pivot, not a
+#'       rerun.}
 #'   }
 #' @param result_folder character. Path to the SEMseeker result folder.
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
@@ -117,7 +126,13 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     family_test <- util_split_and_clean(inference_detail$family_test)
     if (!assoc_validate_family_test(family_test)) next
 
-    study_summary <- sem_study_summary_get(inference_detail$samples_sql_condition)
+    # AI-255: the region classes this request wants are built here, on the way
+    # in. Before, a scope that had not been foreseen at SEM time raised "produce
+    # it with semseeker(...) and rerun the analysis" — the researcher paid a
+    # whole run for having guessed wrong hours earlier.
+    study_summary <- sem_study_summary_get(
+      inference_detail$samples_sql_condition,
+      regions = util_split_and_clean(inference_detail$scopes))
     prep <- sem_prepare_study_for_analysis(inference_detail, study_summary, family_test)
     if (is.null(prep)) next
 

@@ -183,6 +183,11 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       # scope never collapse into one.
       if (!is.null(key$AGGREGATION))
         local_result$AGGREGATION <- as.character(key$AGGREGATION)
+      # AI-255: SCOPE completes the identity of the row. Without it a burden over
+      # the whole sample and a burden per gene are two rows that differ only in
+      # AREA, which reads as two region classes rather than as two extents.
+      if (!is.null(key$SCOPE))
+        local_result$SCOPE <- as.character(key$SCOPE)
       # AI-106 (2026-06-09): reverse-map back to the upstream raw name
       # (HLA-A, chr10:100028204-100028508, ...) so the CSV preserves it
       # for enrichment / resume match. Fallback to burdenValue itself if
