@@ -85,7 +85,7 @@ io_pivot_build <- function(marker, figure, scope, area, subarea,
       # list has to be splatted with do.call(). Same idiom as sem_deltaX_get().
       out <- if (identical(scope, "SAMPLE"))
         do.call(grouped$lazy$select, exprs)$with_columns(
-          polars::pl$lit(key_col_value(area, subarea))$alias("AREA"))
+          polars::pl$lit(key_col_value(agg))$alias("AREA"))
       else
         do.call(grouped$lazy$group_by(key_col, .maintain_order = FALSE)$agg, exprs)
 
@@ -110,13 +110,19 @@ io_pivot_build <- function(marker, figure, scope, area, subarea,
 
 #' The key value of a collapsed artefact (internal)
 #'
-#' AI-255. A `SCOPE = SAMPLE` artefact has exactly one row, and its key is the
-#' name of the region class it collapsed — `PROBE_WHOLE`, `GENE_TSS1500`.
+#' AI-255. A `SCOPE = SAMPLE` artefact has exactly one row, and the key of that
+#' row becomes `AREA_OF_TEST` downstream — the answer to "what was tested".
 #'
+#' For a collapsed artefact that answer is **which aggregate**, not which region
+#' class: the class is already said by the `AREA` and `SUBAREA` columns, and
+#' repeating it would leave the mean and the median of the same class carrying
+#' the identical `AREA_OF_TEST`, distinguishable only by a column further right.
+#'
+#' @param aggregation the operator that produced the single row.
 #' @keywords internal
 #' @noRd
-key_col_value <- function(area, subarea) {
-  core_name_cleaning(paste(area, subarea, sep = "_"))
+key_col_value <- function(aggregation) {
+  core_name_cleaning(as.character(aggregation))
 }
 
 #' Polars expression for one aggregation on one column (internal)
@@ -167,6 +173,21 @@ key_col_value <- function(area, subarea) {
       return(list(lazy = base$drop(intersect(c("CHR", "START", "END", "PROBE"),
                                              names(base))),
                   key_col = "AREA"))
+
+    # A position pivot is keyed by CHR/START/END — three columns — while every
+    # consumer downstream wants ONE identifier per row, because that identifier
+    # becomes AREA_OF_TEST. Compose it the way the package already does:
+    # `<CHR>_<START>`, the synthetic probe id io_probe_id_to_coord() splits back
+    # on the last underscore (START is always a pure integer suffix).
+    #
+    # Without this the three coordinates would fall into `sample_cols` and be
+    # aggregated as if they were samples.
+    if (!("AREA" %in% names(base)) && all(c("CHR", "START") %in% names(base)))
+      base <- base$with_columns(
+        (polars::pl$col("CHR")$cast(polars::pl$String) + polars::pl$lit("_") +
+           polars::pl$col("START")$cast(polars::pl$String))$alias("AREA")
+      )
+    base <- base$drop(intersect(c("CHR", "START", "END", "PROBE"), names(base)))
     return(list(lazy = base, key_col = "AREA"))
   }
 
@@ -231,7 +252,7 @@ key_col_value <- function(area, subarea) {
   for (m in modes) {
     df <- as.data.frame(as.list(stats::setNames(values[[m]], sample_cols)),
                         check.names = FALSE)
-    df <- cbind(AREA = key_col_value(area, subarea), df, stringsAsFactors = FALSE)
+    df <- cbind(AREA = key_col_value(m), df, stringsAsFactors = FALSE)
     path <- io_pivot_file_name_parquet(marker, figure, area, subarea,
                                        aggregation = m, scope = scope)
     dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)

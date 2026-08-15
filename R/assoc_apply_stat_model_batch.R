@@ -44,10 +44,9 @@
 #' @noRd
 assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
                                     covariates = NULL, key,
-                                    transformation_y, dototal,
+                                    transformation_y,
                                     session_folder,
                                     independent_variable,
-                                    depth_analysis = 3,
                                     samples_sql_condition,
                                     inference_detail = NULL, ...) {
 
@@ -74,7 +73,7 @@ assoc_apply_stat_model_batch <- function(tempDataFrame, g_start, family_test,
   transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
   prepared <- io_data_preparation(family_test, transformation_y, tempDataFrame,
                                 independent_variable, g_start, ncol(tempDataFrame),
-                                FALSE, covariates, depth_analysis, key,
+                                covariates, key,
                                 transformation_x = transformation_x_local)
   tempDataFrame <- prepared$tempDataFrame
 

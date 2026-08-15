@@ -35,15 +35,14 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
     "collinearity_check",
     "transformation_y",
     "transformation_x",
-    "depth_analysis",
-    # AI-223 slice 2a: scopes tested at depth=1, as they are named in the
-    # statistics sibling ("SAMPLE", "GENE_TSS1500", …). Several are given
+    # AI-223 slice 2a, AI-255: which region classes to test, named as the
+    # feature columns name them ("SAMPLE", "GENE_TSS1500", …). Several are given
     # separated by "+", like covariates. Default "SAMPLE".
     "scopes",
     # AI-248: which aggregation of the feature is tested (SUM, MEAN, MEDIAN,
-    # VARIANCE, IQR, MODELOW, MODEHIGH). Mandatory at depth 1: with several
-    # aggregations over the same scope, a request that does not name one does
-    # not identify what it wants tested.
+    # VARIANCE, IQR, MODELOW, MODEHIGH). Mandatory: with several aggregations
+    # over the same scope, a request that does not name one does not identify
+    # what it wants tested.
     "aggregation",
     "filter_p_value",
     "samples_sql_condition",
@@ -61,6 +60,24 @@ assoc_validate_inference_schema <- function(inference_details, strict = TRUE) {
 
   # ---- (a) Reject unknown columns with helpful diagnostic ----
   unknown_cols <- setdiff(colnames(inference_details), allowed_columns)
+
+  # AI-255: a column that was REMOVED is not a typo, and telling the user to
+  # register it as legal would send them the wrong way. Name it, say it is gone,
+  # and say what replaced it.
+  retired <- c(
+    depth_analysis = paste0(
+      "removed. The granularity of an artefact is said by SCOPE, AREA and ",
+      "SUBAREA, which say more: those pairs are only partially ordered, so an ",
+      "integer scale projected a lattice onto a line. A request that used ",
+      "depth_analysis = 1 now names the region classes it wants in `scopes`; ",
+      "anything above 1 tested the instances of the classes of the run, which ",
+      "is what happens by default"))
+  hit <- intersect(names(retired), unknown_cols)
+  if (length(hit) > 0)
+    stop("inference_details carries column(s) that no longer exist:\n  ",
+         paste(sprintf("'%s' — %s", hit, retired[hit]), collapse = "\n  "),
+         call. = FALSE)
+
   if (length(unknown_cols) > 0) {
     suggestions <- vapply(unknown_cols, function(uk) {
       d <- utils::adist(uk, expected_columns, ignore.case = TRUE)[1, ]

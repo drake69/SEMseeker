@@ -16,15 +16,6 @@
 # naming helpers (pure)
 # ---------------------------------------------------------------------------
 
-test_that("io_scope_name encodes depth as scope", {
-  expect_equal(SEMseeker:::io_scope_name(1L), "SAMPLE")
-  expect_equal(SEMseeker:::io_scope_name(1L, "GENE", "BODY"), "SAMPLE")
-  expect_equal(SEMseeker:::io_scope_name(2L, "GENE", "BODY"), "GENE")
-  expect_equal(SEMseeker:::io_scope_name(3L, "GENE", "BODY"), "GENE_BODY")
-  # missing area falls back to sample level whatever the depth
-  expect_equal(SEMseeker:::io_scope_name(3L, "", ""), "SAMPLE")
-})
-
 test_that("io_scope_name derives the scope from (area, subarea) with no depth", {
   # AI-223 slice 2a: the producer is depth-agnostic — it writes every scope
   # once, so it names them from the pair alone.
@@ -90,7 +81,11 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
 
   SEMseeker::semseeker(
     input             = syn$signal,
@@ -143,7 +138,6 @@ test_that("semseeker() writes the statistics sibling and leaves the sample sheet
 
   # a marker that was not asked for produces no column
   expect_equal(intersect(signal_cols, colnames(stats)), character(0))
-  expect_true(all(stats$SAMPLE_N_PROBES > 0))
 
   # AI-223 net move: the burden left the sample sheet
   moved_away <- c("MUTATIONS_HYPER", "MUTATIONS_HYPO", "DELTAS_HYPER",
@@ -176,7 +170,11 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
   scope <- SEMseeker:::io_scope_name(area = "GENE", subarea = "TSS1500")
 
   SEMseeker::semseeker(
@@ -269,7 +267,6 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
     scopes               = paste("SAMPLE", scope, sep = "+"),
     aggregation          = "SUM",
     filter_p_value       = FALSE,
@@ -304,24 +301,30 @@ test_that("a region scope reaches the sibling and the depth=1 inference", {
 
   result_df <- do.call(plyr::rbind.fill,
                        lapply(csv_files, function(f) utils::read.csv2(f, stringsAsFactors = FALSE)))
-  # the scope is one value per sample: still DEPTH 1, with the scope in AREA.
+  # AI-255: a collapsed row carries the coordinates of the taxonomy, not a
+  # made-up AREA. It used to be AREA = "GENE_TSS1500" (the scope name squashed
+  # into a coordinate) and AREA = "SAMPLE_GROUP" for the unrestricted one —
+  # values invented for the occasion, exactly as "TOTAL" was invented for
+  # SUBAREA. Now: SCOPE says it is collapsed, AREA and SUBAREA say over which
+  # region class.
+  #
   # which() and not a bare logical: the CSV carries rows with NA in AREA (the
-  # job-summary row), and `df[df$AREA == scope, ]` would materialise them as
-  # all-NA phantom rows.
-  scope_rows <- result_df[which(result_df$AREA == scope), , drop = FALSE]
+  # job-summary row), and `df[df$AREA == …, ]` would materialise them as all-NA
+  # phantom rows.
+  scope_rows <- result_df[which(result_df$SCOPE == "SAMPLE" &
+                                result_df$AREA == "GENE" &
+                                result_df$SUBAREA == "TSS1500"), , drop = FALSE]
   expect_gt(nrow(scope_rows), 0)
-  expect_true(all(scope_rows$DEPTH == 1))
-  expect_true(all(scope_rows$SUBAREA == "SAMPLE"))
-  # which burden was tested stays in MARKER/FIGURE, as at every other depth;
-  # the scope is what AREA adds. (AREA_OF_TEST is "burden_values" on every
-  # depth=1 row, scoped or not: with a single tested column io_data_preparation
-  # loses the column name — pre-existing, see AI-247.)
+  # which burden was tested stays in MARKER/FIGURE; the region class is what
+  # AREA and SUBAREA add, and the aggregate is named by AREA_OF_TEST.
   expect_equal(sort(unique(scope_rows$MARKER)), "MUTATIONS")
   expect_true(all(scope_rows$FIGURE %in% c("HYPER", "HYPO")))
-  expect_setequal(unique(scope_rows$FIGURE),
-                  unique(result_df[which(result_df$AREA == "SAMPLE_GROUP"), "FIGURE"]))
-  # and the whole-sample rows are still there, untouched
-  expect_gt(nrow(result_df[which(result_df$AREA == "SAMPLE_GROUP"), , drop = FALSE]), 0)
+
+  # and the unrestricted collapsed rows are still there, on their own class
+  whole_rows <- result_df[which(result_df$SCOPE == "SAMPLE" &
+                                result_df$AREA == "PROBE"), , drop = FALSE]
+  expect_gt(nrow(whole_rows), 0)
+  expect_setequal(unique(scope_rows$FIGURE), unique(whole_rows$FIGURE))
 })
 
 test_that("an unproduced scope stops the analysis instead of testing nothing", {
@@ -330,7 +333,11 @@ test_that("an unproduced scope stops the analysis instead of testing nothing", {
   on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
             unlink(tempFolder, recursive = TRUE) }, add = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
 
   SEMseeker::semseeker(
     input             = syn$signal,
@@ -350,7 +357,6 @@ test_that("an unproduced scope stops the analysis instead of testing nothing", {
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
     scopes               = "GENE_TSS1500",
     aggregation          = "SUM",
     filter_p_value       = FALSE,

@@ -13,7 +13,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   results$GENOME_BUILD <- genome_build_val
   results$TECH         <- tech_val
 
-  utils::write.csv2(results,fileNameResults , row.names  =  FALSE)
+  utils::write.csv2(.assoc_key_first(results), fileNameResults, row.names = FALSE)
   multiple_test_adj <- core_name_cleaning(ssEnv$multiple_test_adj)
   # there is a bug which mantain more family test in the same results file
   # so we need to filter the results
@@ -79,12 +79,17 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
     if(nrow(results)==0)
       return()
 
-    results$DEPTH <- 3
-    # replace NA of SUBAREA with TOTAL
-    results[is.na(results$SUBAREA),"SUBAREA"] <- "TOTAL"
-    results[results$SUBAREA=="SAMPLE","DEPTH"] <- 1
-    selector <- grepl("TOTAL",results$AREA_OF_TEST)
-    results[selector,"DEPTH"] <- 2
+    # AI-255: DEPTH is not stamped any more. It was a number standing in for
+    # what SCOPE, AREA and SUBAREA now say outright, and it stood in badly: the
+    # 1/2/3 ladder projected a partial order onto a line, and its rung 2 marked
+    # rows produced by composing aggregates — a quantity that no longer exists.
+    # Nothing reads it to decide anything, so writing it would only invite
+    # someone to start.
+    #
+    # Gone with it: `results[is.na(results$SUBAREA), "SUBAREA"] <- "TOTAL"`.
+    # TOTAL was the label of that synthesis, and it is not a value of the
+    # SUBAREA vocabulary — filling a missing coordinate with an invented one
+    # hides the defect inside the key instead of showing it.
     # replace empty with NA
     results[results == ""] <- NA
     results[results == " "] <- NA
@@ -106,7 +111,11 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # C-06: include provenance columns in the grouping key so summarise() preserves them
   # AI-248: AGGREGATION is part of the identity. Without it the summarise(max)
   # below would fuse the median and the mean of the same scope into one row.
-  group_column <- c("MARKER", "FIGURE", "AGGREGATION", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",
+  # AI-255: SCOPE belongs here too. Without it the collapsed row and the
+  # per-instance row of the same region class would be fused by the summarise
+  # below — the very thing the aggregation axis was added to prevent, one
+  # coordinate further along.
+  group_column <- c("MARKER", "FIGURE", "SCOPE", "AGGREGATION", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",
                     "TRANSFORMATION_Y", "R_MODEL", "TRANSFORMATION_X",
                     "INDEPENDENT_VARIABLE", "COVARIATES",
                     "GENOME_BUILD", "TECH")
@@ -123,7 +132,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
                                      ~ max(.x, na.rm = TRUE)),
                        .groups = 'drop')
 
-    utils::write.csv2(results,fileNameResults , row.names  =  FALSE)
+    utils::write.csv2(.assoc_key_first(results), fileNameResults, row.names = FALSE)
   }
 }
 
@@ -178,4 +187,57 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
 
   results$PVALUE_ADJ <- adjusted
   results
+}
+
+#' Put the taxonomy key first, and refuse a key with a hole in it (internal)
+#'
+#' AI-255. The six coordinates plus `AREA_OF_TEST` — the instance within the
+#' artefact — are the identity of a result row, so they lead the file. A reader
+#' opening the CSV sees what the row *is* before seeing what was measured on it,
+#' and the column order stops depending on the order in which the models happened
+#' to add their fields.
+#'
+#' The NA check is the other half. Filling a missing coordinate used to be normal
+#' here — `results[is.na(results$SUBAREA), "SUBAREA"] <- "TOTAL"` invented a
+#' value that is not in the SUBAREA vocabulary — and that is exactly how a defect
+#' hides inside a key: two rows that cannot be told apart, and nothing to show
+#' for it. With every coordinate composed by one function there is no legitimate
+#' NA left, so an NA means something upstream did not set what it was supposed
+#' to, and it stops here rather than travelling into a dedup or a join.
+#'
+#' @param results the results data.frame.
+#' @return `results` with the key columns first.
+#' @keywords internal
+#' @noRd
+.assoc_key_first <- function(results) {
+
+  if (is.null(results) || nrow(results) == 0)
+    return(results)
+
+  key_cols <- c("MARKER", "FIGURE", "SCOPE", "AREA", "SUBAREA", "AGGREGATION",
+                "AREA_OF_TEST")
+  present <- intersect(key_cols, colnames(results))
+  if (length(present) == 0)
+    return(results)
+
+  # An empty SUBAREA has always meant "the whole area" — the same normalisation
+  # io_pivot_file_name() applies. Settle it before the check, so the convention
+  # is honoured and what remains missing is genuinely missing.
+  if ("SUBAREA" %in% present) {
+    blank <- is.na(results$SUBAREA) | !nzchar(trimws(as.character(results$SUBAREA)))
+    if (any(blank)) results$SUBAREA[blank] <- "WHOLE"
+  }
+
+  holed <- present[vapply(present, function(cl)
+    any(is.na(results[[cl]]) | !nzchar(trimws(as.character(results[[cl]])))),
+    logical(1))]
+  if (length(holed) > 0)
+    stop("the taxonomy key of a result row is incomplete: ",
+         paste(holed, collapse = ", "),
+         " carries missing values. The key is the identity of the row — two ",
+         "rows with a hole in the same place cannot be told apart — so this is ",
+         "a coordinate that was never set upstream, not a value to fill in.",
+         call. = FALSE)
+
+  results[, c(present, setdiff(colnames(results), present)), drop = FALSE]
 }

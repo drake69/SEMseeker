@@ -64,12 +64,38 @@
   that number instead of refusing. A minimum-numerosity guard now returns `NA`
   rather than a plausible-looking value.
 
-- **`depth_analysis` no longer selects a code path.** The granularity of an
-  artefact is the `(AREA, SUBAREA)` pair, and those pairs are only *partially*
-  ordered — a TSS200 window and an open-sea stretch refine neither each other
-  nor anything between them — so an integer scale projected a lattice onto a
-  line. `1` still means `SCOPE = SAMPLE` and anything above it `INSTANCE`; the
-  value is carried into the results as a label.
+- **`depth_analysis` is gone, and so is the `DEPTH` column.** Not derived, not
+  deprecated: removed. Once every artefact has the same shape — a key column and
+  one column per sample — a model handed a row does not know, and has no reason
+  to ask, whether the key of that row is a gene symbol or `PROBE_WHOLE`. It
+  fits. The two consumers merged into one (`assoc_run_marker()`, which replaces
+  `sem_run_depth1_marker()` and `sem_run_depth_n_marker()`), and the granularity
+  is said by `SCOPE`, `AREA` and `SUBAREA` — which say more, because those pairs
+  are only *partially* ordered and an integer scale projected a lattice onto a
+  line.
+
+- **The `TOTAL` column is gone.** It was `sum` of the per-area aggregates, and
+  `depth_analysis == 2` meant "test only that" — but the partition into areas is
+  not disjoint, so a probe the annotation maps onto three genes entered that
+  total three times. It was the composition of aggregates this release forbids,
+  in the one place nobody looked for it. What it meant to compute — the whole
+  region class, one number per sample — is now an artefact of its own:
+  `SCOPE = SAMPLE` on that `(AREA, SUBAREA)`, derived from the masked position
+  pivot where every position counts once.
+
+- **`AREA_OF_TEST` names the aggregate for collapsed artefacts.** At
+  `SCOPE = SAMPLE` a row is the whole region class reduced to one number, and
+  which class that is is already said by `AREA` and `SUBAREA`; what the row
+  needs to say is *which aggregate*. So it carries `MEAN`, `MEDIAN`, `SUM`, …
+  Previously it repeated the region class, leaving the mean and the median of
+  the same class with the same `AREA_OF_TEST`.
+
+- **The taxonomy key leads the result file**, in the order `MARKER`, `FIGURE`,
+  `SCOPE`, `AREA`, `SUBAREA`, `AGGREGATION`, `AREA_OF_TEST`, and a missing value
+  in any of them stops the write. The key is the identity of a row: two rows with
+  a hole in the same place cannot be told apart. The old code filled such holes
+  instead — `SUBAREA` became the literal `"TOTAL"`, a value outside its own
+  vocabulary — which is how a defect hides inside a key.
 
 - **`N_PROBES` moved to `SAMPLE_SHEET_RESULT.csv`.** It is a property of the
   imputation — how many positions of that sample survived the treatment of

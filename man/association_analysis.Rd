@@ -15,53 +15,56 @@ association_analysis(
 }
 \arguments{
 \item{inference_details}{data.frame. Each row defines one analysis run.
-Required columns:
-\describe{
-  \item{independent_variable}{Sample sheet column used as grouping /
-    covariate variable.}
-  \item{family_test}{Statistical model: \code{"wilcoxon"},
-    \code{"stats::t.test"}, \code{"gaussian"}, \code{"poisson"},
-    \code{"binomial"}, \code{"pearson"}, \code{"kendall"},
-    \code{"spearman"}, or quantile regression as
-    \code{"quantreg_<tau>_<runs>"} (e.g. \code{"quantreg_0.25_2000"}).}
-  \item{transformation_y}{Transformation applied to the dependent variable:
-    \code{"none"}, \code{"scale"}, \code{"log"}, \code{"log2"},
-    \code{"log10"}, \code{"exp"}, or
-    \code{"quantile_<n>"} (e.g. \code{"quantile_3"}).}
-  \item{marker}{SEM metric column prefix (e.g. \code{"DELTARP"},
-    \code{"MUTATIONS"}).}
-  \item{depth_analysis}{Whether the region class is collapsed or kept open.
-    \code{1} tests one number per sample (scope \code{SAMPLE}); anything
-    above tests one row per instance of the class — a gene, an island, a
-    cytoband, a probe (scope \code{INSTANCE}). It used to be documented as a
-    three-step ladder (sample, type, genomic area), which described a
-    containment that the code never implemented and that the region classes
-    do not have: a TSS200 window and an open-sea stretch refine neither each
-    other nor anything between them, so they cannot be placed on one line.
-    What the artefact covers is said by \code{AREA} and \code{SUBAREA}; this
-    value survives as a label on the result rows.}
-  \item{aggregation}{Required. How the positions are reduced to the one
-    number the model is fitted on: \code{"SUM"}, \code{"MEAN"},
-    \code{"MEDIAN"}, \code{"VARIANCE"}, \code{"IQR"}, \code{"MODELOW"} or
-    \code{"MODEHIGH"}. While every marker admitted exactly one operator
-    this could stay implicit; a scope now carries several, so the request
-    has to name the one it wants. Which are admissible depends on the
-    marker: a count carries \code{SUM} (the burden) and \code{MEAN} (the
-    density, the form comparable across regions of different size), while
-    its median and IQR are degenerate; the two modes exist only for the
-    signal on the beta scale. A request no marker of the run admits is
-    dropped with a warning naming it, not answered with an empty result.}
-  \item{scopes}{Optional, depth=1 only. Which region classes to test,
-    several separated by
-    \code{"+"} (default \code{"SAMPLE"}, meaning no restriction). A region
-    class such as
-    \code{"GENE_TSS1500"} tests the burden restricted to that region
-    class, still one value per sample: the result rows carry
-    \code{DEPTH = 1} with \code{AREA = "GENE_TSS1500"}. The artefact is
-    built on the way in if it does not exist yet (AI-255), so a scope no
-    previous run foresaw costs one scan of the position pivot, not a
-    rerun.}
-}}
+  Required columns:
+  \describe{
+    \item{independent_variable}{Sample sheet column used as grouping /
+      covariate variable.}
+    \item{family_test}{Statistical model: \code{"wilcoxon"},
+      \code{"stats::t.test"}, \code{"gaussian"}, \code{"poisson"},
+      \code{"binomial"}, \code{"pearson"}, \code{"kendall"},
+      \code{"spearman"}, or quantile regression as
+      \code{"quantreg_<tau>_<runs>"} (e.g. \code{"quantreg_0.25_2000"}).}
+    \item{transformation_y}{Transformation applied to the dependent variable:
+      \code{"none"}, \code{"scale"}, \code{"log"}, \code{"log2"},
+      \code{"log10"}, \code{"exp"}, or
+      \code{"quantile_<n>"} (e.g. \code{"quantile_3"}).}
+    \item{marker}{SEM metric column prefix (e.g. \code{"DELTARP"},
+      \code{"MUTATIONS"}).}
+    \item{depth_analysis}{Whether the region class is collapsed or kept open.
+      \code{1} tests one number per sample (scope \code{SAMPLE}); anything
+      above tests one row per instance of the class — a gene, an island, a
+      cytoband, a probe (scope \code{INSTANCE}). It used to be documented as a
+      three-step ladder (sample, type, genomic area), which described a
+      containment that the code never implemented and that the region classes
+      do not have: a TSS200 window and an open-sea stretch refine neither each
+      other nor anything between them, so they cannot be placed on one line.
+      What the artefact covers is said by \code{AREA} and \code{SUBAREA}; this
+      value survives as a label on the result rows.}
+    \item{aggregation}{Required. How the positions are reduced to the one
+      number the model is fitted on: \code{"SUM"}, \code{"MEAN"},
+      \code{"MEDIAN"}, \code{"VARIANCE"}, \code{"IQR"}, \code{"MODELOW"} or
+      \code{"MODEHIGH"}. While every marker admitted exactly one operator
+      this could stay implicit; a scope now carries several, so the request
+      has to name the one it wants. Which are admissible depends on the
+      marker: a count carries \code{SUM} (the burden) and \code{MEAN} (the
+      density, the form comparable across regions of different size), while
+      its median and IQR are degenerate; the two modes exist only for the
+      signal on the beta scale. A request no marker of the run admits is
+      dropped with a warning naming it, not answered with an empty result.}
+    \item{scopes}{Optional. Which region classes to collapse to one number
+      per sample, several separated by \code{"+"} (default \code{"SAMPLE"},
+      meaning no restriction). A class such as \code{"GENE_TSS1500"} tests the
+      burden restricted to the positions of that class, and the result rows
+      carry \code{SCOPE = "SAMPLE"} with \code{AREA = "GENE"} and
+      \code{SUBAREA = "TSS1500"} — the coordinates of the taxonomy, not the
+      scope name squashed into one of them. The per-instance artefacts of the
+      run are tested regardless, and carry \code{SCOPE = "INSTANCE"}.
+
+      The artefact is built on the way in if it does not exist yet (AI-255),
+      so a class no previous run foresaw costs one scan of the position pivot
+      rather than a rerun — provided this call registers it in \code{areas}
+      and \code{subareas}.}
+  }}
 
 \item{result_folder}{character. Path to the SEMseeker result folder.}
 

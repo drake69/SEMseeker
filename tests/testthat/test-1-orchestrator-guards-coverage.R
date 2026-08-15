@@ -28,7 +28,6 @@ test_that("assoc_results_get returns an empty frame when the inference file is a
     transformation_y      = "",
     independent_variable  = "AGE",
     transformation_x      = "",
-    depth_analysis        = "3",
     samples_sql_condition = NULL,
     areas_sql_condition   = ""
   )

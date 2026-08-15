@@ -260,7 +260,6 @@ test_that("assoc_covariates_model: no-op returns list with covariates and study_
     transformation_x      = "none",
     family_test           = "wilcoxon",
     transformation_y      = "none",
-    depth_analysis        = "FULL",
     samples_sql_condition = NULL
   )
 

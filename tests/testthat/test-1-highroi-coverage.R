@@ -41,7 +41,7 @@ test_that(".core_bulk_model_memory_gate escalates away from monolithic when huge
 # io_plot_file_name  (session)
 # ---------------------------------------------------------------------------
 
-test_that("io_plot_file_name builds a DEPTH/marker/figure plot path", {
+test_that("io_plot_file_name builds a marker/figure plot path", {
   tf <- tempFolders[51]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -50,7 +50,6 @@ test_that("io_plot_file_name builds a DEPTH/marker/figure plot path", {
     family_test          = "gaussian",
     transformation_y     = "",
     independent_variable = "AGE",
-    depth_analysis       = "3",
     samples_sql_condition = NULL
   )
   key <- list(AREA = "GENE", SUBAREA = "TSS200", MARKER = "MUTATIONS", FIGURE = "HYPER")
@@ -58,7 +57,8 @@ test_that("io_plot_file_name builds a DEPTH/marker/figure plot path", {
   path <- SEMseeker:::io_plot_file_name(detail, folder = tf, key = key)
 
   expect_type(path, "character")
-  expect_match(path, "DEPTH", ignore.case = TRUE)
+  # AI-255: DEPTH left the path with the concept it named.
+  expect_false(grepl("DEPTH", path, ignore.case = TRUE))
   expect_match(path, "MUTATIONS", ignore.case = TRUE)
   expect_match(path, "\\.png$", ignore.case = TRUE)
 })
@@ -80,7 +80,6 @@ test_that("assoc_results_save writes a readable inference CSV at the canonical p
     transformation_y      = "",
     independent_variable  = "AGE",
     transformation_x      = "",
-    depth_analysis        = "3",
     samples_sql_condition = NULL
   )
   df <- data.frame(AREA = "GENE", SUBAREA = "TSS200", VALUE = 0.42)

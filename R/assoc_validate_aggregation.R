@@ -58,18 +58,15 @@ assoc_validate_aggregation <- function(inference_details, keys = NULL) {
   for (z in seq_len(nrow(inference_details))) {
     detail <- inference_details[z, ]
 
-    depth <- detail$depth_analysis
-    if (is.null(depth) || length(depth) == 0 || is.na(depth))
-      depth <- 1
-    # Every depth, not just the sample level: a per-area value is an aggregate
-    # of the positions of that area exactly as a per-sample value is an
-    # aggregate of the positions of the scope. If the request does not name the
-    # operator, at any depth, it does not identify what it is asking for.
+    # AI-255: every artefact, whatever its scope. A per-area value is an
+    # aggregate of the positions of that area exactly as a per-sample value is
+    # an aggregate of the positions it masks. If the request does not name the
+    # operator, it does not identify what it is asking for.
     requested <- detail$aggregation
     if (is.null(requested) || length(requested) == 0 || all(is.na(requested)) ||
         !any(nzchar(as.character(requested))))
-      stop("inference_details row ", z, ": 'aggregation' is required at depth ",
-           depth, ". Name which aggregation of the feature to test (",
+      stop("inference_details row ", z, ": 'aggregation' is required. ",
+           "Name which aggregation of the feature to test (",
            paste(legal, collapse = ", "), "). It used to be implicit because ",
            "every marker admitted exactly one; a scope now carries several.",
            call. = FALSE)

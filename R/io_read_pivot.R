@@ -82,11 +82,28 @@ io_read_pivot <- function(marker, figure, area = "POSITION", subarea = "WHOLE",
              identical(toupper(as.character(subarea)), "WHOLE")
   if (isTRUE(build) && !is_base) {
     agg <- .io_aggregation_resolve(aggregation, scope, area)
+
+    # AI-255: build EVERY aggregation this key admits, not just the one asked
+    # for. The scan of the position pivot is the expensive part and it is shared:
+    # one group_by emits SUM, MEAN, MEDIAN, VARIANCE and IQR together. Building
+    # them one at a time would turn three requests on the same area into three
+    # scans — which is the cost the taxonomy is supposed to avoid, and which the
+    # producer this replaced already avoided. The extra artefacts are small and
+    # are the cache for the next request.
+    aggregations <- tryCatch(
+      unique(c(agg, util_aggregations_allowed(marker, figure, default = FALSE,
+                                              scope = scope, area = area))),
+      error = function(e) agg)
+    # The two modes need the whole distribution per group and are handled R-side;
+    # do not drag them into an opportunistic build.
+    aggregations <- setdiff(aggregations, setdiff(c("MODELOW", "MODEHIGH"), agg))
+
     core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
               " io_read_pivot[", marker, "_", figure,
-              "] building ", basename(pivot_filename), " on demand")
+              "] building ", basename(pivot_filename), " on demand, with ",
+              length(aggregations), " aggregation(s) in one pass")
     built <- io_pivot_build(marker, figure, scope = scope, area = area,
-                            subarea = subarea, aggregations = agg)
+                            subarea = subarea, aggregations = aggregations)
     if (length(built) > 0 && file.exists(pivot_filename))
       return(polars::pl$scan_parquet(pivot_filename))
     return(NULL)

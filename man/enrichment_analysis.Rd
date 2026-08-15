@@ -32,7 +32,7 @@ enrichment_analysis(
 }
 \arguments{
 \item{inference_details}{data.frame. Inference parameter table (must contain
-a \code{depth_analysis} column; rows with \code{depth_analysis == 3} are
+the per-gene artefacts (SCOPE = INSTANCE, AREA = GENE) are
 processed).}
 
 \item{adjust_per_area_s}{logical vector. Whether to adjust p-values per area

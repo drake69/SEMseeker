@@ -6,10 +6,8 @@
 #' @param covariates vector of covariates
 #' @param key key to identify file to elaborate
 #' @param transformation_y transformation_y to apply to covariates, burden and independent variable
-#' @param dototal do a total per area
 #' @param session_folder where to save log file
 #' @param independent_variable independent variable name
-#' @param depth_analysis depth's analysis
 #' @param samples_sql_condition SQL condition string to filter samples
 #' @param ... extra parameters
 #'
@@ -21,8 +19,8 @@
 #' @importFrom doFuture %dofuture%
 #'
 #'
-assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = NULL, key, transformation_y, dototal,
-  session_folder, independent_variable, depth_analysis=3,samples_sql_condition,
+assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariates = NULL, key, transformation_y,
+  session_folder, independent_variable, samples_sql_condition,
   inference_detail = NULL, ...)
 {
   arguments <- list(...)
@@ -47,10 +45,8 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       covariates           = covariates,
       key                  = key,
       transformation_y     = transformation_y,
-      dototal              = dototal,
       session_folder       = session_folder,
       independent_variable = independent_variable,
-      depth_analysis       = depth_analysis,
       samples_sql_condition = samples_sql_condition,
       inference_detail     = inference_detail,
       ...
@@ -70,10 +66,8 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
       covariates           = covariates,
       key                  = key,
       transformation_y     = transformation_y,
-      dototal              = dototal,
       session_folder       = session_folder,
       independent_variable = independent_variable,
-      depth_analysis       = depth_analysis,
       samples_sql_condition = samples_sql_condition,
       ...
     ))
@@ -86,7 +80,7 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
 
   g_end <- ncol(tempDataFrame)
   transformation_x_local <- if (!is.null(inference_detail$transformation_x)) as.character(inference_detail$transformation_x) else "none"
-  prepared_data <- io_data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, FALSE, covariates, depth_analysis, key, transformation_x = transformation_x_local)
+  prepared_data <- io_data_preparation(family_test,transformation_y,tempDataFrame, independent_variable, g_start, g_end, covariates, key, transformation_x = transformation_x_local)
   # if(ncol(prepared_data$tempDataFrame) != ncol(tempDataFrame))
   #   return(NULL)
 

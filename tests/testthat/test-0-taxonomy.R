@@ -257,7 +257,7 @@ test_that("a request that names no aggregation is refused, at every depth", {
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
   for (depth in c(1L, 2L, 3L)) {
     details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                          depth_analysis = depth, aggregation = NA,
+                          aggregation = NA,
                           stringsAsFactors = FALSE)
     expect_error(SEMseeker:::assoc_validate_aggregation(details, keys), "required")
   }
@@ -266,7 +266,7 @@ test_that("a request that names no aggregation is refused, at every depth", {
 test_that("an aggregation outside the taxonomy is refused", {
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
   details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                        depth_analysis = 1L, aggregation = "AVERAGE",
+                        aggregation = "AVERAGE",
                         stringsAsFactors = FALSE)
   expect_error(SEMseeker:::assoc_validate_aggregation(details, keys),
                "not an aggregation")
@@ -279,7 +279,6 @@ test_that("an impossible request drops its row instead of stopping the batch", {
   details <- data.frame(
     independent_variable = c("Phenotest", "Phenotest"),
     family_test          = c("spearman", "spearman"),
-    depth_analysis       = c(1L, 1L),
     # MODELOW exists only for SIGNAL/BETA, so the first row is possible;
     # a run with only counts would make it impossible
     aggregation          = c("MEDIAN", "SUM"),
@@ -303,7 +302,6 @@ test_that("a batch keeps the rows it can run and drops the ones it cannot", {
   details <- data.frame(
     independent_variable = c("Phenotest", "Phenotest"),
     family_test          = c("spearman", "spearman"),
-    depth_analysis       = c(1L, 1L),
     aggregation          = c("MEDIAN", "SUM"),
     stringsAsFactors = FALSE)
 
@@ -316,7 +314,7 @@ test_that("a batch keeps the rows it can run and drops the ones it cannot", {
 test_that("a possible request passes silently", {
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
   details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                        depth_analysis = 1L, aggregation = "SUM",
+                        aggregation = "SUM",
                         stringsAsFactors = FALSE)
   expect_silent(kept <- SEMseeker:::assoc_validate_aggregation(details, keys))
   expect_equal(nrow(kept), 1L)

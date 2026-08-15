@@ -12,7 +12,6 @@ io_inference_file_name <- function(inference_detail, marker, folder,file_extensi
   if(inference_detail$transformation_x=="scale")
     inference_detail$independent_variable <- paste0(inference_detail$independent_variable, "_SCALED")
   independent_variable <- util_split_and_clean(inference_detail$independent_variable)
-  depth_analysis <- util_split_and_clean(inference_detail$depth_analysis)
 
   file_suffix <- ""
   file_result_prefix <- paste(as.character(independent_variable),as.character(transformation_y),as.character(family_test),sep="_")
@@ -29,7 +28,6 @@ io_inference_file_name <- function(inference_detail, marker, folder,file_extensi
   if(covariates_pca)
     file_suffix <- c(file_suffix, paste("pca", sep = "_"))
 
-  file_result_prefix <- paste("DEPTH",depth_analysis, file_result_prefix,sep = "_")
   file_result_prefix <- paste(prefix, file_result_prefix, sep = "_")
   file_suffix <- paste(file_suffix, suffix, sep = "_")
 

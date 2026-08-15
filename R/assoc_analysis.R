@@ -43,16 +43,19 @@
 #'       its median and IQR are degenerate; the two modes exist only for the
 #'       signal on the beta scale. A request no marker of the run admits is
 #'       dropped with a warning naming it, not answered with an empty result.}
-#'     \item{scopes}{Optional, depth=1 only. Which region classes to test,
-#'       several separated by
-#'       \code{"+"} (default \code{"SAMPLE"}, meaning no restriction). A region
-#'       class such as
-#'       \code{"GENE_TSS1500"} tests the burden restricted to that region
-#'       class, still one value per sample: the result rows carry
-#'       \code{DEPTH = 1} with \code{AREA = "GENE_TSS1500"}. The artefact is
-#'       built on the way in if it does not exist yet (AI-255), so a scope no
-#'       previous run foresaw costs one scan of the position pivot, not a
-#'       rerun.}
+#'     \item{scopes}{Optional. Which region classes to collapse to one number
+#'       per sample, several separated by \code{"+"} (default \code{"SAMPLE"},
+#'       meaning no restriction). A class such as \code{"GENE_TSS1500"} tests the
+#'       burden restricted to the positions of that class, and the result rows
+#'       carry \code{SCOPE = "SAMPLE"} with \code{AREA = "GENE"} and
+#'       \code{SUBAREA = "TSS1500"} — the coordinates of the taxonomy, not the
+#'       scope name squashed into one of them. The per-instance artefacts of the
+#'       run are tested regardless, and carry \code{SCOPE = "INSTANCE"}.
+#'
+#'       The artefact is built on the way in if it does not exist yet (AI-255),
+#'       so a class no previous run foresaw costs one scan of the position pivot
+#'       rather than a rerun — provided this call registers it in \code{areas}
+#'       and \code{subareas}.}
 #'   }
 #' @param result_folder character. Path to the SEMseeker result folder.
 #' @param maxResources numeric. Maximum percentage of CPU cores to use
@@ -148,33 +151,18 @@ association_analysis <- function(inference_details, result_folder, maxResources 
           paste(areas_selection, "_", sep = "")))
       core_log_event("JOURNAL:", "Result saved into file:", fileNameResults, ".")
 
-      # AI-040: skip sample-level (depth=1) and chr-level (depth=2) for
-      # limma/voom families. They expect a per-area distribution to run
-      # eBayes shrinkage on — depth=1 is a single-row fit (degenerate to
-      # OLS) and depth=2 (TOTAL aggregate) mixes scales with depth=3 in
-      # the same eBayes pool, contaminating the prior. Only depth=3
-      # (per-probe / per-area) makes sense for these families.
-      is_batch_family <- grepl("^(limma|voom)_", family_test)
-
-      if (!is_batch_family) {
-        d1 <- sem_run_depth1_marker(prep, keys, family_test, fileNameResults,
-          filter_p_value, ssEnv, ...)
-        results <- d1$results
-        processed_items <- processed_items + d1$processed_items
-      } else {
-        results <- data.frame()
-        core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
-                  " family_test='", family_test,
-                  "': skipping DEPTH=1 (sample-level) — not meaningful for batch eBayes.")
-      }
-
-      if (prep$depth_analysis > 1) {
-        dn <- sem_run_depth_n_marker(prep, marker, family_test, fileNameResults,
-          filter_p_value, ssEnv, selected_areas = areas_selection,
-          results, start_time, processed_items, ...)
-        results <- dn$results
-        processed_items <- dn$processed_items
-      }
+      # AI-255: one road. There used to be two calls here, chosen by
+      # depth_analysis, because the collapsed artefact and the per-instance one
+      # had different shapes — a table of columns against a pivot of rows. They
+      # have the same shape now, so a model handed a row does not know, and has
+      # no reason to ask, whether the key of that row is a gene symbol or
+      # PROBE_WHOLE. It fits. The scope travels in the key; the batch-family
+      # exclusion travels with it (see .assoc_marker_keys).
+      dn <- assoc_run_marker(prep, marker, family_test, fileNameResults,
+        filter_p_value, ssEnv, selected_areas = areas_selection,
+        data.frame(), start_time, processed_items, ...)
+      results <- dn$results
+      processed_items <- dn$processed_items
 
       last_results  <- results
       last_filename <- fileNameResults

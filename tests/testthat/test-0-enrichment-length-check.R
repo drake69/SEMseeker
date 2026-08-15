@@ -18,7 +18,6 @@ minimal_inf_details <- function() {
     covariates_dummy     = "Tissue_Locus",
     transformation_y     = "none",
     transformation_x     = "none",
-    depth_analysis       = 3,
     filter_p_value       = FALSE,
     samples_sql_condition       = "",
     areas_sql_condition         = "",

@@ -33,7 +33,11 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   tempFolders <<- tempFolders[-1]
   unlink(tempFolder, recursive = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
 
   # inpute="median" is defensive: harmless when the input has no NAs (the
   # guard at inpute_missing_values.R:7 short-circuits), useful if a future
@@ -226,7 +230,11 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     unlink(tempFolder, recursive = TRUE)
   }, add = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
 
   # ewas_osteoporosis-style identifiers: core_name_cleaning() uppercases them
   # ("DNAm_sample1" -> "DNAM_SAMPLE1"), so sample sheet and pivot columns must
