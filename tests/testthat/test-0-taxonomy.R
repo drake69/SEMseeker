@@ -319,3 +319,153 @@ test_that("a possible request passes silently", {
   expect_silent(kept <- SEMseeker:::assoc_validate_aggregation(details, keys))
   expect_equal(nrow(kept), 1L)
 })
+
+# ---------------------------------------------------------------------------
+# the numbers, not just the names
+#
+# Everything above checks that the taxonomy is COHERENT: the right names, the
+# right admissibility, the right refusals. None of it checks that a number
+# coming out of the pipeline is the number it claims to be — and that is the gap
+# the original defect lived in. `MEDIAN` on GENE_TSS1500 returned the mean, and
+# every structural check passed while it did, because the mean is a perfectly
+# well-formed number under a column called MEDIAN.
+#
+# So: build a position pivot whose aggregates are known by hand, ask for two
+# different aggregations, and compare against an independent calculation.
+# ---------------------------------------------------------------------------
+
+test_that("two aggregations of the same artefact are two different numbers", {
+  tempFolder <- file.path(tempdir(), "test_two_aggregations")
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  # Chosen so mean and median differ, and so neither coincides with the other
+  # sample's: S1 mean 0.45 / median 0.40, S2 mean 0.50 / median 0.50.
+  s1 <- c(0.10, 0.90, 0.50, 0.30)
+  s2 <- c(0.20, 0.80, 0.40, 0.60)
+  df <- data.frame(CHR   = c("1", "1", "1", "2"),
+                   START = c(100L, 200L, 300L, 400L),
+                   END   = c(101L, 201L, 301L, 401L),
+                   S1 = s1, S2 = s2)
+
+  base <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "POSITION", "WHOLE")
+  dir.create(dirname(base), recursive = TRUE, showWarnings = FALSE)
+  polars::as_polars_df(df)$write_parquet(base)
+
+  written <- SEMseeker:::io_pivot_build("SIGNAL", "BETA", scope = "SAMPLE",
+                                        area = "PROBE", subarea = "WHOLE",
+                                        aggregations = c("MEAN", "MEDIAN"))
+  expect_length(written, 2L)
+
+  read_one <- function(agg) {
+    p <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "PROBE", "WHOLE",
+                                                aggregation = agg, scope = "SAMPLE")
+    expect_true(file.exists(p))
+    as.data.frame(polars::pl$read_parquet(p))
+  }
+
+  got_mean   <- read_one("MEAN")
+  got_median <- read_one("MEDIAN")
+
+  # A collapsed artefact is one row tall.
+  expect_equal(nrow(got_mean), 1L)
+  expect_equal(nrow(got_median), 1L)
+
+  # Each value equals the aggregation computed independently, in plain R.
+  expect_equal(got_mean$S1,   mean(s1))
+  expect_equal(got_mean$S2,   mean(s2))
+  expect_equal(got_median$S1, stats::median(s1))
+  expect_equal(got_median$S2, stats::median(s2))
+
+  # And the two are NOT the same number: this is the assertion that fails if an
+  # aggregation is ever silently answered with another one.
+  expect_false(isTRUE(all.equal(got_mean$S1, got_median$S1)))
+
+  # AREA_OF_TEST names the aggregate, since the region class is already said by
+  # AREA and SUBAREA.
+  expect_equal(got_mean$AREA,   "MEAN")
+  expect_equal(got_median$AREA, "MEDIAN")
+})
+
+test_that("the FDR family is the key, and the numbers say so", {
+  # AI-257. The family over which an FDR is controlled has to be a statistical
+  # choice, and twice it had been something else: adjusted per CHUNK inside
+  # assoc_apply_stat_model() (so the family was the memory split), then adjusted
+  # across the whole file (so it grew with how many aggregations were asked for).
+  # It is now the key minus the instance. This test compares against p.adjust()
+  # computed independently on each family, which is the only way to tell the
+  # three apart: they all produce well-formed p-values.
+  p_mean   <- c(0.001, 0.02, 0.30, 0.60)
+  p_median <- c(0.005, 0.05)
+
+  results <- data.frame(
+    MARKER      = "DELTAS",
+    FIGURE      = "HYPO",
+    SCOPE       = "INSTANCE",
+    AREA        = "GENE",
+    SUBAREA     = "WHOLE",
+    AGGREGATION = c(rep("MEAN", length(p_mean)), rep("MEDIAN", length(p_median))),
+    AREA_OF_TEST = c(paste0("G", seq_along(p_mean)), paste0("G", seq_along(p_median))),
+    PVALUE      = c(p_mean, p_median),
+    stringsAsFactors = FALSE)
+
+  out <- SEMseeker:::.assoc_adjust_within_key(results)
+
+  expect_equal(out$PVALUE_ADJ[out$AGGREGATION == "MEAN"],
+               stats::p.adjust(p_mean, method = "BH"))
+  expect_equal(out$PVALUE_ADJ[out$AGGREGATION == "MEDIAN"],
+               stats::p.adjust(p_median, method = "BH"))
+
+  # The point of the family: asking for a second aggregation must not change the
+  # correction of the first. Adjusting across the file would have made every
+  # adjusted p of MEAN depend on how many MEDIAN rows happened to be there.
+  alone <- results[results$AGGREGATION == "MEAN", ]
+  expect_equal(SEMseeker:::.assoc_adjust_within_key(alone)$PVALUE_ADJ,
+               out$PVALUE_ADJ[out$AGGREGATION == "MEAN"])
+
+  # And it is NOT the global adjustment, which is a different column on purpose.
+  expect_false(isTRUE(all.equal(
+    out$PVALUE_ADJ, stats::p.adjust(c(p_mean, p_median), method = "BH"))))
+})
+
+test_that("VALUE carries the per-position values, unreduced", {
+  tempFolder <- file.path(tempdir(), "test_value_endtoend")
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  s1 <- c(0.10, 0.90, 0.50)
+  s2 <- c(0.20, 0.80, 0.40)
+  df <- data.frame(CHR   = c("1", "1", "2"),
+                   START = c(100L, 200L, 300L),
+                   END   = c(101L, 201L, 301L),
+                   S1 = s1, S2 = s2)
+
+  p <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "POSITION", "WHOLE")
+  dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+  polars::as_polars_df(df)$write_parquet(p)
+
+  # The name resolves to VALUE on its own: at a single position there is nothing
+  # to reduce, so the identity is the only meaningful operator.
+  expect_match(basename(p), "_VALUE_", fixed = TRUE)
+
+  masked <- SEMseeker:::.io_pivot_masked_lazy("SIGNAL", "BETA", "INSTANCE",
+                                              "POSITION", "WHOLE")
+  got <- as.data.frame(masked$lazy$collect())
+
+  # One row per position, nothing aggregated, and the three coordinates composed
+  # into ONE identifier - the form io_probe_id_to_coord() splits back.
+  expect_equal(nrow(got), length(s1))
+  expect_equal(got$AREA, paste(df$CHR, df$START, sep = "_"))
+  expect_equal(got$S1, s1)
+  expect_equal(got$S2, s2)
+  # CHR/START/END must not survive as if they were samples.
+  expect_false(any(c("CHR", "START", "END") %in% colnames(got)))
+})
