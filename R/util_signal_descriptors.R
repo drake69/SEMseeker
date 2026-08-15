@@ -35,6 +35,11 @@ util_signal_descriptors <- function(values, beta = TRUE) {
   out    <- stats::setNames(vector("list", length(wanted)), wanted)
   out[]  <- NA_real_
 
+  # AI-255: N_PROBES describes the INPUT — how many finite values were reduced —
+  # and is reported here for callers that want it. It is deliberately not in
+  # io_signal_stats(), which is the vocabulary of columns an artefact carries,
+  # because no artefact carries it any more: it is a property of the imputation
+  # and it travels on the sample sheet.
   out$N_PROBES <- length(values)
 
   if (length(values) == 0)

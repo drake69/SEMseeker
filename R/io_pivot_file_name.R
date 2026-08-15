@@ -79,15 +79,14 @@ io_pivot_file_name_parquet <- function(marker, figure, area, subarea,
   ssEnv <- core_get_session_info()
   scope <- io_scope_validate(scope)
 
-  # An empty subarea has always meant "the whole area" — anno_annotate_position_pivots()
-  # spelled it out with ifelse(subarea == "", "WHOLE", subarea) — and callers rely
-  # on it. Normalising here keeps that convention while letting io_artefact_key()
-  # stay strict: the key is the identity, and an identity with a hole in it is
-  # not an identity.
-  if (is.null(subarea) || length(subarea) == 0 || is.na(subarea) ||
-      !nzchar(as.character(subarea)))
-    subarea <- "WHOLE"
-
+  # No normalisation of an empty subarea. There is nothing to normalise: the
+  # registry assigns every area an explicit subarea, WHOLE at minimum
+  # (util_keys_create(): PROBE/WHOLE, POSITION/WHOLE, DMR/WHOLE, …), so "" is not
+  # a value the system produces. Where it used to appear it came from a caller
+  # writing it by hand, and turning it into WHOLE here would accept a hole in a
+  # coordinate — the same thing as filling a missing SUBAREA with "TOTAL", which
+  # is how a defect hides inside a key. io_artefact_key() refuses it instead, and
+  # the message names the caller's mistake.
   aggregation <- .io_aggregation_resolve(aggregation, scope, area)
 
   reportFolder <- io_dir_check_and_create(ssEnv$result_folderData, "Pivots")

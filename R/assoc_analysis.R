@@ -129,13 +129,31 @@ association_analysis <- function(inference_details, result_folder, maxResources 
     family_test <- util_split_and_clean(inference_detail$family_test)
     if (!assoc_validate_family_test(family_test)) next
 
-    # AI-255: the region classes this request wants are built here, on the way
-    # in. Before, a scope that had not been foreseen at SEM time raised "produce
-    # it with semseeker(...) and rerun the analysis" — the researcher paid a
-    # whole run for having guessed wrong hours earlier.
-    study_summary <- sem_study_summary_get(
-      inference_detail$samples_sql_condition,
-      regions = util_split_and_clean(inference_detail$scopes))
+    # AI-255: the models read artefacts, not columns — assoc_run_marker() opens
+    # the pivot for every key, collapsed or not. So what this needs from the
+    # sample sheet is the phenotype and the covariates, and joining the
+    # per-sample statistics onto it would build artefacts nobody then reads:
+    # io_feature_colname() has exactly one caller left, the composer inside
+    # sem_study_summary_get(), and nothing reads those names back.
+    #
+    # The join is still done when the request names a feature the plain sheet
+    # does not have — adjusting for the global burden is a legitimate thing to
+    # ask — but it is no longer paid for on every run by default.
+    study_summary <- sem_study_summary_get(inference_detail$samples_sql_condition,
+                                           with_sample_stats = FALSE)
+    wanted_cols <- c(gsub(" ", "", as.character(inference_detail$independent_variable)),
+                     util_split_and_clean(inference_detail$covariates))
+    wanted_cols <- wanted_cols[nzchar(wanted_cols) & !is.na(wanted_cols)]
+    if (!is.null(study_summary) && !all(wanted_cols %in% colnames(study_summary))) {
+      core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+                " The request names ", paste(setdiff(wanted_cols, colnames(study_summary)),
+                                             collapse = ", "),
+                ", which the sample sheet does not carry: joining the per-sample ",
+                "features as well.")
+      study_summary <- sem_study_summary_get(
+        inference_detail$samples_sql_condition,
+        regions = util_split_and_clean(inference_detail$scopes))
+    }
     prep <- sem_prepare_study_for_analysis(inference_detail, study_summary, family_test)
     if (is.null(prep)) next
 

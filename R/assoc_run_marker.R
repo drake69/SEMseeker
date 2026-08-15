@@ -129,11 +129,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     if (is_batch_family) {
       area_to_remove <- character(0)
       if (nrow(old_results_global) > 0) {
-        area_to_remove <- old_results_global[
-          old_results_global$MARKER  == key$MARKER &
-          old_results_global$FIGURE  == key$FIGURE &
-          old_results_global$SUBAREA == key$SUBAREA &
-          old_results_global$AREA    == key$AREA, "AREA_OF_TEST"]
+        area_to_remove <- .assoc_resume_done(old_results_global, key)
       }
       core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
                 " Batch family '", family_test,
@@ -197,10 +193,7 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
     # re-fitted on every resume run. Apply the same gsub to tempDataFrame
     # so the membership test matches the on-disk convention.
     if (nrow(old_results_global) > 0) {
-      area_to_remove <- old_results_global[old_results_global$MARKER == key$MARKER &
-                                            old_results_global$FIGURE == key$FIGURE &
-                                            old_results_global$SUBAREA == key$SUBAREA &
-                                            old_results_global$AREA == key$AREA, "AREA_OF_TEST"]
+      area_to_remove <- .assoc_resume_done(old_results_global, key)
       tempDataFrame <- tempDataFrame[!(tempDataFrame$AREA %in% area_to_remove), ]
     }
 
@@ -411,12 +404,15 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
   # request names. Historically this was "depth 1".
   sample_keys <- data.frame()
   if (!grepl("^(limma|voom)_", family_test)) {
-    regions <- tryCatch(.sem_regions_resolve(util_split_and_clean(prep$inference_detail$scopes)),
-                        error = function(e) {
-                          core_log_event("WARNING: ", format(Sys.time(), "%a %b %d %X %Y"),
-                                    " ", conditionMessage(e))
-                          list()
-                        })
+    # A region class that does not resolve STOPS the run. It must not be caught
+    # and logged: a run that quietly drops a requested class writes an inference
+    # CSV that looks complete and simply never tested what was asked, which is
+    # the failure mode the whole taxonomy exists to make impossible.
+    #
+    # This used to be enforced by sem_study_summary_get(regions = …) in
+    # association_analysis(); that call became conditional, so this is now the
+    # only place that resolves them, and it has to keep the promise.
+    regions <- .sem_regions_resolve(util_split_and_clean(prep$inference_detail$scopes))
     mf <- ssEnv$keys_markers_figures
     mf <- mf[mf$MARKER == marker, , drop = FALSE]
     if (length(regions) > 0 && nrow(mf) > 0) {
@@ -447,4 +443,41 @@ assoc_run_marker <- function(prep, marker, family_test, fileNameResults,
 
   out <- do.call(rbind, Filter(Negate(is.null), list(take(sample_keys), take(instance_keys))))
   if (is.null(out)) data.frame() else unique(out)
+}
+
+#' Instances already tested for THIS key (internal)
+#'
+#' AI-255. The resume filter decides what not to compute again, so it is an
+#' identity check — and it was missing two coordinates.
+#'
+#' It matched on `MARKER`, `FIGURE`, `AREA` and `SUBAREA` only. Since AI-248 the
+#' same area appears once per aggregation, and since AI-255 once per scope, so a
+#' run that had already tested `MEAN` on `GENE_WHOLE` left rows that a later run
+#' asking for `MEDIAN` read as "these genes are done" — and skipped every one of
+#' them, writing an empty `MEDIAN` result that looks like a completed job.
+#'
+#' NEWS 0.99.5 claimed the aggregation was already part of the resume match. It
+#' was part of the deduplication and of the overlaps; here it never was.
+#'
+#' Columns absent from an older CSV are simply not matched on, so a result folder
+#' written before this release resumes as it did — one aggregation, one scope.
+#'
+#' @param old the results already on disk.
+#' @param key the key being computed.
+#' @return the `AREA_OF_TEST` values already present for this exact key.
+#' @keywords internal
+#' @noRd
+.assoc_resume_done <- function(old, key) {
+
+  if (is.null(old) || nrow(old) == 0 || !("AREA_OF_TEST" %in% colnames(old)))
+    return(character(0))
+
+  coords <- c("MARKER", "FIGURE", "SCOPE", "AREA", "SUBAREA", "AGGREGATION")
+  coords <- coords[coords %in% colnames(old) & coords %in% names(key)]
+
+  keep <- rep(TRUE, nrow(old))
+  for (cl in coords)
+    keep <- keep & (as.character(old[[cl]]) == as.character(key[[cl]]))
+
+  as.character(old[which(keep), "AREA_OF_TEST"])
 }
