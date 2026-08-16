@@ -71,6 +71,12 @@ jobs:
           # months; moving the repository to an organisation reset the cache and
           # exposed it.
           BiocManager::install("limma", ask = FALSE, update = FALSE)
+          # qvalue is a Bioconductor package. It used to sit in suggests_cran and
+          # was therefore handed to install.packages(), which does not raise on
+          # failure — so it was listed, never installed, and nothing noticed until
+          # test-0-taxonomy.R started reaching the `q` estimator behind
+          # skip_if_not_installed().
+          BiocManager::install("qvalue", ask = FALSE, update = FALSE)
           BiocManager::install(
             c(
               "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
@@ -90,7 +96,7 @@ jobs:
           suggests_cran <- c(
             "boot", "car", "circlize", "fastDummies", "fitdistrplus",
             "ggpubr", "M3C", "mediation", "meta", "nnet",
-            "quantreg", "qvalue", "UpSetR", "matrixStats",
+            "quantreg", "UpSetR", "matrixStats",
             "caret", "wordcloud", "KMEANS.KNN", "tidyverse",
             "Rfast", "mockery"
           )
