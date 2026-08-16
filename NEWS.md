@@ -4,6 +4,40 @@
 
 ### Breaking changes
 
+- **A p-value adjustment now names the family it was controlled over, and there
+  are three (AI-257).** `PVALUE_ADJ` said nothing about its family, and at
+  `SCOPE = SAMPLE` that family holds a single row — so the column equalled the
+  raw p-value by arithmetic while its name promised a correction. It is replaced
+  by three columns, nested, each named after its own family:
+
+  ```
+  PVALUE_ADJ_KEY_<m>    the identity key: MARKER, FIGURE, SCOPE, AREA,
+                        SUBAREA, AGGREGATION — members are the instances
+  PVALUE_ADJ_SCOPE_<m>  every row of the same SCOPE — members are its region
+                        classes, figures and aggregations
+  PVALUE_ADJ_ALL_<m>    the whole file — members are everything tested on this
+                        marker under this model (unchanged)
+  ```
+
+  The middle level is the one that was missing: a collapsed artefact had only a
+  correction over one row, or one shared with the tens of thousands of
+  per-instance rows in the same file, and neither answers how many things were
+  tested on that sample.
+
+  `<m>` is the method the run declared. All three now honour
+  `multiple_test_adj`; the narrow level had `BH` written into it, so a run
+  asking for another estimator got a column computed as BH and named for it.
+  Where an estimator cannot work on a family — `qvalue` needs enough p-values to
+  estimate pi0 — the answer is `NA` and a line in the log, rather than a
+  silently substituted estimator that would make the column name wrong.
+
+  **Migration.** Read `PVALUE_ADJ_KEY_<m>` wherever you read `PVALUE_ADJ`. Files
+  written by an earlier release keep their `PVALUE_ADJ` column until the folder
+  is recomputed, and it is dropped when they are. The three answer three
+  different questions and are **not** a severity ladder: Benjamini-Hochberg is
+  adaptive, so a wider family is usually but not necessarily more conservative.
+
+
 - **The extent a number is valid over is a coordinate of its own, `SCOPE`
   (AI-255).** A burden over the whole sample and a burden per gene are the same
   marker reduced over different extents. They used to live in artefacts of
@@ -145,6 +179,32 @@
 - **Results carry an `AGGREGATION` column**, part of the row identity along with
   marker, figure, area and subarea, in the deduplication, in the resume match
   and in the cross-study overlaps.
+
+### Bug fixes
+
+- **The significance flags matched the method string, not the level (AI-257).**
+  `SIGNIFICATIVE_ADJ_ALL` and `SIGNIFICATIVE_ADJ` were computed over *every*
+  column whose name contained the method — `grepl("BH", colnames)` — so a second
+  adjusted level would have turned them into "significant at every level at
+  once" without a visible change. They now select the `ALL` level by name. An
+  empty selection yields `NA` instead of `TRUE`, which is what
+  `all(logical(0))` used to return.
+
+- **`filter_p_value` filtered on a column that is never created (AI-257).**
+  `assoc_analysis_save_results()` subset on `SIGNIFICATIVE_ADJ`, which is built
+  by `assoc_results_get()` on the way out and never exists on the way in. The
+  parameter defaults to `TRUE`, so the default path could not complete; every
+  fixture in the suite sets it to `FALSE`, which is why nothing caught it. It
+  filters on `SIGNIFICATIVE_ADJ_ALL`, the flag that exists at that point.
+
+- **Two models adjusted p-values over a batch (AI-257).**
+  `assoc_apply_stat_model()` and `assoc_glm_model_bulk()` each wrote a
+  `PVALUE_ADJ` over whatever chunk they had been handed, making the family a
+  memory parameter; the value was then recomputed downstream anyway. Both
+  removed. The one in `assoc_apply_stat_model()` also split its rows on
+  `grepl("TOTAL", AREA_OF_TEST)`, and `TOTAL` was removed with AI-255 — the
+  predicate had been false on every row since, so its two branches had quietly
+  become one.
 
 ### New features
 

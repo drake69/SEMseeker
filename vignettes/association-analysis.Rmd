@@ -520,10 +520,24 @@ Each CSV contains:
 | `MARKER` | SEM metric tested |
 | `SCORE` | Test statistic (ρ, W, t, β, …) |
 | `P_Value` | Nominal p-value |
-| `Q` / `PVALUE_ADJ_ALL_BH` | FDR-adjusted p-value (Benjamini-Hochberg) |
-| `SIGNIFICATIVE_ADJ` | `TRUE` if Q < α (default 0.05) |
+| `PVALUE_ADJ_KEY_<m>` | Adjusted within the identity key — the instances tested for one `(MARKER, FIGURE, SCOPE, AREA, SUBAREA, AGGREGATION)` |
+| `PVALUE_ADJ_SCOPE_<m>` | Adjusted across every row of the same `SCOPE` — all its region classes, figures and aggregations |
+| `PVALUE_ADJ_ALL_<m>` | Adjusted across the whole file — everything tested on this marker under this model |
+| `SIGNIFICATIVE_ADJ` | `TRUE` if the `ALL` level is below α (default 0.05) |
 | `FAMILY_TEST` | Model used |
 | `SAMPLE_GROUP` | Sample subset tested |
+
+The three adjusted columns differ **only** by the family the correction was
+controlled over, and `<m>` is the method the run declared (`multiple_test_adj`).
+Which one to report is an analytical choice that belongs in your Methods:
+
+- at `SCOPE = INSTANCE` the `KEY` level is the usual one — its members are the
+  genes (or islands, or cytobands) tested for one measurement;
+- at `SCOPE = SAMPLE` the key holds a **single row**, so `PVALUE_ADJ_KEY_<m>`
+  equals the raw p-value by arithmetic. The `SCOPE` level is the one with
+  members to count there;
+- the three are **not** a severity ladder. Benjamini-Hochberg is adaptive, so a
+  wider family is usually — but not necessarily — more conservative.
 
 <hr>
 

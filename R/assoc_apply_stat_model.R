@@ -266,16 +266,16 @@ assoc_apply_stat_model <- function(tempDataFrame, g_start, family_test, covariat
     # result_temp <- unique(result_temp)
     result_temp <- result_temp %>% dplyr::distinct()
 
-    if (!is.null(dim(result_temp)) )
-    {
-      if ("PVALUE" %in% colnames(result_temp))
-      {
-        selector <- grepl("TOTAL",result_temp$AREA_OF_TEST)
-        result_temp[selector,"PVALUE_ADJ"]  <- (stats::p.adjust(result_temp[selector,"PVALUE"]  ,method = "BH"))
-        selector <- !grepl("TOTAL",result_temp$AREA_OF_TEST)
-        result_temp[selector,"PVALUE_ADJ"]  <- (stats::p.adjust(result_temp[selector,"PVALUE"]  ,method = "BH"))
-      }
-    }
+    # AI-257: no adjustment here any more. What this function holds is one
+    # chunk — sem_run_depth_n_marker() splits a pivot at ceiling(6e6 / ncol)
+    # rows — so any family it could form is a memory parameter, not a
+    # statistical choice. assoc_analysis_save_results() is the only place where
+    # every row of a family is together, and it computes all three levels there.
+    #
+    # The block removed here also split on `grepl("TOTAL", AREA_OF_TEST)`, and
+    # TOTAL went with AI-255: it labelled rows built by composing aggregates
+    # over a partition that is not disjoint. The predicate had been false on
+    # every row since, so the two branches had quietly become one.
     colnames(result_temp) <- core_name_cleaning(colnames(result_temp))
     return(result_temp)
   }
