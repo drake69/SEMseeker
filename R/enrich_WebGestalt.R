@@ -64,8 +64,6 @@ enrich_WebGestalt <- function(study,
           area  = "GENE",
           scope = "INSTANCE",
           marker = keys[i,"MARKER"],
-          adjust_per_area= adjust_per_area,
-          adjust_globally = adjust_globally,
           pvalue_column=  pvalue_column,
           adjustment_method= adjustment_method,
           significance = TRUE)

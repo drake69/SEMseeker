@@ -43,8 +43,9 @@ assoc_intra_study_association_replication <- function(inference_details_origin, 
     if(file.exists(inference_filename))
       next
 
-    inference_source <- assoc_results_get(inference_details_origin, marker, adjust_per_area = FALSE, adjust_globally = FALSE,
-      pvalue_column="PVALUE_ADJ_ALL_FDR",adjustment_method = "BH", area ="GENE",
+    inference_source <- assoc_results_get(inference_details_origin, marker,
+      pvalue_column="PVALUE_ADJ_ALL_FDR", adjustment_method = "BH",
+      area = "GENE", scope = "INSTANCE",
       omit_na = TRUE, significance = TRUE)
 
     # C-06: stop if the origin results carry a GENOME_BUILD that differs from the

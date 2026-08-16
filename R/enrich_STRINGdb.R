@@ -74,8 +74,9 @@ enrich_STRINGdb <- function(study,
       results_inference <- assoc_results_get(
         inference_detail =  inference_detail,
         marker = keys[i,"MARKER"],
-        adjust_per_area= adjust_per_area,
-        adjust_globally = adjust_globally,
+        # AI-257: neither coordinate was declared here — see enrich_WebGestalt.
+        area  = "GENE",
+        scope = "INSTANCE",
         pvalue_column=  pvalue_column,
         adjustment_method = adjustment_method,
         significance = TRUE)

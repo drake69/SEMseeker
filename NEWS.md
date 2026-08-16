@@ -182,6 +182,35 @@
 
 ### Bug fixes
 
+- **A consumer wrote over the file it was consuming (AI-257).**
+  `assoc_data_extractor()` read the canonical inference CSV, applied three
+  filters — the figures of the marker, the `areas_sql_condition` of the request,
+  the dropped `SAMPLES_SQL_CONDITION` columns — and wrote the filtered frame
+  back over the same path. Extracting was therefore destructive: a narrow
+  `areas_sql_condition` permanently reduced the result of the run, and the next
+  iteration of its own loop read a file a previous iteration had truncated. It
+  writes only to `destination_folder` now. `sem_metrics_name_collect()` left the
+  read path with it — its body is commented out in full, but what it used to do
+  is why it does not belong there: it wrote a registry to disk while a consumer
+  was reading.
+
+- **`assoc_results_get()` guessed which region class and which extent to read
+  (AI-257).** `area` defaulted to `"GENE"` and `scope` to `NULL`, which meant no
+  filter at all. Both are required now, and removing the defaults immediately
+  showed what they had been hiding: two enrichment backends declared neither, so
+  they were reading every extent — the collapsed `SCOPE = SAMPLE` rows
+  included — into a gene set, and four cross-study overlap call sites mixed the
+  collapsed row of a region class with its per-instance rows. All seven now
+  declare what they read.
+
+- **Two dead adjustment flags removed (AI-257).** `adjust_per_area` and
+  `adjust_globally` re-ran `p.adjust()` at read time on top of an already
+  adjusted column — `pvalue_column` defaults to `PVALUE_ADJ_ALL_BH`, so either
+  one meant BH over BH. No call site passed `TRUE`. `adjust_per_area` also
+  reused the name `area` as its loop counter, shadowing the parameter, so the
+  filter that followed selected the last area of the loop rather than the
+  requested one.
+
 - **The significance flags matched the method string, not the level (AI-257).**
   `SIGNIFICATIVE_ADJ_ALL` and `SIGNIFICATIVE_ADJ` were computed over *every*
   column whose name contained the method — `grepl("BH", colnames)` — so a second
