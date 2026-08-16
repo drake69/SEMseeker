@@ -1,9 +1,13 @@
 #' Statistics emitted for a signal scope
 #'
-#' Single source of truth for which statistics a scope carries: the producer
-#' composes the column names from this vector via [io_stat_colname()], and
-#' [util_signal_descriptors()] builds its output on it, so the computed keys and
-#' the declared vocabulary cannot drift apart.
+#' Single source of truth for which statistics a scope carries:
+#' [util_signal_descriptors()] builds its output on this vector, so the computed
+#' keys and the declared vocabulary cannot drift apart.
+#'
+#' It used to serve a second side — the producer of `SAMPLE_STATS_RESULT.csv`
+#' composed that file's column names from it via [io_stat_colname()]. AI-255
+#' removed the file, and with it that call site; this vector now has one
+#' consumer, and [io_stat_colname()] has none.
 #'
 #' MODELOW / MODEHIGH only make sense on a bounded, bimodal scale (beta in
 #' [0,1], the two peaks around 0 and 1). On M-values the distribution is

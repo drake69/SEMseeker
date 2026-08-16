@@ -1,9 +1,21 @@
-#' Compose a signal-descriptor column name of the sibling artefact
+#' Compose a signal-descriptor column name — superseded, no live caller
 #'
-#' `<SCOPE>_<STAT>`, e.g. `SAMPLE_MEDIAN` or `GENE_BODY_IQR`. See
-#' [io_scope_name()] for the naming contract this belongs to.
+#' `<SCOPE>_<STAT>`, e.g. `SAMPLE_MEDIAN` or `GENE_BODY_IQR`.
 #'
-#' @param scope scope name, as returned by [io_scope_name()].
+#' **Superseded twice over, and kept only until it is removed (AI-259).**
+#' AI-248 replaced the two rules of AI-223 — this one for descriptors and
+#' [io_burden_colname()] for burdens — with the single four-segment compositor
+#' [io_feature_colname()], where the statistic became the `AGGREGATION` segment:
+#' `SAMPLE_MEDIAN` is `SAMPLE_SIGNAL_BETA_MEDIAN` under that rule. AI-255 then
+#' removed the artefact these names described, `SAMPLE_STATS_RESULT.csv`.
+#' Nothing in `R/` calls this function.
+#'
+#' Read it as a record of a superseded contract, not as one in force: a caller
+#' that composes a name this way builds a string no reader of this package looks
+#' up.
+#'
+#' @param scope scope name: a region class (`<AREA>` or `<AREA>_<SUBAREA>`), or
+#'   `"SAMPLE"`.
 #' @param stat one of the statistics declared by [io_signal_stats()].
 #' @keywords internal
 #' @noRd
