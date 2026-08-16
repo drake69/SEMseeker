@@ -1,4 +1,10 @@
-# AI-185 (2026-06-26): unit tests for assoc_statistical_power().
+# AI-185. The function is internal (@keywords internal @noRd), so it is NOT on
+# the search path of the installed package: every call needs the ::: form.
+# devtools::load_all() puts internals in scope and hides this, which is why
+# these tests passed locally and every one of them errored in CI with
+# "could not find function". The original commit had the same defect, so this
+# file had never once run against an installed package.
+# AI-185 (2026-06-26): unit tests for SEMseeker:::assoc_statistical_power().
 #
 # This exercises the STATISTICAL MACHINERY (per-probe partial f^2 + non-central
 # F power + prospective design-power verdict), so it deliberately uses a small
@@ -23,7 +29,7 @@ make_signal <- function(n, beta_effect, seed = 1) {
 
 test_that("associated probes get higher power than null probes (continuous exposure)", {
   d <- make_signal(n = 60, beta_effect = 0.8)
-  res <- assoc_statistical_power(d$signal, d$ss, exposure = "exposure",
+  res <- SEMseeker:::assoc_statistical_power(d$signal, d$ss, exposure = "exposure",
                                   alpha = 0.05)
 
   pp <- res$per_probe
@@ -39,7 +45,7 @@ test_that("associated probes get higher power than null probes (continuous expos
 
 test_that("per-probe power matches pwr::pwr.f2.test on the observed f2", {
   d <- make_signal(n = 50, beta_effect = 0.5)
-  res <- assoc_statistical_power(d$signal, d$ss, exposure = "exposure",
+  res <- SEMseeker:::assoc_statistical_power(d$signal, d$ss, exposure = "exposure",
                                   alpha = 0.05)
   pp <- res$per_probe
   v  <- res$summary$v
@@ -61,9 +67,9 @@ test_that("design-power verdict flips with sample size", {
   large <- make_signal(n = 400, beta_effect = 0.5)
 
   # target_f2 = 0.15 (medium): underpowered at n=12, correctly powered at n=400
-  v_small <- assoc_statistical_power(small$signal, small$ss,
+  v_small <- SEMseeker:::assoc_statistical_power(small$signal, small$ss,
                                       exposure = "exposure", alpha = 0.05)$summary
-  v_large <- assoc_statistical_power(large$signal, large$ss,
+  v_large <- SEMseeker:::assoc_statistical_power(large$signal, large$ss,
                                       exposure = "exposure", alpha = 0.05)$summary
 
   expect_equal(v_small$verdict, "underpowered")
@@ -79,7 +85,7 @@ test_that("categorical exposure uses an (L-1)-df block", {
   d <- make_signal(n = 90, beta_effect = 0.4)
   # 3-level categorical exposure
   d$ss$grp <- factor(rep(c("A", "B", "C"), length.out = nrow(d$ss)))
-  res <- assoc_statistical_power(d$signal, d$ss, exposure = "grp",
+  res <- SEMseeker:::assoc_statistical_power(d$signal, d$ss, exposure = "grp",
                                   alpha = 0.05)
   expect_equal(res$summary$exposure_type, "categorical")
   expect_equal(res$summary$u, 2L)                    # L - 1 = 2
@@ -98,8 +104,8 @@ test_that("covariate adjustment removes covariate-driven signal (partial f2)", {
   ss <- data.frame(Sample_ID = colnames(sig), exposure = exposure, conf = conf,
                    stringsAsFactors = FALSE)
 
-  unadj <- assoc_statistical_power(sig, ss, exposure = "exposure", alpha = 0.05)
-  adj   <- assoc_statistical_power(sig, ss, exposure = "exposure",
+  unadj <- SEMseeker:::assoc_statistical_power(sig, ss, exposure = "exposure", alpha = 0.05)
+  adj   <- SEMseeker:::assoc_statistical_power(sig, ss, exposure = "exposure",
                                     covariates = "conf", alpha = 0.05)
 
   # exposure is null; adjusting for the confounder must not inflate its f2.
