@@ -1,4 +1,9 @@
-tempFolders <<- file.path(tempdir(), paste0("test_enrich_hypothesis_", seq_len(4)))
+# No tempFolders here on purpose. It is a shared global built once in setup.R,
+# and these tests need no session at all — they exercise pure vocabulary
+# functions. Re-assigning it truncated the vector for every file that runs
+# after this one alphabetically, which is how a change confined to the
+# enrichment vocabulary took down semseeker(), the association suite and the
+# burden integration in CI.
 
 test_that("neither question has a default, and the refusal is the question", {
   # AI-261. Until this release the package answered both on the caller's behalf
