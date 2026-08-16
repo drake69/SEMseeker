@@ -87,7 +87,6 @@ test_that("assoc_glm_model_bulk produces one row per probe with legacy schema", 
     dototal              = FALSE,
     session_folder       = tempdir(),
     independent_variable = "IV",
-    depth_analysis       = 3L,
     samples_sql_condition = ""
   )
 
@@ -116,7 +115,6 @@ test_that("Rfast estimates roughly match stats::glm on the same data", {
     dototal              = FALSE,
     session_folder       = tempdir(),
     independent_variable = "IV",
-    depth_analysis       = 3L,
     samples_sql_condition = ""
   )
 
@@ -157,7 +155,6 @@ test_that("wrong family_test returns NULL", {
     dototal              = FALSE,
     session_folder       = tempdir(),
     independent_variable = "IV",
-    depth_analysis       = 3L,
     samples_sql_condition = ""
   )
   expect_null(res)

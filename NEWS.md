@@ -4,6 +4,105 @@
 
 ### Breaking changes
 
+- **The extent a number is valid over is a coordinate of its own, `SCOPE`
+  (AI-255).** A burden over the whole sample and a burden per gene are the same
+  marker reduced over different extents. They used to live in artefacts of
+  different *shape* — a sibling CSV with samples down the rows, and a pivot with
+  areas down the rows — and that difference in shape is what hid the difference
+  in meaning. Both are now pivots, and the name says which is which:
+
+  ```
+  <MARKER>_<FIGURE>_<SCOPE>_<AREA>_<SUBAREA>_<AGGREGATION>_<GENOME_BUILD>
+
+  MUTATIONS_HYPER_SAMPLE_PROBE_WHOLE_SUM_HG19     burden of the whole sample
+  MUTATIONS_HYPER_SAMPLE_GENE_WHOLE_SUM_HG19      same, over gene probes only
+  DELTAS_HYPO_INSTANCE_GENE_TSS200_MEDIAN_HG19    median per gene, TSS200 window
+  SIGNAL_BETA_INSTANCE_PROBE_WHOLE_VALUE_HG19     the beta value per probe
+  ```
+
+  `SCOPE = SAMPLE` collapses the region class to one number per sample — such an
+  artefact is one row tall — while `SCOPE = INSTANCE` keeps one row per gene,
+  island or probe.
+
+- **The aggregation requested at `SCOPE = INSTANCE` is now the one you get.** It
+  was validated and then dropped on the way to the read, so asking for the
+  median of a region returned its mean: the file existed, its name said nothing
+  about which operator had produced it, and nothing complained. Result folders
+  from earlier versions do not match the new names and recompute once.
+
+- **`VALUE` names the identity.** A `PROBE` or `POSITION` row already holds a
+  single position, so there is nothing to reduce; `VALUE` says so, where before
+  the aggregation segment was simply absent. Its absence is again an error
+  everywhere else.
+
+- **`SAMPLE_STATS_RESULT.csv` is gone.** Its content is the `SCOPE = SAMPLE`
+  artefacts, and the readable per-sample table is composed on read by
+  `sem_study_summary_get(regions = ...)`, which joins them onto the sample
+  sheet. `sem_study_summary_get()` with no arguments behaves as before.
+
+- **`semseeker(sample_stats_scopes = ...)` was removed.** Which region classes
+  you want is no longer a decision to be made before the run: the artefacts are
+  built when they are asked for. The error that used to say *"produce it with
+  `semseeker(sample_stats_scopes = ...)` and rerun the analysis"* is gone —
+  changing your mind now costs one scan of the position pivot instead of a whole
+  SEM run. Ask for a region class at analysis time with
+  `association_analysis(inference_details$scopes)` or
+  `sem_study_summary_get(regions = ...)`.
+
+  The cost moved rather than vanished: the call that asks for a region class has
+  to know it, so `association_analysis(inference_details$scopes = "GENE_TSS1500")`
+  needs `areas` and `subareas` to cover `GENE`/`TSS1500` — a run that does not
+  register the pair refuses the request instead of silently testing nothing. The
+  registry is also what resolves `GENE_TSS1500` into its two coordinates without
+  splitting the string, which cannot be done safely: `N_SHORE` carries an
+  underscore of its own.
+
+- **`MODE_LOW` / `MODE_HIGH` are spelled `MODELOW` / `MODEHIGH`**, and they are
+  admissible only at `SCOPE = SAMPLE`. Per instance a gene holds about nineteen
+  probes and a TSS200 window two to five: a two-peak density estimate on those
+  is shaped by the bandwidth rather than by the data, and the old code returned
+  that number instead of refusing. A minimum-numerosity guard now returns `NA`
+  rather than a plausible-looking value.
+
+- **`depth_analysis` is gone, and so is the `DEPTH` column.** Not derived, not
+  deprecated: removed. Once every artefact has the same shape — a key column and
+  one column per sample — a model handed a row does not know, and has no reason
+  to ask, whether the key of that row is a gene symbol or `PROBE_WHOLE`. It
+  fits. The two consumers merged into one (`assoc_run_marker()`, which replaces
+  `sem_run_depth1_marker()` and `sem_run_depth_n_marker()`), and the granularity
+  is said by `SCOPE`, `AREA` and `SUBAREA` — which say more, because those pairs
+  are only *partially* ordered and an integer scale projected a lattice onto a
+  line.
+
+- **The `TOTAL` column is gone.** It was `sum` of the per-area aggregates, and
+  `depth_analysis == 2` meant "test only that" — but the partition into areas is
+  not disjoint, so a probe the annotation maps onto three genes entered that
+  total three times. It was the composition of aggregates this release forbids,
+  in the one place nobody looked for it. What it meant to compute — the whole
+  region class, one number per sample — is now an artefact of its own:
+  `SCOPE = SAMPLE` on that `(AREA, SUBAREA)`, derived from the masked position
+  pivot where every position counts once.
+
+- **`AREA_OF_TEST` names the aggregate for collapsed artefacts.** At
+  `SCOPE = SAMPLE` a row is the whole region class reduced to one number, and
+  which class that is is already said by `AREA` and `SUBAREA`; what the row
+  needs to say is *which aggregate*. So it carries `MEAN`, `MEDIAN`, `SUM`, …
+  Previously it repeated the region class, leaving the mean and the median of
+  the same class with the same `AREA_OF_TEST`.
+
+- **The taxonomy key leads the result file**, in the order `MARKER`, `FIGURE`,
+  `SCOPE`, `AREA`, `SUBAREA`, `AGGREGATION`, `AREA_OF_TEST`, and a missing value
+  in any of them stops the write. The key is the identity of a row: two rows with
+  a hole in the same place cannot be told apart. The old code filled such holes
+  instead — `SUBAREA` became the literal `"TOTAL"`, a value outside its own
+  vocabulary — which is how a defect hides inside a key.
+
+- **`N_PROBES` moved to `SAMPLE_SHEET_RESULT.csv`.** It is a property of the
+  imputation — how many positions of that sample survived the treatment of
+  missing values — not an aggregation of a marker, so it sits with the
+  descriptive properties of the sample. Nothing is lost for the density: the
+  `MEAN` of a binary marker *is* the density, denominator included.
+
 - **Every computed quantity is now named by four coordinates (AI-248).** A
   number produced by SEMseeker is the reduction of a set of genomic positions,
   and until now the operator that reduced them was implicit — one per marker, so
@@ -20,8 +119,8 @@
   | `SAMPLE_MUTATIONS_HYPER` | `SAMPLE_MUTATIONS_HYPER_SUM` |
   | `SAMPLE_DELTAS_HYPO` | `SAMPLE_DELTAS_HYPO_MEAN` |
   | `SAMPLE_MEDIAN` | `SAMPLE_SIGNAL_BETA_MEDIAN` |
-  | `SAMPLE_MODE_LOW` | `SAMPLE_SIGNAL_BETA_MODE_LOW` |
-  | `SAMPLE_N_PROBES` | unchanged — it is a property of the scope, not of a marker |
+  | `SAMPLE_MODE_LOW` | `SAMPLE_SIGNAL_BETA_MODELOW` |
+  | `SAMPLE_N_PROBES` | moved to `SAMPLE_SHEET_RESULT.csv` as `N_PROBES` — see the AI-255 entry above |
 
 - **The figure of `SIGNAL` is the scale of the values, `BETA` or `MVALUE`.** It
   used to be `MEAN`, a placeholder that made the key unique while describing a
@@ -107,7 +206,9 @@
   description of the study; the two files join on `Sample_ID`, and
   `sem_study_summary_get()` performs that join for you, so analyses inside the
   package are unaffected. Code that read the burden straight from
-  `SAMPLE_SHEET_RESULT.csv` must read the sibling instead.
+  `SAMPLE_SHEET_RESULT.csv` must read the sibling instead. *(Superseded in
+  0.99.5: the sibling file no longer exists, the join is composed from the
+  `SCOPE = SAMPLE` artefacts, and `N_PROBES` returned to the sample sheet.)*
 
 ### New features
 

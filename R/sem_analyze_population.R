@@ -192,7 +192,12 @@ sem_analyze_population <- function(signal_data, sample_sheet,signal_thresholds, 
 
     # Only pay the read.delim cost when at least one figure needs computing.
     if (need_mut_hyper || need_mut_hypo || need_deltas_hypo || need_deltar_hypo) {
-      bed_filename <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", io_signal_figure())
+      # Every call inside the worker has to be namespace-qualified: the foreach
+      # expression is evaluated in an environment that does not have the package
+      # namespace on its search path. io_signal_figure() was left unqualified
+      # when AI-248 introduced it, which resolves under an attached package but
+      # not in a parallel worker.
+      bed_filename <- SEMseeker:::io_bed_file_name(local_sample_detail$Sample_ID,local_sample_detail$Sample_Group, "SIGNAL", SEMseeker:::io_signal_figure())
       signal_values <- utils::read.delim(bed_filename, header = FALSE, sep = "\t")
       colnames(signal_values) <- c("CHR", "START", "END", "VALUE")
       signal_values$CHR <- SEMseeker:::anno_normalize_chr(signal_values$CHR, "internal")

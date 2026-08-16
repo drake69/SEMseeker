@@ -22,7 +22,7 @@ assoc_volcano_plot_inference(
 \item{inference_detail}{A single row of `inference_details` (data.frame
 or list) — the same shape consumed by `association_analysis()`. Must
 carry `independent_variable`, `family_test`, `covariates`,
-`covariates_dummy`, `transformation_y`, `depth_analysis`,
+`covariates_dummy`, `transformation_y`,
 `areas_sql_condition`, `samples_sql_condition`.}
 
 \item{result_folder}{Project results folder (e.g.
@@ -66,7 +66,7 @@ convention so the visual artifact is one-to-one traceable to the
 analytic output:
 }
 \details{
-`{MARKER}_DEPTH_{depth}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
+`{MARKER}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
 
 (passed through `core_name_cleaning()` which uppercases + replaces
 comparison operators with `_GT_` / `_LT_` / `_EQ_` etc.)

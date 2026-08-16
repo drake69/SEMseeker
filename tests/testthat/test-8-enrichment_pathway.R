@@ -112,7 +112,7 @@ test_that("enrich_WebGestalt returns NULL gracefully when WebGestaltR not instal
       family_test          = "spearman",
       transformation_y     = "",
       transformation_x     = "",
-      depth_analysis       = 1L,
+      aggregation          = "SUM",
       filter_p_value       = FALSE,
       areas_sql_condition  = NA,
       samples_sql_condition = NA,
@@ -146,7 +146,7 @@ test_that("enrich_STRINGdb returns NULL gracefully when STRINGdb not installed",
       family_test          = "spearman",
       transformation_y     = "",
       transformation_x     = "",
-      depth_analysis       = 1L,
+      aggregation          = "SUM",
       filter_p_value       = FALSE,
       stringsAsFactors = FALSE
     )
@@ -176,7 +176,7 @@ test_that("enrich_pathfindR returns NULL gracefully when pathfindR not installed
       family_test          = "spearman",
       transformation_y     = "",
       transformation_x     = "",
-      depth_analysis       = 1L,
+      aggregation          = "SUM",
       filter_p_value       = FALSE,
       stringsAsFactors = FALSE
     )
@@ -242,7 +242,8 @@ test_that("enrich_ctdR runs without error on synthetic association results", {
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 3L,       # depth=3 reads gene-level pivot files
+
+    aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
   )

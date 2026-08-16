@@ -35,10 +35,8 @@
 #' @param covariates character vector of covariate column names.
 #' @param key list / row carrying MARKER/FIGURE/AREA/SUBAREA.
 #' @param transformation_y character; passed through to the output.
-#' @param dototal logical; ignored (kept for caller-symmetry).
 #' @param session_folder character; ignored (kept for caller-symmetry).
 #' @param independent_variable character; single column name (factor IV).
-#' @param depth_analysis integer; passed to io_data_preparation().
 #' @param samples_sql_condition character; passed to io_data_preparation().
 #' @param ... ignored.
 #'
@@ -50,10 +48,9 @@
 #' @noRd
 assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
                             covariates = NULL, key,
-                            transformation_y, dototal,
+                            transformation_y,
                             session_folder,
                             independent_variable,
-                            depth_analysis = 3,
                             samples_sql_condition, ...) {
 
   if (!requireNamespace("Rfast", quietly = TRUE)) {
@@ -77,7 +74,7 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
     as.character(inference_detail$transformation_x) else "none"
   prepared <- io_data_preparation(family_test, transformation_y, tempDataFrame,
                                 independent_variable, g_start, ncol(tempDataFrame),
-                                FALSE, covariates, depth_analysis, key,
+                                covariates, key,
                                 transformation_x = transformation_x_local)
   tempDataFrame <- prepared$tempDataFrame
   iv_levels <- prepared$independent_variableLevels

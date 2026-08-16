@@ -8,7 +8,7 @@
 #' convention so the visual artifact is one-to-one traceable to the
 #' analytic output:
 #'
-#'   `{MARKER}_DEPTH_{depth}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
+#'   `{MARKER}_{IV}_{transformation_y}_{family}_{covariates}_{areas_sql_condition}_{AREA}_{SUBAREA}.png`
 #'
 #' (passed through `core_name_cleaning()` which uppercases + replaces
 #' comparison operators with `_GT_` / `_LT_` / `_EQ_` etc.)
@@ -16,7 +16,7 @@
 #' @param inference_detail A single row of `inference_details` (data.frame
 #'   or list) — the same shape consumed by `association_analysis()`. Must
 #'   carry `independent_variable`, `family_test`, `covariates`,
-#'   `covariates_dummy`, `transformation_y`, `depth_analysis`,
+#'   `covariates_dummy`, `transformation_y`,
 #'   `areas_sql_condition`, `samples_sql_condition`.
 #' @param result_folder Project results folder (e.g.
 #'   `~/.../results/GSE225845`). The function reads CSVs from
@@ -109,7 +109,6 @@ assoc_volcano_plot_inference <- function(inference_detail,
   covariates_dummy <- as.character(inference_detail$covariates_dummy)
   transformation_y <- as.character(inference_detail$transformation_y)
   if (!nzchar(transformation_y)) transformation_y <- "none"
-  depth_analysis   <- as.integer(inference_detail$depth_analysis)
   areas_sql        <- as.character(inference_detail$areas_sql_condition)
   if (length(areas_sql) == 0L || !nzchar(areas_sql)) areas_sql <- ""
 
@@ -118,7 +117,7 @@ assoc_volcano_plot_inference <- function(inference_detail,
                                             c("VOLCANO"))
 
   # If markers not supplied, scan Inference/ for CSVs that match the
-  # current inference_detail shape (same IV/family/depth) and extract
+  # current inference_detail shape (same IV and family) and extract
   # the leading MARKER token from the file basename.
   if (is.null(markers) || length(markers) == 0L) {
     candidate_csvs <- list.files(inference_folder, pattern = "\\.csv$",
@@ -161,18 +160,17 @@ assoc_volcano_plot_inference <- function(inference_detail,
     # success above and the manual-scan path further down).
     csv_basename <- if (!is.null(csv_path))
       tools::file_path_sans_ext(basename(csv_path)) else
-      paste(c(marker, "DEPTH", depth_analysis,
+      paste(c(marker,
               core_name_cleaning(iv),
               core_name_cleaning(transformation_y),
               core_name_cleaning(family_test)), collapse = "_")
 
     if (is.null(csv_path) || !file.exists(csv_path)) {
       # Permissive fallback: scan Inference/ for a file starting with
-      # `{MARKER}_DEPTH_{depth}_{IV}_` and matching family. Useful when
+      # `{MARKER}_{IV}_` and matching family. Useful when
       # the inference_detail row has changed slightly since the CSV was
       # written (e.g. additional dummy covariates added downstream).
-      prefix <- core_name_cleaning(paste(c(marker, "DEPTH", depth_analysis,
-                                      iv), collapse = "_"))
+      prefix <- core_name_cleaning(paste(c(marker, iv), collapse = "_"))
       fam_tok <- core_name_cleaning(family_test)
       candidates <- list.files(inference_folder, pattern = "\\.csv$",
                                 full.names = TRUE)

@@ -47,6 +47,14 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
+    # An explicit deadline, so exceeding it is a TIMEOUT — which GitHub reports
+    # as such and whose logs it still uploads — rather than an abrupt kill.
+    # Windows run 31852499666 failed with no failed step and no log at all
+    # (`BlobNotFound`): nothing survived to say why, and the successful runs of
+    # the days before had taken LONGER, so it was not the default deadline.
+    # 330 minutes leaves headroom over the ~5h a healthy full matrix takes.
+    timeout-minutes: 330
+
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
@@ -186,3 +194,22 @@ jobs:
           upload-snapshots: true
           args: ${{ matrix.config.args }}
           error-on: '"error"'
+
+      # `if: always()` so the evidence survives a failure. check-r-package
+      # already uploads its own artifacts on failure, but only when it gets to
+      # finish; this keeps whatever R CMD check had written to disk up to the
+      # moment it stopped — which is exactly what was missing when the Windows
+      # job died without a log.
+      - name: Upload check directory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-${{ matrix.config.os }}-${{ matrix.config.r }}
+          path: |
+            check/**/*.log
+            check/**/*.out
+            check/**/*.fail
+            check/**/00check.log
+            check/**/tests/**
+          if-no-files-found: ignore
+          retention-days: 14

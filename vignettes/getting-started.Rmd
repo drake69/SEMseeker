@@ -80,8 +80,9 @@ Starting from a normalised beta-value (or M-value) matrix, semseeker:
 4. Computes per-region **delta metrics**: the signed deviation beyond the
    reference interval (`DELTAS`), its ratio to the interval width (`DELTAR`),
    and their binned/ranked variants (`DELTAP`/`DELTARP`, `DELTAQ`/`DELTARQ`).
-5. Optionally analyses the **raw methylation signal** directly (mean per
-   region, `SIGNAL_MEAN`) for differential methylation without mutation calling.
+5. Optionally analyses the **raw methylation signal** directly (the `SIGNAL`
+   marker, reduced per region the way you ask) for differential methylation
+   without mutation calling.
 
 Supported input platforms: Illumina EPIC (850k), 450k, and 27k arrays
 (detected automatically from probe IDs).
@@ -296,23 +297,33 @@ Population-level pivot tables aggregate all samples per marker:
 
 ```
 Data/Pivots/
-├── SIGNAL/SIGNAL_BETA_PROBE_WHOLE_HG19.parquet       ← signal per probe, all samples
-├── MUTATIONS/MUTATIONS_HYPO_PROBE_WHOLE_HG19.parquet
-├── DELTARP/DELTARP_HYPER_GENE_WHOLE_HG19.parquet     ← DELTARP (hyper) per gene, all samples
+├── SIGNAL/SIGNAL_BETA_INSTANCE_PROBE_WHOLE_VALUE_HG19.parquet    ← one row per probe
+├── MUTATIONS/MUTATIONS_HYPO_INSTANCE_PROBE_WHOLE_VALUE_HG19.parquet
+├── DELTARP/DELTARP_HYPER_INSTANCE_GENE_WHOLE_SUM_HG19.parquet    ← one row per gene
+├── MUTATIONS/MUTATIONS_HYPER_SAMPLE_PROBE_WHOLE_SUM_HG19.parquet ← one row: the whole sample
 └── ...
 ```
 
-The `BETA` segment of the `SIGNAL` files is the **scale** of the value, not an
-operator: `BETA` for a proportion bounded in [0,1] and `MVALUE` for the
-logit-transformed one. A session on the M-value scale writes `SIGNAL_MVALUE_*`
-in the same places.
-
 Pivot file names follow
-`<MARKER>_<FIGURE>_<AREA>_<SUBAREA>[_<AGGREGATION>]_<GENOME_BUILD>.parquet`
-under `Data/Pivots/<MARKER>/`, uppercased. The `AGGREGATION` segment appears
-only where a scope carries several operators (`SUM`, `MEAN`, `MEDIAN`, …); the
-marker name is invariant across aggregation levels — only the `AREA` segment
-(`PROBE`, `GENE`, `ISLAND`, …) changes.
+`<MARKER>_<FIGURE>_<SCOPE>_<AREA>_<SUBAREA>_<AGGREGATION>_<GENOME_BUILD>.parquet`
+under `Data/Pivots/<MARKER>/`, uppercased. Read them as a sentence — *DELTARP
+hyper, over each instance, for GENE WHOLE, by SUM*. Six coordinates, and each
+one answers a different question:
+
+| coordinate | what it fixes |
+|---|---|
+| `MARKER` | which quantity |
+| `FIGURE` | which side of it (`HYPER`/`HYPO`), or for `SIGNAL` the **scale** of the value: `BETA` for a proportion bounded in [0,1], `MVALUE` for the logit-transformed one |
+| `SCOPE` | `SAMPLE` = one number per sample, so the file is **one row tall**; `INSTANCE` = one row per gene, island, cytoband or probe |
+| `AREA`, `SUBAREA` | the region class: which positions take part |
+| `AGGREGATION` | how those positions are reduced — `SUM`, `MEAN`, `MEDIAN`, `VARIANCE`, `IQR`, and `VALUE` when the row is already a single position so nothing is reduced |
+
+The two that differ by one token are worth reading together:
+
+```
+MUTATIONS_HYPER_SAMPLE_PROBE_WHOLE_SUM_HG19    the sample's total burden
+MUTATIONS_HYPER_SAMPLE_GENE_WHOLE_SUM_HG19     the same total, over gene probes only
+```
 
 ### Reading results
 
@@ -374,7 +385,7 @@ per region via the `SIGNAL` marker:
 
 | Marker | File pattern | Description |
 |---|---|---|
-| `SIGNAL` | `Pivots/SIGNAL/SIGNAL_BETA_*.parquet` | Per-region signal per sample, on the scale of the session (`BETA`, or `MVALUE`) |
+| `SIGNAL` | `Pivots/SIGNAL/SIGNAL_BETA_INSTANCE_*.parquet` | Per-region signal per sample, on the scale of the session (`BETA`, or `MVALUE`) |
 
 This pivot table has exactly the same structure as the mutation/delta tables
 and can be passed directly to `association_analysis()` — allowing you to test

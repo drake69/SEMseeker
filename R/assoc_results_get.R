@@ -3,7 +3,7 @@
 # High-level public functions (e.g. enrichment_analysis()) use `adjustment_methods`
 # (plural) because they accept a vector to iterate over multiple corrections.
 assoc_results_get <- function (inference_detail, marker, adjust_per_area = FALSE, adjust_globally = FALSE,
-  pvalue_column="PVALUE_ADJ_ALL_BH",adjustment_method = "BH", area ="GENE",
+  pvalue_column="PVALUE_ADJ_ALL_BH",adjustment_method = "BH", area ="GENE", scope = NULL,
   omit_na = TRUE, significance = NULL)
 {
 
@@ -52,7 +52,21 @@ assoc_results_get <- function (inference_detail, marker, adjust_per_area = FALSE
 
   sem_metrics_name_collect(results_inference)
   multiple_test_adj <- core_name_cleaning(ssEnv$multiple_test_adj)
-  results_inference <- subset(results_inference,DEPTH==3)
+  # AI-255: this reader is free — it returns the artefacts the caller asks for.
+  # It replaces `subset(DEPTH == 3)`, which said "per instance" through a number
+  # whose meaning had to be remembered, with the coordinates that say it.
+  #
+  # `area` was declared as a parameter but never filtered a single row: it was
+  # used only to rewrite AREA_OF_TEST a few lines below, so every caller got the
+  # AREA_OF_TEST of every other class as well. Writing the predicate out is what
+  # made that visible.
+  #
+  # The invariant SCOPE = INSTANCE & AREA = GENE belongs to enrichment, and is
+  # enforced where enrichment enters — not here, where the cross-study overlaps
+  # legitimately iterate over every area of the registry.
+  results_inference <- subset(results_inference, AREA == area)
+  if (!is.null(scope) && "SCOPE" %in% colnames(results_inference))
+    results_inference <- subset(results_inference, SCOPE == scope)
   results_inference$SIGNIFICATIVE_ADJ <- apply(results_inference[, grepl(multiple_test_adj,colnames(results_inference))], 1, function(x) all(x < as.numeric(ssEnv$alpha)))
   results_inference$SIGNIFICATIVE <- apply(results_inference[, grepl("PVALUE", colnames(results_inference)) & !grepl(multiple_test_adj,colnames(results_inference))], 1, function(x) all(x < as.numeric(ssEnv$alpha)))
   # results_inference <- results_inference[,c("AREA","SUBAREA","MARKER","FIGURE","AREA_OF_TEST","STATISTIC_PARAMETER",pvalue_column,"PVALUE","DEPTH")]

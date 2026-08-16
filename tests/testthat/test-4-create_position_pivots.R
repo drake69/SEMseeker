@@ -45,7 +45,10 @@ test_that("anno_create_position_pivots", {
     FIGURE = c("HYPER","HYPO")
   )
   area <- "POSITION"
-  subarea <- ""
+  # AI-255: every coordinate is explicit. The registry gives POSITION its
+  # subarea (WHOLE) like every other area; "" was this test writing a hole by
+  # hand, and the key composer now refuses it instead of filling it in.
+  subarea <- "WHOLE"
 
   # prova con un subset di colonne che non ha le lesioni
 

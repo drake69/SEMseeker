@@ -11,7 +11,7 @@
 #'   Phenolyzer binary directory via \code{phenolyzer_folder_bin}.
 #'
 #' @param inference_details data.frame. Inference parameter table (must contain
-#'   a \code{depth_analysis} column; rows with \code{depth_analysis == 3} are
+#'   the per-gene artefacts (SCOPE = INSTANCE, AREA = GENE) are
 #'   processed).
 #' @param adjust_per_area_s logical vector. Whether to adjust p-values per area
 #'   for each \code{pvalue_columns} entry.
@@ -97,7 +97,8 @@ enrichment_analysis <- function(inference_details, adjust_per_area_s, adjust_glo
   }
 
 
-  inference_details <- subset(inference_details, depth_analysis ==3)
+  # AI-255: nothing to select here. The enrichment invariant is SCOPE = INSTANCE
+  # and AREA = GENE, and it is enforced where the results are read.
   for (alpha in alphas)
   {
     for (id in seq_len(nrow(inference_details)))

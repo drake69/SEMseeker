@@ -161,7 +161,6 @@ test_that("association_analysis depth=1 gaussian runs without error and writes i
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
     aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
@@ -253,7 +252,6 @@ test_that("association_analysis depth=3 reads area pivots and writes inference C
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 3L,
     aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
@@ -313,7 +311,6 @@ test_that("association_analysis polynomial family runs without error", {
     family_test          = "polynomial_2_1",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
     aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
@@ -353,7 +350,6 @@ test_that("association_analysis with covariates runs and produces a assoc_covari
     covariates           = "Covariates1+Covariates2",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
     aggregation          = "SUM",
     filter_p_value       = FALSE,
     collinearity_check   = TRUE,
@@ -394,7 +390,6 @@ test_that("association_analysis is idempotent: second run on same folder does no
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
     aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE
@@ -473,7 +468,6 @@ test_that("association_analysis skips gracefully when independent_variable absen
     family_test          = "spearman",
     transformation_y     = "",
     transformation_x     = "",
-    depth_analysis       = 1L,
     aggregation          = "SUM",
     filter_p_value       = FALSE,
     stringsAsFactors     = FALSE

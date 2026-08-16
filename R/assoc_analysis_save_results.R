@@ -13,7 +13,7 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   results$GENOME_BUILD <- genome_build_val
   results$TECH         <- tech_val
 
-  utils::write.csv2(results,fileNameResults , row.names  =  FALSE)
+  utils::write.csv2(.assoc_key_first(results), fileNameResults, row.names = FALSE)
   multiple_test_adj <- core_name_cleaning(ssEnv$multiple_test_adj)
   # there is a bug which mantain more family test in the same results file
   # so we need to filter the results
@@ -38,6 +38,25 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
     # remove all existing column adjusted all pvalues
     results <- unique(results[,!grepl("_ADJ_ALL_", colnames(results))])
 
+    # AI-257: PVALUE_ADJ is adjusted WITHIN THE KEY — the instances tested for
+    # one measurement — and it is recomputed here because here is the only place
+    # where every row of a key is together.
+    #
+    # assoc_apply_stat_model() adjusts what it has in hand, and what it has in
+    # hand is one CHUNK: sem_run_depth_n_marker() splits a pivot at
+    # ceiling(6e6 / ncol) rows, so a 485k-probe pivot on ~100 samples is nine
+    # independent BH corrections instead of one. That made the family a memory
+    # parameter rather than a statistical choice.
+    #
+    # The family is the key and not the whole file because the file now holds the
+    # same area several times — once per aggregation asked for. Adjusting across
+    # all of them would make the correction a function of how many ways you
+    # looked rather than of how many hypotheses you tested: request MEAN, MEDIAN
+    # and IQR of the same genes and every adjusted p roughly triples. The global
+    # correction is still available in PVALUE_ADJ_ALL_<method>, and the two say
+    # different things on purpose.
+    results <- .assoc_adjust_within_key(results)
+
     if (exists("results") & length(pvalue_columns)>0)
     {
       for (p in seq_along(pvalue_columns))
@@ -60,12 +79,17 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
     if(nrow(results)==0)
       return()
 
-    results$DEPTH <- 3
-    # replace NA of SUBAREA with TOTAL
-    results[is.na(results$SUBAREA),"SUBAREA"] <- "TOTAL"
-    results[results$SUBAREA=="SAMPLE","DEPTH"] <- 1
-    selector <- grepl("TOTAL",results$AREA_OF_TEST)
-    results[selector,"DEPTH"] <- 2
+    # AI-255: DEPTH is not stamped any more. It was a number standing in for
+    # what SCOPE, AREA and SUBAREA now say outright, and it stood in badly: the
+    # 1/2/3 ladder projected a partial order onto a line, and its rung 2 marked
+    # rows produced by composing aggregates — a quantity that no longer exists.
+    # Nothing reads it to decide anything, so writing it would only invite
+    # someone to start.
+    #
+    # Gone with it: `results[is.na(results$SUBAREA), "SUBAREA"] <- "TOTAL"`.
+    # TOTAL was the label of that synthesis, and it is not a value of the
+    # SUBAREA vocabulary — filling a missing coordinate with an invented one
+    # hides the defect inside the key instead of showing it.
     # replace empty with NA
     results[results == ""] <- NA
     results[results == " "] <- NA
@@ -87,7 +111,11 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
   # C-06: include provenance columns in the grouping key so summarise() preserves them
   # AI-248: AGGREGATION is part of the identity. Without it the summarise(max)
   # below would fuse the median and the mean of the same scope into one row.
-  group_column <- c("MARKER", "FIGURE", "AGGREGATION", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",
+  # AI-255: SCOPE belongs here too. Without it the collapsed row and the
+  # per-instance row of the same region class would be fused by the summarise
+  # below — the very thing the aggregation axis was added to prevent, one
+  # coordinate further along.
+  group_column <- c("MARKER", "FIGURE", "SCOPE", "AGGREGATION", "AREA", "SUBAREA", "AREA_OF_TEST", "FAMILY_TEST",
                     "TRANSFORMATION_Y", "R_MODEL", "TRANSFORMATION_X",
                     "INDEPENDENT_VARIABLE", "COVARIATES",
                     "GENOME_BUILD", "TECH")
@@ -104,6 +132,112 @@ assoc_analysis_save_results <- function(results=NULL,fileNameResults, family_tes
                                      ~ max(.x, na.rm = TRUE)),
                        .groups = 'drop')
 
-    utils::write.csv2(results,fileNameResults , row.names  =  FALSE)
+    utils::write.csv2(.assoc_key_first(results), fileNameResults, row.names = FALSE)
   }
+}
+
+#' Adjust p-values within the key, not within the chunk (internal)
+#'
+#' AI-257. The family over which an FDR is controlled has to be a statistical
+#' choice. Two things had made it something else:
+#'
+#' \itemize{
+#'   \item `assoc_apply_stat_model()` adjusts whatever `result_temp` it is
+#'     handed, and at `SCOPE = INSTANCE` that is one chunk of the pivot — the
+#'     family was the memory split;
+#'   \item since the aggregation became an axis, one file holds the same area
+#'     once per aggregation requested, so adjusting across the whole file makes
+#'     the correction depend on how many ways the data were described.
+#' }
+#'
+#' The family is therefore the identity key minus the instance: the areas tested
+#' for one `(MARKER, FIGURE, SCOPE, AREA, SUBAREA, AGGREGATION)`. Asking for a
+#' second aggregation no longer penalises the first, and the choice *between*
+#' aggregations is a multiplicity to be handled by naming the aggregation in
+#' advance — not by a correction, which cannot tell a planned comparison from an
+#' opportunistic one.
+#'
+#' `PVALUE_ADJ_ALL_<method>` keeps the global view alongside it. The two answer
+#' different questions and the analysis has to say which one it used.
+#'
+#' @param results the accumulated results of the run.
+#' @return `results` with `PVALUE_ADJ` recomputed per family.
+#' @keywords internal
+#' @noRd
+.assoc_adjust_within_key <- function(results) {
+
+  if (is.null(results) || nrow(results) == 0 || !("PVALUE" %in% colnames(results)))
+    return(results)
+
+  key_cols <- intersect(c("MARKER", "FIGURE", "SCOPE", "AREA", "SUBAREA",
+                          "AGGREGATION"),
+                        colnames(results))
+  if (length(key_cols) == 0)
+    return(results)
+
+  pvalues <- suppressWarnings(as.numeric(results$PVALUE))
+  families <- do.call(paste, c(lapply(key_cols, function(cl)
+    as.character(results[[cl]])), list(sep = "\r")))
+
+  adjusted <- rep(NA_real_, length(pvalues))
+  for (fam in unique(families)) {
+    idx <- which(families == fam)
+    adjusted[idx] <- stats::p.adjust(pvalues[idx], method = "BH")
+  }
+
+  results$PVALUE_ADJ <- adjusted
+  results
+}
+
+#' Put the taxonomy key first, and refuse a key with a hole in it (internal)
+#'
+#' AI-255. The six coordinates plus `AREA_OF_TEST` — the instance within the
+#' artefact — are the identity of a result row, so they lead the file. A reader
+#' opening the CSV sees what the row *is* before seeing what was measured on it,
+#' and the column order stops depending on the order in which the models happened
+#' to add their fields.
+#'
+#' The NA check is the other half. Filling a missing coordinate used to be normal
+#' here — `results[is.na(results$SUBAREA), "SUBAREA"] <- "TOTAL"` invented a
+#' value that is not in the SUBAREA vocabulary — and that is exactly how a defect
+#' hides inside a key: two rows that cannot be told apart, and nothing to show
+#' for it. With every coordinate composed by one function there is no legitimate
+#' NA left, so an NA means something upstream did not set what it was supposed
+#' to, and it stops here rather than travelling into a dedup or a join.
+#'
+#' @param results the results data.frame.
+#' @return `results` with the key columns first.
+#' @keywords internal
+#' @noRd
+.assoc_key_first <- function(results) {
+
+  if (is.null(results) || nrow(results) == 0)
+    return(results)
+
+  key_cols <- c("MARKER", "FIGURE", "SCOPE", "AREA", "SUBAREA", "AGGREGATION",
+                "AREA_OF_TEST")
+  present <- intersect(key_cols, colnames(results))
+  if (length(present) == 0)
+    return(results)
+
+  # An empty SUBAREA has always meant "the whole area" — the same normalisation
+  # io_pivot_file_name() applies. Settle it before the check, so the convention
+  # is honoured and what remains missing is genuinely missing.
+  if ("SUBAREA" %in% present) {
+    blank <- is.na(results$SUBAREA) | !nzchar(trimws(as.character(results$SUBAREA)))
+    if (any(blank)) results$SUBAREA[blank] <- "WHOLE"
+  }
+
+  holed <- present[vapply(present, function(cl)
+    any(is.na(results[[cl]]) | !nzchar(trimws(as.character(results[[cl]])))),
+    logical(1))]
+  if (length(holed) > 0)
+    stop("the taxonomy key of a result row is incomplete: ",
+         paste(holed, collapse = ", "),
+         " carries missing values. The key is the identity of the row — two ",
+         "rows with a hole in the same place cannot be told apart — so this is ",
+         "a coordinate that was never set upstream, not a value to fill in.",
+         call. = FALSE)
+
+  results[, c(present, setdiff(colnames(results), present)), drop = FALSE]
 }

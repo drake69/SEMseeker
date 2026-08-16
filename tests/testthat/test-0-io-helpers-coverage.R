@@ -59,7 +59,7 @@ test_that(".io_make_probe_id strips the chr prefix and joins with START", {
 # io_inference_file_name
 # ---------------------------------------------------------------------------
 
-test_that("io_inference_file_name assembles a DEPTH/marker path", {
+test_that("io_inference_file_name assembles a marker path", {
   tf <- tempFolders[42]
   SEMseeker:::core_init_env(result_folder = tf, start_fresh = TRUE)
   on.exit({ SEMseeker:::core_close_env(); unlink(tf, recursive = TRUE) }, add = TRUE)
@@ -72,7 +72,6 @@ test_that("io_inference_file_name assembles a DEPTH/marker path", {
     transformation_y      = "",
     independent_variable  = "AGE",
     transformation_x      = "",
-    depth_analysis        = "3",
     samples_sql_condition = NULL
   )
 
@@ -81,7 +80,8 @@ test_that("io_inference_file_name assembles a DEPTH/marker path", {
 
   expect_type(path, "character")
   expect_length(path, 1L)
-  expect_match(path, "DEPTH", ignore.case = TRUE)
+  # AI-255: DEPTH left the path with the concept it named.
+  expect_false(grepl("DEPTH", path, ignore.case = TRUE))
   expect_match(path, "MUTATIONS", ignore.case = TRUE)
   expect_match(path, "\\.csv$", ignore.case = TRUE)
 })

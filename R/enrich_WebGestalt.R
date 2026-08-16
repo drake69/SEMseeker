@@ -58,6 +58,11 @@ enrich_WebGestalt <- function(study,
 
         results_inference <- assoc_results_get(
           inference_detail =  inference_detail,
+          # AI-257: enrichment happens for genes and nothing else — a pathway is a set
+          # of genes. And it needs a p-value PER gene, so a collapsed artefact (one
+          # number per sample) has nothing to list. Two coordinates, both invariant.
+          area  = "GENE",
+          scope = "INSTANCE",
           marker = keys[i,"MARKER"],
           adjust_per_area= adjust_per_area,
           adjust_globally = adjust_globally,

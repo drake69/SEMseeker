@@ -33,7 +33,11 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   tempFolders <<- tempFolders[-1]
   unlink(tempFolder, recursive = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
 
   # inpute="median" is defensive: harmless when the input has no NAs (the
   # guard at inpute_missing_values.R:7 short-circuits), useful if a future
@@ -59,19 +63,12 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   # by default so either spelling works; Linux ext4 is case-sensitive and
   # only the uppercase form resolves. Use uppercase here to be correct on
   # all three CI runners.
-  result_csv <- file.path(tempFolder, "Data", "SAMPLE_STATS_RESULT.csv")
+  # AI-255: the sibling CSV is gone. The per-sample table is composed on read
+  # from the SCOPE = SAMPLE artefacts and joined onto the sample sheet.
   sheet_csv  <- file.path(tempFolder, "Data", "SAMPLE_SHEET_RESULT.csv")
-  testthat::expect_true(
-    file.exists(result_csv),
-    info = sprintf(
-      "SAMPLE_STATS_RESULT.csv was not written by semseeker() — tempFolder=%s",
-      tempFolder
-    )
-  )
-  testthat::skip_if_not(file.exists(result_csv),
-                        "downstream assertions need the statistics sibling")
-
-  df <- utils::read.csv2(result_csv, stringsAsFactors = FALSE)
+  df <- SEMseeker:::sem_study_summary_get()
+  testthat::expect_true(!is.null(df) && nrow(df) > 0,
+    info = sprintf("no per-sample statistics composed — tempFolder=%s", tempFolder))
 
   # AI-223 net move: the sample sheet must NOT carry the burden any more
   sheet <- utils::read.csv2(sheet_csv, stringsAsFactors = FALSE)
@@ -90,7 +87,10 @@ test_that("sample_sheet_result.csv has populated burden columns for all discrete
   # AI-248: composed once in helper-burden.R, where the aggregation each class
   # produces by default is spelled out.
   required_burden_cols <- .burden_cols
-  required_cols <- c("Sample_ID", required_burden_cols, "SAMPLE_N_PROBES")
+  # AI-255: N_PROBES describes the sample, not a scope of it — it counts the
+  # positions the imputation left usable — so it comes in from the sample sheet
+  # under its own name.
+  required_cols <- c("Sample_ID", required_burden_cols, "N_PROBES")
 
   missing_cols <- setdiff(required_cols, colnames(df))
   testthat::expect_equal(
@@ -230,7 +230,11 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     unlink(tempFolder, recursive = TRUE)
   }, add = TRUE)
 
-  syn <- .burden_setup_signal_with_outliers()
+  syn <- .burden_setup_signal_with_outliers(
+    n_samples      = nsamples,
+    probe_features = probe_features,
+    sample_sheet   = mySampleSheet,
+    signal_data    = signal_data)
 
   # ewas_osteoporosis-style identifiers: core_name_cleaning() uppercases them
   # ("DNAm_sample1" -> "DNAM_SAMPLE1"), so sample sheet and pivot columns must
@@ -264,12 +268,9 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     verbosity         = verbosity
   )
 
-  result_csv <- file.path(tempFolder, "Data", "SAMPLE_STATS_RESULT.csv")
-  testthat::expect_true(file.exists(result_csv))
-  testthat::skip_if_not(file.exists(result_csv),
-                        "downstream assertions need the statistics sibling")
-
-  df <- utils::read.csv2(result_csv, stringsAsFactors = FALSE)
+  # AI-255: composed on read, no sibling file.
+  df <- SEMseeker:::sem_study_summary_get()
+  testthat::expect_true(!is.null(df) && nrow(df) > 0)
 
   # identifiers landed normalised on both sides
   testthat::expect_true(all(grepl("^DNAM_SAMPLE", df$Sample_ID)))
@@ -313,8 +314,12 @@ test_that("burden survives mixed-case Sample_IDs and a polluted global temp_resu
     showprogress      = FALSE,
     verbosity         = 1
   )
+  # AI-255: the check moved with the join. sem_sample_stats_build() now only
+  # materialises artefacts; it is sem_study_summary_get() that puts the sample
+  # sheet and the artefact columns side by side, so that is where a total
+  # identifier mismatch has to be caught rather than joined into a table of NAs.
   testthat::expect_error(
-    SEMseeker:::sem_sample_stats_build(),
+    SEMseeker:::sem_study_summary_get(),
     "no Sample_ID in common"
   )
 })

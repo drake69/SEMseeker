@@ -46,10 +46,10 @@ test_that("the two modes are admissible only on the bounded scale", {
                                                            default = FALSE)
   admissible_mval <- SEMseeker:::util_aggregations_allowed("SIGNAL", "MVALUE",
                                                            default = FALSE)
-  expect_true(all(c("MODE_LOW", "MODE_HIGH") %in% admissible_beta))
-  expect_false(any(c("MODE_LOW", "MODE_HIGH") %in% admissible_mval))
+  expect_true(all(c("MODELOW", "MODEHIGH") %in% admissible_beta))
+  expect_false(any(c("MODELOW", "MODEHIGH") %in% admissible_mval))
   # an unbounded marker has no bimodal split to speak of either
-  expect_false(any(c("MODE_LOW", "MODE_HIGH") %in%
+  expect_false(any(c("MODELOW", "MODEHIGH") %in%
                      SEMseeker:::util_aggregations_allowed("MUTATIONS", "HYPER",
                                                            default = FALSE)))
 })
@@ -105,23 +105,32 @@ test_that("util_aggregate_values computes what the name says", {
   expect_equal(SEMseeker:::util_aggregate_values(values, "VARIANCE"),
                stats::var(values))
   expect_equal(SEMseeker:::util_aggregate_values(values, "IQR"), stats::IQR(values))
-  expect_equal(SEMseeker:::util_aggregate_values(values, "N_PROBES"), length(values))
+  # AI-255: VALUE is the identity, and it is only meaningful on a single
+  # position — asking it of a set is a request that contradicts itself.
+  expect_equal(SEMseeker:::util_aggregate_values(0.42, "VALUE"), 0.42)
+  expect_error(SEMseeker:::util_aggregate_values(values, "VALUE"),
+               "single position")
+  # N_PROBES left the taxonomy: it is a property of the imputation, not an
+  # aggregation of a marker.
+  expect_error(SEMseeker:::util_aggregate_values(values, "N_PROBES"),
+               "unknown aggregation")
 })
 
 test_that("util_aggregate_values finds the two peaks of a bimodal sample", {
   set.seed(11L)
   values <- c(stats::rbeta(3000, 2, 40), stats::rbeta(3000, 40, 2))
-  low  <- SEMseeker:::util_aggregate_values(values, "MODE_LOW")
-  high <- SEMseeker:::util_aggregate_values(values, "MODE_HIGH")
+  low  <- SEMseeker:::util_aggregate_values(values, "MODELOW")
+  high <- SEMseeker:::util_aggregate_values(values, "MODEHIGH")
   expect_lt(low, 0.5)
   expect_gt(high, 0.5)
 })
 
 test_that("util_aggregate_values degrades instead of inventing a number", {
   expect_true(is.na(SEMseeker:::util_aggregate_values(numeric(0), "MEDIAN")))
-  expect_equal(SEMseeker:::util_aggregate_values(numeric(0), "N_PROBES"), 0L)
-  # non-finite values are not data
-  expect_equal(SEMseeker:::util_aggregate_values(c(1, NA, Inf, 3), "N_PROBES"), 2L)
+  expect_true(is.na(SEMseeker:::util_aggregate_values(numeric(0), "MEAN")))
+  # non-finite values are not data: the mean of c(1, NA, Inf, 3) is the mean of
+  # the two numbers that are.
+  expect_equal(SEMseeker:::util_aggregate_values(c(1, NA, Inf, 3), "MEAN"), 2)
   expect_error(SEMseeker:::util_aggregate_values(1:10, "AVERAGE"), "unknown aggregation")
 })
 
@@ -152,7 +161,8 @@ test_that("the pivot name carries the aggregation, and the scale for SIGNAL", {
 
   burden <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER", "CHR",
                                                    "CYTOBAND", aggregation = "SUM")
-  expect_match(basename(burden), "^MUTATIONS_HYPER_CHR_CYTOBAND_SUM_HG19\\.parquet$",
+  expect_match(basename(burden),
+               "^MUTATIONS_HYPER_INSTANCE_CHR_CYTOBAND_SUM_HG19\\.parquet$",
                ignore.case = TRUE)
 
   beta_mean <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "CHR",
@@ -162,12 +172,76 @@ test_that("the pivot name carries the aggregation, and the scale for SIGNAL", {
   # the two scales must not overwrite each other in the same folder
   expect_false(identical(beta_mean, mval_mean))
 
-  # omitting the aggregation is how the not-yet-aggregated POSITION pivots are
-  # named, and must keep the historical shape
+  # AI-255: omitting the aggregation resolves to VALUE where the block is a
+  # single position — the identity now has a name instead of being an absence.
   position <- SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER",
                                                      "POSITION", "WHOLE")
-  expect_match(basename(position), "^MUTATIONS_HYPER_POSITION_WHOLE_HG19\\.parquet$",
+  expect_match(basename(position),
+               "^MUTATIONS_HYPER_INSTANCE_POSITION_WHOLE_VALUE_HG19\\.parquet$",
                ignore.case = TRUE)
+
+  # ... and stays an error where it is not, because a block holding many
+  # positions was reduced somehow and the name has to say how.
+  expect_error(
+    SEMseeker:::io_pivot_file_name_parquet("MUTATIONS", "HYPER", "GENE", "WHOLE"),
+    "aggregation is required")
+
+  # the same region class collapsed to one number per sample is a different
+  # artefact, and says so in one token
+  collapsed <- SEMseeker:::io_pivot_file_name_parquet(
+    "MUTATIONS", "HYPER", "GENE", "WHOLE", aggregation = "SUM", scope = "SAMPLE")
+  expect_match(basename(collapsed),
+               "^MUTATIONS_HYPER_SAMPLE_GENE_WHOLE_SUM_HG19\\.parquet$",
+               ignore.case = TRUE)
+})
+
+test_that("the artefact key is injective over the closed vocabularies", {
+  tempFolder <- file.path(tempdir(), "test_key_injective")
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  # The key is the identity of a row, so two different coordinate tuples must
+  # never compose to the same string. It is not obvious that they cannot:
+  # core_name_cleaning() maps every separator to "_", and two vocabularies carry
+  # an underscore inside their values (N_SHORE, and CHR_CYTOBAND read as three
+  # tokens for two coordinates). This is the test that fails loudly the day
+  # someone adds a subarea called LOW or a marker called MODE.
+  grid <- expand.grid(
+    marker      = c("SIGNAL", "MUTATIONS", "DELTAS", "DELTAR", "DELTARP"),
+    figure      = c("HYPER", "HYPO", "BETA", "MVALUE"),
+    scope       = SEMseeker:::io_scope_vocabulary(),
+    area        = c("PROBE", "POSITION", "GENE", "ISLAND", "CHR", "DMR"),
+    subarea     = c("WHOLE", "TSS200", "TSS1500", "BODY", "OPENSEA", "CYTOBAND",
+                    "N_SHORE", "S_SHORE", "N_SHELF", "S_SHELF"),
+    aggregation = SEMseeker:::util_aggregation_vocabulary(),
+    stringsAsFactors = FALSE)
+
+  keys <- vapply(seq_len(nrow(grid)), function(i)
+    SEMseeker:::io_artefact_key(grid$marker[i], grid$figure[i], grid$scope[i],
+                                grid$area[i], grid$subarea[i],
+                                grid$aggregation[i]),
+    character(1))
+
+  expect_equal(length(unique(keys)), nrow(grid))
+})
+
+test_that("every coordinate of the key is required", {
+  tempFolder <- file.path(tempdir(), "test_key_required")
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  expect_error(
+    SEMseeker:::io_artefact_key("MUTATIONS", "HYPER", "INSTANCE", "GENE", "WHOLE", ""),
+    "every coordinate is required")
+  expect_error(SEMseeker:::io_scope_validate("DEPTH2"), "is not a scope")
 })
 
 # ---------------------------------------------------------------------------
@@ -183,7 +257,7 @@ test_that("a request that names no aggregation is refused, at every depth", {
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
   for (depth in c(1L, 2L, 3L)) {
     details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                          depth_analysis = depth, aggregation = NA,
+                          aggregation = NA,
                           stringsAsFactors = FALSE)
     expect_error(SEMseeker:::assoc_validate_aggregation(details, keys), "required")
   }
@@ -192,7 +266,7 @@ test_that("a request that names no aggregation is refused, at every depth", {
 test_that("an aggregation outside the taxonomy is refused", {
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
   details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                        depth_analysis = 1L, aggregation = "AVERAGE",
+                        aggregation = "AVERAGE",
                         stringsAsFactors = FALSE)
   expect_error(SEMseeker:::assoc_validate_aggregation(details, keys),
                "not an aggregation")
@@ -205,8 +279,7 @@ test_that("an impossible request drops its row instead of stopping the batch", {
   details <- data.frame(
     independent_variable = c("Phenotest", "Phenotest"),
     family_test          = c("spearman", "spearman"),
-    depth_analysis       = c(1L, 1L),
-    # MODE_LOW exists only for SIGNAL/BETA, so the first row is possible;
+    # MODELOW exists only for SIGNAL/BETA, so the first row is possible;
     # a run with only counts would make it impossible
     aggregation          = c("MEDIAN", "SUM"),
     stringsAsFactors = FALSE)
@@ -229,7 +302,6 @@ test_that("a batch keeps the rows it can run and drops the ones it cannot", {
   details <- data.frame(
     independent_variable = c("Phenotest", "Phenotest"),
     family_test          = c("spearman", "spearman"),
-    depth_analysis       = c(1L, 1L),
     aggregation          = c("MEDIAN", "SUM"),
     stringsAsFactors = FALSE)
 
@@ -242,8 +314,158 @@ test_that("a batch keeps the rows it can run and drops the ones it cannot", {
 test_that("a possible request passes silently", {
   keys <- .tax_keys(MARKER = "MUTATIONS", FIGURE = "HYPER", DISCRETE = TRUE)
   details <- data.frame(independent_variable = "Phenotest", family_test = "spearman",
-                        depth_analysis = 1L, aggregation = "SUM",
+                        aggregation = "SUM",
                         stringsAsFactors = FALSE)
   expect_silent(kept <- SEMseeker:::assoc_validate_aggregation(details, keys))
   expect_equal(nrow(kept), 1L)
+})
+
+# ---------------------------------------------------------------------------
+# the numbers, not just the names
+#
+# Everything above checks that the taxonomy is COHERENT: the right names, the
+# right admissibility, the right refusals. None of it checks that a number
+# coming out of the pipeline is the number it claims to be — and that is the gap
+# the original defect lived in. `MEDIAN` on GENE_TSS1500 returned the mean, and
+# every structural check passed while it did, because the mean is a perfectly
+# well-formed number under a column called MEDIAN.
+#
+# So: build a position pivot whose aggregates are known by hand, ask for two
+# different aggregations, and compare against an independent calculation.
+# ---------------------------------------------------------------------------
+
+test_that("two aggregations of the same artefact are two different numbers", {
+  tempFolder <- file.path(tempdir(), "test_two_aggregations")
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  # Chosen so mean and median differ, and so neither coincides with the other
+  # sample's: S1 mean 0.45 / median 0.40, S2 mean 0.50 / median 0.50.
+  s1 <- c(0.10, 0.90, 0.50, 0.30)
+  s2 <- c(0.20, 0.80, 0.40, 0.60)
+  df <- data.frame(CHR   = c("1", "1", "1", "2"),
+                   START = c(100L, 200L, 300L, 400L),
+                   END   = c(101L, 201L, 301L, 401L),
+                   S1 = s1, S2 = s2)
+
+  base <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "POSITION", "WHOLE")
+  dir.create(dirname(base), recursive = TRUE, showWarnings = FALSE)
+  polars::as_polars_df(df)$write_parquet(base)
+
+  written <- SEMseeker:::io_pivot_build("SIGNAL", "BETA", scope = "SAMPLE",
+                                        area = "PROBE", subarea = "WHOLE",
+                                        aggregations = c("MEAN", "MEDIAN"))
+  expect_length(written, 2L)
+
+  read_one <- function(agg) {
+    p <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "PROBE", "WHOLE",
+                                                aggregation = agg, scope = "SAMPLE")
+    expect_true(file.exists(p))
+    as.data.frame(polars::pl$read_parquet(p))
+  }
+
+  got_mean   <- read_one("MEAN")
+  got_median <- read_one("MEDIAN")
+
+  # A collapsed artefact is one row tall.
+  expect_equal(nrow(got_mean), 1L)
+  expect_equal(nrow(got_median), 1L)
+
+  # Each value equals the aggregation computed independently, in plain R.
+  expect_equal(got_mean$S1,   mean(s1))
+  expect_equal(got_mean$S2,   mean(s2))
+  expect_equal(got_median$S1, stats::median(s1))
+  expect_equal(got_median$S2, stats::median(s2))
+
+  # And the two are NOT the same number: this is the assertion that fails if an
+  # aggregation is ever silently answered with another one.
+  expect_false(isTRUE(all.equal(got_mean$S1, got_median$S1)))
+
+  # AREA_OF_TEST names the aggregate, since the region class is already said by
+  # AREA and SUBAREA.
+  expect_equal(got_mean$AREA,   "MEAN")
+  expect_equal(got_median$AREA, "MEDIAN")
+})
+
+test_that("the FDR family is the key, and the numbers say so", {
+  # AI-257. The family over which an FDR is controlled has to be a statistical
+  # choice, and twice it had been something else: adjusted per CHUNK inside
+  # assoc_apply_stat_model() (so the family was the memory split), then adjusted
+  # across the whole file (so it grew with how many aggregations were asked for).
+  # It is now the key minus the instance. This test compares against p.adjust()
+  # computed independently on each family, which is the only way to tell the
+  # three apart: they all produce well-formed p-values.
+  p_mean   <- c(0.001, 0.02, 0.30, 0.60)
+  p_median <- c(0.005, 0.05)
+
+  results <- data.frame(
+    MARKER      = "DELTAS",
+    FIGURE      = "HYPO",
+    SCOPE       = "INSTANCE",
+    AREA        = "GENE",
+    SUBAREA     = "WHOLE",
+    AGGREGATION = c(rep("MEAN", length(p_mean)), rep("MEDIAN", length(p_median))),
+    AREA_OF_TEST = c(paste0("G", seq_along(p_mean)), paste0("G", seq_along(p_median))),
+    PVALUE      = c(p_mean, p_median),
+    stringsAsFactors = FALSE)
+
+  out <- SEMseeker:::.assoc_adjust_within_key(results)
+
+  expect_equal(out$PVALUE_ADJ[out$AGGREGATION == "MEAN"],
+               stats::p.adjust(p_mean, method = "BH"))
+  expect_equal(out$PVALUE_ADJ[out$AGGREGATION == "MEDIAN"],
+               stats::p.adjust(p_median, method = "BH"))
+
+  # The point of the family: asking for a second aggregation must not change the
+  # correction of the first. Adjusting across the file would have made every
+  # adjusted p of MEAN depend on how many MEDIAN rows happened to be there.
+  alone <- results[results$AGGREGATION == "MEAN", ]
+  expect_equal(SEMseeker:::.assoc_adjust_within_key(alone)$PVALUE_ADJ,
+               out$PVALUE_ADJ[out$AGGREGATION == "MEAN"])
+
+  # And it is NOT the global adjustment, which is a different column on purpose.
+  expect_false(isTRUE(all.equal(
+    out$PVALUE_ADJ, stats::p.adjust(c(p_mean, p_median), method = "BH"))))
+})
+
+test_that("VALUE carries the per-position values, unreduced", {
+  tempFolder <- file.path(tempdir(), "test_value_endtoend")
+  unlink(tempFolder, recursive = TRUE)
+  on.exit({ try(SEMseeker:::core_close_env(), silent = TRUE)
+            unlink(tempFolder, recursive = TRUE) }, add = TRUE)
+
+  SEMseeker:::core_init_env(result_folder = tempFolder, parallel_strategy = "sequential",
+                            start_fresh = TRUE, showprogress = FALSE, verbosity = 1)
+
+  s1 <- c(0.10, 0.90, 0.50)
+  s2 <- c(0.20, 0.80, 0.40)
+  df <- data.frame(CHR   = c("1", "1", "2"),
+                   START = c(100L, 200L, 300L),
+                   END   = c(101L, 201L, 301L),
+                   S1 = s1, S2 = s2)
+
+  p <- SEMseeker:::io_pivot_file_name_parquet("SIGNAL", "BETA", "POSITION", "WHOLE")
+  dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+  polars::as_polars_df(df)$write_parquet(p)
+
+  # The name resolves to VALUE on its own: at a single position there is nothing
+  # to reduce, so the identity is the only meaningful operator.
+  expect_match(basename(p), "_VALUE_", fixed = TRUE)
+
+  masked <- SEMseeker:::.io_pivot_masked_lazy("SIGNAL", "BETA", "INSTANCE",
+                                              "POSITION", "WHOLE")
+  got <- as.data.frame(masked$lazy$collect())
+
+  # One row per position, nothing aggregated, and the three coordinates composed
+  # into ONE identifier - the form io_probe_id_to_coord() splits back.
+  expect_equal(nrow(got), length(s1))
+  expect_equal(got$AREA, paste(df$CHR, df$START, sep = "_"))
+  expect_equal(got$S1, s1)
+  expect_equal(got$S2, s2)
+  # CHR/START/END must not survive as if they were samples.
+  expect_false(any(c("CHR", "START", "END") %in% colnames(got)))
 })

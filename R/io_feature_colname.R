@@ -15,7 +15,7 @@
 #' MARKER       SIGNAL | MUTATIONS | LESIONS | DELTA*
 #' FIGURE       HYPER / HYPO for the instability markers,
 #'              BETA / MVALUE (the scale) for SIGNAL
-#' AGGREGATION  SUM | MEAN | MEDIAN | VARIANCE | IQR | MODE_LOW | MODE_HIGH
+#' AGGREGATION  SUM | MEAN | MEDIAN | VARIANCE | IQR | MODELOW | MODEHIGH
 #' }
 #'
 #' Until AI-248 the aggregation was implicit — one operator per marker, so
