@@ -61,7 +61,7 @@
 #'
 #' @keywords internal
 #' @noRd
-assess_statistical_power <- function(signal_data, sample_sheet, exposure,
+assoc_statistical_power <- function(signal_data, sample_sheet, exposure,
                                      covariates = character(0), alpha = NULL,
                                      target_power = 0.8, target_f2 = 0.15,
                                      exposure_type = c("auto", "continuous",
@@ -78,22 +78,22 @@ assess_statistical_power <- function(signal_data, sample_sheet, exposure,
 
   # --- input validation -----------------------------------------------------
   if (!"Sample_ID" %in% colnames(sample_sheet))
-    stop("assess_statistical_power: sample_sheet must have a 'Sample_ID' column.")
+    stop("assoc_statistical_power: sample_sheet must have a 'Sample_ID' column.")
   if (length(exposure) != 1L || !exposure %in% colnames(sample_sheet))
-    stop("assess_statistical_power: 'exposure' must name a single sample_sheet column.")
+    stop("assoc_statistical_power: 'exposure' must name a single sample_sheet column.")
   missing_cov <- setdiff(covariates, colnames(sample_sheet))
   if (length(missing_cov))
-    stop("assess_statistical_power: covariates not found in sample_sheet: ",
+    stop("assoc_statistical_power: covariates not found in sample_sheet: ",
          paste(missing_cov, collapse = ", "))
   if (target_f2 <= 0)
-    stop("assess_statistical_power: 'target_f2' must be > 0.")
+    stop("assoc_statistical_power: 'target_f2' must be > 0.")
 
   signal_data <- as.matrix(signal_data)
 
   # --- align samples: sample_sheet rows <-> signal_data columns -------------
   samples <- intersect(as.character(sample_sheet$Sample_ID), colnames(signal_data))
   if (length(samples) < 3L)
-    stop("assess_statistical_power: fewer than 3 samples shared between ",
+    stop("assoc_statistical_power: fewer than 3 samples shared between ",
          "sample_sheet$Sample_ID and signal_data columns.")
   meta <- sample_sheet[match(samples, as.character(sample_sheet$Sample_ID)), ,
                        drop = FALSE]
@@ -105,7 +105,7 @@ assess_statistical_power <- function(signal_data, sample_sheet, exposure,
   meta     <- meta[complete, , drop = FALSE]
   n <- length(samples)
   if (n < 4L)
-    stop("assess_statistical_power: fewer than 4 complete-case samples after ",
+    stop("assoc_statistical_power: fewer than 4 complete-case samples after ",
          "dropping missing exposure/covariate values.")
 
   # --- coerce exposure type -------------------------------------------------
@@ -117,7 +117,7 @@ assess_statistical_power <- function(signal_data, sample_sheet, exposure,
   if (is_categorical) {
     ex <- droplevels(as.factor(ex))
     if (nlevels(ex) < 2L)
-      stop("assess_statistical_power: categorical exposure has < 2 levels after ",
+      stop("assoc_statistical_power: categorical exposure has < 2 levels after ",
            "complete-case filtering.")
   } else {
     ex <- as.numeric(ex)
@@ -136,10 +136,10 @@ assess_statistical_power <- function(signal_data, sample_sheet, exposure,
   k <- ncol(Xf) - 1L                    # total predictors (excl. intercept)
   v <- n - ncol(Xf)                     # residual df = n - k - 1
   if (u < 1L)
-    stop("assess_statistical_power: exposure contributes no degrees of freedom ",
+    stop("assoc_statistical_power: exposure contributes no degrees of freedom ",
          "(constant within complete cases?).")
   if (v < 1L)
-    stop("assess_statistical_power: not enough residual degrees of freedom ",
+    stop("assoc_statistical_power: not enough residual degrees of freedom ",
          "(n - k - 1 = ", v, "); reduce covariates or add samples.")
 
   # --- vectorised per-probe partial f^2 via FWL residualisation -------------
@@ -174,7 +174,7 @@ assess_statistical_power <- function(signal_data, sample_sheet, exposure,
   design_power <- .f2_power(target_f2, u = u, v = v, alpha = alpha)
   verdict <- if (design_power >= target_power) "correctly_powered" else "underpowered"
 
-  log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
+  core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " Statistical power on exposure '", exposure, "' (",
             if (is_categorical) "categorical" else "continuous",
             ", u=", u, ", n=", n, ", alpha=", alpha,
