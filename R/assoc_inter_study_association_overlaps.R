@@ -38,8 +38,9 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
       # get the inference details for the study
       result_folder_study <- studies[s,"RESULT_FOLDER"]
       ssEnv <- core_init_env( result_folder =  result_folder_study, start_fresh = FALSE,alpha=alpha, ...)
-      temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER, area= AREA,
-        adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
+      temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER,
+        area = AREA, scope = "INSTANCE",
+        pvalue_column= pvalue_column,
         adjustment_method = adjustment_method, significance = NULL)
       if(nrow(temp_res) != 0)
         temp_res$STUDY <- studies[s,"STUDY"]
@@ -128,8 +129,9 @@ assoc_inter_study_association_overlaps <- function(inference_detail, studies,alp
         # get the inference details for the study
         result_folder_study <- studies[s,"RESULT_FOLDER"]
         ssEnv <- core_init_env( result_folder =  result_folder_study, start_fresh = FALSE,alpha=alpha, ...)
-        temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER, area= AREA,
-          adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
+        temp_res <- assoc_results_get(inference_detail = inference_detail, marker = MARKER,
+          area = AREA, scope = "INSTANCE",
+          pvalue_column= pvalue_column,
           adjustment_method = adjustment_method, significance = signif)
         if(nrow(temp_res) != 0)
           temp_res$STUDY <- studies[s,"STUDY"]

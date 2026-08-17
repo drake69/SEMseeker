@@ -93,8 +93,12 @@ test_that("assoc_glm_model_bulk produces one row per probe with legacy schema", 
   expect_true(is.data.frame(res))
   expect_equal(nrow(res), 40L)   # 40 probes in
   expect_true(all(c("MARKER", "FIGURE", "AREA", "SUBAREA", "AREA_OF_TEST",
-                    "FAMILY_TEST", "R_MODEL", "PVALUE", "PVALUE_ADJ")
+                    "FAMILY_TEST", "R_MODEL", "PVALUE")
                    %in% colnames(res)))
+  # AI-257: the model emits raw p-values and nothing adjusted. A batch is not a
+  # family — assoc_analysis_save_results() forms the three families and names
+  # each column after its own.
+  expect_false(any(grepl("_ADJ", colnames(res))))
   expect_equal(unique(res$FAMILY_TEST), "binomial_bulk")
   expect_equal(unique(res$R_MODEL), "Rfast::glm_logistic")
 })

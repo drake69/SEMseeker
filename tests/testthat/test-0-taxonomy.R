@@ -413,23 +413,129 @@ test_that("the FDR family is the key, and the numbers say so", {
     PVALUE      = c(p_mean, p_median),
     stringsAsFactors = FALSE)
 
-  out <- SEMseeker:::.assoc_adjust_within_key(results)
+  out <- SEMseeker:::.assoc_adjust_levels(results, method = "BH",
+                                          method_label = "BH", alpha = 0.05)
 
-  expect_equal(out$PVALUE_ADJ[out$AGGREGATION == "MEAN"],
+  expect_equal(out$PVALUE_ADJ_KEY_BH[out$AGGREGATION == "MEAN"],
                stats::p.adjust(p_mean, method = "BH"))
-  expect_equal(out$PVALUE_ADJ[out$AGGREGATION == "MEDIAN"],
+  expect_equal(out$PVALUE_ADJ_KEY_BH[out$AGGREGATION == "MEDIAN"],
                stats::p.adjust(p_median, method = "BH"))
 
   # The point of the family: asking for a second aggregation must not change the
   # correction of the first. Adjusting across the file would have made every
   # adjusted p of MEAN depend on how many MEDIAN rows happened to be there.
   alone <- results[results$AGGREGATION == "MEAN", ]
-  expect_equal(SEMseeker:::.assoc_adjust_within_key(alone)$PVALUE_ADJ,
-               out$PVALUE_ADJ[out$AGGREGATION == "MEAN"])
+  expect_equal(SEMseeker:::.assoc_adjust_levels(alone, method = "BH",
+                                                method_label = "BH",
+                                                alpha = 0.05)$PVALUE_ADJ_KEY_BH,
+               out$PVALUE_ADJ_KEY_BH[out$AGGREGATION == "MEAN"])
 
   # And it is NOT the global adjustment, which is a different column on purpose.
   expect_false(isTRUE(all.equal(
-    out$PVALUE_ADJ, stats::p.adjust(c(p_mean, p_median), method = "BH"))))
+    out$PVALUE_ADJ_KEY_BH, stats::p.adjust(c(p_mean, p_median), method = "BH"))))
+})
+
+test_that("the SCOPE level pools what the key separates, and says which is which", {
+  # AI-257. The middle family. Every row here shares SCOPE = INSTANCE, so the
+  # SCOPE level adjusts across both aggregations at once while the KEY level
+  # keeps them apart. Two columns, two families, one set of p-values: if the two
+  # ever came out equal the middle level would be buying nothing.
+  p_mean   <- c(0.001, 0.02, 0.30, 0.60)
+  p_median <- c(0.005, 0.05)
+
+  results <- data.frame(
+    MARKER      = "DELTAS",
+    FIGURE      = "HYPO",
+    SCOPE       = "INSTANCE",
+    AREA        = "GENE",
+    SUBAREA     = "WHOLE",
+    AGGREGATION = c(rep("MEAN", length(p_mean)), rep("MEDIAN", length(p_median))),
+    AREA_OF_TEST = c(paste0("G", seq_along(p_mean)), paste0("H", seq_along(p_median))),
+    PVALUE      = c(p_mean, p_median),
+    stringsAsFactors = FALSE)
+
+  out <- SEMseeker:::.assoc_adjust_levels(results, method = "BH",
+                                          method_label = "BH", alpha = 0.05)
+
+  expect_equal(out$PVALUE_ADJ_SCOPE_BH,
+               stats::p.adjust(c(p_mean, p_median), method = "BH"))
+  expect_false(isTRUE(all.equal(out$PVALUE_ADJ_SCOPE_BH, out$PVALUE_ADJ_KEY_BH)))
+})
+
+test_that("at SCOPE = SAMPLE the key holds one row, and the scope level is what answers", {
+  # AI-257. The reason there are three levels and not two. A collapsed artefact
+  # is one number per sample, so its key holds a single row and BH on n = 1 is
+  # the identity: PVALUE_ADJ_KEY_BH == PVALUE, exactly, and a column named for an
+  # adjustment that did not happen is how multiplicity goes unreported. The scope
+  # level is the one with members to count.
+  p <- c(0.001, 0.02, 0.30, 0.60)
+
+  results <- data.frame(
+    MARKER      = "MUTATIONS",
+    FIGURE      = c("HYPER", "HYPO", "HYPER", "HYPO"),
+    SCOPE       = "SAMPLE",
+    AREA        = "GENE",
+    SUBAREA     = c("TSS1500", "TSS1500", "BODY", "BODY"),
+    AGGREGATION = "SUM",
+    AREA_OF_TEST = "GENE",
+    PVALUE      = p,
+    stringsAsFactors = FALSE)
+
+  out <- SEMseeker:::.assoc_adjust_levels(results, method = "BH",
+                                          method_label = "BH", alpha = 0.05)
+
+  # Every key is degenerate: four distinct (FIGURE, SUBAREA) pairs, one row each.
+  expect_equal(out$PVALUE_ADJ_KEY_BH, p)
+  # The scope level counts all four.
+  expect_equal(out$PVALUE_ADJ_SCOPE_BH, stats::p.adjust(p, method = "BH"))
+  expect_false(isTRUE(all.equal(out$PVALUE_ADJ_SCOPE_BH, out$PVALUE_ADJ_KEY_BH)))
+})
+
+test_that("the level a flag answers for is named, not matched by the method string", {
+  # AI-257. `grepl(method, colnames)` caught every adjusted column at once, so
+  # adding a second level silently turned the significance flag into an AND
+  # across levels. The selector names the level.
+  results <- data.frame(
+    PVALUE                = c(0.001, 0.20),
+    PVALUE_ADJ_KEY_BH     = c(0.900, 0.001),
+    PVALUE_ADJ_SCOPE_BH   = c(0.900, 0.001),
+    PVALUE_ADJ_ALL_BH     = c(0.001, 0.900),
+    I_AGE_PVALUE_ADJ_ALL_BH = c(0.001, 0.900),
+    stringsAsFactors = FALSE)
+
+  all_cols <- SEMseeker:::.assoc_level_columns(results, "ALL", "BH")
+  expect_setequal(all_cols, c("PVALUE_ADJ_ALL_BH", "I_AGE_PVALUE_ADJ_ALL_BH"))
+  expect_equal(SEMseeker:::.assoc_level_columns(results, "KEY", "BH"),
+               "PVALUE_ADJ_KEY_BH")
+
+  # The flag follows the ALL level alone: row 1 is significant there and not at
+  # the two narrow levels, and it must still read TRUE.
+  expect_equal(SEMseeker:::.assoc_all_below(results, all_cols, 0.05),
+               c(TRUE, FALSE))
+
+  # No column to answer with is not an answer of TRUE.
+  expect_true(all(is.na(SEMseeker:::.assoc_all_below(results, "NOSUCH", 0.05))))
+})
+
+test_that("one estimator serves the three levels, and an unnameable one yields NA", {
+  # AI-257. The narrow level used to have method = "BH" written into it while
+  # the global level honoured the run's setting, so a run asking for something
+  # else got a column named for one estimator and computed with another.
+  p <- c(0.001, 0.02, 0.30, 0.60)
+
+  expect_equal(SEMseeker:::.assoc_adjust_vector(p, method = "bonferroni",
+                                                alpha = 0.05),
+               stats::p.adjust(p, method = "bonferroni"))
+  expect_equal(SEMseeker:::.assoc_adjust_vector(p, method = "BH", alpha = 0.05),
+               stats::p.adjust(p, method = "BH"))
+
+  # qvalue cannot estimate pi0 on a family this small. NA is the honest answer:
+  # substituting another estimator would leave the column name wrong.
+  skip_if_not_installed("qvalue")
+  # suppressWarnings: qvalue's own internals partial-match an argument, and
+  # testthat turns that into a warning of ours. Not our call site to fix.
+  expect_true(all(is.na(suppressWarnings(
+    SEMseeker:::.assoc_adjust_vector(c(0.01, 0.4), method = "q", alpha = 0.05)))))
 })
 
 test_that("VALUE carries the per-position values, unreduced", {

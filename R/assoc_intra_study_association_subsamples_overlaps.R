@@ -37,8 +37,9 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
     for (i in seq_len(nrow(inference_details)))
     {
       # get the inference detail
-      temp_res <- assoc_results_get(inference_detail = inference_details[i,], marker = MARKER, area= AREA,
-        adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
+      temp_res <- assoc_results_get(inference_detail = inference_details[i,], marker = MARKER,
+        area = AREA, scope = "INSTANCE",
+        pvalue_column= pvalue_column,
         adjustment_method = adjustment_method, significance = NULL)
       if(nrow(temp_res) != 0)
       {
@@ -119,8 +120,9 @@ assoc_intra_study_association_subsamples_overlaps <- function(inference_details,
       # for each SAMPLES_SQL_CONDITION in inference_details
       for (i in seq_len(nrow(inference_details)))
       {
-        temp_res <- assoc_results_get(inference_detail = inference_details[i,], marker = MARKER, area= AREA,
-          adjust_per_area = adjust_per_area, adjust_globally = adjust_globally, pvalue_column= pvalue_column,
+        temp_res <- assoc_results_get(inference_detail = inference_details[i,], marker = MARKER,
+          area = AREA, scope = "INSTANCE",
+          pvalue_column= pvalue_column,
           adjustment_method = adjustment_method, significance = signif)
         if(nrow(temp_res) != 0)
           temp_res$SAMPLES_SQL_CONDITION <- core_name_cleaning(inference_details[i,"samples_sql_condition"])

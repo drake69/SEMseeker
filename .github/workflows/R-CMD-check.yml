@@ -174,7 +174,12 @@ jobs:
               "IlluminaHumanMethylation450kanno.ilmn12.hg19",
               "IlluminaHumanMethylation27kanno.ilmn12.hg19",
               "AnnotationHub",
-              "TxDb.Hsapiens.UCSC.hg19.knownGene"
+              "TxDb.Hsapiens.UCSC.hg19.knownGene",
+              # qvalue   test-0-taxonomy.R — the `q` estimator of
+              #          .assoc_adjust_vector(). Without it the test skips, and
+              #          test-0-suggests-installed.R fails on purpose: a silent
+              #          skip hides a coverage gap instead of reporting one.
+              "qvalue"
             ),
             ask = FALSE, update = FALSE
           )

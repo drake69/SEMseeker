@@ -58,8 +58,11 @@ enrich_phenotype_phenolyzer <- function(study,
     results_inference <- assoc_results_get(
       inference_detail =  inference_detail,
       marker = keys[i,"MARKER"],
-      adjust_per_area= adjust_per_area,
-      adjust_globally = adjust_globally,
+      # AI-257: neither coordinate was declared here, so this read took the
+      # GENE default and every scope — the collapsed rows included. A pathway
+      # needs a p-value per gene; a per-sample burden has no genes to list.
+      area  = "GENE",
+      scope = "INSTANCE",
       pvalue_column=  pvalue_column,
       adjustment_method= adjustment_method,
       significance = TRUE)

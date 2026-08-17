@@ -281,10 +281,11 @@ assoc_glm_model_bulk <- function(tempDataFrame, g_start, family_test,
   colnames(result) <- toupper(colnames(result))
   colnames(result) <- core_name_cleaning(colnames(result))
 
-  # BH adjustment (mirrors apply_stat_model.R lines 213-219 logic).
-  if ("PVALUE" %in% colnames(result)) {
-    result$PVALUE_ADJ <- stats::p.adjust(result$PVALUE, method = "BH")
-  }
+  # AI-257: no adjustment here. This function sees the probes of one batch, and
+  # a family made of whatever happened to be in a batch is a memory parameter.
+  # The three levels — key, scope, file — are computed in
+  # assoc_analysis_save_results(), the one place where every row of a family is
+  # together, and each is named after the family it controls.
 
   core_log_event("INFO: ", format(Sys.time(), "%a %b %d %X %Y"),
             " assoc_glm_model_bulk: produced ", nrow(result), " probe-level rows.")
