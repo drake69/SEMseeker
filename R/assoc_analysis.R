@@ -52,7 +52,7 @@
 #'       scope name squashed into one of them. The per-instance artefacts of the
 #'       run are tested regardless, and carry \code{SCOPE = "INSTANCE"}.
 #'
-#'       The artefact is built on the way in if it does not exist yet (AI-255),
+#'       The artefact is built on the way in if it does not exist yet,
 #'       so a class no previous run foresaw costs one scan of the position pivot
 #'       rather than a rerun — provided this call registers it in \code{areas}
 #'       and \code{subareas}.}

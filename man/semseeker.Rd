@@ -44,12 +44,12 @@ and \code{core_init_env()} (e.g. \code{parallel_strategy}, \code{alpha},
 \code{LESIONS_BP}, \code{marker}, \code{areas}). \code{LESIONS_BP}
 (default 2000) is the maximum bp distance between two probes for them to
 be in the same LESIONS enrichment window — replaces the legacy
-\code{sliding_window_size} probe-count parameter (removed in AI-092).
+\code{sliding_window_size} probe-count parameter (removed in 0.99.2).
 \code{coverage_minimum} (default 80) is the minimum percentage of input
 positions that must be present in the reference annotation: the coverage
 charts are written on every run, and the run stops below this threshold
-(AI-074). Lower it explicitly for deliberate cross-technology runs.
-The per-sample statistics are no longer selected here (AI-255): they are
+Lower it explicitly for deliberate cross-technology runs.
+The per-sample statistics are no longer selected here: they are
 built on demand by \code{sem_study_summary_get(regions = ...)} and by
 \code{association_analysis()} through \code{inference_details$scopes}, so a
 region class that was not foreseen at run time costs one scan instead of a
@@ -83,7 +83,7 @@ Supported \code{input} forms:
 }
 \examples{
 # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
-# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
 invisible(NULL)
 \dontrun{
 # Bedmethyl (Nanopore / modkit):

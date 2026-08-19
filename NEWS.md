@@ -5,7 +5,7 @@
 ### Breaking changes
 
 - **A p-value adjustment now names the family it was controlled over, and there
-  are three (AI-257).** `PVALUE_ADJ` said nothing about its family, and at
+  are three.** `PVALUE_ADJ` said nothing about its family, and at
   `SCOPE = SAMPLE` that family holds a single row — so the column equalled the
   raw p-value by arithmetic while its name promised a correction. It is replaced
   by three columns, nested, each named after its own family:
@@ -38,8 +38,8 @@
   adaptive, so a wider family is usually but not necessarily more conservative.
 
 
-- **The extent a number is valid over is a coordinate of its own, `SCOPE`
-  (AI-255).** A burden over the whole sample and a burden per gene are the same
+- **The extent a number is valid over is a coordinate of its own, `SCOPE`.**
+  A burden over the whole sample and a burden per gene are the same
   marker reduced over different extents. They used to live in artefacts of
   different *shape* — a sibling CSV with samples down the rows, and a pivot with
   areas down the rows — and that difference in shape is what hid the difference
@@ -137,7 +137,7 @@
   descriptive properties of the sample. Nothing is lost for the density: the
   `MEAN` of a binary marker *is* the density, denominator included.
 
-- **Every computed quantity is now named by four coordinates (AI-248).** A
+- **Every computed quantity is now named by four coordinates.** A
   number produced by SEMseeker is the reduction of a set of genomic positions,
   and until now the operator that reduced them was implicit — one per marker, so
   the marker and its direction identified the value. A scope can carry several
@@ -154,7 +154,7 @@
   | `SAMPLE_DELTAS_HYPO` | `SAMPLE_DELTAS_HYPO_MEAN` |
   | `SAMPLE_MEDIAN` | `SAMPLE_SIGNAL_BETA_MEDIAN` |
   | `SAMPLE_MODE_LOW` | `SAMPLE_SIGNAL_BETA_MODELOW` |
-  | `SAMPLE_N_PROBES` | moved to `SAMPLE_SHEET_RESULT.csv` as `N_PROBES` — see the AI-255 entry above |
+  | `SAMPLE_N_PROBES` | moved to `SAMPLE_SHEET_RESULT.csv` as `N_PROBES` — see the entry above |
 
 - **The figure of `SIGNAL` is the scale of the values, `BETA` or `MVALUE`.** It
   used to be `MEAN`, a placeholder that made the key unique while describing a
@@ -182,7 +182,7 @@
 
 ### Bug fixes
 
-- **A consumer wrote over the file it was consuming (AI-257).**
+- **A consumer wrote over the file it was consuming.**
   `assoc_data_extractor()` read the canonical inference CSV, applied three
   filters — the figures of the marker, the `areas_sql_condition` of the request,
   the dropped `SAMPLES_SQL_CONDITION` columns — and wrote the filtered frame
@@ -194,8 +194,8 @@
   is why it does not belong there: it wrote a registry to disk while a consumer
   was reading.
 
-- **`assoc_results_get()` guessed which region class and which extent to read
-  (AI-257).** `area` defaulted to `"GENE"` and `scope` to `NULL`, which meant no
+- **`assoc_results_get()` guessed which region class and which extent to read.**
+  `area` defaulted to `"GENE"` and `scope` to `NULL`, which meant no
   filter at all. Both are required now, and removing the defaults immediately
   showed what they had been hiding: two enrichment backends declared neither, so
   they were reading every extent — the collapsed `SCOPE = SAMPLE` rows
@@ -203,7 +203,7 @@
   collapsed row of a region class with its per-instance rows. All seven now
   declare what they read.
 
-- **Two dead adjustment flags removed (AI-257).** `adjust_per_area` and
+- **Two dead adjustment flags removed.** `adjust_per_area` and
   `adjust_globally` re-ran `p.adjust()` at read time on top of an already
   adjusted column — `pvalue_column` defaults to `PVALUE_ADJ_ALL_BH`, so either
   one meant BH over BH. No call site passed `TRUE`. `adjust_per_area` also
@@ -211,7 +211,7 @@
   filter that followed selected the last area of the loop rather than the
   requested one.
 
-- **The significance flags matched the method string, not the level (AI-257).**
+- **The significance flags matched the method string, not the level.**
   `SIGNIFICATIVE_ADJ_ALL` and `SIGNIFICATIVE_ADJ` were computed over *every*
   column whose name contained the method — `grepl("BH", colnames)` — so a second
   adjusted level would have turned them into "significant at every level at
@@ -219,19 +219,19 @@
   empty selection yields `NA` instead of `TRUE`, which is what
   `all(logical(0))` used to return.
 
-- **`filter_p_value` filtered on a column that is never created (AI-257).**
+- **`filter_p_value` filtered on a column that is never created.**
   `assoc_analysis_save_results()` subset on `SIGNIFICATIVE_ADJ`, which is built
   by `assoc_results_get()` on the way out and never exists on the way in. The
   parameter defaults to `TRUE`, so the default path could not complete; every
   fixture in the suite sets it to `FALSE`, which is why nothing caught it. It
   filters on `SIGNIFICATIVE_ADJ_ALL`, the flag that exists at that point.
 
-- **Two models adjusted p-values over a batch (AI-257).**
+- **Two models adjusted p-values over a batch.**
   `assoc_apply_stat_model()` and `assoc_glm_model_bulk()` each wrote a
   `PVALUE_ADJ` over whatever chunk they had been handed, making the family a
   memory parameter; the value was then recomputed downstream anyway. Both
   removed. The one in `assoc_apply_stat_model()` also split its rows on
-  `grepl("TOTAL", AREA_OF_TEST)`, and `TOTAL` was removed with AI-255 — the
+  `grepl("TOTAL", AREA_OF_TEST)`, and `TOTAL` was removed in this release — the
   predicate had been false on every row since, so its two branches had quietly
   become one.
 
@@ -253,7 +253,7 @@
   restricted to the signal on the beta scale.
 
 
-- **Per-sample burden restricted to a region class (AI-223 slice 2a).** The
+- **Per-sample burden restricted to a region class.** The
   statistics sibling can now carry a scope other than the whole sample:
   `semseeker(sample_stats_scopes = c("SAMPLE", "GENE_TSS1500"))` adds
   `GENE_TSS1500_<MARKER>_<FIGURE>`, the burden computed over the probes of that
@@ -287,7 +287,7 @@
 ### Breaking changes
 
 - **The per-sample burden moved out of `SAMPLE_SHEET_RESULT.csv` into a new
-  sibling file, `SAMPLE_STATS_RESULT.csv` (AI-223).** The columns that used to
+  sibling file, `SAMPLE_STATS_RESULT.csv`.** The columns that used to
   be appended to the sample sheet (`MUTATIONS_HYPER`, `DELTAS_HYPO`, …, and
   `PROBES_COUNT`) were aggregated over every probe with no genomic filter —
   that is the *sample* scope of the new artefact — and are now written there as
@@ -301,7 +301,7 @@
 
 ### New features
 
-- **Per-sample signal descriptors (AI-223).** Alongside the burden, the new
+- **Per-sample signal descriptors.** Alongside the burden, the new
   sibling carries `SAMPLE_MEDIAN`, `SAMPLE_MEAN`, `SAMPLE_VARIANCE`,
   `SAMPLE_IQR` and `SAMPLE_N_PROBES` for every sample. On the beta scale it
   also carries the two modes of the bimodal distribution, `SAMPLE_MODE_LOW` and
@@ -313,7 +313,7 @@
   (`<AREA>[_<SUBAREA>]_*`) are the next step; the naming already accommodates
   them.
 
-- **Coverage is now a mandatory pre-step of every SEM analysis (AI-074).**
+- **Coverage is now a mandatory pre-step of every SEM analysis.**
   Coverage used to be an opt-in report, so a run could go straight to SEM
   detection on input that barely overlaps the reference annotation (long-read
   positions against an Illumina manifest, a batch with a probe mismatch, the
@@ -337,12 +337,12 @@
 - `inst/CITATION` now carries the Zenodo DOI `10.5281/zenodo.5095416` instead
   of a Bioconductor DOI that does not resolve (the package is not on
   Bioconductor yet), and the README no longer says a Zenodo DOI "will be
-  registered" — the archive has existed since 2021 (AI-119).
+  registered" — the archive has existed since 2021.
 
 ### Bug fixes
 
 - **A sample sheet that shares no identifier with the computed pivots no
-  longer produces a silently empty result (AI-083).**
+  longer produces a silently empty result.**
   `sem_study_summary_total()` merged the per-sample burden onto the sample
   sheet by name with `all.x = TRUE`: when the two sides had no identifier in
   common, every burden column landed as `NA` while `PROBES_COUNT` stayed
@@ -355,8 +355,8 @@
   which could also raise "object 'tot_result' not found" when no area
   produced a usable table.
 
-- **Sample identifiers containing `-`, `.` or spaces are now handled correctly
-  (AI-224).** Sample-column names of the signal matrix are normalised
+- **Sample identifiers containing `-`, `.` or spaces are now handled correctly.**
+  Sample-column names of the signal matrix are normalised
   (uppercase, non-alphanumeric characters replaced by `_`), but the sample
   sheet identifiers were used as-is when selecting those columns. With
   identifiers such as `C3L-00001-06` the two sides never matched:
@@ -403,7 +403,7 @@
 
 ### Breaking changes
 
-- **LESIONS detection now uses genomic distance, not probe count (AI-092).**
+- **LESIONS detection now uses genomic distance, not probe count.**
   The legacy `sliding_window_size` parameter (probe-count based, default 11)
   has been REMOVED. It is replaced by `LESIONS_BP` (default 2000), the
   maximum bp distance for two probes to be considered part of the same
@@ -418,11 +418,11 @@
   semantics across platforms. Migration: any caller passing
   `sliding_window_size=N` must replace it with `LESIONS_BP=M` (no equivalence
   formula; the metric has changed). Multi-window sensitivity will be tackled
-  in AI-091 (vector-valued `LESIONS_BP`).
+  in a later release (vector-valued `LESIONS_BP`).
 
 ### New features
 
-- **AI-190: CpG-island subareas aligned to Illumina `Relation_to_Island`.**
+- **CpG-island subareas aligned to Illumina `Relation_to_Island`.**
   The `ISLAND` area now exposes all six Illumina contexts plus the whole
   neighbourhood: `WHOLE`, `ISLAND`, `N_SHORE`, `S_SHORE`, `N_SHELF`,
   `S_SHELF`, `OPENSEA`. Previously the island core (`Island`) and the
@@ -435,7 +435,7 @@
   Illumina (`anno_probe_annotation_build`) and coordinate/AnnotationHub
   (`anno_area_granges_build`) backends. See the getting-started vignette.
 
-- **AI-044: binomial_bulk family + goodness-of-fit metrics extension.**
+- **`binomial_bulk` family + goodness-of-fit metrics extension.**
   New `family_test = "binomial_bulk"` dispatches to `assoc_glm_model_bulk()` for
   bulk per-probe logistic regression via `Rfast::glm_logistic` (parallelised
   with `foreach %dorng%`), ~10-20× faster than the per-probe `stats::glm`
