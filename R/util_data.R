@@ -125,7 +125,7 @@
 #' proband, L2–L4 = siblings/parent with NLRP5 compound heterozygous variants).
 #'
 #' This fixture replaces all \code{rbeta()}-based synthetic signal generation
-#' in the test suite and vignette (AI-123).  Because the data contain real BWS
+#' in the test suite and vignette.  Because the data contain real BWS
 #' epimutations at imprinting DMRs (KCNQ1OT1, H19/IGF2, MEG3, ...), running
 #' the full SEMseeker pipeline on this matrix detects biologically expected
 #' hypo-epimutation events in the Case samples without any artificial injection.

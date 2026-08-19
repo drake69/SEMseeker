@@ -7,8 +7,8 @@
 #' **Hot-path callers (inside foreach loops) MUST pass `save_to_disk = FALSE`**
 #' to avoid hammering the disk with one 15 MB rds write per gene per worker.
 #' The on-disk persistence is meant for end-of-job snapshots, not per-iteration
-#' state syncs. See SEMseeker backlog AI-041 for the rationale and the
-#' regression that triggered this split.
+#' state syncs: the split exists because per-iteration writes were a
+#' measured performance regression.
 #'
 #' @param ssEnv list. Session environment.
 #' @param save_to_disk logical. If TRUE (default, backward-compatible) writes

@@ -49,6 +49,6 @@ silently skipped.
 }
 \examples{
 # Stub: see vignette('imprinting-disorders', package = 'SEMseeker') for a
-# runnable Beckwith-Wiedemann workflow on the GSE133774 subset (AI-112b).
+# runnable Beckwith-Wiedemann workflow on the GSE133774 subset.
 invisible(NULL)
 }

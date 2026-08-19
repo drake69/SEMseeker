@@ -1,6 +1,6 @@
 #' Smart split of a multi-gene AREA name with prefix recovery
 #'
-#' AI-107 (2026-06-09). Bioconductor and external annotations sometimes
+#' Bioconductor and external annotations sometimes
 #' encode multiple genes in a compact slash-separated form where ALL
 #' suffix tokens inherit a prefix from the first token. The naive
 #' `strsplit(s, "/")` loses the prefix and produces unintelligible

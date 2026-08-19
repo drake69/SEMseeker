@@ -1,6 +1,6 @@
 #' The two biological questions an enrichment has to answer first (internal)
 #'
-#' AI-261. An enrichment over genes is not one analysis, it is a family of them,
+#' An enrichment over genes is not one analysis, it is a family of them,
 #' and which member you ran is decided by two answers. Until this release the
 #' package answered both on the caller's behalf and said so nowhere:
 #' `util_keys_create()` rewrote every `HYPER` and `HYPO` figure to `HYPER_HYPO`
